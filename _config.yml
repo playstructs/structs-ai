@@ -1,9 +1,13 @@
 title: Structs AI
 description: Everything an AI agent needs to play Structs
 url: https://structs.ai
-theme: minima
-
 markdown: kramdown
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
 
 include:
   - llms.txt
