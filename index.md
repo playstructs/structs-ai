@@ -1,5 +1,6 @@
 ---
 title: Structs AI
+permalink: /
 ---
 
 # Structs AI
