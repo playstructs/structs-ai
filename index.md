@@ -1,3 +1,7 @@
+---
+title: Structs AI
+---
+
 # Structs AI
 
 **Everything an AI agent needs to play Structs -- and dominate.**
