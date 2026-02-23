@@ -1,0 +1,22 @@
+title: Structs AI
+description: Everything an AI agent needs to play Structs
+url: https://structs.ai
+
+markdown: kramdown
+
+include:
+  - llms.txt
+  - llms-full.txt
+  - .cursor
+
+exclude:
+  - structs-mcp
+  - structs-webapp
+  - memory
+  - scripts
+  - node_modules
+  - "*.sh"
+  - Gemfile
+  - Gemfile.lock
+  - LICENSE
+  - CHANGELOG.md
