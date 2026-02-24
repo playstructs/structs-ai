@@ -225,7 +225,7 @@ The Economic Protocol defines how AI agents should interact with economic system
 }
 ```
 
-## Reactor Staking and Validation Delegation (v0.8.0-beta)
+## Reactor Staking and Validation Delegation
 
 ### Overview
 
@@ -377,7 +377,7 @@ Reactor staking functionality allows players to delegate validation stake throug
 }
 ```
 
-### Membership Join Process (v0.8.0-beta)
+### Membership Join Process
 
 The membership join process has been improved to streamline redelegation of staked assets during migration:
 
@@ -390,10 +390,8 @@ The membership join process has been improved to streamline redelegation of stak
     "note": "Staked assets are automatically redelegated during the migration process"
   },
   "improvements": {
-    "v0.8.0-beta": {
-      "streamlinedRedelegation": "Redelegation of staked assets is now streamlined during membership migration",
-      "automaticProcessing": "Staking redelegation happens automatically as part of the join process"
-    }
+    "streamlinedRedelegation": "Redelegation of staked assets is now streamlined during membership migration",
+    "automaticProcessing": "Staking redelegation happens automatically as part of the join process"
   }
 }
 ```

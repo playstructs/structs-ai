@@ -7,7 +7,7 @@
 
 ## Description
 
-Workflow for checking permissions including Hash permission (v0.8.0-beta).
+Workflow for checking permissions including Hash permission.
 
 ## Primary Workflow: Check Player Permissions
 

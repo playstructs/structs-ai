@@ -122,7 +122,7 @@ Energy measured in Watts (kilowatts). Ephemeral -- must be consumed immediately 
 | Endpoint | `/structs/reactor/{id}` |
 | List endpoint | `/structs/reactor` |
 
-Standard energy production facility. Converts Alpha Matter to energy at 1 kW per gram. Lower risk, designed for network stability. Supports validation delegation staking (v0.8.0-beta).
+Standard energy production facility. Converts Alpha Matter to energy at 1 kW per gram. Lower risk, designed for network stability. Supports validation delegation staking.
 
 ### Production Rate
 
@@ -132,7 +132,7 @@ Energy (kW) = Alpha Matter (grams) x 1
 
 Input: Alpha Matter (grams) | Output: Energy (kW) | Rate: 1
 
-### Staking (v0.8.0-beta)
+### Staking
 
 Reactor staking functionality with player-level management. Validation delegation is abstracted via Reactor Infuse/Defuse actions.
 

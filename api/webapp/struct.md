@@ -8,17 +8,6 @@
 
 ---
 
-## v0.8.0-beta Notes
-
-**Struct Lifecycle Changes** (Verified):
-- **Destroyed Field**: Struct queries filter out destroyed structs (`is_destroyed = false`). Destroyed structs are not returned in API responses, consistent with StructSweepDelay behavior (destroyed structs persist for 5 blocks in database but are filtered from queries).
-- **StructSweepDelay**: Destroyed structs persist for 5 blocks before being fully removed from database.
-- **Struct Type Fields**: Struct type endpoint includes `cheatsheet_details` and `cheatsheet_extended_details` fields (via `SELECT * FROM struct_type`).
-
-**See**: `reviews/webapp-review-findings.md` for code review findings
-
----
-
 ## Endpoint Summary
 
 | Method | Path | Description | Auth Required |
@@ -159,7 +148,7 @@ Get struct by ID.
 
 ---
 
-## Response Schema (v0.8.0-beta Verified)
+## Response Schema
 
 ### Struct Response
 

@@ -56,6 +56,8 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 - Exploration: new planet created, fleet moves to new planet, old planet released
 - One planet ownership at a time
 - **Planet completion**: When a planet's ore depletes, all fleets are automatically sent away (peace deal)
+- Fleet movement validation does not block moves based on fleet-away state
+- Fleets can move to already-populated planets
 
 ## Command Ship Details
 

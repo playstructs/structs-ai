@@ -1,10 +1,10 @@
 # Struct Entity Schema
 
-**Version**: 1.1.0
+**Version**: 1.3.0
 **Category**: core
 **Entity**: Struct
 **Endpoint**: `/structs/struct/{id}`
-**Last Updated**: 2026-01-01
+**Last Updated**: 2026-02-24
 
 ---
 
@@ -17,12 +17,15 @@
 | structType | string | struct-type-id | | Yes | Struct type ID (references a StructType definition) |
 | locationType | integer | | `1` or `2` | Yes | Location type: `1` = planet, `2` = fleet |
 | locationId | string | | | Yes | Location ID (planet ID or fleet ID depending on locationType) |
-| destroyed | boolean | | | No | Whether the struct has been destroyed (v0.8.0-beta). Destroyed structs persist for StructSweepDelay (5 blocks) before being fully removed. |
+| destroyed | boolean | | | No | Whether the struct has been destroyed. Database column: `is_destroyed` (default false). Destroyed structs persist for StructSweepDelay (5 blocks) before being fully removed. |
+| destroyedBlock | integer | | | No | Block height at which the struct was destroyed. Database column: `destroyed_block` (bigint). Only set when `destroyed` is true. |
 
-### Destroyed Field (v0.8.0-beta)
+### Destroyed Fields
 
-- Database column `struct.destroyed` added 2025-12-29
-- Related: StructSweepDelay (5 blocks) -- destroyed structs persist for 5 blocks before slot clearing
+- Database column `struct.is_destroyed` (boolean, default false)
+- Database column `struct.destroyed_block` (bigint)
+- StructSweepDelay (5 blocks) -- destroyed structs persist for 5 blocks before slot clearing
+- `destroyed_block` enables precise timing of destruction events for activity feeds and replay
 
 ## Grid Attributes
 
@@ -50,11 +53,12 @@ Grid position and resource attributes. Accepts additional properties of any stru
 | Property | Value |
 |----------|-------|
 | Verified | Yes |
-| Verified By | GameCodeAnalyst |
-| Verified Date | 2026-01-01 |
-| Method | code-analysis |
+| Verified By | GameCodeAnalyst + DB verification |
+| Verified Date | 2026-02-24 |
+| Method | code-analysis + direct database inspection |
 | Confidence | high |
 | Code Reference | `x/structs/types/struct.pb.go`, `x/structs/keeper/struct_cache.go` |
-| Verified Fields | id, owner, structType, locationType, status |
+| DB Reference | `structs.struct` table (13 columns verified against live database) |
+| Verified Fields | id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block |
 
 API response schema. For code-based field definitions with power draw, charge costs, and formulas, see `schemas/entities.md#struct`.

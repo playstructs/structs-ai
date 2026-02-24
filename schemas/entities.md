@@ -323,7 +323,7 @@
 
 - **ID**: `permission`
 - **Category**: core
-- **Description**: A permission (access control). Permission values are bit-based flags. Hash permission (bit value 64) added in v0.8.0-beta.
+- **Description**: A permission (access control). Permission values are bit-based flags. Hash permission bit value is 64.
 - **Endpoint**: `/structs/permission/{permissionId}`
 - **List Endpoint**: `/structs/permission`
 
@@ -436,7 +436,7 @@
 | buildDraw | integer | milliwatts | -- | -- | Power draw during building |
 | passiveDraw | integer | milliwatts | -- | -- | Power draw when active (online) |
 | buildDifficulty | integer | -- | -- | -- | Proof-of-work difficulty for building |
-| activateCharge | integer | -- | -- | -- | Charge cost to activate struct. v0.10.0-beta genesis sets activateCharge = 1 for all struct types. |
+| activateCharge | integer | -- | -- | -- | Charge cost to activate struct. Genesis sets activateCharge = 1 for all struct types. |
 | buildCharge | integer | -- | -- | -- | Charge cost to build struct |
 | oreMiningCharge | integer | -- | -- | -- | Charge cost for ore mining |
 | oreRefiningCharge | integer | -- | -- | -- | Charge cost for ore refining |

@@ -197,9 +197,9 @@ Gameplay-specific state query definition.
 |----------|-------|
 | Value | 5 |
 | Unit | blocks |
-| Description | Block-based delay before struct slots are cleared after destruction (v0.8.0-beta) |
+| Description | Block-based delay before struct slots are cleared after destruction |
 
-**v0.8.0-beta change**: Struct sweeping now has a block-based delay. Planet/fleet back references for slots are not cleared until the delay is met. Slots may appear occupied for 5 blocks after struct destruction.
+Struct sweeping has a block-based delay. Planet/fleet back references for slots are not cleared until the delay is met. Slots may appear occupied for 5 blocks after struct destruction.
 
 ---
 

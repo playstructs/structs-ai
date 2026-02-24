@@ -8,14 +8,6 @@
 
 ---
 
-## v0.8.0-beta Notes
-
-**Hash Permission**: Authentication and authorization may need to support Hash permission (bit 64) in v0.8.0-beta. Permission checking may include permission_hash information.
-
-**See**: `reviews/webapp-v0.8.0-beta-review.md` for review status
-
----
-
 ## Endpoint Summary
 
 | Method | Path | Description | Auth Required |

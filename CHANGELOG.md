@@ -5,6 +5,127 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-24
+
+### Chain Releases Covered
+
+- **v0.10.0-beta (Junctiondale)** -- Sticky State (partial; some items in 1.2.0)
+- **v0.11.0-beta (Luxoria)** -- IBC v10, SDK v0.53.5, open hashing, genesis improvements
+- **v0.12.0-beta (Mystigon)** -- Context Manager refactor, combat fixes, raid improvements
+- **v0.13.0-beta (Nebulon)** -- Indexer commit order fix
+
+### Changed - Combat Mechanics
+
+- **Minimum damage floor** (v0.12.0-beta)
+  - After damage reduction, minimum damage is now 1 -- attacks always deal at least 1 damage
+  - Updated `knowledge/mechanics/combat.md` with minimum damage edge case
+
+- **Offline counter-attack fix** (v0.12.0-beta)
+  - Offline/destroyed structs can no longer counter-attack
+  - Counter-attack now requires full readiness check including weapon system validation
+  - Updated `knowledge/mechanics/combat.md` counter-attack section
+
+- **Attack health results** (v0.11.0-beta)
+  - Attack events now include remaining health values in addition to damage amounts
+  - Updated `knowledge/mechanics/combat.md` algorithm description
+
+- **Multi-commit prevention** (v0.11.0-beta)
+  - Each struct can only commit once per attack action (prevents double-commit on same target)
+  - Updated `knowledge/mechanics/combat.md` edge cases
+
+- **Target struct validation** (v0.11.0-beta)
+  - Target struct existence is now validated before attack proceeds
+  - Updated `knowledge/mechanics/combat.md` edge cases
+
+### Added - Raid Improvements
+
+- **Seized ore tracking** (v0.12.0-beta)
+  - `seized_ore` (numeric) field added to `planet_raid` table
+  - Tracks total ore stolen during a raid for easier victory handling
+  - Updated `schemas/entities/planet.md` with `planet_raid` table schema
+  - Updated `knowledge/mechanics/planet.md` raid vulnerability section
+  - Updated `knowledge/mechanics/combat.md` outcomes section
+
+### Changed - Building & Hashing
+
+- **Open hashing by default** (v0.11.0-beta)
+  - All proof-of-work operations (build, mine, refine, raid) now accept hashes openly
+  - Zero-block hashing results handled correctly post-migration
+  - Updated `knowledge/mechanics/building.md` proof-of-work section
+
+### Changed - Fleet Movement
+
+- **Fleet movement readiness fix** (v0.12.0-beta)
+  - Fixed `MoveReadiness` bug that erroneously checked for fleet-away status
+  - Fixed error on fleet movement to populated planet
+  - Updated `knowledge/mechanics/fleet.md` fleet movement section
+
+### Added - Struct Fields
+
+- **`destroyed_block` field** (v0.12.0-beta)
+  - `destroyed_block` (bigint) added to struct table -- records block height of destruction
+  - Updated `schemas/entities/struct.md` with new field
+  - Updated `knowledge/mechanics/building.md` StructSweepDelay note
+  - Corrected existing `destroyed` field: DB column is actually `is_destroyed` (boolean)
+
+### Added - Provider Guild Access
+
+- **`ProviderGuildAccessRecord`** (v0.12.0-beta)
+  - New protobuf message for provider-guild access tracking
+  - Fields: `providerId`, `guildId`
+  - Used for genesis import/export of provider access policies
+  - Updated `schemas/entities/provider.md`
+
+### Changed - Internal Architecture (v0.11.0-v0.12.0)
+
+- **Cosmos SDK v0.53.5 and IBC v10 upgrade** (v0.11.0-beta)
+- **General Context Manager** (v0.12.0-beta) -- major keeper refactoring introducing `*_context.go` files for all entity types
+- **Structured error types** (v0.11.0-beta) -- migrated error handling to structured error types
+- **Improved genesis import/export** (v0.11.0-beta) -- allocation count, reactor index, index rebuild, block attribute resets
+- **Object deletion consistency** (v0.11.0-beta) -- resolved inconsistencies in object deletion
+- **Indexer commit order fix** (v0.13.0-beta) -- attributes now committed after objects to prevent indexer cascading failures
+
+### Added - Database Schema Changes
+
+- **`struct.destroyed_block`** (bigint) -- block height of destruction (2026-02-07)
+- **`planet_raid.seized_ore`** (numeric) -- ore seized during raids (2026-02-21)
+- **`struct_health`** added to `grass_category` enum for planet activity events (2026-01-15)
+- **`handle_event_struct_defender_clear`** cache function (2026-01-11)
+- **`player_address_cascade`** trigger on player table for onboarding (2026-02-23)
+- **Cache system refactor** (2026-01-21) -- 41 handler functions in cache schema
+- **`view.work` zero-block fix** (2026-01-19)
+- **Player insert trigger fix** for guild association (2026-01-23)
+- **Defender clear caching** -- multiple iterations fixing defender removal event processing (2026-01-11 through 2026-01-18)
+- **Zero-value attribute cleanup** in cache handlers (2026-02-03)
+- See `schemas/database-schema.md` for complete migration log
+
+### Added - Webapp Features (PRs #16-#40)
+
+- **Struct actions UI** -- move (#29-#30), defend (#32), attack (#37-#38), stealth (#28)
+- **Raid end dialogues** (#39) -- victory/defeat notification sequences with Lottie animations
+- **Struct HUD** (#27) -- struct status display with real-time updates
+- **Progress estimations** (#16) -- estimated completion times for proof-of-work tasks
+- **Signing Manager** cleanup (#20) and TX response logging (#31)
+- **Key player refactor** (#22-#23) -- improved player state management
+- **Command Ship loading** during planet exploration (#25)
+- **Map rendering fixes** (#35-#36) -- struct rendering on preview map, raid enemy map display
+- **Planet depart button** fix and messaging update (#40)
+- **Gameplay bug fixes** (#33-#34) -- action bar visibility, various gameplay issues
+
+### Updated - Documentation Files
+
+- `schemas/database-schema.md` -- v0.10.0-v0.13.0 changelog, database schemas overview, verified table/view/trigger definitions
+- `schemas/entities/struct.md` -- `destroyed_block` field, corrected `is_destroyed` column name, updated verification
+- `schemas/entities/planet.md` -- planet view fields, `planet_raid` table, `seized_ore`, updated verification
+- `schemas/entities/provider.md` -- `ProviderGuildAccessRecord`
+- `knowledge/mechanics/combat.md` -- minimum damage, counter-attack fixes, seizedOre, health results, edge cases
+- `knowledge/mechanics/fleet.md` -- movement readiness fix, populated planet fix
+- `knowledge/mechanics/building.md` -- open hashing, destroyed_block in sweep delay
+- `knowledge/mechanics/planet.md` -- seized ore tracking in raids
+- `.cursor/skills/structs-combat/SKILL.md` -- combat notes, verification updates
+
+---
+
 ## [1.2.0] - 2026-01-16
 
 ### Added - Streaming Events
@@ -214,6 +335,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.3.0** (2026-02-24): v0.10.0-v0.13.0-beta updates - Combat fixes (minimum damage, counter-attack), seized ore tracking, open hashing, destroyed_block, fleet movement fix, Context Manager refactor, SDK v0.53.5/IBC v10, database schema updates, webapp struct actions UI
+- **1.2.0** (2026-01-16): v0.10.0-beta updates - Defender clear event, genesis import/export, activate charge, build cancel, initial Command Ship grant
 - **1.1.0** (2026-01-01): v0.8.0-beta updates - Hash permission, reactor staking, attackerRetreated status, struct sweep delay, database schema changes, bug fixes
 - **1.0.0** (2025-12-07): Initial release
 

@@ -328,7 +328,7 @@ Same structure as Reactor Grid Attributes (all string representations of integer
 | Field | Type | Description |
 |-------|------|-------------|
 | permissionId | string | Permission identifier in format 'objectId@playerId' (e.g., '0-1@1-1') |
-| value | string | Permission value (numeric string). Bit-based flags. Common: 127 (all), 64 (Hash, v0.8.0-beta). Bits combined with bitwise OR. |
+| value | string | Permission value (numeric string). Bit-based flags. Common: 127 (all), 64 (Hash). Bits combined with bitwise OR. |
 | objectType | string | Type of object (e.g., 'guild', 'planet', 'struct', 'fleet') |
 | objectIndex | string | Object index number |
 | objectId | string | Object entity ID (guild type 0, planet type 2, struct type 5, or fleet type 9) |

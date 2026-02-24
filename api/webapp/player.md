@@ -8,14 +8,6 @@
 
 ---
 
-## v0.8.0-beta Notes
-
-**Reactor Staking**: Player endpoints may include reactor staking summary information in v0.8.0-beta. Reactor staking is managed at the player level.
-
-**See**: `reviews/webapp-v0.8.0-beta-review.md` for review status
-
----
-
 ## Endpoint Summary
 
 | Method | Path | Description | Auth Required |
@@ -188,9 +180,9 @@ Get launched raids for player.
 
 ---
 
-## Response Schema (v0.8.0-beta Considerations)
+## Response Schema
 
-Player responses may include reactor staking summary:
+Player responses include reactor staking summary:
 
 ```json
 {
@@ -207,8 +199,6 @@ Player responses may include reactor staking summary:
   ...
 }
 ```
-
-**Note**: Response schema updates are under review. See `reviews/webapp-v0.8.0-beta-review.md` for verification status.
 
 ---
 

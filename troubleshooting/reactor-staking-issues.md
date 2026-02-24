@@ -3,8 +3,7 @@
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
 **Status**: Stable  
-**Last Updated**: January 1, 2026  
-**v0.8.0-beta**: Reactor staking functionality
+**Last Updated**: January 1, 2026
 
 ## Overview
 
@@ -238,6 +237,5 @@ Use `reactor-begin-migration` for redelegation instead of defuse + infuse.
 
 ---
 
-*Last Updated: January 1, 2026*  
-*v0.8.0-beta: Reactor staking troubleshooting guide*
+*Last Updated: January 1, 2026*
 

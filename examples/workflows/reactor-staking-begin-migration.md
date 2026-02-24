@@ -2,14 +2,7 @@
 
 **Version**: 1.0.0
 **Category**: economic
-**Description**: Detailed workflow for beginning redelegation to a different validator (v0.8.0-beta)
-
----
-
-## v0.8.0-beta Feature
-
-- **Feature**: reactor_staking
-- **Purpose**: validation_redelegation
+**Description**: Detailed workflow for beginning redelegation to a different validator
 
 ---
 

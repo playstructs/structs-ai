@@ -2,15 +2,7 @@
 
 **Version**: 1.0.0
 **Category**: lifecycle
-**Description**: Detailed workflow for StructSweepDelay behavior after struct destruction (v0.8.0-beta)
-
----
-
-## v0.8.0-beta Feature
-
-- **Feature**: StructSweepDelay
-- **Delay**: 5 blocks
-- **Description**: Block-based delay before struct slots are cleared after destruction
+**Description**: Detailed workflow for StructSweepDelay behavior after struct destruction
 
 ---
 

@@ -2,14 +2,7 @@
 
 **Version**: 1.0.0
 **Category**: gameplay
-**Description**: Detailed workflow for handling attackerRetreated raid outcome (v0.8.0-beta)
-
----
-
-## v0.8.0-beta Feature
-
-- **Feature**: attackerRetreated
-- **Status**: New raid outcome status
+**Description**: Detailed workflow for handling attackerRetreated raid outcome
 
 ---
 

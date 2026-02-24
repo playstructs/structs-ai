@@ -81,7 +81,7 @@
 
 | Field | Type | Description |
 |-------|------|-------------|
-| activateCharge | string | Charge cost to activate struct. v0.10.0-beta genesis sets activateCharge = 1 for all struct types. |
+| activateCharge | string | Charge cost to activate struct. Genesis sets activateCharge = 1 for all struct types. |
 | oreMiningCharge | string | Charge cost for ore mining (if applicable) |
 | oreRefiningCharge | string | Charge cost for ore refining (if applicable) |
 | oreMiningDifficulty | string | Proof-of-work difficulty for ore mining (if applicable) |
@@ -112,9 +112,9 @@
 | Code Reference | `proto/structs/structs/struct.proto:26`, `x/structs/types/struct.pb.go` |
 | Database Reference | `structs.struct_type` table (80+ columns covering all struct properties: build, weapons, defenses, economics, charges, etc.) |
 
-### Database Changes (v0.8.0-beta)
+### Database Notes
 
-- **Added**: `cheatsheet_details` (2025-11-29), `cheatsheet_extended_details` (2025-12-02)
-- **Removed**: Deprecated charge columns for mine and refine (2025-12-08)
+- Columns include `cheatsheet_details` and `cheatsheet_extended_details` for UI display
+- Deprecated charge columns for mine and refine have been removed
 
 Cheatsheet details added for better struct type documentation. Deprecated charge columns removed from database.

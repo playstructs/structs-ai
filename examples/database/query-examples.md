@@ -2,15 +2,15 @@
 
 **Version**: 1.0.0
 **Category**: Database
-**Purpose**: Query examples for database schema changes in v0.8.0-beta
+**Purpose**: Query examples for database schema features
 
 ---
 
 ## Overview
 
-These examples demonstrate SQL queries for the database schema changes introduced in v0.8.0-beta: destroyed structs tracking, cheatsheet details on struct types, the permission hash level, and signer transaction table changes.
+These examples demonstrate SQL queries for database schema features: destroyed structs tracking, cheatsheet details on struct types, the permission hash level, and signer transaction table changes.
 
-### v0.8.0-beta Features Covered
+### Features Covered
 
 - `destroyed_structs` -- New `destroyed` column on struct table
 - `cheatsheet_details` -- Cheatsheet and extended cheatsheet columns on struct_type table
@@ -261,7 +261,7 @@ SELECT * FROM signer_tx WHERE tx_type = ?
 
 Parameter: `tx_type` = `struct_build_complete`
 
-New transaction types were added in v0.8.0-beta.
+New transaction types are available.
 
 ### Get Transactions with Hash Complete Nonces
 

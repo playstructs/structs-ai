@@ -206,7 +206,7 @@ Expected response (victory):
 
 **Defeat**: The attacker lost the raid and gained no resources.
 
-**Attacker Retreated** (v0.8.0-beta): The attacker retreated from the raid. No resources are gained or lost, and the fleet remains intact. The fleet can immediately be used for another raid attempt.
+**Attacker Retreated**: The attacker retreated from the raid. No resources are gained or lost, and the fleet remains intact. The fleet can immediately be used for another raid attempt.
 
 When the attacker retreats:
 1. Query the fleet to confirm it is intact

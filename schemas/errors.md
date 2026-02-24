@@ -6,7 +6,7 @@
 
 ---
 
-## Resolved Bugs (v0.8.0-beta)
+## Resolved Bugs
 
 | Bug | Status | Description |
 |-----|--------|-------------|

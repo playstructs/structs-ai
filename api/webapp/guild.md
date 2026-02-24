@@ -8,14 +8,6 @@
 
 ---
 
-## v0.8.0-beta Notes
-
-**Hash Permission**: Guild endpoints may need to include Hash permission (bit 64) information in permission-related responses.
-
-**See**: `reviews/webapp-v0.8.0-beta-review.md` for review status
-
----
-
 ## Endpoint Summary
 
 | Method | Path | Description | Auth Required |

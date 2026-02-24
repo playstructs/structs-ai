@@ -2,13 +2,13 @@
 
 **Version**: 1.0.0
 **Category**: Authentication
-**Purpose**: Hash permission bit manipulation, checking, combination, and validation (v0.8.0-beta)
+**Purpose**: Hash permission bit manipulation, checking, combination, and validation
 
 ---
 
 ## Overview
 
-The Hash permission (bit value 64) was introduced in v0.8.0-beta to control transaction signing with Hash permission level. This document covers bit manipulation patterns, permission checking workflows, combination operations, and validation logic with code examples in JavaScript, Python, and Go.
+The Hash permission (bit value 64) controls transaction signing with Hash permission level. This document covers bit manipulation patterns, permission checking workflows, combination operations, and validation logic with code examples in JavaScript, Python, and Go.
 
 ## Permission Bit Values
 

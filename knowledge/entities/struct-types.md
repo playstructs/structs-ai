@@ -91,7 +91,7 @@ Substations are entities (ID `4-{index}`), not structs. Reactors (type 3) feed s
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-complete`; age-based difficulty |
 
-**Charge**: `activateCharge` = 1 for all struct types (v0.10.0-beta).
+**Charge**: `activateCharge` = 1 for all struct types.
 
 ---
 

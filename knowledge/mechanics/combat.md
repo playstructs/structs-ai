@@ -32,7 +32,9 @@ else health = health - damage
 | damageReduction | Defense reduction |
 | health | Target current health |
 
-**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Cap at target health.
+**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Minimum damage after reduction is 1. Cap at target health.
+
+**Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 
 ### Evasion
 
@@ -66,6 +68,8 @@ Requires: defender assigned, defender online, same ambit as target.
 | Same ambit | `counterAttackDamage` (full) |
 | Different ambit | `counterAttackDamage / 2` |
 
+**Requirements**: Counter-attack requires a full readiness check. Offline structs cannot counter-attack. The counter-attack also validates weapon system existence on the defending struct.
+
 ### Planetary Defense Cannon
 
 ```
@@ -98,6 +102,8 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 | defeat | Defender wins |
 | attackerRetreated | Attacker withdrew |
 
+**Raid status**: Raid status includes `seizedOre` -- the amount of ore stolen during the raid. This is tracked on the `planet_raid` record and simplifies victory handling. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+
 ---
 
 ## Edge Cases
@@ -106,6 +112,10 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
+- **Minimum damage**: After damage reduction, minimum damage is 1 -- attacks always deal at least 1 damage
+- **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
+- **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)
+- **Target validation**: Target struct existence is validated before attack proceeds
 
 ---
 

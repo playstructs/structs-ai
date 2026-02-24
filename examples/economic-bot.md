@@ -163,7 +163,7 @@ Energy is ephemeral and must be consumed immediately. Have consumption ready bef
 2. Refine ore (`MsgStructOreRefineryComplete`): output is 100 grams Alpha Matter (non-stealable)
 3. Convert via Field Generator (`MsgStructGeneratorInfuse`): output is 200 kW Energy (2x efficiency, higher risk by design intent)
 
-### Reactor Staking Flow (v0.8.0-beta)
+### Reactor Staking Flow
 
 Reactor staking manages validation delegation at the player level through Reactor Infuse/Defuse actions.
 

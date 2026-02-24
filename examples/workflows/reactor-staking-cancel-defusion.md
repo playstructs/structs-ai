@@ -2,14 +2,7 @@
 
 **Version**: 1.0.0
 **Category**: economic
-**Description**: Detailed workflow for canceling an ongoing undelegation process (v0.8.0-beta)
-
----
-
-## v0.8.0-beta Feature
-
-- **Feature**: reactor_staking
-- **Purpose**: cancel_undelegation
+**Description**: Detailed workflow for canceling an ongoing undelegation process
 
 ---
 

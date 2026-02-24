@@ -276,12 +276,12 @@ Transaction may broadcast but struct not created if requirements not met. Always
 - **Name**: Infuse Reactor
 - **Message Type**: `/structs.structs.MsgReactorInfuse`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Add Alpha Matter to reactor for energy production. Also handles validation delegation (v0.8.0-beta). Reactor staking is now managed at player level, and validation delegation is abstracted via this action.
+- **Description**: Add Alpha Matter to reactor for energy production. Also handles validation delegation. Reactor staking is managed at player level, and validation delegation is abstracted via this action.
 - **Verified**: true
 - **Code Reference**: `x/structs/keeper/msg_server_reactor_infuse.go`
 - **Proto Reference**: `proto/structs/structs/tx.proto:95`
 
-**v0.8.0-beta Changes**: This action now abstracts validation delegation. When used for staking, it delegates validation stake to a validator. Reactor staking is managed at the player level, not reactor level.
+This action abstracts validation delegation. When used for staking, it delegates validation stake to a validator. Reactor staking is managed at the player level, not reactor level.
 
 **Required Fields**: `creator`, `reactorId`, `amount`
 
@@ -314,12 +314,12 @@ Transaction may broadcast but struct not created if requirements not met. Always
 - **Name**: Defuse Reactor
 - **Message Type**: `/structs.structs.MsgReactorDefuse`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Remove Alpha Matter from reactor. Also handles validation undelegation (v0.8.0-beta).
+- **Description**: Remove Alpha Matter from reactor. Also handles validation undelegation.
 - **Verified**: true
 - **Code Reference**: `x/structs/keeper/msg_server_reactor_defuse.go`
 - **Proto Reference**: `proto/structs/structs/tx.proto:96`
 
-**v0.8.0-beta Changes**: This action now abstracts validation undelegation. Reactor staking is managed at the player level, not reactor level.
+This action abstracts validation undelegation. Reactor staking is managed at the player level, not reactor level.
 
 **Required Fields**: `creator`, `reactorId`, `amount`
 
@@ -350,7 +350,7 @@ Transaction may broadcast but struct not created if requirements not met. Always
 - **Name**: Begin Reactor Migration
 - **Message Type**: `/structs.structs.MsgReactorBeginMigration`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Begin redelegation process for reactor validation stake (v0.8.0-beta).
+- **Description**: Begin redelegation process for reactor validation stake.
 
 **Required Fields**: `creator`, `reactorId`
 
@@ -380,7 +380,7 @@ Transaction may broadcast but struct not created if requirements not met. Always
 - **Name**: Cancel Reactor Defusion
 - **Message Type**: `/structs.structs.MsgReactorCancelDefusion`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Cancel undelegation process for reactor validation stake (v0.8.0-beta).
+- **Description**: Cancel undelegation process for reactor validation stake.
 
 **Required Fields**: `creator`, `reactorId`
 

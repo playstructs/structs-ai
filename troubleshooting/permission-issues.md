@@ -3,12 +3,11 @@
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
 **Status**: Stable  
-**Last Updated**: January 1, 2026  
-**v0.8.0-beta**: Hash permission (bit value 64) added
+**Last Updated**: January 1, 2026
 
 ## Overview
 
-This guide helps troubleshoot issues with Hash permissions and permission bit manipulation. Hash permission (bit value 64) was added in v0.8.0-beta. Permission values are bit-based flags that can be combined using bitwise OR.
+This guide helps troubleshoot issues with Hash permissions and permission bit manipulation. Permission values are bit-based flags that can be combined using bitwise OR.
 
 ---
 
@@ -182,7 +181,7 @@ This guide helps troubleshoot issues with Hash permissions and permission bit ma
 - **Bit 3**: Permission type 3
 - **Bit 4**: Permission type 4
 - **Bit 5**: Permission type 5
-- **Bit 6 (Hash)**: Hash permission (v0.8.0-beta)
+- **Bit 6 (Hash)**: Hash permission
 
 ### Common Permission Values
 
@@ -245,7 +244,7 @@ Verify permission applies to correct object and player.
 
 ### 4. Handle Permission Hash in Database
 
-When querying database, account for permission_hash level (added v0.8.0-beta).
+When querying database, account for permission_hash level.
 
 ### 5. Test Permission Combinations
 
@@ -263,6 +262,5 @@ Test permission combinations before applying to production.
 
 ---
 
-*Last Updated: January 1, 2026*  
-*v0.8.0-beta: Hash permission troubleshooting guide*
+*Last Updated: January 1, 2026*
 

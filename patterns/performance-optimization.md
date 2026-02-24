@@ -3,12 +3,11 @@
 **Version**: 1.0.0  
 **Category**: Patterns  
 **Status**: Stable  
-**Last Updated**: January 1, 2026  
-**v0.8.0-beta**: Performance tips for new features
+**Last Updated**: January 1, 2026
 
 ## Overview
 
-This guide provides performance optimization tips for AI agents working with Structs. It covers optimization strategies for reactor staking queries, permission checking, database queries, and caching strategies for v0.8.0-beta features.
+This guide provides performance optimization tips for AI agents working with Structs. It covers optimization strategies for reactor staking queries, permission checking, database queries, and caching strategies.
 
 ---
 
@@ -246,7 +245,7 @@ AND object_id = '0-1';
 -- Uses permission_hash index
 ```
 
-**Reference**: `schemas/database-schema.md#/v0.8.0-beta/changes`, `api/queries/permission.md`
+**Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
 
 ---
 
@@ -334,7 +333,7 @@ AND object_id = '0-1';
 }
 ```
 
-**Reference**: `schemas/database-schema.md#/v0.8.0-beta/changes`, `patterns/caching.md`
+**Reference**: `schemas/database-schema.md`, `patterns/caching.md`
 
 ---
 
@@ -467,6 +466,5 @@ Use bitwise operations directly for permission checks.
 
 ---
 
-*Last Updated: January 1, 2026*  
-*v0.8.0-beta: Performance optimization guide*
+*Last Updated: January 1, 2026*
 

@@ -8,17 +8,6 @@
 
 ---
 
-## v0.8.0-beta Notes
-
-**Raid Status Updates** (Verified):
-- **attackerRetreated Status**: The `attackerRetreated` status is defined in the frontend constants (`src/js/constants/RaidStatus.js`). Status value: `'attackerRetreated'`.
-- **Active Raid Queries**: Active raid endpoints (`/api/planet/{planet_id}/raid/active`) only return raids with status `'initiated'` or `'ongoing'`. The `attackerRetreated` status would appear in completed raid queries or raid history.
-- This status indicates the attacker retreated from the raid before completion.
-
-**See**: `reviews/webapp-review-findings.md` for code review verification
-
----
-
 ## Endpoint Summary
 
 | Method | Path | Description | Auth Required |
@@ -136,9 +125,9 @@ Get active raid for fleet.
 
 ---
 
-## Response Schema (v0.8.0-beta Considerations)
+## Response Schema
 
-Raid responses may include the new `attackerRetreated` status:
+Raid responses include the `attackerRetreated` status:
 
 ```json
 {
@@ -150,8 +139,6 @@ Raid responses may include the new `attackerRetreated` status:
   }
 }
 ```
-
-**Note**: Response schema updates are under review. See `reviews/webapp-v0.8.0-beta-review.md` for verification status.
 
 ---
 

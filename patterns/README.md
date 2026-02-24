@@ -192,7 +192,7 @@ Gameplay strategy patterns for AI agents.
 - Following proven gameplay patterns
 
 ### `performance-optimization.md`
-Performance optimization tips for AI agents (v0.8.0-beta).
+Performance optimization tips for AI agents.
 
 **Covers**:
 - Reactor staking query optimization
@@ -374,6 +374,5 @@ For a quick lookup guide to find the right pattern, see:
 
 ---
 
-*API Documentation Specialist - January 1, 2026*  
-*v0.8.0-beta: Added performance optimization guide*
+*API Documentation Specialist - January 1, 2026*
 

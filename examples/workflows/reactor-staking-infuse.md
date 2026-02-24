@@ -2,14 +2,7 @@
 
 **Version**: 1.0.0
 **Category**: economic
-**Description**: Detailed workflow for infusing reactor with Alpha Matter for validation delegation (v0.8.0-beta)
-
----
-
-## v0.8.0-beta Feature
-
-- **Feature**: reactor_staking
-- **Purpose**: validation_delegation
+**Description**: Detailed workflow for infusing reactor with Alpha Matter for validation delegation
 
 ---
 

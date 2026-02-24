@@ -39,6 +39,8 @@ isValid = HashBuildAndCheckDifficulty(hashInput, proof, age, BuildDifficulty)
 
 Difficulty is age-based: older builds require less work.
 
+**Open hashing**: Hashing is open by default for all proof-of-work operations (build, mine, refine, raid). Any valid proof is accepted regardless of submitter.
+
 ---
 
 ## Charge Accumulation
@@ -47,7 +49,7 @@ Difficulty is age-based: older builds require less work.
 charge = CurrentBlockHeight - LastActionBlock
 ```
 
-Charge required for activate; `ActivateCharge` = 1 for all struct types (v0.10.0-beta).
+Charge required for activate; `ActivateCharge` = 1 for all struct types.
 
 ---
 
@@ -77,7 +79,7 @@ Materialized → Built (Offline) → Built (Online) → Destroyed
 | Hidden | Unchanged | Yes | Stealth mode, invisible to other players |
 | Destroyed | None | No | Terminal state |
 
-**StructSweepDelay**: After destruction, the slot may appear occupied for 5 blocks. Planet/fleet slot arrays may still reference the destroyed struct ID during this delay.
+**StructSweepDelay**: After destruction, the slot may appear occupied for 5 blocks. Planet/fleet slot arrays may still reference the destroyed struct ID during this delay. The `destroyed_block` field records the exact block height of destruction.
 
 ---
 

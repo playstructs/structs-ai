@@ -27,11 +27,11 @@ This directory contains troubleshooting guides for common issues AI agents encou
 - **`common-issues.md`** - Common issues and solutions
 - **`error-codes.md`** - Error code reference
 
-### Feature-Specific Troubleshooting (v0.8.0-beta)
+### Feature-Specific Troubleshooting
 
 - **`reactor-staking-issues.md`** - Reactor staking and validation delegation troubleshooting
 - **`permission-issues.md`** - Hash permission and permission bit manipulation troubleshooting
-- **`edge-cases.md`** - Edge cases and gotchas for v0.8.0-beta features
+- **`edge-cases.md`** - Edge cases and gotchas
 
 ---
 
@@ -99,6 +99,5 @@ This directory contains troubleshooting guides for common issues AI agents encou
 
 ---
 
-*Last Updated: January 1, 2026*  
-*v0.8.0-beta: Added reactor staking, permission, and edge cases guides*
+*Last Updated: January 1, 2026*
 

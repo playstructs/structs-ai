@@ -1,9 +1,10 @@
 # Provider Entity Schema
 
-**Version**: 1.0.0
+**Version**: 1.3.0
 **Category**: economic
 **Entity**: Provider
 **Endpoint**: `/structs/provider/{id}`
+**Last Updated**: 2026-02-24
 
 ---
 
@@ -44,3 +45,14 @@ Provider entity definition -- extracted from game-state.json for context window 
 **Database Reference**: `structs.provider` table (columns: `id`, `substation_id`, `rate_amount`, `rate_denom`, `access_policy`, `capacity_minimum`, `capacity_maximum`, `duration_minimum`, `duration_maximum`, `provider_cancellation_penalty`, `consumer_cancellation_penalty`)
 
 **Note**: API response schema. Missing many fields from database (`substationId`, `rateAmount`, `rateDenom`, `accessPolicy`, `capacityMinimum`, `capacityMaximum`, `durationMinimum`, `durationMaximum`, `cancellationPenalties`) -- these may be in gridAttributes or separate queries. For code-based field definitions, see `schemas/entities.md#provider`.
+
+## ProviderGuildAccessRecord
+
+Protobuf message for tracking provider-guild access relationships. Defined in `provider.proto`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| providerId | string | Provider ID |
+| guildId | string | Guild ID with access |
+
+Used for genesis import/export of provider-guild access policies. When a provider's `accessPolicy` restricts access to specific guilds, this record maps the allowed guild-provider pairs.

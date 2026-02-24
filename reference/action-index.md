@@ -100,8 +100,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 | struct-generator-infuse | Infuse Generator with Alpha Matter | `/structs.structs.MsgStructGeneratorInfuse` | Yes | Infuse a generator struct with Alpha Matter to produce energy |
 | reactor-infuse | Infuse Reactor | `/structs.structs.MsgReactorInfuse` | Yes | Add Alpha Matter to reactor for energy production |
 | reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Remove Alpha Matter from reactor |
-| reactor-begin-migration | Begin Reactor Migration | `/structs.structs.MsgReactorBeginMigration` | No | Begin redelegation process for reactor validation stake (v0.8.0-beta) |
-| reactor-cancel-defusion | Cancel Reactor Defusion | `/structs.structs.MsgReactorCancelDefusion` | No | Cancel undelegation process for reactor validation stake (v0.8.0-beta) |
+| reactor-begin-migration | Begin Reactor Migration | `/structs.structs.MsgReactorBeginMigration` | No | Begin redelegation process for reactor validation stake |
+| reactor-cancel-defusion | Cancel Reactor Defusion | `/structs.structs.MsgReactorCancelDefusion` | No | Cancel undelegation process for reactor validation stake |
 | reactor-allocate | Allocate Reactor Energy | `/structs.structs.MsgReactorAllocate` | No | **DEPRECATED** -- Allocate energy from a reactor |
 | substation-create | Create Substation | `/structs.structs.MsgSubstationCreate` | Yes | Create a new substation for power distribution |
 | substation-player-connect | Connect Player to Substation | `/structs.structs.MsgSubstationPlayerConnect` | Yes | Connect a player to a substation for power capacity |
@@ -113,10 +113,10 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 - **struct-ore-miner-complete**: Code: `x/structs/keeper/msg_server_struct_ore_miner_complete.go` | Proto: `proto/structs/structs/tx.proto:763-770` | Requires proof-of-work (difficulty: 14000), requires charge
 - **struct-ore-refinery-complete**: Code: `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` | Proto: `proto/structs/structs/tx.proto:777-784` | Requires proof-of-work (difficulty: 28000), requires charge
 - **struct-generator-infuse**: Code: `x/structs/keeper/msg_server_struct_generator_infuse.go` | Proto: `proto/structs/structs/tx.proto:120` | Generator rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g
-- **reactor-infuse**: Code: `x/structs/keeper/msg_server_reactor_infuse.go` | Proto: `proto/structs/structs/tx.proto:95` | v0.8.0-beta: Abstracts validation delegation; reactor staking managed at player level
-- **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `proto/structs/structs/tx.proto:96` | v0.8.0-beta: Abstracts validation undelegation; reactor staking managed at player level
-- **reactor-begin-migration**: v0.8.0-beta: Begins redelegation process for validation stake; reactor staking managed at player level
-- **reactor-cancel-defusion**: v0.8.0-beta: Cancels ongoing undelegation process; reactor staking managed at player level
+- **reactor-infuse**: Code: `x/structs/keeper/msg_server_reactor_infuse.go` | Proto: `proto/structs/structs/tx.proto:95` | Abstracts validation delegation; reactor staking managed at player level
+- **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `proto/structs/structs/tx.proto:96` | Abstracts validation undelegation; reactor staking managed at player level
+- **reactor-begin-migration**: Begins redelegation process for validation stake; reactor staking managed at player level
+- **reactor-cancel-defusion**: Cancels ongoing undelegation process; reactor staking managed at player level
 - **reactor-allocate**: **DEPRECATED** -- Message type does not exist. Energy allocation is handled via allocations and substations, not direct reactor allocation. See MsgAllocationCreate for creating allocations.
 - **substation-create**: Code: `x/structs/keeper/msg_server_substation_create.go` | Proto: `proto/structs/structs/tx.proto:131`
 - **substation-player-connect**: Code: `x/structs/keeper/msg_server_substation_player_connect.go` | Proto: `proto/structs/structs/tx.proto:135`
@@ -205,4 +205,4 @@ All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 ## Verification Notes
 
-26 actions fully verified with code references. 7 actions are deprecated (marked with replacement actions). 1 action (reactor-allocate) is deprecated with no direct replacement (use allocation system). 4 replacement actions added: substation-allocation-connect, agreement-open, guild-membership-kick, struct-generator-infuse. v0.8.0-beta: Added reactor-begin-migration and reactor-cancel-defusion actions. Updated reactor-infuse and reactor-defuse with validation delegation functionality.
+26 actions fully verified with code references. 7 actions are deprecated (marked with replacement actions). 1 action (reactor-allocate) is deprecated with no direct replacement (use allocation system). 4 replacement actions added: substation-allocation-connect, agreement-open, guild-membership-kick, struct-generator-infuse.

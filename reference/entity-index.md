@@ -59,7 +59,7 @@
 ### Struct
 
 - **Key Fields**: id, typeId, ownerId, status, buildDraw, passiveDraw, destroyed
-- **v0.8.0-beta**: `destroyed` field added to track struct destruction status (related to StructSweepDelay of 5 blocks). Database: `struct.destroyed` column added 2025-12-29.
+- The `destroyed` field tracks struct destruction status (related to StructSweepDelay of 5 blocks).
 - **Relationships**: Owned by Player; Type of StructType; Located on Planet or Fleet; Has StructAttribute
 - **Query Patterns**: byId `/structs/struct/{id}` | all `/structs/struct` | attributes `/structs/struct_attribute/{structId}/{attributeType}` | allAttributes `/structs/struct_attribute`
 - **Code**: `x/structs/types/struct.pb.go`, `x/structs/keeper/struct_cache.go`
@@ -69,7 +69,7 @@
 ### Struct Type
 
 - **Key Fields**: id, class, category, buildLimit, buildDifficulty, buildDraw, passiveDraw, maxHealth
-- **v0.8.0-beta**: Database updated with `cheatsheet_details` (2025-11-29), `cheatsheet_extended_details` (2025-12-02). Deprecated charge columns removed (2025-12-08).
+- Database includes `cheatsheet_details` and `cheatsheet_extended_details` columns.
 - **Relationships**: Has instances of Struct
 - **Query Patterns**: byId `/structs/struct_type/{id}` | all `/structs/struct_type`
 - **Code**: `proto/structs/structs/struct.proto:26`, `x/structs/types/struct.pb.go`
@@ -95,7 +95,7 @@
 ### Permission
 
 - **Key Fields**: permissionId, value
-- **v0.8.0-beta**: Hash permission bit (value 64) added to permission system. Permission values are bit-based flags that can be combined using bitwise OR.
+- Hash permission bit (value 64) is part of the permission system. Permission values are bit-based flags that can be combined using bitwise OR.
 - **Relationships**: Granted to Player; Applies to Planet, Struct, Fleet
 - **Query Patterns**: byId `/structs/permission/{permissionId}` | all `/structs/permission` | byObject `/structs/permission/object/{objectId}` | byPlayer `/structs/permission/player/{playerId}`
 - **Code**: `proto/structs/structs/permission.proto:11`, `x/structs/types/permission.pb.go`
@@ -130,7 +130,7 @@
 ### Reactor
 
 - **Key Fields**: id, ownerId, validator, guildId, defaultCommission, staking
-- **v0.8.0-beta**: Reactor staking now managed at player level. Validation delegation abstracted via Reactor Infuse/Defuse actions.
+- Reactor staking is managed at player level. Validation delegation is abstracted via Reactor Infuse/Defuse actions.
 - **Relationships**: Owned by Player; Belongs to Guild; Located on Planet
 - **Query Patterns**: byId `/structs/reactor/{id}` | all `/structs/reactor`
 - **Code**: `x/structs/types/reactor.pb.go`, `x/structs/keeper/reactor_cache.go`

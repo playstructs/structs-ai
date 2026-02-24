@@ -3,8 +3,7 @@
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
 **Status**: Stable  
-**Last Updated**: January 1, 2026  
-**v0.8.0-beta**: Edge cases for new features
+**Last Updated**: January 1, 2026
 
 ## Overview
 
@@ -104,7 +103,7 @@ This document documents edge cases and gotchas that AI agents should be aware of
 - Account for permission_hash level in database queries
 - Verify API permission value includes bit 64 for Hash permission
 
-**Reference**: `schemas/database-schema.md#/v0.8.0-beta/changes`, `api/queries/permission.md`
+**Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
 
 ---
 
@@ -134,7 +133,7 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Slot may appear occupied for 5 blocks after struct destruction
 
 **Details**:
-- `StructSweepDelay = 5` blocks (v0.8.0-beta)
+- `StructSweepDelay = 5` blocks
 - Destroyed structs persist for 5 blocks before slot clearing
 - Planet/fleet slot arrays may still reference destroyed struct ID
 - Slot not available for new structs during delay period
@@ -227,7 +226,7 @@ This document documents edge cases and gotchas that AI agents should be aware of
 - Verify API permission value includes bit 64
 - Don't rely on single source for permission information
 
-**Reference**: `schemas/database-schema.md#/v0.8.0-beta/changes`, `api/queries/permission.md`
+**Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
 
 ---
 
@@ -335,6 +334,5 @@ Always verify game state after transaction broadcast.
 
 ---
 
-*Last Updated: January 1, 2026*  
-*v0.8.0-beta: Edge cases and gotchas documentation*
+*Last Updated: January 1, 2026*
 

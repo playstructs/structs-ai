@@ -269,11 +269,11 @@ This protocol defines how AI agents interact with Structs gameplay mechanics. It
 **Raid Outcome Statuses**:
 - `"victory"`: Attacker successfully completed the raid and gained resources
 - `"defeat"`: Attacker lost the raid (defender successfully defended)
-- `"attackerRetreated"`: Attacker retreated from the raid before completion (new in v0.8.0-beta)
+- `"attackerRetreated"`: Attacker retreated from the raid before completion
 
 **Defeat by Destruction**:
 - Defeat can be triggered when the attacker Command Ship is destroyed
-- This is governed by the `TriggerRaidDefeatByDestruction` flag on the Command Ship (v0.10.0-beta fix)
+- This is governed by the `TriggerRaidDefeatByDestruction` flag on the Command Ship
 
 **AttackerRetreated Status**:
 The `attackerRetreated` status indicates that the attacker chose to retreat from a raid before it was completed. This can occur when:

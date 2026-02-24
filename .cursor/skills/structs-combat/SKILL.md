@@ -33,6 +33,16 @@ Raid: fleet-move → planet-raid-compute → planet-raid-complete → fleet-move
 - Query planet shield, struct health
 - Query fleet location (onStation vs away)
 - Stolen ore: refine immediately; verify with struct/player queries
+- Attack results include health values (remaining health after attack) -- use to assess damage dealt
+- Raid `seized_ore` is tracked on `planet_raid` record -- query to see total ore stolen
+
+## Combat Notes
+
+- Minimum damage after reduction is 1 -- attacks always deal at least 1 damage
+- Offline/destroyed structs cannot counter-attack
+- Each struct can only commit once per attack action (no double-commit)
+- Target struct existence is validated before attack proceeds
+- Hashing for raid-compute is open by default -- any valid proof accepted
 
 ## Error Handling
 

@@ -62,6 +62,7 @@ All newly explored planets start with identical properties.
 
 - Unrefined ore (storedOre) on player can be stolen during raids
 - Ore on planet is mined by owner; raiders steal from player's storedOre after successful raid
+- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen during a raid, simplifying victory determination and activity feeds.
 - See [combat.md](combat.md), [resources.md](resources.md)
 
 ---

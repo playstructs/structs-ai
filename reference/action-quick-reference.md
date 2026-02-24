@@ -51,7 +51,7 @@ This guide provides a quick reference for all game actions available to AI agent
 
 **Requirements**:
 - Player online
-- Sufficient charge (for activate; ActivateCharge is 1 for all struct types in v0.10.0-beta)
+- Sufficient charge (for activate; ActivateCharge is 1 for all struct types)
 - Sufficient power (for activate)
 - Valid location (for move)
 
@@ -81,16 +81,16 @@ This guide provides a quick reference for all game actions available to AI agent
 - `struct-ore-refinery-complete` - Complete ore refining (requires proof-of-work)
 
 **Power**:
-- `reactor-infuse` - Infuse reactor with resources (produces energy). Also handles validation delegation (v0.8.0-beta)
-- `reactor-defuse` - Defuse reactor (remove resources). Also handles validation undelegation (v0.8.0-beta)
-- `reactor-begin-migration` - Begin redelegation process for reactor validation stake (v0.8.0-beta)
-- `reactor-cancel-defusion` - Cancel undelegation process for reactor validation stake (v0.8.0-beta)
+- `reactor-infuse` - Infuse reactor with resources (produces energy). Also handles validation delegation
+- `reactor-defuse` - Defuse reactor (remove resources). Also handles validation undelegation
+- `reactor-begin-migration` - Begin redelegation process for reactor validation stake
+- `reactor-cancel-defusion` - Cancel undelegation process for reactor validation stake
 - `substation-create` - Create substation
 - `substation-player-connect` - Connect player to substation
 - ⚠️ **Deprecated**: `reactor-allocate` (use allocation system instead)
 - ⚠️ **Deprecated**: `substation-connect` (use `MsgSubstationAllocationConnect` instead)
 
-**Reactor Staking (v0.8.0-beta)**:
+**Reactor Staking**:
 - Reactor staking is now managed at player level
 - Validation delegation is abstracted via Reactor Infuse/Defuse actions
 - Use `reactor-infuse` for delegation, `reactor-defuse` for undelegation
@@ -209,8 +209,8 @@ The following actions are **deprecated** and should not be used. Use the replace
 **Sufficient Charge**:
 - Struct must have required charge
 - Check: `GET /structs/struct/{id}` → `struct.charge >= required`
-- Note: `ActivateCharge` is 1 for all struct types in v0.10.0-beta (genesis default)
-- Exception: Build cancel actions no longer require charge or player online in v0.10.0-beta
+- Note: `ActivateCharge` is 1 for all struct types (genesis default)
+- Exception: Build cancel actions no longer require charge or player online
 
 **Sufficient Power**:
 - Player must have power capacity > struct passive draw
