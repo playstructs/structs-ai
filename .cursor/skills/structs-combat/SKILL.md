@@ -10,7 +10,7 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
 2. **Optional stealth** — `structsd tx structs struct-stealth-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y` before attack.
 3. **Attack structs** — `structsd tx structs struct-attack [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D [difficulty]`, then `planet-raid-complete [fleet-id]`. Move fleet home. Refine stolen ore immediately.
+4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
 5. **Defense setup** — `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` to assign; `struct-defense-clear [defender-struct-id]` to remove.
 
 ## Commands Reference
@@ -18,15 +18,19 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 | Action | CLI Command |
 |--------|-------------|
 | Attack | `structsd tx structs struct-attack [operating-struct-id] [target-ids] [weapon-system]` |
-| Raid compute (PoW) | `structsd tx structs planet-raid-compute [fleet-id] -D [difficulty]` |
-| Raid complete | `structsd tx structs planet-raid-complete [fleet-id]` |
+| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 5` |
+| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete [fleet-id]` |
 | Fleet move | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
 | Set defense | `structsd tx structs struct-defense-set [defender-id] [protected-id]` |
 | Clear defense | `structsd tx structs struct-defense-clear [defender-id]` |
 | Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
 | Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
 
-Raid: fleet-move → planet-raid-compute → planet-raid-complete → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+
+## Raid Timing
+
+`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. With `-D 5`, expect ~20-40 minutes depending on chain load. Compute auto-submits the complete transaction.
 
 ## Verification
 

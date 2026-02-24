@@ -4,12 +4,14 @@
 
 ---
 
-## Two-Step Build Process
+## Build Process
 
-| Step | Action | Proof-of-Work |
-|------|--------|---------------|
-| 1 | `struct-build-initiate` | No |
-| 2 | `struct-build-complete` | Yes (age-based) |
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `struct-build-initiate` | Starts construction; reserves slot; begins aging |
+| 2 | `struct-build-compute` | Calculates proof-of-work hash AND auto-submits `struct-build-complete` |
+
+`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. You only need `struct-build-complete` directly if you computed the hash through external tools.
 
 ---
 
@@ -40,6 +42,31 @@ isValid = HashBuildAndCheckDifficulty(hashInput, proof, age, BuildDifficulty)
 Difficulty is age-based: older builds require less work.
 
 **Open hashing**: Hashing is open by default for all proof-of-work operations (build, mine, refine, raid). Any valid proof is accepted regardless of submitter.
+
+### The -D Flag
+
+The `-D` flag (range 1-64) on compute commands tells the CLI to wait until difficulty drops to the target level before starting the hash.
+
+- Lower `-D` values = longer wait, but hash completes quickly (less CPU work)
+- Higher `-D` values = starts sooner, but hash takes much longer
+- **Recommended: `-D 5`** for most operations
+
+### Expected Build Times (with -D 5)
+
+| Struct | Build Difficulty | Approx Time |
+|--------|------------------|-------------|
+| Command Ship | 200 | ~2-5 min |
+| Starfighter | 250 | ~3-5 min |
+| Ore Extractor | 700 | ~10-20 min |
+| Ore Refinery | 700 | ~10-20 min |
+| Small Arms | 700 | ~10-20 min |
+| PDC | 2,880 | ~30-45 min |
+| Ore Bunker | 3,600 | ~30-45 min |
+| World Engine | 5,000 | ~45-60 min |
+
+Mining and refining also use proof-of-work:
+- Mine compute: difficulty 14,000 → ~15-30 min
+- Refine compute: difficulty 28,000 → ~30-45 min
 
 ---
 
@@ -104,6 +131,23 @@ Materialized → Built (Offline) → Built (Online) → Destroyed
 | Fleet | N/A | Online |
 
 Command Ship must be built in fleet (locationType = 2), not on planet. Power requirement: 50,000 W.
+
+---
+
+## Ambit Encoding
+
+Struct types have a `possibleAmbit` bit-flag field that encodes which ambits the struct can operate in:
+
+| Ambit | Bit Value |
+|-------|-----------|
+| Space | 16 |
+| Air | 8 |
+| Land | 4 |
+| Water | 2 |
+
+Values are combined. For example: 6 = land + water, 30 = space + air + land + water. When initiating a build, the `[operating-ambit]` argument must be a valid ambit for that struct type.
+
+See [struct-types.md](../entities/struct-types.md) for the full table with `possibleAmbit` per type.
 
 ---
 

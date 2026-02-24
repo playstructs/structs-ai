@@ -5,6 +5,42 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-24
+
+### Fixed - Agent Operational Documentation
+
+Addressed 10 issues reported by an AI agent during first play session:
+
+- **Struct type IDs corrected** -- Command Ship is type 1 (was incorrectly listed as 14), Ore Extractor is type 14. All skills now use explicit, verified type IDs.
+- **Complete struct type table** -- All 22 struct types added to `knowledge/entities/struct-types.md` with DB-verified stats: ID, category, build difficulty, build/passive draw, max HP, and possible ambit.
+- **Ambit bit-flag encoding documented** -- Space=16, Air=8, Land=4, Water=2. Added to struct-types, building mechanics, and onboarding skill.
+- **Compute vs Complete clarified** -- `struct-build-compute` (and mine-compute, refine-compute, raid-compute) are helpers that calculate the hash AND auto-submit the complete transaction. Documented across all skills and building mechanics.
+- **-D flag documented** -- Range 1-64, waits until difficulty drops to target level before hashing. Recommended `-D 5` for most operations. Added to building, mining, combat skills, and building mechanics.
+- **Timing expectations added** -- Every skill now includes approximate durations. Build times range from ~2-5 min (Command Ship) to ~45-60 min (World Engine). Mine ~15-30 min, refine ~30-45 min.
+- **`player-me` replaced** -- All references replaced with `structsd query structs address [address]`. Note: player ID `1-0` means nonexistent.
+- **New player power budget** -- Added to `knowledge/mechanics/power.md`. Documents cumulative load through onboarding build order, minimum viable capacity (~575 kW).
+- **TOOLS.md improved** -- Added deployment options, placeholder guidance, address query tip, MCP parameter reference.
+
+### Fixed - MCP Query Tools
+
+- **Parameter bug resolved** -- MCP query tools now accept both entity-specific parameters (`player_id`, `planet_id`, etc.) and generic `id` as an alias.
+- **Root cause** -- Callers using generic `id` left entity-specific params undefined, causing crash in `validateEntityId`. Server now guards against undefined/null/non-string IDs.
+- **MCP query parameter reference** added to `TOOLS.md` with correct parameter names and examples for all 10 query tools.
+
+### Updated Files
+
+- `.cursor/skills/structs-onboarding/SKILL.md` -- Rewrote: correct type IDs, address query, -D flag, timing, ambit encoding
+- `.cursor/skills/structs-building/SKILL.md` -- Compute/complete clarification, -D flag, build time table
+- `.cursor/skills/structs-mining/SKILL.md` -- Compute auto-complete, timing section
+- `.cursor/skills/structs-combat/SKILL.md` -- Raid compute auto-complete, -D flag, raid timing
+- `.cursor/skills/structs-reconnaissance/SKILL.md` -- Address query pattern, 1-0 note
+- `knowledge/mechanics/building.md` -- Build process, -D flag, timing, ambit encoding section
+- `knowledge/entities/struct-types.md` -- Complete 22-type table, ambit encoding, combat stats
+- `knowledge/mechanics/power.md` -- New player power budget section
+- `TOOLS.md` -- Deployment, placeholders, MCP query parameter reference
+
+---
+
 ## [1.3.0] - 2026-02-24
 
 ### Chain Releases Covered
@@ -335,6 +371,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.4.0** (2026-02-24): Agent feedback fixes - Corrected struct type IDs, documented compute/complete workflow, -D flag, timing expectations, ambit encoding, new player power budget. MCP query tool parameter fix and documentation.
 - **1.3.0** (2026-02-24): v0.10.0-v0.13.0-beta updates - Combat fixes (minimum damage, counter-attack), seized ore tracking, open hashing, destroyed_block, fleet movement fix, Context Manager refactor, SDK v0.53.5/IBC v10, database schema updates, webapp struct actions UI
 - **1.2.0** (2026-01-16): v0.10.0-beta updates - Defender clear event, genesis import/export, activate charge, build cancel, initial Command Ship grant
 - **1.1.0** (2026-01-01): v0.8.0-beta updates - Hash permission, reactor staking, attackerRetreated status, struct sweep delay, database schema changes, bug fixes

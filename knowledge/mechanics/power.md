@@ -94,6 +94,28 @@ Primary capacity only; used for allocation to reactors/generators.
 
 ---
 
+## New Player Power Budget
+
+New players receive power capacity through their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
+
+| Item | Build Draw | Passive Draw | Cumulative Load |
+|------|------------|--------------|-----------------|
+| Player (base) | — | 25 kW | 25 kW |
+| Command Ship (build) | 50 kW | — | 75 kW |
+| Command Ship (online) | — | 50 kW | 75 kW |
+| Ore Extractor (build) | 500 kW | — | 575 kW |
+| Ore Extractor (online) | — | 500 kW | 575 kW |
+| Ore Refinery (build) | 500 kW | — | 1,075 kW |
+| Ore Refinery (online) | — | 500 kW | 1,075 kW |
+
+Build draw is temporary (only during construction) and releases when the build completes. The worst-case load during onboarding is ~1,075 kW with all three structs online plus a build in progress.
+
+**Minimum viable capacity**: ~575 kW to have player + Command Ship + Ore Extractor online. If the guild substation provides less, prioritize activating Command Ship first, then build one struct at a time.
+
+If total load ever exceeds total capacity, the player goes **offline** and cannot perform any actions until load is reduced (deactivate structs) or capacity is increased.
+
+---
+
 ## See Also
 
 - [building.md](building.md) — Build power requirements

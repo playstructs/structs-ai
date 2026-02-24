@@ -8,6 +8,7 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 ## Procedure
 
 1. **Query entities** — All via `structsd query structs [subcommand] [args]`:
+   - Self: `address [your-address]` — resolves your address to a player ID. A result of `1-0` means no player exists for that address.
    - Players: `player [id]`, `player-all`
    - Planets: `planet [id]`, `planet-all`, `planet-all-by-player [player-id]`, `planet-attribute [planet-id] [type]`, `planet-attribute-all`
    - Structs: `struct [id]`, `struct-all`, `struct-attribute [id] [type]`, `struct-type [id]`, `struct-type-all`
@@ -29,6 +30,7 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 
 | Entity | Query Command |
 |--------|---------------|
+| Address → Player | `structsd query structs address [address]` (returns player ID; `1-0` = nonexistent) |
 | Player | `structsd query structs player [id]`, `player-all` |
 | Planet | `structsd query structs planet [id]`, `planet-all`, `planet-all-by-player [player-id]` |
 | Planet attribute | `structsd query structs planet-attribute [planet-id] [type]`, `planet-attribute-all` |
