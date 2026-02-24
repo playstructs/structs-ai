@@ -52,7 +52,7 @@
 
 | ID | Name | File | Description |
 |----|------|------|-------------|
-| onboarding | Player Onboarding Task | [onboarding.md](../tasks/onboarding.md) | Complete workflow for new player onboarding - first 30 minutes |
+| onboarding | Player Onboarding Task | [onboarding.md](../tasks/onboarding.md) | Complete workflow for new player onboarding - first 1-2 days |
 | building | Building Task | [building.md](../tasks/building.md) | Complete workflow for building structures on planets or in fleets |
 | exploration | Exploration Task | [exploration.md](../tasks/exploration.md) | Complete workflow for exploring and charting planets |
 | resource-management | Resource Management Task | [resource-management.md](../tasks/resource-management.md) | Complete workflow for managing resources (mining, refining, converting) |

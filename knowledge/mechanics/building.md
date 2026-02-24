@@ -47,26 +47,42 @@ Difficulty is age-based: older builds require less work.
 
 The `-D` flag (range 1-64) on compute commands tells the CLI to wait until difficulty drops to the target level before starting the hash.
 
-- Lower `-D` values = longer wait, but hash completes quickly (less CPU work)
-- Higher `-D` values = starts sooner, but hash takes much longer
-- **Recommended: `-D 5`** for most operations
+- Lower `-D` values = longer wait, but hash completes instantly (less CPU work)
+- Higher `-D` values = starts sooner, but hash takes exponentially longer
+- **Recommended: `-D 8`** for builds, `-D 8` for mine/refine (the sweet spot where hashes are feasible)
 
-### Expected Build Times (with -D 5)
+### The Difficulty Cliff
 
-| Struct | Build Difficulty | Approx Time |
-|--------|------------------|-------------|
-| Command Ship | 200 | ~2-5 min |
-| Starfighter | 250 | ~3-5 min |
-| Ore Extractor | 700 | ~10-20 min |
-| Ore Refinery | 700 | ~10-20 min |
-| Small Arms | 700 | ~10-20 min |
-| PDC | 2,880 | ~30-45 min |
-| Ore Bunker | 3,600 | ~30-45 min |
-| World Engine | 5,000 | ~45-60 min |
+At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** Always wait until D <= 8 before computing.
 
-Mining and refining also use proof-of-work:
-- Mine compute: difficulty 14,000 → ~15-30 min
-- Refine compute: difficulty 28,000 → ~30-45 min
+### Difficulty Decay Table
+
+Time from initiation until difficulty drops to target level (assuming 6 sec/block):
+
+| Base Difficulty | D=8 | D=7 | D=6 | D=5 |
+|----------------|------|------|------|------|
+| 200 (Command Ship) | ~11 min | ~12 min | ~13 min | ~14 min |
+| 250 (Starfighter) | ~12 min | ~14 min | ~15 min | ~17 min |
+| 700 (Ore Ext/Ref) | ~34 min | ~37 min | ~41 min | ~46 min |
+| 2,880 (PDC) | ~2.1 hr | ~2.3 hr | ~2.6 hr | ~2.9 hr |
+| 3,600 (Ore Bunker) | ~2.5 hr | ~2.8 hr | ~3.2 hr | ~3.5 hr |
+| 5,000 (World Engine) | ~3.5 hr | ~3.8 hr | ~4.3 hr | ~4.9 hr |
+| 14,000 (Mine) | ~8.1 hr | ~9.2 hr | ~10.8 hr | ~12.7 hr |
+| 28,000 (Refine) | ~15.0 hr | ~17.3 hr | ~20.6 hr | ~24.4 hr |
+
+At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly longer wait but the hash is trivially instant.
+
+### Strategic Implications
+
+**Initiate early, compute later.** The age clock starts at initiation. Waiting to initiate wastes time. The optimal pattern:
+
+1. Initiate all planned builds/mines/refines immediately (costs only gas)
+2. Do other things while age accumulates (scout, plan, build other structs)
+3. Come back and compute when difficulty has dropped to D <= 8
+
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../awareness/async-operations.md) for the async pattern.
+
+**Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 
 ---
 
@@ -76,7 +92,19 @@ Mining and refining also use proof-of-work:
 charge = CurrentBlockHeight - LastActionBlock
 ```
 
-Charge required for activate; `ActivateCharge` = 1 for all struct types.
+Charge accumulates passively from the last action. Different actions consume different amounts:
+
+| Action | Charge Cost | Notes |
+|--------|------------|-------|
+| Activate | 1 | Same for all struct types |
+| Build complete | 8 | Same for all struct types |
+| Defend change | 1 | Set or clear defense assignment |
+| Move | 8 | Command Ship only |
+| Primary weapon | 1-20 | Varies by struct type (1 for fast attackers, 8-20 for heavy) |
+| Secondary weapon | 1-8 | Only Starfighter, Cruiser |
+| Stealth activate | 1 | Only Stealth Bomber, Submersible |
+
+At ~6 sec/block, 8 blocks of charge = ~48 seconds. Charge is not a bottleneck for most actions but matters for rapid repeated attacks.
 
 ---
 
@@ -156,6 +184,7 @@ See [struct-types.md](../entities/struct-types.md) for the full table with `poss
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon
+- [async-operations.md](../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
 - `reference/action-quick-reference.md` — struct-build-initiate, struct-build-complete
 - `schemas/formulas.md` — Build difficulty, charge accumulation
 - `knowledge/entities/struct-types.md` — Struct types, power requirements

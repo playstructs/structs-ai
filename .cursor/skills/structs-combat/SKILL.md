@@ -30,7 +30,9 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 
 ## Raid Timing
 
-`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. With `-D 5`, expect ~20-40 minutes depending on chain load. Compute auto-submits the complete transaction.
+`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 8` as the minimum feasible target. Compute auto-submits the complete transaction.
+
+**Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
 
 ## Verification
 

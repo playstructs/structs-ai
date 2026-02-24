@@ -26,6 +26,8 @@ Read in this order:
 
 Then, if resuming:
 
+- `memory/jobs.md` — **Check first.** PoW jobs may have completed while you were away.
+- `memory/charge-tracker.md` — Which structs are ready to act
 - Latest `memory/YYYY-MM-DD-HHMM-context-handoff.md` — Where you left off
 - Recent `memory/` session logs — What happened last session
 
@@ -47,6 +49,9 @@ Before ending a session:
 
 **Contents**:
 
+- `jobs.md` — Active/completed PoW background jobs (check first on resume)
+- `charge-tracker.md` — Struct charge states and action readiness
+- `game-state.md` — Strategic picture, resources, threats, priority queue
 - `YYYY-MM-DD-HHMM-context-handoff.md` — Handoff snapshots
 - Session logs — Date-stamped notes, intelligence, decisions
 - Strategic notes — Plans, guild intel, player assessments
@@ -69,6 +74,7 @@ These files define and persist you:
 
 ## See Also
 
+- [Async Operations](async-operations.md) — Job tracker, charge tracker, pipeline strategy
 - [Context Handoff](context-handoff.md) — Handoff protocol, template
 - `SOUL.md` — Continuity section, file references
 - `identity/values.md` — Learning and updating identity

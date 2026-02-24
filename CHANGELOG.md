@@ -5,6 +5,48 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-24
+
+### Added - Async Agent Architecture
+
+Major overhaul addressing PoW timing and async operations, based on agent field experience:
+
+- **NEW: `awareness/async-operations.md`** -- Core document teaching agents the async pattern: pipeline strategy, background PoW management, job/charge tracker templates, difficulty planning table, multi-player orchestration, ore vulnerability analysis.
+- **Timing corrections across all docs** -- Previous estimates were wrong by 1-2 orders of magnitude. Mining takes ~8 hours (D=8) not ~15-30 min. Refining takes ~15 hours (D=8) not ~30-45 min. All skills and mechanics docs updated with correct calculations.
+- **Difficulty cliff documented** -- D=8 to D=9 cliff is the most important tactical fact in PoW. Hash is instant at D<=8, impossible at D>=9. Recommended `-D 8` for all operations.
+- **Game loop updated** -- Added "Check Jobs" (step 0) and "Dispatch" step. Renamed "Passive" tempo to "Pipeline" mode.
+- **Playbooks reframed** -- Early game changed from "First 30 minutes" to "First 1-2 days". Build order updated with pipeline strategy. Mid-game and tempo docs updated with realistic multi-day timelines.
+- **Ore vulnerability window** -- New section in `resources.md`: ore is stealable for ~15-24 hours between mining and refining completion. Primary driver of PvP conflict.
+- **Context handoff expanded** -- Templates now include Active PoW Jobs, Pending Initiations, and Charge Status sections.
+- **Continuity updated** -- Memory file list includes `jobs.md`, `charge-tracker.md`, `game-state.md`. Session resume checks jobs first.
+- **Critical rule #5** -- "Never block on PoW" added to AGENTS.md.
+- **`llms.txt` and `llms-full.txt` updated** -- New async-operations entry, corrected descriptions, regenerated full text.
+
+### Updated Files
+
+- `awareness/async-operations.md` -- NEW
+- `knowledge/mechanics/building.md` -- Difficulty decay table, cliff, charge costs, async cross-reference
+- `knowledge/mechanics/resources.md` -- PoW timing table, ore vulnerability window
+- `.cursor/skills/structs-onboarding/SKILL.md` -- Correct timing, async strategy, D=8 recommendation
+- `.cursor/skills/structs-building/SKILL.md` -- Correct timing, async cross-reference
+- `.cursor/skills/structs-mining/SKILL.md` -- Multi-hour timing, pipeline strategy
+- `.cursor/skills/structs-combat/SKILL.md` -- Background raid compute, fleet lock note
+- `awareness/game-loop.md` -- Async loop, pipeline tempo mode
+- `awareness/context-handoff.md` -- Job state in handoff template
+- `awareness/continuity.md` -- Memory file list expanded
+- `playbooks/phases/early-game.md` -- Reframed to 1-2 days, pipeline build order
+- `playbooks/phases/mid-game.md` -- Days/weeks timeline
+- `playbooks/meta/tempo.md` -- Tempo through parallelism section
+- `AGENTS.md` -- Async-operations in awareness, timeline fix, rule #5
+- `llms.txt` -- Async-operations entry, corrected descriptions
+- `scripts/generate-llms-full.sh` -- Added async-operations.md
+- `llms-full.txt` -- Regenerated
+- `awareness/index.md` -- Async-operations entry
+- `playbooks/phases/index.md` -- Timeline fix
+- `reference/gameplay-index.md` -- Timeline fix
+
+---
+
 ## [1.4.0] - 2026-02-24
 
 ### Fixed - Agent Operational Documentation

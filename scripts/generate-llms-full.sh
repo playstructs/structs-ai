@@ -79,6 +79,7 @@ FILES=(
   awareness/opportunity-identification.md
   awareness/priority-framework.md
   awareness/game-loop.md
+  awareness/async-operations.md
   awareness/context-handoff.md
   awareness/continuity.md
 )

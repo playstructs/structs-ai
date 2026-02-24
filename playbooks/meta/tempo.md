@@ -62,13 +62,31 @@ The Killer feels this instinctively. The Entrepreneur builds to create these win
 
 ---
 
+## Tempo Through Parallelism
+
+The PoW difficulty formula means everything takes time to age. The player who has the most age clocks ticking simultaneously has the best tempo.
+
+**Sequential play** (bad tempo):
+```
+initiate A → wait → compute A → initiate B → wait → compute B
+```
+
+**Parallel play** (good tempo):
+```
+initiate A, B, C → scout/plan → compute A (ready!) → initiate D → compute B → ...
+```
+
+Always have something aging. If nothing is initiated and aging right now, you are losing tempo. After completing any action, immediately initiate the next one. See [async operations](../../awareness/async-operations.md).
+
+---
+
 ## Build Orders and Tempo
 
 Your opening build order sets early tempo:
 
-- **Command Ship first**—mobility, exploration, raiding option
-- **Ore Extractor before Reactor**—faster ore, but power risk
-- **Reactor before second Extractor**—stable, slower
+- **Command Ship first** — mobility, exploration, raiding option (~11 min)
+- **Ore Extractor + Refinery together** — batch-initiate both, they age in parallel (~34 min each)
+- **Reactor during mine wait** — mine takes ~8 hours; build reactor while waiting
 
 Each choice trades tempo for security, or security for tempo. The [Early Game](../phases/early-game.md) playbook favors security. Adjust if you're an Entrepreneur or Killer and willing to gamble.
 

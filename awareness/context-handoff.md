@@ -48,6 +48,15 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 - Fleet: onStation / away
 - Guild: 
 - Next planned action:
+
+## Active PoW Jobs
+[Copy from memory/jobs.md — which jobs are running, which terminals, estimated completion]
+
+## Pending Initiations
+[Actions initiated but not yet ready to compute — what's aging, when it reaches D=8]
+
+## Charge Status
+[Key structs and their readiness — last action block, charge needed, ready block]
 ```
 
 ---
@@ -56,8 +65,9 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 
 1. Create `memory/` directory if it doesn't exist
 2. Fill template with current state (use `structs_query_player`, `structs_query_planet`, etc.)
-3. Write clear resume command
-4. Optionally: append to session log in `memory/`
+3. **Update `memory/jobs.md`** with all running PoW jobs and their terminal IDs
+4. Write clear resume command
+5. Optionally: append to session log in `memory/`
 
 ---
 
@@ -82,5 +92,6 @@ Handoff files are snapshots. Game state may have changed. Always re-query before
 ## See Also
 
 - [Continuity](continuity.md) — What to read on startup, memory directory
+- [Async Operations](async-operations.md) — Job tracker, charge tracker templates
 - [Game Loop](game-loop.md) — Loop that may trigger handoff
 - [State Assessment](state-assessment.md) — Refresh state on resume

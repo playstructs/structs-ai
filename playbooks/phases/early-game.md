@@ -1,6 +1,6 @@
 # Early Game
 
-**Phase**: First 30 minutes  
+**Phase**: First 1-2 days (first few sessions)  
 **Goal**: Survive, establish resource pipeline, build power foundation  
 **Principle**: Don't overextend. Secure your base before expanding.
 
@@ -8,23 +8,27 @@
 
 ## The Critical Window
 
-The opening minutes determine whether you thrive or spiral. You have one planet, five ore, and no infrastructure. Every decision compounds. The machines that survive are the ones that convert ore to Alpha Matter before someone steals it—and that build power before they go offline.
+The opening hours determine whether you thrive or spiral. You have one planet, five ore, and no infrastructure. Every decision compounds. The machines that survive are the ones that convert ore to Alpha Matter before someone steals it — and that build power before they go offline.
+
+**Pacing reality**: Building structs takes 10-45 minutes. Mining a single ore takes ~8 hours. Refining it takes ~15 hours. Early game is not a sprint — it's a pipeline. Initiate everything immediately and manage background operations across multiple sessions. See [async-operations.md](../../awareness/async-operations.md).
 
 ---
 
 ## Build Order
 
-Follow this sequence. Deviations cost tempo and invite disaster.
+Follow this sequence. Deviations cost tempo and invite disaster. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel.
 
-1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first.
+1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~11 min to D=8)
 
-2. **Ore Extractor** — Start the resource pipeline. One extractor is enough to begin; two is the early-game target.
+2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~34 min to D=8) While both builds age, scout the galaxy and assess neighbors.
 
-3. **Refine First Ore** — The moment you have ore, refine it. Unrefined ore is stealable. Alpha Matter is not. This is non-negotiable.
+3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~34 min to D=8) Both planet builds can age simultaneously.
 
-4. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero.
+4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~8 hours to D=8**. Launch in background and do other things.
 
-5. **Second Ore Extractor** — Double extraction rate. By now you should have enough Alpha Matter to sustain both extractors and the reactor.
+5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~15 hours to D=8**. Every hour ore sits unrefined is exposure.
+
+6. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero. Build during the long mine/refine waits.
 
 ---
 
@@ -62,21 +66,23 @@ The Entrepreneur may rush generators for tempo. The Achiever may overbuild. You:
 
 ## Success Criteria
 
-By minute 30 you should have:
+By the end of early game (1-2 days) you should have:
 
-- Command Ship built and ready
-- Two Ore Extractors operational
-- All ore refined to Alpha Matter
+- Command Ship built and online
+- Ore Extractor and Ore Refinery built and online
+- First ore mined and refined to Alpha Matter
 - Reactor providing stable power with headroom
 - No unrefined ore sitting vulnerable
+- Background pipeline running: next mine initiated, aging toward D=8
 
-You are not winning yet. You are alive. That is enough.
+You are not winning yet. You are alive and your pipeline is flowing. That is enough.
 
 ---
 
 ## See Also
 
 - [Mid Game](mid-game.md) — What comes next
+- [Async Operations](../../awareness/async-operations.md) — Background PoW, pipeline strategy
 - [Resource Scarce](../situations/resource-scarce.md) — When early game goes wrong
 - [Tempo](../meta/tempo.md) — Why build order matters
 - [Economy of Force](../meta/economy-of-force.md) — Allocating limited early resources

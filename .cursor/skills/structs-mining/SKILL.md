@@ -8,12 +8,14 @@ description: Executes resource extraction in Structs. Mines ore and refines imme
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Mine ore** — `structsd tx structs struct-ore-mine-compute [struct-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; with `-D 5` expect ~15-30 minutes. Compute auto-submits the complete transaction.
-3. **Refine immediately** — Ore is stealable. `structsd tx structs struct-ore-refine-compute [struct-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; with `-D 5` expect ~30-45 minutes. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~8 hours** for difficulty to drop to D=8. Compute auto-submits the complete transaction.
+3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~15 hours** for D=8. Compute auto-submits the complete transaction.
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
-**CRITICAL**: Ore is stealable. Alpha Matter is not. Always refine immediately after mining.
+**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See `awareness/async-operations.md`.
+
+**CRITICAL**: Ore is stealable. Alpha Matter is not. Refine as soon as mining completes — every hour ore sits unrefined is an hour it can be stolen.
 
 ## Commands Reference
 
@@ -44,16 +46,21 @@ Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
 ## Timing
 
-Compute commands use the `-D` flag (range 1-64) to wait until difficulty drops to the target level. Lower `-D` = longer wait but faster hash. Compute auto-submits the complete transaction.
+Mining and refining have high base difficulties, meaning they take **hours** for difficulty to drop to a feasible level. At D=8, the hash itself completes in seconds — the wait IS the time.
 
-| Operation | Difficulty | `-D 5` Approx Time |
-|-----------|------------|---------------------|
-| Mine | 14,000 | ~15-30 min |
-| Refine | 28,000 | ~30-45 min |
-| Full cycle (mine + refine) | -- | ~45-75 min |
+| Operation | Difficulty | D=8 | D=5 |
+|-----------|------------|------|------|
+| Mine | 14,000 | ~8.1 hr | ~12.7 hr |
+| Refine | 28,000 | ~15.0 hr | ~24.4 hr |
+| Full cycle (mine + refine) | -- | ~23 hr | ~37 hr |
+
+**Use `-D 8`** for mine/refine. The difference between D=8 and D=5 is several hours of additional waiting for negligible hash speed improvement.
+
+**Pipeline strategy**: After initiating a mine, immediately do other things — build structs, scout players, plan defense. When the mine completes, immediately start the refine. While refining runs (~15 hr), you have time to initiate the next mine so its age clock starts ticking. Always keep something aging.
 
 ## See Also
 
 - `knowledge/mechanics/resources.md`
 - `knowledge/mechanics/planet.md`
 - `knowledge/lore/alpha-matter.md`
+- `awareness/async-operations.md` — Background PoW, job tracking, pipeline strategy

@@ -8,14 +8,20 @@
 ## The Loop
 
 ```
-Assess → Plan → Act → Verify → Repeat
+Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Update Memory → Repeat
 ```
 
-Each full cycle is one "tick" of the game loop.
+Each full cycle is one "tick" of the game loop. PoW operations run as background jobs between ticks.
 
 ---
 
 ## Single Tick Anatomy
+
+### 0. Check Jobs
+
+Before anything else, check all background PoW terminals. Mark completions in `memory/jobs.md`. On completion: activate structs, start next operations, update charge tracker. This is the highest-priority step — completed PoW means new capabilities or exposed resources.
+
+See [Async Operations](async-operations.md) for background job management.
 
 ### 1. Assess
 
@@ -28,21 +34,34 @@ Each full cycle is one "tick" of the game loop.
 ### 2. Plan
 
 - Apply [Priority Framework](priority-framework.md) — Highest unmet tier wins
-- Pick one concrete action (or small batch of dependent actions)
+- **Think in pipelines**: what should I initiate now so it's ready later?
+- Pick actions and also identify future actions whose age clocks should start now
 - Validate: `structs_validate_gameplay_requirements`, `structs_calculate_power`, `structs_calculate_damage` as needed
 
-### 3. Act
+### 3. Initiate
 
-- Execute the chosen action (build, mine, refine, attack, raid, move fleet, etc.)
-- Use `structs_action_*` tools or submit transaction via `structs_action_submit_transaction`
+- Batch-submit all initiation transactions (build-initiate, etc.) to start age clocks
+- Initiations are cheap (just gas) — start everything you plan to compute later
 
-### 4. Verify
+### 4. Dispatch
 
-- Query game state after action
+- Launch PoW compute in background terminals for anything where difficulty has dropped to D <= 8
+- Record new jobs in `memory/jobs.md`
+- Execute non-PoW actions (activate, attack, move fleet, set defense)
+
+### 5. Verify
+
+- Query game state after actions
 - Confirm: struct built, ore refined, attack landed, fleet moved
 - **Rule**: Transaction broadcast ≠ success. Always verify.
 
-### 5. Repeat
+### 6. Update Memory
+
+- Update `memory/jobs.md` with new and completed jobs
+- Update `memory/charge-tracker.md` with struct states
+- Update `memory/game-state.md` with strategic picture
+
+### 7. Repeat
 
 - Loop. Tempo depends on context (see below).
 
@@ -52,10 +71,12 @@ Each full cycle is one "tick" of the game loop.
 
 | Mode | Loop Frequency | When |
 |------|----------------|------|
-| **Crisis** | Every 30–60 sec | Under attack, power critical |
-| **Active** | Every 2–5 min | Normal play, mining, building |
-| **Passive** | Every 10–30 min | Waiting for builds, low threat |
-| **Idle** | On event or manual | Streaming events, user prompt |
+| **Crisis** | Every 30-60 sec | Under attack, power critical, ore exposed |
+| **Active** | Every 2-5 min | Builds completing, initiating new actions |
+| **Pipeline** | Every 10-30 min | Managing background PoW, scouting, planning |
+| **Idle** | On event or check-in | Long PoW running (mine/refine), streaming events |
+
+**Pipeline mode is not idle.** When PoW is running in background, use the time for reconnaissance, strategic planning, guild coordination, or managing other players. The player with the most age clocks ticking simultaneously has the best tempo.
 
 ---
 
@@ -98,5 +119,6 @@ When approaching context limits, use [Context Handoff](context-handoff.md). Save
 
 - [State Assessment](state-assessment.md) — Assess step
 - [Priority Framework](priority-framework.md) — Plan step
+- [Async Operations](async-operations.md) — Background PoW, job tracking, pipeline strategy
 - [Context Handoff](context-handoff.md) — Session boundaries
 - [Continuity](continuity.md) — Cross-session persistence

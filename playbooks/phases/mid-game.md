@@ -8,7 +8,9 @@
 
 ## The Expansion Phase
 
-Early game was survival. Mid game is multiplication. You have a working base. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+Early game was survival. Mid game is multiplication. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+
+**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~23 hours at D=8. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
 
 ---
 

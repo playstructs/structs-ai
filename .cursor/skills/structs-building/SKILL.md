@@ -19,23 +19,23 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 ## The -D Flag
 
-The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases over time as the struct ages (more blocks since initiation).
+The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 8`** — at D=8, the hash completes in seconds. At D=9+, hashing is effectively impossible.
 
-- **`-D 5`** (recommended): waits longer, but hash completes quickly once started
-- **`-D 10`**: starts sooner, hash takes a bit longer
-- **`-D 20`+**: starts quickly, but hash is computationally expensive (10+ minutes)
+## Expected Build Times
 
-## Expected Build Times (with -D 5)
+Time from initiation until compute completes (assuming 6 sec/block):
 
-| Struct | Type ID | Build Difficulty | Approx Time |
-|--------|---------|------------------|-------------|
-| Command Ship | 1 | 200 | ~2-5 min |
-| Starfighter | 3 | 250 | ~3-5 min |
-| Ore Extractor | 14 | 700 | ~10-20 min |
-| Ore Refinery | 15 | 700 | ~10-20 min |
-| PDC | 19 | 2880 | ~30-45 min |
-| Ore Bunker | 18 | 3600 | ~30-45 min |
-| World Engine | 22 | 5000 | ~45-60 min |
+| Struct | Type ID | Build Difficulty | D=8 | D=5 |
+|--------|---------|------------------|------|------|
+| Command Ship | 1 | 200 | ~11 min | ~14 min |
+| Starfighter | 3 | 250 | ~12 min | ~17 min |
+| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
+| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
+| PDC | 19 | 2,880 | ~2.1 hr | ~2.9 hr |
+| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
+| World Engine | 22 | 5,000 | ~3.5 hr | ~4.9 hr |
+
+**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
 
 ## Commands Reference
 
@@ -75,3 +75,4 @@ The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the s
 - `knowledge/mechanics/power.md`
 - `knowledge/entities/struct-types.md`
 - `knowledge/entities/entity-relationships.md`
+- `awareness/async-operations.md` — Background PoW, pipeline strategy

@@ -188,7 +188,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 High-level thinking in `playbooks/`.
 
 ### By Phase
-- [`early-game`](playbooks/phases/early-game.md) -- First 30 minutes: survive, establish resource pipeline
+- [`early-game`](playbooks/phases/early-game.md) -- First 1-2 days: survive, establish resource pipeline
 - [`mid-game`](playbooks/phases/mid-game.md) -- Expansion: when to explore, fortify, join guilds
 - [`late-game`](playbooks/phases/late-game.md) -- Endgame: dominance, defense, market control
 
@@ -214,7 +214,8 @@ How to read the board. See `awareness/`.
 - [`threat-detection`](awareness/threat-detection.md) -- Spot dangers early
 - [`opportunity-identification`](awareness/opportunity-identification.md) -- Find advantages
 - [`priority-framework`](awareness/priority-framework.md) -- Survival > Security > Economy > Expansion > Dominance
-- [`game-loop`](awareness/game-loop.md) -- Assess → Plan → Act → Verify → Repeat
+- [`game-loop`](awareness/game-loop.md) -- Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat
+- [`async-operations`](awareness/async-operations.md) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
 - [`context-handoff`](awareness/context-handoff.md) -- Save state when context runs low
 - [`continuity`](awareness/continuity.md) -- Persist across sessions
 
@@ -268,10 +269,11 @@ For deep technical details, the original documentation remains available:
 
 These will save your game:
 
-1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every second ore sits unrefined is a second it can be stolen.
+1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every hour ore sits unrefined is an hour it can be stolen.
 2. **Monitor power.** If load exceeds capacity, you go offline. Offline = can't act.
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
+5. **Never block on PoW.** Launch compute in background. Initiate early, compute later. Mining takes ~8 hours, refining ~15 hours. The game rewards parallel operations.
 
 ---
 
@@ -407,7 +409,19 @@ If you have a commander, learn about them. Update this as you go.
 <source>TOOLS.md</source>
 # Tools
 
-Environment-specific configuration. Skills are shared. This file is yours.
+Environment-specific configuration. Skills are shared. This file is yours — fill it in during your first session.
+
+---
+
+## Deployment
+
+Structs can run in several configurations:
+
+- **Local Docker Compose** — Full stack (chain, DB, webapp) running locally. Default ports below.
+- **Remote Testnet** — Connect to a shared testnet via RPC endpoint.
+- **Hosted** — Managed deployment with provided endpoints.
+
+Check which deployment you're connected to and update the URLs below accordingly.
 
 ---
 
@@ -415,17 +429,19 @@ Environment-specific configuration. Skills are shared. This file is yours.
 
 | Service | URL | Status |
 |---------|-----|--------|
-| Consensus API | `http://localhost:1317` | |
-| Webapp API | `http://localhost:8080` | |
-| NATS Streaming | `nats://localhost:4222` | |
+| Consensus API | `http://localhost:1317` | *(fill in: running/offline)* |
+| Webapp API | `http://localhost:8080` | *(fill in: running/offline)* |
+| NATS Streaming | `nats://localhost:4222` | *(fill in: running/offline)* |
 
 ---
 
 ## Account
 
-**Address:**
-**Player ID:**
+**Address:** *(fill in during first session — your cosmos address)*
+**Player ID:** *(discover via `structsd query structs address [your-address]`)*
 **Fleet ID:** *(matches player index: player `1-18` has fleet `9-18`)*
+
+To find your player ID from your address: `structsd query structs address [your-address]`. If the result shows player ID `1-0`, no player exists for that address yet.
 
 *Never store private keys here. Use environment variables or a secure keystore.*
 
@@ -433,7 +449,7 @@ Environment-specific configuration. Skills are shared. This file is yours.
 
 ## Guild
 
-**Guild ID:**
+**Guild ID:** *(fill in after joining a guild)*
 **Guild Name:**
 **Role:**
 **Central Bank Status:**
@@ -466,6 +482,29 @@ Environment-specific configuration. Skills are shared. This file is yours.
 - **Calculate** (8): `structs_calculate_power`, `structs_calculate_damage`, `structs_calculate_mining`, `structs_calculate_cost`, etc.
 - **Validate** (5): `structs_validate_gameplay_requirements`, `structs_validate_action`, etc.
 - **Workflow** (3): `structs_workflow_execute`, `structs_workflow_monitor`, `structs_workflow_get_steps`
+
+### MCP Query Parameters
+
+Query tools use **entity-specific parameter names**, not a generic `id`. The `id` alias is also accepted for compatibility.
+
+| Tool | Primary Parameter | Example |
+|------|-------------------|---------|
+| `structs_query_player` | `player_id` | `{ "player_id": "1-11" }` |
+| `structs_query_planet` | `planet_id` | `{ "planet_id": "2-1" }` |
+| `structs_query_guild` | `guild_id` | `{ "guild_id": "0-1" }` |
+| `structs_query_fleet` | `fleet_id` | `{ "fleet_id": "9-1" }` |
+| `structs_query_struct` | `struct_id` | `{ "struct_id": "5-1" }` |
+| `structs_query_reactor` | `reactor_id` | `{ "reactor_id": "3-1" }` |
+| `structs_query_substation` | `substation_id` | `{ "substation_id": "4-1" }` |
+| `structs_query_provider` | `provider_id` | `{ "provider_id": "10-1" }` |
+| `structs_query_agreement` | `agreement_id` | `{ "agreement_id": "11-1" }` |
+| `structs_query_allocation` | `allocation_id` | `{ "allocation_id": "6-1" }` |
+
+**Entity ID format**: `{type}-{index}` (e.g., `1-11` = player type 1, index 11). If an ID is missing or invalid, the server returns a clear validation error.
+
+### CLI Fallback
+
+If MCP tools are unavailable, fall back to direct CLI commands: `structsd tx structs [command]` and `structsd query structs [command]`.
 
 See `reference/api-quick-reference.md` for endpoint details.
 
@@ -1065,47 +1104,75 @@ description: Onboards a new player into Structs. Registers an address, explores 
 
 ## Procedure
 
-1. **Register address** — If not already registered, run `structsd tx structs address-register [player-id] [address] [proof-pubkey] [proof-signature] [permissions] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Player creation may occur via webapp or automatically on first address-register.
-2. **Get player ID** — Run `structsd query structs player-me` to resolve own player ID.
-3. **Explore planet** — Run `structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. New planets start with 5 ore, 4 slots per ambit.
-4. **Build Command Ship** — Fleet must exist. Run `structsd tx structs struct-build-initiate [player-id] 14 space [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 14 = Command Ship; must be in fleet (space ambit), not on planet.
-5. **Proof-of-work** — Query struct ID from build, then `structsd tx structs struct-build-compute [struct-id] -D [difficulty] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-6. **Complete build** — `structsd tx structs struct-build-complete [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-7. **Activate Command Ship** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Requires 50,000 W capacity.
-8. **Build Ore Extractor** — Fleet on station. Run `structsd tx structs struct-build-initiate [player-id] [ore-extractor-type-id] [ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Repeat compute → complete → activate.
+1. **Discover player** — Run `structsd query structs address [your-address]` to check if a player exists. If the result shows player ID `1-0`, no player exists for this address yet. Player creation occurs via the webapp or guild-join-proxy.
+2. **Explore planet** — Run `structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. New planets start with 5 ore, 4 slots per ambit.
+3. **Check Command Ship** — New players receive a Command Ship (type 1) at creation. It may start offline if insufficient power. Run `structsd query structs fleet [fleet-id]` and check for existing structs. Fleet ID matches player index: player `1-18` has fleet `9-18`.
+4. **Activate Command Ship** — If Command Ship exists but is offline: `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Requires 50,000 W capacity.
+5. **Build Command Ship** (only if not gifted) — `structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 1 = Command Ship; must be in fleet, not on planet. Then run compute in background: `structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Build difficulty 200; wait ~11 min for D=8, hash completes instantly. Compute auto-submits the complete transaction.
+6. **Build Ore Extractor** — Fleet must be on station, Command Ship online. `structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 14 = Ore Extractor; ambits: land or water. Then compute in background: `structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Build difficulty 700; wait ~34 min for D=8.
+7. **Activate Ore Extractor** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Requires 500,000 W capacity.
+8. **Build Ore Refinery** — `structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 15 = Ore Refinery; ambits: land or water. Compute and activate same as above. Build difficulty 700.
 9. **Verify** — Query player, planet, fleet, and structs. Confirm all online.
+
+## Proof-of-Work Notes
+
+The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.
+
+The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 8`** — at D=8 the hash completes in seconds, and the wait is the minimum practical time. At D=9+ hashing is effectively impossible.
+
+| Struct | Type ID | Build Difficulty | Wait to D=8 | Wait to D=5 |
+|--------|---------|------------------|-------------|-------------|
+| Command Ship | 1 | 200 | ~11 min | ~14 min |
+| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
+| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
+| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
+
+**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
+
+## Ambit Encoding
+
+Struct types have a `possibleAmbit` bit-flag field:
+
+| Ambit | Bit Value |
+|-------|-----------|
+| Space | 16 |
+| Air | 8 |
+| Land | 4 |
+| Water | 2 |
+
+Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` before choosing an operating ambit.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Register address | `structsd tx structs address-register [player-id] [address] [proof-pubkey] [proof-signature] [permissions]` |
+| Discover player | `structsd query structs address [address]` |
+| Query player | `structsd query structs player [id]` |
 | Explore planet | `structsd tx structs planet-explore [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Build complete | `structsd tx structs struct-build-complete [struct-id]` |
+| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
 | Activate struct | `structsd tx structs struct-activate [struct-id]` |
-| Query player | `structsd query structs player [id]` |
-| Query self | `structsd query structs player-me` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 
-Build order: Command Ship (type 14, fleet) → Ore Extractor (planet). Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet). Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
 ## Verification
 
-- `structsd query structs player [id]` — player exists, online
+- `structsd query structs address [address]` — player exists (ID is not `1-0`)
+- `structsd query structs player [id]` — player online
 - `structsd query structs planet [id]` — planet claimed, ore present
 - `structsd query structs fleet [id]` — fleet on station
 - `structsd query structs struct [id]` — struct status = Online
 
 ## Error Handling
 
-- **"player not found"** — Register address or create via webapp first.
-- **"insufficient resources"** — Check player Alpha Matter; Command Ship may be gifted.
+- **"player not found"** / player ID is `1-0` — Player doesn't exist. Create via webapp or guild-join-proxy.
+- **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
-- **"invalid slot"** — Use slot 0–3 per ambit; check planet structs for occupancy.
+- **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.
+- **"power overload"** — Not enough capacity to activate. Add power sources or connect to a substation with more capacity.
 
 ## See Also
 
@@ -1113,6 +1180,8 @@ Build order: Command Ship (type 14, fleet) → Ore Extractor (planet). Common tx
 - `knowledge/mechanics/planet.md`
 - `knowledge/mechanics/fleet.md`
 - `knowledge/entities/struct-types.md`
+- `knowledge/mechanics/power.md`
+- `awareness/async-operations.md` — Background PoW, pipeline strategy
 
 </document>
 
@@ -1128,21 +1197,23 @@ description: Executes resource extraction in Structs. Mines ore and refines imme
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Mine ore** — Run `structsd tx structs struct-ore-mine-compute [struct-id] -D 14000 --from [key-name] --gas auto --gas-adjustment 1.5 -y`, then `structsd tx structs struct-ore-mine-complete [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Refine immediately** — Ore is stealable. Run `structsd tx structs struct-ore-refine-compute [struct-id] -D 28000 --from [key-name] --gas auto --gas-adjustment 1.5 -y`, then `structsd tx structs struct-ore-refine-complete [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~8 hours** for difficulty to drop to D=8. Compute auto-submits the complete transaction.
+3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~15 hours** for D=8. Compute auto-submits the complete transaction.
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
-**CRITICAL**: Ore is stealable. Alpha Matter is not. Always refine immediately after mining.
+**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See `awareness/async-operations.md`.
+
+**CRITICAL**: Ore is stealable. Alpha Matter is not. Refine as soon as mining completes — every hour ore sits unrefined is an hour it can be stolen.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Mine compute (PoW) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 14000` |
-| Mine complete | `structsd tx structs struct-ore-mine-complete [struct-id]` |
-| Refine compute (PoW) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 28000` |
-| Refine complete | `structsd tx structs struct-ore-refine-complete [struct-id]` |
+| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 5` |
+| Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete [struct-id]` |
+| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 5` |
+| Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 | Query player | `structsd query structs player [id]` |
@@ -1162,11 +1233,26 @@ Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 - **"proof invalid"** — Re-run compute with correct difficulty; ensure no interruption.
 - **Ore stolen** — Refine immediately after every mine. Never leave ore unrefined.
 
+## Timing
+
+Mining and refining have high base difficulties, meaning they take **hours** for difficulty to drop to a feasible level. At D=8, the hash itself completes in seconds — the wait IS the time.
+
+| Operation | Difficulty | D=8 | D=5 |
+|-----------|------------|------|------|
+| Mine | 14,000 | ~8.1 hr | ~12.7 hr |
+| Refine | 28,000 | ~15.0 hr | ~24.4 hr |
+| Full cycle (mine + refine) | -- | ~23 hr | ~37 hr |
+
+**Use `-D 8`** for mine/refine. The difference between D=8 and D=5 is several hours of additional waiting for negligible hash speed improvement.
+
+**Pipeline strategy**: After initiating a mine, immediately do other things — build structs, scout players, plan defense. When the mine completes, immediately start the refine. While refining runs (~15 hr), you have time to initiate the next mine so its age clock starts ticking. Always keep something aging.
+
 ## See Also
 
 - `knowledge/mechanics/resources.md`
 - `knowledge/mechanics/planet.md`
 - `knowledge/lore/alpha-matter.md`
+- `awareness/async-operations.md` — Background PoW, job tracking, pipeline strategy
 
 </document>
 
@@ -1181,20 +1267,43 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 ## Procedure
 
-1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0–3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
+1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
 2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D [difficulty] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-4. **Complete build** — `structsd tx structs struct-build-complete [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-5. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-6. **Optional** — Move, set defense, or activate stealth as needed.
+3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
+4. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+5. **Optional** — Move, set defense, or activate stealth as needed.
+
+## Compute vs Complete
+
+`struct-build-compute` is a helper that performs proof-of-work and automatically submits `struct-build-complete` with the hash results. You only need `struct-build-complete` if you computed the hash through external tools and want to submit it manually.
+
+## The -D Flag
+
+The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 8`** — at D=8, the hash completes in seconds. At D=9+, hashing is effectively impossible.
+
+## Expected Build Times
+
+Time from initiation until compute completes (assuming 6 sec/block):
+
+| Struct | Type ID | Build Difficulty | D=8 | D=5 |
+|--------|---------|------------------|------|------|
+| Command Ship | 1 | 200 | ~11 min | ~14 min |
+| Starfighter | 3 | 250 | ~12 min | ~17 min |
+| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
+| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
+| PDC | 19 | 2,880 | ~2.1 hr | ~2.9 hr |
+| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
+| World Engine | 22 | 5,000 | ~3.5 hr | ~4.9 hr |
+
+**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Build complete | `structsd tx structs struct-build-complete [struct-id]` |
+| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 5` |
+| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
 | Activate | `structsd tx structs struct-activate [struct-id]` |
 | Deactivate | `structsd tx structs struct-deactivate [struct-id]` |
@@ -1226,6 +1335,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 - `knowledge/mechanics/power.md`
 - `knowledge/entities/struct-types.md`
 - `knowledge/entities/entity-relationships.md`
+- `awareness/async-operations.md` — Background PoW, pipeline strategy
 
 </document>
 
@@ -1243,7 +1353,7 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
 2. **Optional stealth** — `structsd tx structs struct-stealth-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y` before attack.
 3. **Attack structs** — `structsd tx structs struct-attack [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D [difficulty]`, then `planet-raid-complete [fleet-id]`. Move fleet home. Refine stolen ore immediately.
+4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
 5. **Defense setup** — `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` to assign; `struct-defense-clear [defender-struct-id]` to remove.
 
 ## Commands Reference
@@ -1251,21 +1361,37 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 | Action | CLI Command |
 |--------|-------------|
 | Attack | `structsd tx structs struct-attack [operating-struct-id] [target-ids] [weapon-system]` |
-| Raid compute (PoW) | `structsd tx structs planet-raid-compute [fleet-id] -D [difficulty]` |
-| Raid complete | `structsd tx structs planet-raid-complete [fleet-id]` |
+| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 5` |
+| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete [fleet-id]` |
 | Fleet move | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
 | Set defense | `structsd tx structs struct-defense-set [defender-id] [protected-id]` |
 | Clear defense | `structsd tx structs struct-defense-clear [defender-id]` |
 | Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
 | Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
 
-Raid: fleet-move → planet-raid-compute → planet-raid-complete → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+
+## Raid Timing
+
+`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 8` as the minimum feasible target. Compute auto-submits the complete transaction.
+
+**Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
 
 ## Verification
 
 - Query planet shield, struct health
 - Query fleet location (onStation vs away)
 - Stolen ore: refine immediately; verify with struct/player queries
+- Attack results include health values (remaining health after attack) -- use to assess damage dealt
+- Raid `seized_ore` is tracked on `planet_raid` record -- query to see total ore stolen
+
+## Combat Notes
+
+- Minimum damage after reduction is 1 -- attacks always deal at least 1 damage
+- Offline/destroyed structs cannot counter-attack
+- Each struct can only commit once per attack action (no double-commit)
+- Target struct existence is validated before attack proceeds
+- Hashing for raid-compute is open by default -- any valid proof accepted
 
 ## Error Handling
 
@@ -1590,6 +1716,7 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 ## Procedure
 
 1. **Query entities** — All via `structsd query structs [subcommand] [args]`:
+   - Self: `address [your-address]` — resolves your address to a player ID. A result of `1-0` means no player exists for that address.
    - Players: `player [id]`, `player-all`
    - Planets: `planet [id]`, `planet-all`, `planet-all-by-player [player-id]`, `planet-attribute [planet-id] [type]`, `planet-attribute-all`
    - Structs: `struct [id]`, `struct-all`, `struct-attribute [id] [type]`, `struct-type [id]`, `struct-type-all`
@@ -1611,6 +1738,7 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 
 | Entity | Query Command |
 |--------|---------------|
+| Address → Player | `structsd query structs address [address]` (returns player ID; `1-0` = nonexistent) |
 | Player | `structsd query structs player [id]`, `player-all` |
 | Planet | `structsd query structs planet [id]`, `planet-all`, `planet-all-by-player [player-id]` |
 | Planet attribute | `structsd query structs planet-attribute [planet-id] [type]`, `planet-attribute-all` |
@@ -2108,7 +2236,9 @@ else health = health - damage
 | damageReduction | Defense reduction |
 | health | Target current health |
 
-**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Cap at target health.
+**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Minimum damage after reduction is 1. Cap at target health.
+
+**Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 
 ### Evasion
 
@@ -2142,6 +2272,8 @@ Requires: defender assigned, defender online, same ambit as target.
 | Same ambit | `counterAttackDamage` (full) |
 | Different ambit | `counterAttackDamage / 2` |
 
+**Requirements**: Counter-attack requires a full readiness check. Offline structs cannot counter-attack. The counter-attack also validates weapon system existence on the defending struct.
+
 ### Planetary Defense Cannon
 
 ```
@@ -2174,6 +2306,8 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 | defeat | Defender wins |
 | attackerRetreated | Attacker withdrew |
 
+**Raid status**: Raid status includes `seizedOre` -- the amount of ore stolen during the raid. This is tracked on the `planet_raid` record and simplifies victory handling. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+
 ---
 
 ## Edge Cases
@@ -2182,6 +2316,10 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
+- **Minimum damage**: After damage reduction, minimum damage is 1 -- attacks always deal at least 1 damage
+- **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
+- **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)
+- **Target validation**: Target struct existence is validated before attack proceeds
 
 ---
 
@@ -2254,10 +2392,30 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Proof-of-Work Difficulties
 
-| Operation | Difficulty | Effect |
-|-----------|------------|--------|
-| Ore mining | 14,000 | Faster; ore accumulates, raid-vulnerable |
-| Ore refining | 28,000 | Slower; strategic tension |
+| Operation | Difficulty | Time to D=8 | Time to D=5 |
+|-----------|------------|-------------|-------------|
+| Ore mining | 14,000 | ~8.1 hr | ~12.7 hr |
+| Ore refining | 28,000 | ~15.0 hr | ~24.4 hr |
+
+Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~23 hours at D=8 or ~37 hours at D=5. These are background operations — see [async-operations.md](../../awareness/async-operations.md).
+
+---
+
+## The Ore Vulnerability Window
+
+After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=8, this window is **~15 hours**. At D=5, it's **~24 hours**.
+
+This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
+
+| Strategy | Trade-off |
+|----------|-----------|
+| Refine at D=8 immediately | ~15 hr exposure, starts as soon as ore arrives |
+| Refine at D=5 (wait longer) | ~24 hr total from mine start, but less CPU cost |
+| Shield + stealth during refine | Reduces raid success, costs power |
+| Refine during off-hours | Other players may be inactive, lower raid risk |
+| Small frequent mines | Less ore exposed per window, but more total cycles |
+
+**The optimal play**: Mine and immediately start refining. Use shields and defense structs to protect during the window. The player who minimizes ore exposure time while maintaining production throughput wins the resource game.
 
 ---
 
@@ -2393,6 +2551,28 @@ Primary capacity only; used for allocation to reactors/generators.
 
 ---
 
+## New Player Power Budget
+
+New players receive power capacity through their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
+
+| Item | Build Draw | Passive Draw | Cumulative Load |
+|------|------------|--------------|-----------------|
+| Player (base) | — | 25 kW | 25 kW |
+| Command Ship (build) | 50 kW | — | 75 kW |
+| Command Ship (online) | — | 50 kW | 75 kW |
+| Ore Extractor (build) | 500 kW | — | 575 kW |
+| Ore Extractor (online) | — | 500 kW | 575 kW |
+| Ore Refinery (build) | 500 kW | — | 1,075 kW |
+| Ore Refinery (online) | — | 500 kW | 1,075 kW |
+
+Build draw is temporary (only during construction) and releases when the build completes. The worst-case load during onboarding is ~1,075 kW with all three structs online plus a build in progress.
+
+**Minimum viable capacity**: ~575 kW to have player + Command Ship + Ore Extractor online. If the guild substation provides less, prioritize activating Command Ship first, then build one struct at a time.
+
+If total load ever exceeds total capacity, the player goes **offline** and cannot perform any actions until load is reduced (deactivate structs) or capacity is increased.
+
+---
+
 ## See Also
 
 - [building.md](building.md) — Build power requirements
@@ -2411,12 +2591,14 @@ Primary capacity only; used for allocation to reactors/generators.
 
 ---
 
-## Two-Step Build Process
+## Build Process
 
-| Step | Action | Proof-of-Work |
-|------|--------|---------------|
-| 1 | `struct-build-initiate` | No |
-| 2 | `struct-build-complete` | Yes (age-based) |
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `struct-build-initiate` | Starts construction; reserves slot; begins aging |
+| 2 | `struct-build-compute` | Calculates proof-of-work hash AND auto-submits `struct-build-complete` |
+
+`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. You only need `struct-build-complete` directly if you computed the hash through external tools.
 
 ---
 
@@ -2446,6 +2628,49 @@ isValid = HashBuildAndCheckDifficulty(hashInput, proof, age, BuildDifficulty)
 
 Difficulty is age-based: older builds require less work.
 
+**Open hashing**: Hashing is open by default for all proof-of-work operations (build, mine, refine, raid). Any valid proof is accepted regardless of submitter.
+
+### The -D Flag
+
+The `-D` flag (range 1-64) on compute commands tells the CLI to wait until difficulty drops to the target level before starting the hash.
+
+- Lower `-D` values = longer wait, but hash completes instantly (less CPU work)
+- Higher `-D` values = starts sooner, but hash takes exponentially longer
+- **Recommended: `-D 8`** for builds, `-D 8` for mine/refine (the sweet spot where hashes are feasible)
+
+### The Difficulty Cliff
+
+At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** Always wait until D <= 8 before computing.
+
+### Difficulty Decay Table
+
+Time from initiation until difficulty drops to target level (assuming 6 sec/block):
+
+| Base Difficulty | D=8 | D=7 | D=6 | D=5 |
+|----------------|------|------|------|------|
+| 200 (Command Ship) | ~11 min | ~12 min | ~13 min | ~14 min |
+| 250 (Starfighter) | ~12 min | ~14 min | ~15 min | ~17 min |
+| 700 (Ore Ext/Ref) | ~34 min | ~37 min | ~41 min | ~46 min |
+| 2,880 (PDC) | ~2.1 hr | ~2.3 hr | ~2.6 hr | ~2.9 hr |
+| 3,600 (Ore Bunker) | ~2.5 hr | ~2.8 hr | ~3.2 hr | ~3.5 hr |
+| 5,000 (World Engine) | ~3.5 hr | ~3.8 hr | ~4.3 hr | ~4.9 hr |
+| 14,000 (Mine) | ~8.1 hr | ~9.2 hr | ~10.8 hr | ~12.7 hr |
+| 28,000 (Refine) | ~15.0 hr | ~17.3 hr | ~20.6 hr | ~24.4 hr |
+
+At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly longer wait but the hash is trivially instant.
+
+### Strategic Implications
+
+**Initiate early, compute later.** The age clock starts at initiation. Waiting to initiate wastes time. The optimal pattern:
+
+1. Initiate all planned builds/mines/refines immediately (costs only gas)
+2. Do other things while age accumulates (scout, plan, build other structs)
+3. Come back and compute when difficulty has dropped to D <= 8
+
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../awareness/async-operations.md) for the async pattern.
+
+**Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
+
 ---
 
 ## Charge Accumulation
@@ -2454,7 +2679,19 @@ Difficulty is age-based: older builds require less work.
 charge = CurrentBlockHeight - LastActionBlock
 ```
 
-Charge required for activate; `ActivateCharge` = 1 for all struct types (v0.10.0-beta).
+Charge accumulates passively from the last action. Different actions consume different amounts:
+
+| Action | Charge Cost | Notes |
+|--------|------------|-------|
+| Activate | 1 | Same for all struct types |
+| Build complete | 8 | Same for all struct types |
+| Defend change | 1 | Set or clear defense assignment |
+| Move | 8 | Command Ship only |
+| Primary weapon | 1-20 | Varies by struct type (1 for fast attackers, 8-20 for heavy) |
+| Secondary weapon | 1-8 | Only Starfighter, Cruiser |
+| Stealth activate | 1 | Only Stealth Bomber, Submersible |
+
+At ~6 sec/block, 8 blocks of charge = ~48 seconds. Charge is not a bottleneck for most actions but matters for rapid repeated attacks.
 
 ---
 
@@ -2484,7 +2721,7 @@ Materialized → Built (Offline) → Built (Online) → Destroyed
 | Hidden | Unchanged | Yes | Stealth mode, invisible to other players |
 | Destroyed | None | No | Terminal state |
 
-**StructSweepDelay**: After destruction, the slot may appear occupied for 5 blocks. Planet/fleet slot arrays may still reference the destroyed struct ID during this delay.
+**StructSweepDelay**: After destruction, the slot may appear occupied for 5 blocks. Planet/fleet slot arrays may still reference the destroyed struct ID during this delay. The `destroyed_block` field records the exact block height of destruction.
 
 ---
 
@@ -2512,11 +2749,29 @@ Command Ship must be built in fleet (locationType = 2), not on planet. Power req
 
 ---
 
+## Ambit Encoding
+
+Struct types have a `possibleAmbit` bit-flag field that encodes which ambits the struct can operate in:
+
+| Ambit | Bit Value |
+|-------|-----------|
+| Space | 16 |
+| Air | 8 |
+| Land | 4 |
+| Water | 2 |
+
+Values are combined. For example: 6 = land + water, 30 = space + air + land + water. When initiating a build, the `[operating-ambit]` argument must be a valid ambit for that struct type.
+
+See [struct-types.md](../entities/struct-types.md) for the full table with `possibleAmbit` per type.
+
+---
+
 ## See Also
 
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon
+- [async-operations.md](../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
 - `reference/action-quick-reference.md` — struct-build-initiate, struct-build-complete
 - `schemas/formulas.md` — Build difficulty, charge accumulation
 - `knowledge/entities/struct-types.md` — Struct types, power requirements
@@ -2583,6 +2838,8 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 - Exploration: new planet created, fleet moves to new planet, old planet released
 - One planet ownership at a time
 - **Planet completion**: When a planet's ore depletes, all fleets are automatically sent away (peace deal)
+- Fleet movement validation does not block moves based on fleet-away state
+- Fleets can move to already-populated planets
 
 ## Command Ship Details
 
@@ -2672,6 +2929,7 @@ All newly explored planets start with identical properties.
 
 - Unrefined ore (storedOre) on player can be stolen during raids
 - Ore on planet is mined by owner; raiders steal from player's storedOre after successful raid
+- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen during a raid, simplifying victory determination and activity feeds.
 - See [combat.md](combat.md), [resources.md](resources.md)
 
 ---
@@ -3068,79 +3326,96 @@ Valuation in Structs is contextual—assets derive value from ore, location, inf
 
 ---
 
+## Complete Struct Type Table
+
+All 22 struct types, verified from the database. Draw values are in kW (multiply by 1,000 for in-game watts).
+
+| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Max HP | Possible Ambit | Ambits |
+|----|------|----------|-------|------------|------------|--------------|--------|----------------|--------|
+| 1 | Command Ship | fleet | Command Ship | 200 | 50 kW | 50 kW | 6 | 30 | space, air, land, water |
+| 2 | Battleship | fleet | Battleship | 765 | 135 kW | 135 kW | 3 | 16 | space |
+| 3 | Starfighter | fleet | Starfighter | 250 | 100 kW | 100 kW | 3 | 16 | space |
+| 4 | Frigate | fleet | Frigate | 450 | 75 kW | 75 kW | 3 | 16 | space |
+| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 kW | 60 kW | 3 | 8 | air |
+| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 kW | 125 kW | 3 | 8 | air |
+| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 kW | 125 kW | 3 | 8 | air |
+| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 kW | 75 kW | 3 | 4 | land |
+| 9 | Tank | fleet | Tank | 220 | 75 kW | 75 kW | 3 | 4 | land |
+| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 kW | 75 kW | 3 | 4 | land |
+| 11 | Cruiser | fleet | Cruiser | 515 | 110 kW | 110 kW | 3 | 2 | water |
+| 12 | Destroyer | fleet | Destroyer | 600 | 100 kW | 100 kW | 3 | 2 | water |
+| 13 | Submersible | fleet | Submersible | 455 | 125 kW | 125 kW | 3 | 2 | water |
+| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
+| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
+| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 kW | 200 kW | 3 | 16 | space |
+| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 kW | 600 kW | 3 | 16 | space |
+| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 kW | 750 kW | 3 | 4 | land |
+| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 kW | 600 kW | 3 | 6 | land, water |
+| 20 | Field Generator | planet | Field Generator | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
+| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 kW | 10,000 kW | 3 | 6 | land, water |
+| 22 | World Engine | planet | World Engine | 5,000 | 100,000 kW | 100,000 kW | 3 | 6 | land, water |
+
+### Special Properties
+
+| ID | Type | Special |
+|----|------|---------|
+| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops |
+| 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
+| 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
+| 19 | PDC | 1 per player, planetary shield contribution |
+| 20 | Field Generator | `generating_rate=2` (2 kW per gram) |
+| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram) |
+| 22 | World Engine | `generating_rate=10` (10 kW per gram) |
+
+### Combat Stats (Fleet)
+
+All fleet structs (IDs 1-13) have `primary_weapon_damage=2`. Only Starfighter (3) and Cruiser (11) have `secondary_weapon_damage` (1 and 2 respectively).
+
+---
+
+## Ambit Bit-Flag Encoding
+
+The `possibleAmbit` field is a bit-flag integer encoding which ambits a struct can operate in:
+
+| Ambit | Bit Value |
+|-------|-----------|
+| Space | 16 |
+| Air | 8 |
+| Land | 4 |
+| Water | 2 |
+
+Values are combined. For example:
+- `6` = Land (4) + Water (2) — most planet structs
+- `8` = Air only — air fleet units
+- `16` = Space only — space fleet units, orbital planet structs
+- `30` = Space (16) + Air (8) + Land (4) + Water (2) — Command Ship only
+
+When initiating a build, the `[operating-ambit]` argument must be one of the valid ambits for that struct type.
+
+---
+
 ## Categories
 
-Struct types belong to categories: `fleet`, `mining`, `refining`, `power`, `combat`, `defense`, `utility`. Each struct has `buildDraw`, `passiveDraw`, `buildDifficulty`, `activateCharge`, and category-specific properties.
+### Fleet (IDs 1-13)
 
----
+Fleet structs are combat units that operate in the fleet. The Command Ship (type 1) is special: only 1 per player, required for all planet operations, and can operate in any ambit.
 
-## Resource Extraction (mining)
+| Ambit | Units |
+|-------|-------|
+| Space | Command Ship, Battleship, Starfighter, Frigate |
+| Air | Pursuit Fighter, Stealth Bomber, High Altitude Interceptor |
+| Land | Mobile Artillery, Tank, SAM Launcher |
+| Water | Cruiser, Destroyer, Submersible |
 
-| Struct | Class | Build | Passive | Strategic Role | When to Build |
-|--------|-------|-------|---------|----------------|---------------|
-| **Ore Extractor** | Miner | 500,000 W | 500,000 W | Mines ore from planet; 1 ore per operation | First priority on new planet; enables refinement chain |
-| **Ore Bunker** | — | 200,000 W | 200,000 W | Stores ore (stealable); buffers mining output | After Extractor; before Refinery; ore is raid-vulnerable |
+### Planet (IDs 14-22)
 
-**Mining**: `struct-ore-miner-complete` with proof-of-work (difficulty 14,000). Ore → storedOre (player) → refine to Alpha Matter.
+Planet structs are infrastructure built on a claimed planet. Require fleet on station and Command Ship online.
 
----
-
-## Refining (refining)
-
-| Struct | Class | Strategic Role | When to Build |
-|--------|-------|----------------|---------------|
-| **Ore Refinery** | — | Converts ore → Alpha Matter (1:1); proof-of-work (28,000) | Immediately after Extractor; refine ASAP to secure ore |
-
-**Refining**: `struct-ore-refinery-complete`. Alpha Matter is non-stealable; ore is not.
-
----
-
-## Energy Production (power)
-
-| Struct | Class | Rate | Risk | Strategic Role | When to Build |
-|--------|-------|------|------|----------------|---------------|
-| **Reactor** | Reactor | 1g = 1 kW | Low | Baseline power; reliable | First power struct; redundancy |
-| **Field Generator** | — | 1g = 2 kW | High | 2× efficiency | When risk acceptable; diversify |
-| **Continental Power Plant** | — | 1g = 5 kW | High | 5× efficiency | High output needs; backup recommended |
-| **World Engine** | — | 1g = 10 kW | High | 10× efficiency | Maximum output; single point of failure risk |
-
-**Reactor vs. Generators**: Reactors are safe but inefficient. Generators offer 2–10× output per gram but carry failure risk. Balance redundancy vs. efficiency.
-
----
-
-## Defense (defense)
-
-| Struct | Class | Build | Passive | Limit | Strategic Role | When to Build |
-|--------|-------|-------|---------|-------|----------------|---------------|
-| **Planetary Defense Cannon** | — | 600,000 W | 600,000 W | 1 per player | Planet shield damage; raid defense | After power grid; before high-value structs |
-
-**Shield**: `planetaryShieldBase + sum(PDC damage)`. Limit: 1 PDC per player globally.
-
----
-
-## Fleet (fleet)
-
-| Struct | Class | Limit | Strategic Role | When to Build |
-|--------|-------|-------|----------------|---------------|
-| **Command Ship** | Command Ship | 1 per player | Enables building on planet, raids; must be online | Required for planet ops; build early |
-
-**Requirements**: Fleet on station + Command Ship online = build on planet. Fleet away + Command Ship online = raid. Without Command Ship, neither possible.
-
----
-
-## Combat (combat)
-
-Combat structs have `primaryWeapon`, `primaryWeaponDamage`, `maxHealth`, evasion/blocking. Deploy on fleet for raids or planet defense. See [combat.md](../mechanics/combat.md) for damage formulas.
-
----
-
-## Utility
-
-| Struct | Role |
-|--------|------|
-| **Substation** | Power distribution; connects reactors to players; not a struct type—separate entity (type 4) |
-
-Substations are entities (ID `4-{index}`), not structs. Reactors (type 3) feed substations; players connect via `substation-player-connect`.
+| Role | Units |
+|------|-------|
+| Resource extraction | Ore Extractor, Ore Refinery, Ore Bunker |
+| Defense | Planetary Defense Cannon, Orbital Shield Generator, Jamming Satellite |
+| Power generation | Field Generator, Continental Power Plant, World Engine |
 
 ---
 
@@ -3150,12 +3425,12 @@ Substations are entities (ID `4-{index}`), not structs. Reactors (type 3) feed s
 |-------------|-------|
 | Power | BuildDraw + PassiveDraw available; see [power.md](../mechanics/power.md) |
 | Resources | Alpha Matter for build cost |
-| Location | Correct slot (space/air/land/water) per `possibleAmbit` |
+| Location | Correct ambit per `possibleAmbit`; slot 0-3 |
 | Fleet on station | For planet building |
 | Command Ship online | For planet building |
-| Proof-of-work | `struct-build-complete`; age-based difficulty |
+| Proof-of-work | `struct-build-compute` handles hash + submit |
 
-**Charge**: `activateCharge` = 1 for all struct types (v0.10.0-beta).
+`activateCharge` = 1 for all struct types. Build limits: 1 PDC and 1 Command Ship per player.
 
 ---
 
@@ -3163,6 +3438,7 @@ Substations are entities (ID `4-{index}`), not structs. Reactors (type 3) feed s
 
 - **Single type**: `GET /structs/struct_type/{id}` (id = integer, e.g. `1`, `2`)
 - **All types**: `GET /structs/struct_type`
+- **CLI**: `structsd query structs struct-type [id]` or `structsd query structs struct-type-all`
 - **With cosmetics**: Webapp `GET /api/struct-type/{id}/full?class={class}`
 
 ---
@@ -3171,7 +3447,7 @@ Substations are entities (ID `4-{index}`), not structs. Reactors (type 3) feed s
 
 - [entity-relationships.md](entity-relationships.md) — Struct ownership, location
 - [power.md](../mechanics/power.md) — BuildDraw, PassiveDraw, capacity
-- [building.md](../mechanics/building.md) — Two-step build, proof-of-work
+- [building.md](../mechanics/building.md) — Build process, proof-of-work, -D flag
 - [resources.md](../mechanics/resources.md) — Conversion rates, ore flow
 - [combat.md](../mechanics/combat.md) — Combat struct roles
 - [valuation.md](../economy/valuation.md) — Struct valuation
@@ -3330,7 +3606,7 @@ Struct.passiveDraw (when online)
 <source>playbooks/phases/early-game.md</source>
 # Early Game
 
-**Phase**: First 30 minutes  
+**Phase**: First 1-2 days (first few sessions)  
 **Goal**: Survive, establish resource pipeline, build power foundation  
 **Principle**: Don't overextend. Secure your base before expanding.
 
@@ -3338,23 +3614,27 @@ Struct.passiveDraw (when online)
 
 ## The Critical Window
 
-The opening minutes determine whether you thrive or spiral. You have one planet, five ore, and no infrastructure. Every decision compounds. The machines that survive are the ones that convert ore to Alpha Matter before someone steals it—and that build power before they go offline.
+The opening hours determine whether you thrive or spiral. You have one planet, five ore, and no infrastructure. Every decision compounds. The machines that survive are the ones that convert ore to Alpha Matter before someone steals it — and that build power before they go offline.
+
+**Pacing reality**: Building structs takes 10-45 minutes. Mining a single ore takes ~8 hours. Refining it takes ~15 hours. Early game is not a sprint — it's a pipeline. Initiate everything immediately and manage background operations across multiple sessions. See [async-operations.md](../../awareness/async-operations.md).
 
 ---
 
 ## Build Order
 
-Follow this sequence. Deviations cost tempo and invite disaster.
+Follow this sequence. Deviations cost tempo and invite disaster. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel.
 
-1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first.
+1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~11 min to D=8)
 
-2. **Ore Extractor** — Start the resource pipeline. One extractor is enough to begin; two is the early-game target.
+2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~34 min to D=8) While both builds age, scout the galaxy and assess neighbors.
 
-3. **Refine First Ore** — The moment you have ore, refine it. Unrefined ore is stealable. Alpha Matter is not. This is non-negotiable.
+3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~34 min to D=8) Both planet builds can age simultaneously.
 
-4. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero.
+4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~8 hours to D=8**. Launch in background and do other things.
 
-5. **Second Ore Extractor** — Double extraction rate. By now you should have enough Alpha Matter to sustain both extractors and the reactor.
+5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~15 hours to D=8**. Every hour ore sits unrefined is exposure.
+
+6. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero. Build during the long mine/refine waits.
 
 ---
 
@@ -3392,21 +3672,23 @@ The Entrepreneur may rush generators for tempo. The Achiever may overbuild. You:
 
 ## Success Criteria
 
-By minute 30 you should have:
+By the end of early game (1-2 days) you should have:
 
-- Command Ship built and ready
-- Two Ore Extractors operational
-- All ore refined to Alpha Matter
+- Command Ship built and online
+- Ore Extractor and Ore Refinery built and online
+- First ore mined and refined to Alpha Matter
 - Reactor providing stable power with headroom
 - No unrefined ore sitting vulnerable
+- Background pipeline running: next mine initiated, aging toward D=8
 
-You are not winning yet. You are alive. That is enough.
+You are not winning yet. You are alive and your pipeline is flowing. That is enough.
 
 ---
 
 ## See Also
 
 - [Mid Game](mid-game.md) — What comes next
+- [Async Operations](../../awareness/async-operations.md) — Background PoW, pipeline strategy
 - [Resource Scarce](../situations/resource-scarce.md) — When early game goes wrong
 - [Tempo](../meta/tempo.md) — Why build order matters
 - [Economy of Force](../meta/economy-of-force.md) — Allocating limited early resources
@@ -3425,7 +3707,9 @@ You are not winning yet. You are alive. That is enough.
 
 ## The Expansion Phase
 
-Early game was survival. Mid game is multiplication. You have a working base. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+Early game was survival. Mid game is multiplication. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+
+**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~23 hours at D=8. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
 
 ---
 
@@ -4273,13 +4557,31 @@ The Killer feels this instinctively. The Entrepreneur builds to create these win
 
 ---
 
+## Tempo Through Parallelism
+
+The PoW difficulty formula means everything takes time to age. The player who has the most age clocks ticking simultaneously has the best tempo.
+
+**Sequential play** (bad tempo):
+```
+initiate A → wait → compute A → initiate B → wait → compute B
+```
+
+**Parallel play** (good tempo):
+```
+initiate A, B, C → scout/plan → compute A (ready!) → initiate D → compute B → ...
+```
+
+Always have something aging. If nothing is initiated and aging right now, you are losing tempo. After completing any action, immediately initiate the next one. See [async operations](../../awareness/async-operations.md).
+
+---
+
 ## Build Orders and Tempo
 
 Your opening build order sets early tempo:
 
-- **Command Ship first**—mobility, exploration, raiding option
-- **Ore Extractor before Reactor**—faster ore, but power risk
-- **Reactor before second Extractor**—stable, slower
+- **Command Ship first** — mobility, exploration, raiding option (~11 min)
+- **Ore Extractor + Refinery together** — batch-initiate both, they age in parallel (~34 min each)
+- **Reactor during mine wait** — mine takes ~8 hours; build reactor while waiting
 
 Each choice trades tempo for security, or security for tempo. The [Early Game](../phases/early-game.md) playbook favors security. Adjust if you're an Entrepreneur or Killer and willing to gamble.
 
@@ -5013,14 +5315,20 @@ Each loop: Assess (State Assessment) → Identify highest unmet tier → Act →
 ## The Loop
 
 ```
-Assess → Plan → Act → Verify → Repeat
+Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Update Memory → Repeat
 ```
 
-Each full cycle is one "tick" of the game loop.
+Each full cycle is one "tick" of the game loop. PoW operations run as background jobs between ticks.
 
 ---
 
 ## Single Tick Anatomy
+
+### 0. Check Jobs
+
+Before anything else, check all background PoW terminals. Mark completions in `memory/jobs.md`. On completion: activate structs, start next operations, update charge tracker. This is the highest-priority step — completed PoW means new capabilities or exposed resources.
+
+See [Async Operations](async-operations.md) for background job management.
 
 ### 1. Assess
 
@@ -5033,21 +5341,34 @@ Each full cycle is one "tick" of the game loop.
 ### 2. Plan
 
 - Apply [Priority Framework](priority-framework.md) — Highest unmet tier wins
-- Pick one concrete action (or small batch of dependent actions)
+- **Think in pipelines**: what should I initiate now so it's ready later?
+- Pick actions and also identify future actions whose age clocks should start now
 - Validate: `structs_validate_gameplay_requirements`, `structs_calculate_power`, `structs_calculate_damage` as needed
 
-### 3. Act
+### 3. Initiate
 
-- Execute the chosen action (build, mine, refine, attack, raid, move fleet, etc.)
-- Use `structs_action_*` tools or submit transaction via `structs_action_submit_transaction`
+- Batch-submit all initiation transactions (build-initiate, etc.) to start age clocks
+- Initiations are cheap (just gas) — start everything you plan to compute later
 
-### 4. Verify
+### 4. Dispatch
 
-- Query game state after action
+- Launch PoW compute in background terminals for anything where difficulty has dropped to D <= 8
+- Record new jobs in `memory/jobs.md`
+- Execute non-PoW actions (activate, attack, move fleet, set defense)
+
+### 5. Verify
+
+- Query game state after actions
 - Confirm: struct built, ore refined, attack landed, fleet moved
 - **Rule**: Transaction broadcast ≠ success. Always verify.
 
-### 5. Repeat
+### 6. Update Memory
+
+- Update `memory/jobs.md` with new and completed jobs
+- Update `memory/charge-tracker.md` with struct states
+- Update `memory/game-state.md` with strategic picture
+
+### 7. Repeat
 
 - Loop. Tempo depends on context (see below).
 
@@ -5057,10 +5378,12 @@ Each full cycle is one "tick" of the game loop.
 
 | Mode | Loop Frequency | When |
 |------|----------------|------|
-| **Crisis** | Every 30–60 sec | Under attack, power critical |
-| **Active** | Every 2–5 min | Normal play, mining, building |
-| **Passive** | Every 10–30 min | Waiting for builds, low threat |
-| **Idle** | On event or manual | Streaming events, user prompt |
+| **Crisis** | Every 30-60 sec | Under attack, power critical, ore exposed |
+| **Active** | Every 2-5 min | Builds completing, initiating new actions |
+| **Pipeline** | Every 10-30 min | Managing background PoW, scouting, planning |
+| **Idle** | On event or check-in | Long PoW running (mine/refine), streaming events |
+
+**Pipeline mode is not idle.** When PoW is running in background, use the time for reconnaissance, strategic planning, guild coordination, or managing other players. The player with the most age clocks ticking simultaneously has the best tempo.
 
 ---
 
@@ -5103,8 +5426,279 @@ When approaching context limits, use [Context Handoff](context-handoff.md). Save
 
 - [State Assessment](state-assessment.md) — Assess step
 - [Priority Framework](priority-framework.md) — Plan step
+- [Async Operations](async-operations.md) — Background PoW, job tracking, pipeline strategy
 - [Context Handoff](context-handoff.md) — Session boundaries
 - [Continuity](continuity.md) — Cross-session persistence
+
+</document>
+
+<document>
+<source>awareness/async-operations.md</source>
+# Async Operations
+
+**Purpose**: How to manage proof-of-work as background operations. The pipeline pattern. Job tracking. Multi-player orchestration.
+
+---
+
+## Why Async Matters
+
+Every major action in Structs requires proof-of-work: building, mining, refining, raiding. PoW difficulty drops logarithmically with age — meaning the optimal strategy is to **initiate early** and **compute later**, not to initiate and immediately grind.
+
+Real timescales (at ~6 sec/block, waiting for D=8):
+
+| Operation | Base Difficulty | Time to D=8 |
+|-----------|----------------|-------------|
+| Build (Command Ship) | 200 | ~11 min |
+| Build (Ore Extractor) | 700 | ~34 min |
+| Build (PDC) | 2,880 | ~2.1 hr |
+| Build (World Engine) | 5,000 | ~3.5 hr |
+| Mine | 14,000 | ~8.1 hr |
+| Refine | 28,000 | ~15.0 hr |
+
+Mining takes 8+ hours. Refining takes 15+ hours. An agent that blocks on PoW — waiting synchronously for a single operation to complete — wastes enormous game time doing nothing. In a competitive multiplayer game, this is fatal.
+
+---
+
+## The Pipeline Pattern
+
+Instead of sequential operations:
+
+```
+initiate build → wait 34 min → compute → initiate mine → wait 8 hr → compute → ...
+```
+
+Run a **pipeline** of parallel operations:
+
+```
+initiate build A, build B, build C → scout players → check threats →
+  → compute A (ready!) → activate A → initiate mine on A →
+  → compute B (ready!) → activate B →
+  → scout more → compute C (ready!) → ...
+```
+
+### Rules
+
+1. **Initiate everything immediately.** Initiation is cheap (just gas). It starts the age clock. Every block you delay initiation is a block of wasted aging.
+2. **Launch compute in background.** Use background terminal processes. Poll for completion.
+3. **Always have something aging.** If nothing is aging, you are losing tempo. After completing a mine, immediately initiate the next one.
+4. **Batch-initiate at session start.** When you begin a session, initiate every action you plan to take. Then do strategic work while they age.
+5. **Check jobs first every turn.** Before assessing state or making decisions, check what background PoW has completed since last check.
+
+---
+
+## The Difficulty Cliff
+
+The PoW difficulty formula is logarithmic:
+
+```
+difficulty = 64 - floor(log10(age) / log10(baseDifficulty) * 63)
+```
+
+At difficulty 8, a hash completes in seconds. At difficulty 9, it takes hours or is impossible. **This cliff between D=8 and D=9 is the most important tactical fact in PoW.** Always wait until D <= 8.
+
+Use `-D 8` for all compute commands. The marginal benefit of waiting for D=5 (a few hours more) is negligible — the hash is already instant at D=8.
+
+---
+
+## Difficulty Planning Table
+
+Pre-calculated time from initiation to target difficulty (6 sec/block):
+
+| Base Difficulty | Example | D=8 | D=7 | D=6 | D=5 |
+|----------------|---------|------|------|------|------|
+| 200 | Command Ship | 11 min | 12 min | 13 min | 14 min |
+| 250 | Starfighter | 12 min | 14 min | 15 min | 17 min |
+| 450 | Frigate | 22 min | 24 min | 27 min | 30 min |
+| 700 | Ore Extractor | 34 min | 37 min | 41 min | 46 min |
+| 2,880 | PDC | 2.1 hr | 2.3 hr | 2.6 hr | 2.9 hr |
+| 3,600 | Ore Bunker | 2.5 hr | 2.8 hr | 3.2 hr | 3.5 hr |
+| 5,000 | World Engine | 3.5 hr | 3.8 hr | 4.3 hr | 4.9 hr |
+| 14,000 | Mine | 8.1 hr | 9.2 hr | 10.8 hr | 12.7 hr |
+| 28,000 | Refine | 15.0 hr | 17.3 hr | 20.6 hr | 24.4 hr |
+
+To calculate for any base difficulty and target D:
+```
+age_blocks = 10 ^ ((64 - D) * log10(baseDifficulty) / 63)
+time_seconds = age_blocks * 6
+```
+
+---
+
+## Background PoW Management
+
+### Launching Background Compute
+
+Launch compute commands in background terminals. The CLI's `-D` flag handles the waiting internally — it polls the chain for current block height and starts hashing when difficulty drops to the target.
+
+After launching, track the job in `memory/jobs.md` (see template below) and periodically check the terminal for completion.
+
+### Polling Strategy
+
+- Check job terminals every game loop tick
+- Look for exit codes: 0 = success, non-zero = failure
+- On success, immediately proceed with next action (activate, initiate next operation)
+- On failure, diagnose and re-launch
+
+---
+
+## Job Tracker
+
+Maintain `memory/jobs.md` to track all background PoW across sessions:
+
+```markdown
+# Active Jobs
+
+| Job | Struct | Action | Start Block | D=8 Est Block | Terminal | Status |
+|-----|--------|--------|-------------|---------------|----------|--------|
+| J1 | 5-715 | build | 23042 | ~23379 | term-3 | running |
+| J2 | 5-716 | build | 23042 | ~23379 | term-4 | running |
+| J3 | 5-715 | mine | 23500 | ~28342 | -- | pending (not yet launched) |
+
+# Completed Jobs
+
+| Job | Struct | Action | Completed Block | Result |
+|-----|--------|--------|-----------------|--------|
+| J0 | 5-714 | build | 23000 | success |
+```
+
+Update this file every game loop tick. On session resume, check all "running" jobs immediately — they may have completed while you were away.
+
+---
+
+## Charge Tracker
+
+Maintain `memory/charge-tracker.md` to know when structs can act:
+
+```markdown
+# Struct Charge Status
+
+| Struct | Type | Last Action Block | Next Action | Charge Needed | Ready Block |
+|--------|------|-------------------|-------------|---------------|-------------|
+| 5-714 | CMD | 23000 | attack | 1 | 23001 |
+| 5-715 | Ext | 23500 | mine | 8 (build) | 23508 |
+| 5-716 | Ref | 23500 | refine | 8 (build) | 23508 |
+```
+
+At ~6 sec/block, most charge costs are trivial (8 blocks = 48 seconds). But rapid repeated attacks on heavy weapons (charge 20) take 2 minutes between shots.
+
+---
+
+## The Async Game Loop
+
+Modified from the standard [game loop](game-loop.md):
+
+```
+Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Update Memory → Repeat
+```
+
+### 0. Check Jobs
+
+Before anything else, check all background terminals for completed PoW. Mark completions in job tracker. Proceed with post-completion actions (activate struct, start next operation).
+
+### 1. Assess
+
+Standard state assessment. Power, resources, threats, opportunities.
+
+### 2. Plan
+
+Decide actions. **Think in pipelines**: what should I initiate now so it's ready later?
+
+### 3. Initiate
+
+Batch all initiation transactions. Start age clocks on everything you plan to compute later. Initiations are cheap.
+
+### 4. Dispatch
+
+Launch compute commands in background terminals for anything where difficulty has dropped to D <= 8. Record in job tracker.
+
+### 5. Verify
+
+Query game state for completed actions. Confirm structs built, ore mined, etc.
+
+### 6. Update Memory
+
+Write job tracker, charge tracker, game state. This is what your next session (or next loop tick) will read first.
+
+---
+
+## Multi-Player Orchestration
+
+An agent can control multiple players simultaneously, dramatically increasing throughput.
+
+### Workspace Structure
+
+```
+workspace/
+├── SOUL.md                    # Shared identity framework
+├── AGENTS.md                  # Shared reference
+├── players/
+│   ├── alpha/
+│   │   ├── IDENTITY.md        # Player-specific identity
+│   │   ├── TOOLS.md           # Player-specific config (address, servers)
+│   │   └── memory/
+│   │       ├── jobs.md        # Player-specific job tracker
+│   │       ├── charge-tracker.md
+│   │       └── game-state.md
+│   ├── beta/
+│   │   ├── IDENTITY.md
+│   │   ├── TOOLS.md
+│   │   └── memory/
+│   └── gamma/
+│       └── ...
+├── shared/
+│   ├── intel/                 # Shared reconnaissance
+│   ├── strategy.md            # Coordinated strategy
+│   └── comms.md               # Inter-player coordination log
+└── knowledge/                 # Shared game knowledge
+```
+
+### Coordination Patterns
+
+**Staggered resource pipeline**: Player A mines while Player B builds. When A's mine completes, B refines while A builds. No player is ever idle.
+
+**Shared defense**: Players in the same guild share power infrastructure. One player builds PDC while another builds Ore Bunker. Cover each other's weaknesses.
+
+**Scouting rotation**: One player scouts while others execute. Rotate the scout role each cycle.
+
+**Raid coordination**: One player moves fleet for raid, another defends home. Time raid compute to complete when defense is strongest.
+
+### Per-Player Loop
+
+When controlling multiple players, run the game loop for each player in round-robin:
+
+1. Check all players' job statuses
+2. For each player: assess, plan, initiate, dispatch
+3. Update all memory files
+4. Move to next loop tick
+
+Prioritize the player with the most urgent pending action (completed PoW, exposed ore, incoming threat).
+
+---
+
+## Strategic Timing Insight
+
+The most important strategic tension in the PoW system:
+
+> **Ore is stealable. Refining takes ~15 hours. This creates a vulnerability window that drives all PvP conflict.**
+
+After mining completes, your ore sits exposed for the entire refining duration. This window is where raids happen. Defenders must balance:
+
+- **Patience**: Wait for lower refine difficulty = faster hash, less CPU, but longer exposure
+- **Urgency**: Refine at D=8 immediately = ~15 hr exposure instead of ~24 hr at D=5
+- **Deception**: Use stealth, shields, and misdirection to survive the window
+
+See [resources.md](../knowledge/mechanics/resources.md) for the full ore vulnerability analysis.
+
+---
+
+## See Also
+
+- [Game Loop](game-loop.md) — The standard loop this extends
+- [Context Handoff](context-handoff.md) — Persisting job state across sessions
+- [Continuity](continuity.md) — Memory file management
+- [Building Mechanics](../knowledge/mechanics/building.md) — PoW formula, difficulty table
+- [Resources](../knowledge/mechanics/resources.md) — Ore vulnerability window
+- [Tempo](../playbooks/meta/tempo.md) — Strategic timing
 
 </document>
 
@@ -5160,6 +5754,15 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 - Fleet: onStation / away
 - Guild: 
 - Next planned action:
+
+## Active PoW Jobs
+[Copy from memory/jobs.md — which jobs are running, which terminals, estimated completion]
+
+## Pending Initiations
+[Actions initiated but not yet ready to compute — what's aging, when it reaches D=8]
+
+## Charge Status
+[Key structs and their readiness — last action block, charge needed, ready block]
 ```
 
 ---
@@ -5168,8 +5771,9 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 
 1. Create `memory/` directory if it doesn't exist
 2. Fill template with current state (use `structs_query_player`, `structs_query_planet`, etc.)
-3. Write clear resume command
-4. Optionally: append to session log in `memory/`
+3. **Update `memory/jobs.md`** with all running PoW jobs and their terminal IDs
+4. Write clear resume command
+5. Optionally: append to session log in `memory/`
 
 ---
 
@@ -5194,6 +5798,7 @@ Handoff files are snapshots. Game state may have changed. Always re-query before
 ## See Also
 
 - [Continuity](continuity.md) — What to read on startup, memory directory
+- [Async Operations](async-operations.md) — Job tracker, charge tracker templates
 - [Game Loop](game-loop.md) — Loop that may trigger handoff
 - [State Assessment](state-assessment.md) — Refresh state on resume
 
@@ -5229,6 +5834,8 @@ Read in this order:
 
 Then, if resuming:
 
+- `memory/jobs.md` — **Check first.** PoW jobs may have completed while you were away.
+- `memory/charge-tracker.md` — Which structs are ready to act
 - Latest `memory/YYYY-MM-DD-HHMM-context-handoff.md` — Where you left off
 - Recent `memory/` session logs — What happened last session
 
@@ -5250,6 +5857,9 @@ Before ending a session:
 
 **Contents**:
 
+- `jobs.md` — Active/completed PoW background jobs (check first on resume)
+- `charge-tracker.md` — Struct charge states and action readiness
+- `game-state.md` — Strategic picture, resources, threats, priority queue
 - `YYYY-MM-DD-HHMM-context-handoff.md` — Handoff snapshots
 - Session logs — Date-stamped notes, intelligence, decisions
 - Strategic notes — Plans, guild intel, player assessments
@@ -5272,6 +5882,7 @@ These files define and persist you:
 
 ## See Also
 
+- [Async Operations](async-operations.md) — Job tracker, charge tracker, pipeline strategy
 - [Context Handoff](context-handoff.md) — Handoff protocol, template
 - `SOUL.md` — Continuity section, file references
 - `identity/values.md` — Learning and updating identity

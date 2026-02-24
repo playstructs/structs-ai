@@ -50,7 +50,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 High-level thinking in `playbooks/`.
 
 ### By Phase
-- [`early-game`](playbooks/phases/early-game.md) -- First 30 minutes: survive, establish resource pipeline
+- [`early-game`](playbooks/phases/early-game.md) -- First 1-2 days: survive, establish resource pipeline
 - [`mid-game`](playbooks/phases/mid-game.md) -- Expansion: when to explore, fortify, join guilds
 - [`late-game`](playbooks/phases/late-game.md) -- Endgame: dominance, defense, market control
 
@@ -76,7 +76,8 @@ How to read the board. See `awareness/`.
 - [`threat-detection`](awareness/threat-detection.md) -- Spot dangers early
 - [`opportunity-identification`](awareness/opportunity-identification.md) -- Find advantages
 - [`priority-framework`](awareness/priority-framework.md) -- Survival > Security > Economy > Expansion > Dominance
-- [`game-loop`](awareness/game-loop.md) -- Assess → Plan → Act → Verify → Repeat
+- [`game-loop`](awareness/game-loop.md) -- Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat
+- [`async-operations`](awareness/async-operations.md) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
 - [`context-handoff`](awareness/context-handoff.md) -- Save state when context runs low
 - [`continuity`](awareness/continuity.md) -- Persist across sessions
 
@@ -130,10 +131,11 @@ For deep technical details, the original documentation remains available:
 
 These will save your game:
 
-1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every second ore sits unrefined is a second it can be stolen.
+1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every hour ore sits unrefined is an hour it can be stolen.
 2. **Monitor power.** If load exceeds capacity, you go offline. Offline = can't act.
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
+5. **Never block on PoW.** Launch compute in background. Initiate early, compute later. Mining takes ~8 hours, refining ~15 hours. The game rewards parallel operations.
 
 ---
 
