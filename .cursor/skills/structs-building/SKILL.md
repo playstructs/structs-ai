@@ -1,6 +1,6 @@
 ---
 name: structs-building
-description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, and stealth. Use when constructing or managing structs.
+description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~11 min (Command Ship) to ~4.9 hours (World Engine).
 ---
 
 # Structs Building

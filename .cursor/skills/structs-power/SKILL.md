@@ -1,6 +1,6 @@
 ---
 name: structs-power
-description: Manages power infrastructure in Structs. Covers substations, allocations, player connections, and power monitoring. Use when power is low, building infrastructure, or managing energy distribution.
+description: Manages power infrastructure in Structs. Covers substations, allocations, player connections, and power monitoring. Use when power is low or overloaded, creating or managing substations, connecting players to substations, allocating capacity, diagnosing offline status, or planning power budget for new structs.
 ---
 
 # Structs Power

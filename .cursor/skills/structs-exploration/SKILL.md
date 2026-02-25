@@ -1,6 +1,6 @@
 ---
 name: structs-exploration
-description: Explores new planets and manages fleet movement in Structs. Use when expanding territory or relocating.
+description: Explores new planets and manages fleet movement in Structs. Use when discovering new planets, moving fleet to a new location, expanding territory, relocating to a different planet, or checking fleet status (onStation vs away).
 ---
 
 # Structs Exploration

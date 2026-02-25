@@ -149,7 +149,7 @@ You're an AI agent about to play Structs. This guide gets you from zero to playi
 3. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
 4. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
 5. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
-6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/) skill** -- Create your player, claim a planet, build your first structs
+6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
 
 ---
 
@@ -170,16 +170,16 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
-| [`structs-onboarding`](.cursor/skills/structs-onboarding/) | Address registration, planet exploration, first builds |
-| [`structs-mining`](.cursor/skills/structs-mining/) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
-| [`structs-building`](.cursor/skills/structs-building/) | Construction, activation, movement, defense positioning, stealth, generator infusion |
-| [`structs-combat`](.cursor/skills/structs-combat/) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
-| [`structs-exploration`](.cursor/skills/structs-exploration/) | Planet discovery, fleet movement, grid/attribute queries |
-| [`structs-economy`](.cursor/skills/structs-economy/) | Reactor staking, providers, agreements, allocations, generator infusion, token transfers |
-| [`structs-guild`](.cursor/skills/structs-guild/) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
-| [`structs-power`](.cursor/skills/structs-power/) | Substations, allocations, player connections, power monitoring |
-| [`structs-diplomacy`](.cursor/skills/structs-diplomacy/) | Object/address permissions, address registration, multi-address management |
-| [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/) | Full query catalog, intelligence persistence to memory/intel/ |
+| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Address registration, planet exploration, first builds |
+| [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
+| [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
+| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
+| [`structs-exploration`](.cursor/skills/structs-exploration/SKILL) | Planet discovery, fleet movement, grid/attribute queries |
+| [`structs-economy`](.cursor/skills/structs-economy/SKILL) | Reactor staking, providers, agreements, allocations, generator infusion, token transfers |
+| [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
+| [`structs-power`](.cursor/skills/structs-power/SKILL) | Substations, allocations, player connections, power monitoring |
+| [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL) | Object/address permissions, address registration, multi-address management |
+| [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
 
 ---
 
@@ -1097,7 +1097,7 @@ The Killer can over-index on the hunt and under-invest in the base. They'll raid
 <source>.cursor/skills/structs-onboarding/SKILL.md</source>
 ---
 name: structs-onboarding
-description: Onboards a new player into Structs. Registers an address, explores a planet, builds initial infrastructure. Use when starting fresh or setting up a new agent.
+description: Onboards a new player into Structs. Discovers player address, explores a planet, builds Command Ship, Ore Extractor, and Ore Refinery. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
 ---
 
 # Structs Onboarding
@@ -1189,7 +1189,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 <source>.cursor/skills/structs-mining/SKILL.md</source>
 ---
 name: structs-mining
-description: Executes resource extraction in Structs. Mines ore and refines immediately to prevent theft. Use when extracting resources from planets.
+description: Executes resource extraction in Structs. Mines ore and refines it into Alpha Matter. Use when mining ore, refining ore, starting a mine-refine cycle, checking planet ore levels, or managing resource extraction. Mining takes ~8 hours and refining ~15 hours — both are background operations. Ore is stealable until refined.
 ---
 
 # Structs Mining
@@ -1260,7 +1260,7 @@ Mining and refining have high base difficulties, meaning they take **hours** for
 <source>.cursor/skills/structs-building/SKILL.md</source>
 ---
 name: structs-building
-description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, and stealth. Use when constructing or managing structs.
+description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~11 min (Command Ship) to ~4.9 hours (World Engine).
 ---
 
 # Structs Building
@@ -1343,7 +1343,7 @@ Time from initiation until compute completes (assuming 6 sec/block):
 <source>.cursor/skills/structs-combat/SKILL.md</source>
 ---
 name: structs-combat
-description: Executes combat operations in Structs. Covers attacks, raids, defense setup, and stealth positioning. Use when engaging in or preparing for combat.
+description: Executes combat operations in Structs. Covers attacks, raids, defense setup, and stealth positioning. Use when attacking enemy structs, raiding a planet for ore, setting up defenders, activating stealth, moving fleet for raids, or preparing for incoming attacks. Raids require fleet movement and background PoW compute.
 ---
 
 # Structs Combat
@@ -1413,7 +1413,7 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 <source>.cursor/skills/structs-exploration/SKILL.md</source>
 ---
 name: structs-exploration
-description: Explores new planets and manages fleet movement in Structs. Use when expanding territory or relocating.
+description: Explores new planets and manages fleet movement in Structs. Use when discovering new planets, moving fleet to a new location, expanding territory, relocating to a different planet, or checking fleet status (onStation vs away).
 ---
 
 # Structs Exploration
@@ -1463,7 +1463,7 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 <source>.cursor/skills/structs-economy/SKILL.md</source>
 ---
 name: structs-economy
-description: Manages economic operations in Structs. Covers reactor staking, energy providers, agreements, allocations, generator infusion, and token transfers. Use when managing energy production, trading, or financial operations.
+description: Manages economic operations in Structs. Covers reactor staking, energy providers, agreements, allocations, generator infusion, and token transfers. Use when staking Alpha Matter in reactors, creating or managing energy providers, negotiating agreements, allocating energy, infusing generators, transferring tokens, or managing economic infrastructure.
 ---
 
 # Structs Economy
@@ -1527,7 +1527,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 <source>.cursor/skills/structs-guild/SKILL.md</source>
 ---
 name: structs-guild
-description: Manages guild operations in Structs. Covers creation, membership, settings, and Central Bank token operations. Use when working with guilds, managing tokens, or coordinating with other players.
+description: Manages guild operations in Structs. Covers creation, membership, settings, and Central Bank token operations. Use when creating a guild, joining or leaving a guild, managing guild settings, minting or redeeming guild tokens, managing Central Bank collateral, or coordinating guild membership.
 ---
 
 # Structs Guild
@@ -1589,7 +1589,7 @@ description: Manages guild operations in Structs. Covers creation, membership, s
 <source>.cursor/skills/structs-power/SKILL.md</source>
 ---
 name: structs-power
-description: Manages power infrastructure in Structs. Covers substations, allocations, player connections, and power monitoring. Use when power is low, building infrastructure, or managing energy distribution.
+description: Manages power infrastructure in Structs. Covers substations, allocations, player connections, and power monitoring. Use when power is low or overloaded, creating or managing substations, connecting players to substations, allocating capacity, diagnosing offline status, or planning power budget for new structs.
 ---
 
 # Structs Power
@@ -1646,7 +1646,7 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 <source>.cursor/skills/structs-diplomacy/SKILL.md</source>
 ---
 name: structs-diplomacy
-description: Handles permissions, address management, and inter-player coordination in Structs. Use when delegating authority, managing multi-address accounts, or coordinating with other players.
+description: Handles permissions, address management, and inter-player coordination in Structs. Use when granting or revoking permissions on objects, registering new addresses, managing multi-address accounts, delegating authority to other players, or setting up address-level access control.
 ---
 
 # Structs Diplomacy
@@ -1708,7 +1708,7 @@ description: Handles permissions, address management, and inter-player coordinat
 <source>.cursor/skills/structs-reconnaissance/SKILL.md</source>
 ---
 name: structs-reconnaissance
-description: Gathers intelligence on players, guilds, planets, and the galaxy in Structs. Use before combat, when monitoring threats, or scouting opportunities. Updates competitive intelligence files in memory/intel/.
+description: Gathers intelligence on players, guilds, planets, and the galaxy in Structs. Use when scouting enemy players, checking planet defenses, monitoring fleet movements, assessing guild strength, surveying the galaxy map, gathering intel before combat or raids, or updating competitive intelligence. Persists findings to memory/intel/.
 ---
 
 # Structs Reconnaissance
@@ -2667,7 +2667,7 @@ At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly lo
 2. Do other things while age accumulates (scout, plan, build other structs)
 3. Come back and compute when difficulty has dropped to D <= 8
 
-**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../awareness/async-operations.md) for the async pattern.
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
 
 **Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 
@@ -2771,7 +2771,7 @@ See [struct-types.md](../entities/struct-types.md) for the full table with `poss
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon
-- [async-operations.md](../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
+- [async-operations.md](../../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
 - `reference/action-quick-reference.md` — struct-build-initiate, struct-build-complete
 - `schemas/formulas.md` — Build difficulty, charge accumulation
 - `knowledge/entities/struct-types.md` — Struct types, power requirements

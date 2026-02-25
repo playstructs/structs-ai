@@ -1,6 +1,6 @@
 ---
 name: structs-mining
-description: Executes resource extraction in Structs. Mines ore and refines immediately to prevent theft. Use when extracting resources from planets.
+description: Executes resource extraction in Structs. Mines ore and refines it into Alpha Matter. Use when mining ore, refining ore, starting a mine-refine cycle, checking planet ore levels, or managing resource extraction. Mining takes ~8 hours and refining ~15 hours — both are background operations. Ore is stealable until refined.
 ---
 
 # Structs Mining

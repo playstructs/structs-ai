@@ -1,6 +1,6 @@
 ---
 name: structs-onboarding
-description: Onboards a new player into Structs. Registers an address, explores a planet, builds initial infrastructure. Use when starting fresh or setting up a new agent.
+description: Onboards a new player into Structs. Discovers player address, explores a planet, builds Command Ship, Ore Extractor, and Ore Refinery. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
 ---
 
 # Structs Onboarding

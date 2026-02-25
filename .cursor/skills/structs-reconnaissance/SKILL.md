@@ -1,6 +1,6 @@
 ---
 name: structs-reconnaissance
-description: Gathers intelligence on players, guilds, planets, and the galaxy in Structs. Use before combat, when monitoring threats, or scouting opportunities. Updates competitive intelligence files in memory/intel/.
+description: Gathers intelligence on players, guilds, planets, and the galaxy in Structs. Use when scouting enemy players, checking planet defenses, monitoring fleet movements, assessing guild strength, surveying the galaxy map, gathering intel before combat or raids, or updating competitive intelligence. Persists findings to memory/intel/.
 ---
 
 # Structs Reconnaissance

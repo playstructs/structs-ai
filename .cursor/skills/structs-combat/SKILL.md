@@ -1,6 +1,6 @@
 ---
 name: structs-combat
-description: Executes combat operations in Structs. Covers attacks, raids, defense setup, and stealth positioning. Use when engaging in or preparing for combat.
+description: Executes combat operations in Structs. Covers attacks, raids, defense setup, and stealth positioning. Use when attacking enemy structs, raiding a planet for ore, setting up defenders, activating stealth, moving fleet for raids, or preparing for incoming attacks. Raids require fleet movement and background PoW compute.
 ---
 
 # Structs Combat

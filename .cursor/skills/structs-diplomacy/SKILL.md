@@ -1,6 +1,6 @@
 ---
 name: structs-diplomacy
-description: Handles permissions, address management, and inter-player coordination in Structs. Use when delegating authority, managing multi-address accounts, or coordinating with other players.
+description: Handles permissions, address management, and inter-player coordination in Structs. Use when granting or revoking permissions on objects, registering new addresses, managing multi-address accounts, delegating authority to other players, or setting up address-level access control.
 ---
 
 # Structs Diplomacy

@@ -1,6 +1,6 @@
 ---
 name: structs-guild
-description: Manages guild operations in Structs. Covers creation, membership, settings, and Central Bank token operations. Use when working with guilds, managing tokens, or coordinating with other players.
+description: Manages guild operations in Structs. Covers creation, membership, settings, and Central Bank token operations. Use when creating a guild, joining or leaving a guild, managing guild settings, minting or redeeming guild tokens, managing Central Bank collateral, or coordinating guild membership.
 ---
 
 # Structs Guild
