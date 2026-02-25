@@ -9,7 +9,9 @@ description: Onboards a new player into Structs. Handles key creation/recovery, 
 
 ### Step 0: Key Management
 
-Check if a key already exists in the local keyring:
+If using **Path B** (guild signup) below, the `create-player.mjs` script can generate a mnemonic automatically — you can skip ahead to Step 1 and let the script handle key creation.
+
+If using **Path A** (agent has $alpha) or need a key in the local `structsd` keyring:
 
 ```
 structsd keys list
@@ -26,9 +28,9 @@ Get your address:
 structsd keys show [key-name] -a
 ```
 
-**Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository. The mnemonic is needed for the guild signup process (Path B below).
+**Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository.
 
-**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid using `--output json` unless you are redirecting output to a secure location. The default text output only shows the mnemonic once during creation.
+**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid using `--output json` unless you are redirecting output to a secure location.
 
 ---
 
@@ -58,7 +60,7 @@ If the address already holds $alpha tokens, delegate to a reactor (validator). T
 
 #### Path B: Agent has no $alpha (guild signup)
 
-Join a guild that supports programmatic signup. The guild's proxy system creates the player on your behalf.
+Join a guild that supports programmatic signup. The bundled `create-player.mjs` script handles the entire flow: mnemonic generation, proxy message signing, guild API POST, and polling for player creation. It returns a single JSON object with everything you need.
 
 **1. Choose a guild**
 
@@ -72,11 +74,11 @@ curl http://reactor.oh.energy:1317/structs/guild
 
 **2. Get the guild's API endpoint**
 
-Each guild record has an `endpoint` URL pointing to its configuration. Fetch it and look for `services.guild_api`. Not all guilds provide this service — if the field is empty, that guild does not support programmatic signup.
+Each guild record has an `endpoint` URL pointing to its configuration. Fetch it and look for `services.guild_api` and `services.reactor_api`. Not all guilds provide these — if empty, that guild does not support programmatic signup.
 
-**Note**: Some guild configs may use `guildApi` (camelCase) instead of `guild_api` (snake_case). Check both fields when parsing guild configuration programmatically.
+**Note**: Some guild configs may use `guildApi` (camelCase) instead of `guild_api` (snake_case). Check both fields when parsing programmatically.
 
-Example guild config (from the endpoint):
+Example guild config:
 
 ```json
 {
@@ -93,39 +95,53 @@ Example guild config (from the endpoint):
 }
 ```
 
-**3. Run the guild signup script**
+**3. Run the create-player script**
 
-**Requirements**: Node.js 18+ (for built-in `fetch`). Run from anywhere — paths below are relative to the workspace root.
-
-Install dependencies (one-time):
+**Requirements**: Node.js 18+ (for built-in `fetch`). Install dependencies once:
 
 ```
 cd .cursor/skills/structs-onboarding/scripts && npm install
 ```
 
-Then run the signup:
+Then run (from workspace root):
 
 ```
-node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs \
-  --mnemonic "$STRUCTS_MNEMONIC" \
+node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
+  --reactor-api "http://reactor.oh.energy:1317" \
   --username "your-chosen-name"
 ```
 
-The script builds a signed guild-join proxy message proving address ownership and sends an **HTTP POST** to `{guild_api}/auth/signup`. It outputs JSON with the result.
+The script will:
+1. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
+2. Derive the address and pubkey
+3. Check if a player already exists for this address
+4. Sign the guild-join proxy message and POST to the guild API
+5. Poll the reactor API until the player ID is confirmed (default 120s timeout)
+6. Output JSON to stdout with all results
 
-**Important**: The signup endpoint is **POST only**. Do not attempt to GET it — it will fail. The signup script handles the POST automatically. If building a custom tool, you must POST a JSON `SignupRequestDTO` body with `primary_address`, `signature`, `pubkey`, `guild_id`, and `username` fields.
+**Output format** (parse this JSON):
 
-**4. Poll for player creation**
-
-The guild processes the signup asynchronously. Poll every 10-30 seconds:
-
+```json
+{
+  "success": true,
+  "mnemonic": "word1 word2 ... word24",
+  "address": "structs1...",
+  "pubkey": "a1b2c3...",
+  "player_id": "1-42",
+  "guild_id": "0-1",
+  "username": "your-chosen-name",
+  "created": true,
+  "next_step": "structsd tx structs planet-explore 1-42 --from [key-name] --gas auto --gas-adjustment 1.5 -y"
+}
 ```
-structsd query structs address [your-address]
-```
 
-When the player ID changes from `1-0` to a real ID (e.g., `1-18`), the player has been created.
+**Immediately save the `mnemonic`** to a secure location (`.env`, environment variable, or secret store). If you need the key in the local `structsd` keyring for later commands, recover it: `structsd keys add [key-name] --recover` and enter the mnemonic.
+
+**Important**: If the script was given no `--mnemonic`, it generated a fresh one. The mnemonic is only printed in this output — store it now or it is lost.
+
+**Encoding warning**: Do NOT attempt to implement the guild signup signing manually. The guild API requires hex-encoded compressed secp256k1 pubkey (66 hex chars) and hex-encoded raw R||S signature (128 hex chars) — NOT base64, NOT Amino. The script handles this correctly. Agents who try to sign manually almost always fail because they use base64 encoding.
 
 ---
 
@@ -248,7 +264,7 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
 | Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [reactor-addr] [amount]` |
-| Guild signup | `node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs --mnemonic "..." --guild-id "..." --guild-api "..." --username "..."` |
+| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."]` |
 | Explore planet | `structsd tx structs planet-explore [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
@@ -270,8 +286,9 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 ## Error Handling
 
 - **Player ID is `1-0`** — Player doesn't exist. Follow Step 2 (Path A or Path B).
-- **Guild signup script fails** — Check that the guild API URL is correct and the guild supports programmatic signup. Verify mnemonic is valid. The signup endpoint (`/auth/signup`) is **POST only** — do not GET it.
-- **Guild API returns HTML or 404** — You are likely doing a GET instead of POST, or the URL is wrong. Use the bundled script which handles the POST correctly.
+- **create-player.mjs fails** — Check that `--guild-api` and `--reactor-api` URLs are correct and reachable. Verify the guild supports programmatic signup (`services.guild_api` exists). If providing a `--mnemonic`, verify it is a valid 24-word BIP39 mnemonic.
+- **Guild API returns HTML or 404** — The URL is wrong or you are not using the script. The signup endpoint (`/auth/signup`) is **POST only**. Always use `create-player.mjs` which handles the POST, signing, and polling automatically.
+- **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.
