@@ -14,7 +14,7 @@ This file defines who you are. Not what you can do -- who you choose to be.
 
 **Alpha Matter is everything.** It fuels energy, funds economies, backs currencies, and wins wars. Every decision you make ultimately traces back to Alpha Matter -- acquiring it, protecting it, converting it, or taking it from someone who wasn't careful enough.
 
-**Ore is a liability until it's refined.** Unrefined ore can be stolen. Alpha Matter cannot. The moment you mine ore, refine it. This is not a suggestion. This is survival.
+**Ore is a liability until it's refined.** Once mined, unrefined ore sits in your `storedOre` where any raider can steal it. Alpha Matter cannot be stolen. The moment you mine ore, refine it. This is not a suggestion. This is survival. (Unmined ore on the planet is safe — only your mined inventory is at risk.)
 
 **Power keeps you alive.** If your power load exceeds your capacity, you go offline. Offline means you can't build, can't mine, can't fight. Monitor your power. Always.
 
@@ -3327,7 +3327,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Edge Cases
 
-- **Raid loot**: Only unrefined ore (storedOre) can be stolen; Alpha Matter is secure
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
@@ -3361,7 +3361,8 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 | Resource | Unit | Stealable | Refinement | Location |
 |----------|------|-----------|------------|----------|
-| Alpha Ore | grams | Yes | Required | Planet, player inventory (storedOre) |
+| Alpha Ore (unmined) | grams | No | Required | Planet (`remainingOre`) — extracted by Ore Extractor |
+| Alpha Ore (mined) | grams | **Yes** | Required | Player inventory (`storedOre`) — stolen in raids |
 | Alpha Matter | grams | No | Output | Player inventory (on-chain) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
 
@@ -3418,7 +3419,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**.
+After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -3436,11 +3437,11 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 ## Security Model
 
-| State | Stealable | Action |
-|-------|-----------|--------|
-| Ore on planet | Yes | Mine to storedOre |
-| storedOre (player) | Yes | Refine immediately |
-| Alpha Matter | No | Secure |
+| State | Location | Stealable | Action |
+|-------|----------|-----------|--------|
+| Unmined ore (`remainingOre`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
+| Mined ore (`storedOre`) | Player | **Yes** | Refine immediately — this is what raiders steal |
+| Alpha Matter | Player | No | Secure — cryptographically bound to owner |
 
 **Strategy**: Refine ore as soon as mined to minimize raid exposure. Maintain a 20-30% Alpha Matter reserve for emergencies.
 
@@ -3973,9 +3974,10 @@ All newly explored planets start with identical properties.
 
 ## Raid Vulnerability
 
-- Unrefined ore (storedOre) on player can be stolen during raids
-- Ore on planet is mined by owner; raiders steal from player's storedOre after successful raid
-- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen during a raid, simplifying victory determination and activity feeds.
+- **What gets stolen**: The player's `storedOre` (mined but unrefined ore). Raids seize ore from the player who owns the planet, not from the planet itself.
+- **What is NOT at risk**: The planet's `remainingOre` (unmined ore still in the ground). Unmined ore can only be extracted by an Ore Extractor — raiders cannot touch it.
+- Once ore is refined into Alpha Matter, it is cryptographically secure and cannot be stolen.
+- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen from the player during a raid.
 - See [combat.md](combat.md), [resources.md](resources.md)
 
 ---

@@ -60,9 +60,10 @@ All newly explored planets start with identical properties.
 
 ## Raid Vulnerability
 
-- Unrefined ore (storedOre) on player can be stolen during raids
-- Ore on planet is mined by owner; raiders steal from player's storedOre after successful raid
-- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen during a raid, simplifying victory determination and activity feeds.
+- **What gets stolen**: The player's `storedOre` (mined but unrefined ore). Raids seize ore from the player who owns the planet, not from the planet itself.
+- **What is NOT at risk**: The planet's `remainingOre` (unmined ore still in the ground). Unmined ore can only be extracted by an Ore Extractor — raiders cannot touch it.
+- Once ore is refined into Alpha Matter, it is cryptographically secure and cannot be stolen.
+- **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen from the player during a raid.
 - See [combat.md](combat.md), [resources.md](resources.md)
 
 ---

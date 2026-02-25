@@ -108,7 +108,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Edge Cases
 
-- **Raid loot**: Only unrefined ore (storedOre) can be stolen; Alpha Matter is secure
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
