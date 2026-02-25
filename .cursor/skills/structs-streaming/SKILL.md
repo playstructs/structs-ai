@@ -1,0 +1,251 @@
+---
+name: structs-streaming
+description: Connects to the GRASS real-time event system via NATS WebSocket. Use when you need real-time game updates, want to react to events as they happen, need to monitor raids or attacks, watch for player creation, track fleet movements, or build event-driven tools. GRASS is the fastest way to know what's happening in the galaxy.
+---
+
+# Structs Streaming (GRASS)
+
+GRASS (Game Real-time Application Streaming Service) delivers real-time game events over NATS. Instead of polling queries repeatedly, subscribe to GRASS and react to events the moment they happen.
+
+## When to Use GRASS
+
+| Situation | Use GRASS | Use Polling |
+|-----------|-----------|-------------|
+| Detect incoming raid | Yes — instant alert | Too slow |
+| Wait for player creation after guild signup | Yes — listen for `address_register` | Polling every 10s works too |
+| Monitor fleet arriving at your planet | Yes — `fleet_arrive` event | Might miss it |
+| Track struct health during combat | Yes — `planet_activity` with `struct_health` | Too slow |
+| Check your own resource balance | No | Yes — one-off query |
+| Read struct type stats | No | Yes — static data |
+
+**Rule of thumb**: If you need to *react* to something, use GRASS. If you need to *read* something, use a query.
+
+---
+
+## Finding Your GRASS Endpoint
+
+The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.
+
+1. Query the guild list: `curl http://reactor.oh.energy:1317/structs/guild`
+2. Follow the guild's `endpoint` URL to get its config
+3. Look for `services.grass_nats_websocket`
+
+Example (Orbital Hydro guild):
+
+```json
+{
+  "services": {
+    "grass_nats_websocket": "ws://reactor.oh.energy:1443",
+    "guild_api": "http://crew.oh.energy/api/",
+    "reactor_api": "http://reactor.oh.energy:1317/"
+  }
+}
+```
+
+The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
+
+A reliable reference endpoint: **`ws://reactor.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+
+---
+
+## Subject Patterns
+
+Subscribe to subjects matching the entities you care about:
+
+| Entity | Wildcard | Specific | Example |
+|--------|----------|----------|---------|
+| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
+| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.2-1` |
+| Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
+| Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
+| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
+| Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
+| Global | `structs.global` | `structs.global` | Block updates |
+
+Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need.
+
+---
+
+## Event Types
+
+### Planet Events
+
+| Event | Description | React By |
+|-------|-------------|----------|
+| `raid_status` | Raid started/completed on planet | Activate defenses, alert |
+| `planet_activity` | Activity log including `struct_health` changes | Track combat damage |
+| `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
+| `fleet_depart` | Fleet left planet | Update threat assessment |
+
+### Struct Events
+
+| Event | Description | React By |
+|-------|-------------|----------|
+| `struct_attack` | Struct was attacked | Counter-attack, repair |
+| `struct_status` | Struct status changed (online/offline/destroyed) | Rebuild, reallocate power |
+| `struct_defense_add` / `struct_defense_remove` | Defense assignments changed | Update defense map |
+| `struct_defender_clear` | All defense relationships cleared | Re-assign defenders |
+| `struct_block_build_start` | Build operation initiated | Track in job list |
+| `struct_block_ore_mine_start` | Mine operation initiated | Track in job list |
+| `struct_block_ore_refine_start` | Refine operation initiated | Track in job list |
+
+### Player Events
+
+| Event | Description | React By |
+|-------|-------------|----------|
+| `player_consensus` | Player chain data updated | Update intel |
+| `player_meta` | Player metadata changed | Update intel |
+
+### Guild Events
+
+| Event | Description | React By |
+|-------|-------------|----------|
+| `guild_consensus` | Guild chain data updated | Update guild status |
+| `guild_membership` | Member joined/left guild | Update relationship map |
+
+### Global Events
+
+| Event | Description | React By |
+|-------|-------------|----------|
+| `block` | New block produced | Tick game loop, update charge calculations |
+
+---
+
+## Building Event Listener Tools
+
+Agents should build custom tools that connect to GRASS when they need event-driven behavior. Here are patterns to follow.
+
+### Minimal Node.js Listener
+
+Install the NATS WebSocket client:
+
+```bash
+npm install nats.ws
+```
+
+```javascript
+import { connect } from "nats.ws";
+
+const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+
+const sub = nc.subscribe("structs.planet.2-1");
+for await (const msg of sub) {
+  const event = JSON.parse(new TextDecoder().decode(msg.data));
+  console.log(JSON.stringify(event));
+}
+```
+
+### Minimal Python Listener
+
+Install the NATS client:
+
+```bash
+pip install nats-py
+```
+
+```python
+import asyncio, json, nats
+
+async def main():
+    nc = await nats.connect("ws://reactor.oh.energy:1443")
+    sub = await nc.subscribe("structs.planet.2-1")
+    async for msg in sub.messages:
+        event = json.loads(msg.data.decode())
+        print(json.dumps(event))
+
+asyncio.run(main())
+```
+
+### Raid Alert Tool (example pattern)
+
+A tool that watches for raids on your planet and outputs an alert:
+
+```javascript
+import { connect } from "nats.ws";
+
+const PLANET_ID = process.argv[2]; // e.g. "2-1"
+const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const sub = nc.subscribe(`structs.planet.${PLANET_ID}`);
+
+for await (const msg of sub) {
+  const event = JSON.parse(new TextDecoder().decode(msg.data));
+  if (event.category === "raid_status") {
+    console.log(JSON.stringify({ alert: "RAID", planet: PLANET_ID, data: event }));
+  }
+  if (event.category === "fleet_arrive") {
+    console.log(JSON.stringify({ alert: "FLEET_ARRIVAL", planet: PLANET_ID, data: event }));
+  }
+}
+```
+
+### Player Creation Watcher (example pattern)
+
+Instead of polling `structsd query structs address` after guild signup, watch for the address registration event:
+
+```javascript
+import { connect } from "nats.ws";
+
+const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const sub = nc.subscribe("structs.address.register.*");
+
+for await (const msg of sub) {
+  const event = JSON.parse(new TextDecoder().decode(msg.data));
+  console.log(JSON.stringify(event));
+  break; // exit after first match
+}
+await nc.close();
+```
+
+---
+
+## When to Build a Custom Tool
+
+Build a GRASS listener tool when:
+
+- **You need to wait for an event** — guild signup completion, fleet arrival, raid detection
+- **You need continuous monitoring** — threat detection during vulnerable ore window, combat tracking
+- **You want an event-driven game loop** — react to block events instead of polling on a timer
+- **You're managing multiple players** — one GRASS connection can monitor all your entities simultaneously
+
+Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant skill).
+
+---
+
+## Connection Best Practices
+
+- **Use specific subjects** once you know what you need. Wildcards are for discovery.
+- **Limit to 10-20 subscriptions** per connection to avoid overwhelming the client.
+- **Implement reconnection** with exponential backoff — NATS connections can drop.
+- **Parse JSON defensively** — not all messages may match expected schema.
+- **Close connections** when done. Don't leave idle GRASS connections open.
+
+---
+
+## Procedure
+
+### Quick Setup
+
+1. Get the GRASS endpoint from your guild config (or use `ws://reactor.oh.energy:1443`)
+2. Record the endpoint in `TOOLS.md` under Servers
+3. Choose your language (Node.js or Python)
+4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)
+5. Write a listener script for your specific use case
+6. Run it in a background terminal
+
+### For Ongoing Monitoring
+
+1. Subscribe to your planet(s): `structs.planet.{id}` — raid alerts, fleet arrivals
+2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
+3. Subscribe to global: `structs.global` — block tick for game loop timing
+4. Log events to `memory/` for cross-session awareness
+
+---
+
+## See Also
+
+- `protocols/streaming.md` — Full GRASS/NATS protocol specification
+- `api/streaming/event-types.md` — Complete event type catalog
+- `api/streaming/event-schemas.md` — JSON schema definitions for event payloads
+- `api/streaming/subscription-patterns.md` — Subscription patterns and examples
+- `awareness/async-operations.md` — Background operations and pipeline strategy
+- `awareness/threat-detection.md` — Using GRASS for early warning

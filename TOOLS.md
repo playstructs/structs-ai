@@ -54,6 +54,7 @@ Check which deployment you're connected to and update the URLs below accordingly
 | Consensus API | `http://localhost:1317` | *(fill in: running/offline)* |
 | Webapp API | `http://localhost:8080` | *(fill in: running/offline)* |
 | NATS Streaming | `nats://localhost:4222` | *(fill in: running/offline)* |
+| GRASS WebSocket | `ws://localhost:1443` | *(fill in — or use guild config's `grass_nats_websocket`)* |
 
 ---
 

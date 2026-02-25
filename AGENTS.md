@@ -43,6 +43,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
 | [`structs-power`](.cursor/skills/structs-power/SKILL) | Substations, allocations, player connections, power monitoring |
 | [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL) | Object/address permissions, address registration, multi-address management |
+| [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
 
 ---

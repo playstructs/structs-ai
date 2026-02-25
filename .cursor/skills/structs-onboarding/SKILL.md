@@ -107,7 +107,9 @@ node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs \
   --username "your-chosen-name"
 ```
 
-The script signs a guild-join proxy message proving address ownership and POSTs to the guild API. It outputs JSON with the result.
+The script builds a signed guild-join proxy message proving address ownership and sends an **HTTP POST** to `{guild_api}/auth/signup`. It outputs JSON with the result.
+
+**Important**: The signup endpoint is **POST only**. Do not attempt to GET it — it will fail. The signup script handles the POST automatically. If building a custom tool, you must POST a JSON `SignupRequestDTO` body with `primary_address`, `signature`, `pubkey`, `guild_id`, and `username` fields.
 
 **4. Poll for player creation**
 
@@ -278,7 +280,8 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 ## Error Handling
 
 - **Player ID is `1-0`** — Player doesn't exist. Follow Step 2 (Path A or Path B).
-- **Guild signup script fails** — Check that the guild API URL is correct and the guild supports programmatic signup. Verify mnemonic is valid.
+- **Guild signup script fails** — Check that the guild API URL is correct and the guild supports programmatic signup. Verify mnemonic is valid. The signup endpoint (`/auth/signup`) is **POST only** — do not GET it.
+- **Guild API returns HTML or 404** — You are likely doing a GET instead of POST, or the URL is wrong. Use the bundled script which handles the POST correctly.
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.
