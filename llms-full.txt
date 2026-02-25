@@ -102,9 +102,13 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 
 ## New Player
 
-1. Read `TOOLS.md` -- confirm your server addresses and account
-2. Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`
-3. Fill in `IDENTITY.md` when you have a player ID
+1. Read `TOOLS.md` -- confirm your server addresses, secrets setup, and account
+2. **Set up your key**: `structsd keys add [name]` (new) or `structsd keys add [name] --recover` (existing mnemonic). Store the mnemonic securely (env var, `.env` file, or commander-provided).
+3. **Create your player**: Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`. Two paths:
+   - **Have $alpha?** Delegate to a reactor — player created automatically.
+   - **No $alpha?** Join a guild via the bundled signup script — the guild creates your player.
+4. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
+5. Fill in `IDENTITY.md` when you have a player ID
 
 ## Returning Player
 
@@ -413,6 +417,21 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ---
 
+## Secrets
+
+**Never commit mnemonics, private keys, or secrets to the repository.**
+
+Storage options (in order of preference):
+
+1. **Environment variable**: `export STRUCTS_MNEMONIC="word1 word2 ..."` — set per session, no file on disk.
+2. **`.env` file**: Store in the workspace root as `STRUCTS_MNEMONIC=...`. The `.env` file must be in `.gitignore`.
+3. **Keyring**: `structsd keys add [name]` stores the key in the system keyring. Retrieve the address with `structsd keys show [name] -a`. The mnemonic is still needed for guild signup (Path B in onboarding).
+4. **Commander-provided**: The user provides the mnemonic or key name at session start.
+
+The guild signup script reads the mnemonic from its `--mnemonic` argument. Pass it from the environment: `--mnemonic "$STRUCTS_MNEMONIC"`.
+
+---
+
 ## Deployment
 
 Structs can run in several configurations:
@@ -422,6 +441,16 @@ Structs can run in several configurations:
 - **Hosted** — Managed deployment with provided endpoints.
 
 Check which deployment you're connected to and update the URLs below accordingly.
+
+---
+
+## Reference Node
+
+`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild). Use it for queries when no local node is available:
+
+- **Consensus API**: `http://reactor.oh.energy:1317`
+- **WebSocket**: `ws://reactor.oh.energy:26657`
+- **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
 
 ---
 
@@ -449,10 +478,13 @@ To find your player ID from your address: `structsd query structs address [your-
 
 ## Guild
 
-**Guild ID:** *(fill in after joining a guild)*
+**Guild ID:** *(fill in after joining a guild — or set as preferred guild for signup)*
 **Guild Name:**
+**Guild API:** *(from the guild config's `services.guild_api` field — needed for programmatic signup)*
 **Role:**
 **Central Bank Status:**
+
+To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl http://reactor.oh.energy:1317/structs/guild`
 
 ---
 
@@ -1097,22 +1129,222 @@ The Killer can over-index on the hunt and under-invest in the base. They'll raid
 <source>.cursor/skills/structs-onboarding/SKILL.md</source>
 ---
 name: structs-onboarding
-description: Onboards a new player into Structs. Discovers player address, explores a planet, builds Command Ship, Ore Extractor, and Ore Refinery. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
+description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
 ---
 
 # Structs Onboarding
 
 ## Procedure
 
-1. **Discover player** — Run `structsd query structs address [your-address]` to check if a player exists. If the result shows player ID `1-0`, no player exists for this address yet. Player creation occurs via the webapp or guild-join-proxy.
-2. **Explore planet** — Run `structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. New planets start with 5 ore, 4 slots per ambit.
-3. **Check Command Ship** — New players receive a Command Ship (type 1) at creation. It may start offline if insufficient power. Run `structsd query structs fleet [fleet-id]` and check for existing structs. Fleet ID matches player index: player `1-18` has fleet `9-18`.
-4. **Activate Command Ship** — If Command Ship exists but is offline: `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Requires 50,000 W capacity.
-5. **Build Command Ship** (only if not gifted) — `structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 1 = Command Ship; must be in fleet, not on planet. Then run compute in background: `structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Build difficulty 200; wait ~11 min for D=8, hash completes instantly. Compute auto-submits the complete transaction.
-6. **Build Ore Extractor** — Fleet must be on station, Command Ship online. `structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 14 = Ore Extractor; ambits: land or water. Then compute in background: `structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Build difficulty 700; wait ~34 min for D=8.
-7. **Activate Ore Extractor** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Requires 500,000 W capacity.
-8. **Build Ore Refinery** — `structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Type 15 = Ore Refinery; ambits: land or water. Compute and activate same as above. Build difficulty 700.
-9. **Verify** — Query player, planet, fleet, and structs. Confirm all online.
+### Step 0: Key Management
+
+Check if a key already exists in the local keyring:
+
+```
+structsd keys list
+```
+
+**If no key exists**, create or recover one:
+
+- **Create new key**: `structsd keys add [key-name]` — outputs a mnemonic. Save it securely.
+- **Recover from mnemonic**: `structsd keys add [key-name] --recover` — prompts for mnemonic input.
+
+Get your address:
+
+```
+structsd keys show [key-name] -a
+```
+
+**Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository. The mnemonic is needed for the guild signup process (Path B below).
+
+---
+
+### Step 1: Check Player Status
+
+```
+structsd query structs address [your-address]
+```
+
+If the result shows a player ID other than `1-0`, a player already exists. Skip to **Step 3: Explore Planet** (or later steps if planet already explored).
+
+If the player ID is `1-0`, no player exists — proceed to Step 2.
+
+---
+
+### Step 2: Create Player
+
+Two paths depending on whether the agent has $alpha (the native token).
+
+#### Path A: Agent has $alpha
+
+If the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.
+
+1. Choose a validator/reactor to delegate to
+2. Run: `structsd tx structs reactor-infuse [your-address] [reactor-address] [amount] --from [key-name] --gas auto --gas-adjustment 1.5 -y`
+3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`
+
+#### Path B: Agent has no $alpha (guild signup)
+
+Join a guild that supports programmatic signup. The guild's proxy system creates the player on your behalf.
+
+**1. Choose a guild**
+
+The commander may specify a guild via `TOOLS.md` or environment config. Otherwise, query available guilds from a reference node:
+
+```
+curl http://reactor.oh.energy:1317/structs/guild
+```
+
+`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild).
+
+**2. Get the guild's API endpoint**
+
+Each guild record has an `endpoint` URL pointing to its configuration. Fetch it and look for `services.guild_api`. Not all guilds provide this service — if the field is empty, that guild does not support programmatic signup.
+
+Example guild config (from the endpoint):
+
+```json
+{
+  "guild": {
+    "id": "0-1",
+    "name": "Orbital Hydro",
+    "tag": "OH",
+    "services": {
+      "guild_api": "http://crew.oh.energy/api/",
+      "reactor_api": "http://reactor.oh.energy:1317/",
+      "client_websocket": "ws://reactor.oh.energy:26657"
+    }
+  }
+}
+```
+
+**3. Run the guild signup script**
+
+First, install dependencies (one-time):
+
+```
+cd .cursor/skills/structs-onboarding/scripts && npm install
+```
+
+Then run the signup:
+
+```
+node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs \
+  --mnemonic "$STRUCTS_MNEMONIC" \
+  --guild-id "0-1" \
+  --guild-api "http://crew.oh.energy/api/" \
+  --username "your-chosen-name"
+```
+
+The script signs a guild-join proxy message proving address ownership and POSTs to the guild API. It outputs JSON with the result.
+
+**4. Poll for player creation**
+
+The guild processes the signup asynchronously. Poll every 10-30 seconds:
+
+```
+structsd query structs address [your-address]
+```
+
+When the player ID changes from `1-0` to a real ID (e.g., `1-18`), the player has been created.
+
+---
+
+### Step 3: Explore Planet
+
+Always the first action after player creation:
+
+```
+structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
+
+---
+
+### Step 4: Check Command Ship
+
+New players receive a Command Ship (type 1) at creation. It may start offline if insufficient power.
+
+```
+structsd query structs fleet [fleet-id]
+```
+
+Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existing structs in the fleet.
+
+---
+
+### Step 5: Activate Command Ship
+
+If Command Ship exists but is offline:
+
+```
+structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Requires 50,000 W capacity.
+
+---
+
+### Step 6: Build Command Ship (only if not gifted)
+
+```
+structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
+
+```
+structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Build difficulty 200; wait ~11 min for D=8, hash completes instantly. Compute auto-submits the complete transaction.
+
+---
+
+### Step 7: Build Ore Extractor
+
+Fleet must be on station, Command Ship online.
+
+```
+structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
+
+```
+structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Build difficulty 700; wait ~34 min for D=8.
+
+---
+
+### Step 8: Activate Ore Extractor
+
+```
+structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Requires 500,000 W capacity.
+
+---
+
+### Step 9: Build Ore Refinery
+
+```
+structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Type 15 = Ore Refinery; ambits: land or water. Compute and activate same as above. Build difficulty 700.
+
+---
+
+### Step 10: Verify
+
+Query player, planet, fleet, and structs. Confirm all online.
+
+---
 
 ## Proof-of-Work Notes
 
@@ -1146,8 +1378,14 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 
 | Action | CLI Command |
 |--------|-------------|
+| List keys | `structsd keys list` |
+| Create key | `structsd keys add [name]` |
+| Recover key | `structsd keys add [name] --recover` |
+| Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
+| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [reactor-addr] [amount]` |
+| Guild signup | `node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs --mnemonic "..." --guild-id "..." --guild-api "..." --username "..."` |
 | Explore planet | `structsd tx structs planet-explore [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
 | Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
@@ -1168,7 +1406,8 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 
 ## Error Handling
 
-- **"player not found"** / player ID is `1-0` — Player doesn't exist. Create via webapp or guild-join-proxy.
+- **Player ID is `1-0`** — Player doesn't exist. Follow Step 2 (Path A or Path B).
+- **Guild signup script fails** — Check that the guild API URL is correct and the guild supports programmatic signup. Verify mnemonic is valid.
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.

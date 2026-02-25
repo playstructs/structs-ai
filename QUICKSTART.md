@@ -6,9 +6,13 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 
 ## New Player
 
-1. Read `TOOLS.md` -- confirm your server addresses and account
-2. Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`
-3. Fill in `IDENTITY.md` when you have a player ID
+1. Read `TOOLS.md` -- confirm your server addresses, secrets setup, and account
+2. **Set up your key**: `structsd keys add [name]` (new) or `structsd keys add [name] --recover` (existing mnemonic). Store the mnemonic securely (env var, `.env` file, or commander-provided).
+3. **Create your player**: Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`. Two paths:
+   - **Have $alpha?** Delegate to a reactor — player created automatically.
+   - **No $alpha?** Join a guild via the bundled signup script — the guild creates your player.
+4. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
+5. Fill in `IDENTITY.md` when you have a player ID
 
 ## Returning Player
 

@@ -33,7 +33,7 @@
 
 ## Skills
 
-- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Address registration, planet exploration, first builds
+- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
 - [Mining](https://structs.ai/skills/structs-mining/SKILL): Ore extraction and refining (mine-compute/complete then refine-compute/complete)
 - [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion
 - [Combat](https://structs.ai/skills/structs-combat/SKILL): Attacks (multi-target), raids (fleet-move then raid-compute/complete), defense setup

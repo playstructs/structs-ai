@@ -1,0 +1,9 @@
+{
+  "name": "structs-guild-signup",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Guild signup tool for Structs AI agents",
+  "dependencies": {
+    "@cosmjs/proto-signing": "^0.32.4"
+  }
+}

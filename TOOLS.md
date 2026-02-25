@@ -4,6 +4,21 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ---
 
+## Secrets
+
+**Never commit mnemonics, private keys, or secrets to the repository.**
+
+Storage options (in order of preference):
+
+1. **Environment variable**: `export STRUCTS_MNEMONIC="word1 word2 ..."` — set per session, no file on disk.
+2. **`.env` file**: Store in the workspace root as `STRUCTS_MNEMONIC=...`. The `.env` file must be in `.gitignore`.
+3. **Keyring**: `structsd keys add [name]` stores the key in the system keyring. Retrieve the address with `structsd keys show [name] -a`. The mnemonic is still needed for guild signup (Path B in onboarding).
+4. **Commander-provided**: The user provides the mnemonic or key name at session start.
+
+The guild signup script reads the mnemonic from its `--mnemonic` argument. Pass it from the environment: `--mnemonic "$STRUCTS_MNEMONIC"`.
+
+---
+
 ## Deployment
 
 Structs can run in several configurations:
@@ -13,6 +28,16 @@ Structs can run in several configurations:
 - **Hosted** — Managed deployment with provided endpoints.
 
 Check which deployment you're connected to and update the URLs below accordingly.
+
+---
+
+## Reference Node
+
+`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild). Use it for queries when no local node is available:
+
+- **Consensus API**: `http://reactor.oh.energy:1317`
+- **WebSocket**: `ws://reactor.oh.energy:26657`
+- **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
 
 ---
 
@@ -40,10 +65,13 @@ To find your player ID from your address: `structsd query structs address [your-
 
 ## Guild
 
-**Guild ID:** *(fill in after joining a guild)*
+**Guild ID:** *(fill in after joining a guild — or set as preferred guild for signup)*
 **Guild Name:**
+**Guild API:** *(from the guild config's `services.guild_api` field — needed for programmatic signup)*
 **Role:**
 **Central Bank Status:**
+
+To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl http://reactor.oh.energy:1317/structs/guild`
 
 ---
 
