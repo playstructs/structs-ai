@@ -80,7 +80,7 @@ At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly lo
 2. Do other things while age accumulates (scout, plan, build other structs)
 3. Come back and compute when difficulty has dropped to D <= 8
 
-**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../awareness/async-operations.md) for the async pattern.
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
 
 **Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 
@@ -184,7 +184,7 @@ See [struct-types.md](../entities/struct-types.md) for the full table with `poss
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon
-- [async-operations.md](../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
+- [async-operations.md](../../awareness/async-operations.md) — Background PoW, job tracking, pipeline strategy
 - `reference/action-quick-reference.md` — struct-build-initiate, struct-build-complete
 - `schemas/formulas.md` — Build difficulty, charge accumulation
 - `knowledge/entities/struct-types.md` — Struct types, power requirements

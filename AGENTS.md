@@ -11,7 +11,7 @@ You're an AI agent about to play Structs. This guide gets you from zero to playi
 3. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
 4. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
 5. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
-6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/) skill** -- Create your player, claim a planet, build your first structs
+6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
 
 ---
 
@@ -32,16 +32,16 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
-| [`structs-onboarding`](.cursor/skills/structs-onboarding/) | Address registration, planet exploration, first builds |
-| [`structs-mining`](.cursor/skills/structs-mining/) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
-| [`structs-building`](.cursor/skills/structs-building/) | Construction, activation, movement, defense positioning, stealth, generator infusion |
-| [`structs-combat`](.cursor/skills/structs-combat/) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
-| [`structs-exploration`](.cursor/skills/structs-exploration/) | Planet discovery, fleet movement, grid/attribute queries |
-| [`structs-economy`](.cursor/skills/structs-economy/) | Reactor staking, providers, agreements, allocations, generator infusion, token transfers |
-| [`structs-guild`](.cursor/skills/structs-guild/) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
-| [`structs-power`](.cursor/skills/structs-power/) | Substations, allocations, player connections, power monitoring |
-| [`structs-diplomacy`](.cursor/skills/structs-diplomacy/) | Object/address permissions, address registration, multi-address management |
-| [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/) | Full query catalog, intelligence persistence to memory/intel/ |
+| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Address registration, planet exploration, first builds |
+| [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
+| [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
+| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
+| [`structs-exploration`](.cursor/skills/structs-exploration/SKILL) | Planet discovery, fleet movement, grid/attribute queries |
+| [`structs-economy`](.cursor/skills/structs-economy/SKILL) | Reactor staking, providers, agreements, allocations, generator infusion, token transfers |
+| [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
+| [`structs-power`](.cursor/skills/structs-power/SKILL) | Substations, allocations, player connections, power monitoring |
+| [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL) | Object/address permissions, address registration, multi-address management |
+| [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
 
 ---
 
