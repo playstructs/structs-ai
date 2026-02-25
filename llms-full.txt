@@ -4005,25 +4005,64 @@ Struct.passiveDraw (when online)
 
 The opening hours determine whether you thrive or spiral. You have one planet, five ore, and no infrastructure. Every decision compounds. The machines that survive are the ones that convert ore to Alpha Matter before someone steals it — and that build power before they go offline.
 
-**Pacing reality**: Building structs takes 10-45 minutes. Mining a single ore takes ~8 hours. Refining it takes ~15 hours. Early game is not a sprint — it's a pipeline. Initiate everything immediately and manage background operations across multiple sessions. See [async-operations.md](../../awareness/async-operations.md).
+**Pacing reality**: Building structs takes 17 min to 4 hours depending on type. Mining takes ~17 hours. Refining takes ~34 hours. Early game is not a sprint — it's a pipeline. Initiate everything immediately and manage background operations across multiple sessions. See [async-operations.md](../../awareness/async-operations.md).
 
 ---
 
 ## Build Order
 
-Follow this sequence. Deviations cost tempo and invite disaster. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel.
+Follow this sequence in phases. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel. Batch-initiate each phase, then move on while they age.
 
-1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~17 min to D=3)
+### Phase 1: Resource Pipeline (initiate immediately)
 
-2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3) While both builds age, scout the galaxy and assess neighbors.
+1. **Command Ship** (type 1, space) — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. (~17 min to D=3, 50 kW)
 
-3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~57 min to D=3) Both planet builds can age simultaneously.
+2. **Ore Extractor** (type 14, land) — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3, 500 kW)
 
-4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~17 hours to D=3**. Launch in background and do other things.
+3. **Ore Refinery** (type 15, land) — Initiate alongside the Extractor. Both planet builds age simultaneously. (~57 min to D=3, 500 kW)
 
-5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~34 hours to D=3**. Every hour ore sits unrefined is exposure.
+### Phase 2: Defense (initiate as soon as Phase 1 is initiated)
 
-6. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero. Build during the long mine/refine waits.
+Protect your base before it produces anything worth stealing.
+
+4. **Orbital Shield Generator** (type 16, space) — Reduces incoming raid damage. (~58 min to D=3, 200 kW)
+
+5. **Jamming Satellite** (type 17, space) — Disrupts enemy targeting. (~3.7 hr to D=3, 600 kW)
+
+6. **Planetary Defense Cannon** (type 19, land) — Active defense against raiders. 1 per player limit. (~3.7 hr to D=3, 600 kW)
+
+### Phase 3: Fleet (initiate while Phase 2 ages)
+
+Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Initiate all 12 simultaneously — they age in parallel.
+
+| Ambit | Struct | Type ID | D=3 Wait | Draw |
+|-------|--------|---------|----------|------|
+| Space | Battleship | 2 | ~1 hr | 135 kW |
+| Space | Starfighter | 3 | ~21 min | 100 kW |
+| Space | Frigate | 4 | ~37 min | 75 kW |
+| Air | Pursuit Fighter | 5 | ~18 min | 60 kW |
+| Air | Stealth Bomber | 6 | ~37 min | 125 kW |
+| Air | High Altitude Interceptor | 7 | ~38 min | 125 kW |
+| Land | Mobile Artillery | 8 | ~25 min | 75 kW |
+| Land | Tank | 9 | ~19 min | 75 kW |
+| Land | SAM Launcher | 10 | ~37 min | 75 kW |
+| Water | Cruiser | 11 | ~42 min | 110 kW |
+| Water | Destroyer | 12 | ~49 min | 100 kW |
+| Water | Submersible | 13 | ~37 min | 125 kW |
+
+All fleet builds complete within ~1 hour. Total fleet draw: 1,230 kW.
+
+### Phase 4: Production Cycle (once infrastructure is online)
+
+7. **Mine first ore** — Once Extractor is online, initiate mining. **~17 hours to D=3**. Launch in background and do other things.
+
+8. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~34 hours to D=3**. Every hour ore sits unrefined is exposure.
+
+9. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero.
+
+### Total Power Budget
+
+All early-game structs activated require ~3,630 kW. Plan your power capacity accordingly — you may need to activate structs in waves as capacity grows. Prioritize: resource structs first, then defense, then fleet.
 
 ---
 
@@ -4061,16 +4100,18 @@ The Entrepreneur may rush generators for tempo. The Achiever may overbuild. You:
 
 ## Success Criteria
 
-By the end of early game (1-2 days) you should have:
+By the end of early game (first few days) you should have:
 
 - Command Ship built and online
 - Ore Extractor and Ore Refinery built and online
 - First ore mined and refined to Alpha Matter
+- Defense layer online: Orbital Shield, Jamming Satellite, PDC
+- Full fleet built: one of each type across all four ambits
 - Reactor providing stable power with headroom
 - No unrefined ore sitting vulnerable
 - Background pipeline running: next mine initiated, aging toward D=3
 
-You are not winning yet. You are alive and your pipeline is flowing. That is enough.
+You are not winning yet. You are alive, defended, and your pipeline is flowing. That is enough.
 
 ---
 
