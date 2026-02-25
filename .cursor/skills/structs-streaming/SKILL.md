@@ -35,7 +35,7 @@ Example (Orbital Hydro guild):
 ```json
 {
   "services": {
-    "grass_nats_websocket": "ws://reactor.oh.energy:1443",
+    "grass_nats_websocket": "ws://crew.oh.energy:1443",
     "guild_api": "http://crew.oh.energy/api/",
     "reactor_api": "http://reactor.oh.energy:1317/"
   }
@@ -44,7 +44,24 @@ Example (Orbital Hydro guild):
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://reactor.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+
+---
+
+## Discovery First
+
+Before subscribing to specific subjects, **subscribe to the `>` wildcard** to see all traffic flowing through the GRASS server. This reveals the actual subject patterns in use, which may differ from documentation.
+
+```javascript
+const sub = nc.subscribe(">");
+for await (const msg of sub) {
+  console.log(`[${msg.subject}]`, new TextDecoder().decode(msg.data));
+}
+```
+
+Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
+
+**Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
 
 ---
 
@@ -60,9 +77,12 @@ Subscribe to subjects matching the entities you care about:
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
+| Grid | `structs.grid.*` | `structs.grid.{grid_id}` | Grid/map changes |
 | Global | `structs.global` | `structs.global` | Block updates |
+| Consensus | `consensus` | `consensus` | Chain consensus events |
+| Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
-Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need.
+Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
 
 ---
 
@@ -78,6 +98,8 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
 ### Struct Events
+
+**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{id}`) rather than the struct subject. Subscribe to both if you need complete coverage.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -126,7 +148,7 @@ npm install nats.ws
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 
 const sub = nc.subscribe("structs.planet.2-1");
 for await (const msg of sub) {
@@ -147,7 +169,7 @@ pip install nats-py
 import asyncio, json, nats
 
 async def main():
-    nc = await nats.connect("ws://reactor.oh.energy:1443")
+    nc = await nats.connect("ws://crew.oh.energy:1443")
     sub = await nc.subscribe("structs.planet.2-1")
     async for msg in sub.messages:
         event = json.loads(msg.data.decode())
@@ -164,7 +186,7 @@ A tool that watches for raids on your planet and outputs an alert:
 import { connect } from "nats.ws";
 
 const PLANET_ID = process.argv[2]; // e.g. "2-1"
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 const sub = nc.subscribe(`structs.planet.${PLANET_ID}`);
 
 for await (const msg of sub) {
@@ -185,7 +207,7 @@ Instead of polling `structsd query structs address` after guild signup, watch fo
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 const sub = nc.subscribe("structs.address.register.*");
 
 for await (const msg of sub) {
@@ -225,7 +247,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### Quick Setup
 
-1. Get the GRASS endpoint from your guild config (or use `ws://reactor.oh.energy:1443`)
+1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)
 2. Record the endpoint in `TOOLS.md` under Servers
 3. Choose your language (Node.js or Python)
 4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)

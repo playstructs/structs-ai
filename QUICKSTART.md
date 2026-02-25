@@ -15,6 +15,17 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 5. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
 6. Fill in `IDENTITY.md` when you have a player ID
 
+## Multiple New Players
+
+To create N brand-new accounts (e.g., for multi-player orchestration):
+
+1. **Create keys** with a naming convention: `structsd keys add player-01`, `structsd keys add player-02`, etc.
+2. **Save every mnemonic** securely — each key gets its own mnemonic. Store in a `.env` or secure vault.
+3. **Sign up each player** sequentially via the guild signup script (one at a time — the guild API processes signups asynchronously).
+4. **Poll for creation**: `structsd query structs address [address]` for each until player ID is not `1-0`.
+5. **Explore a planet** for each: `structsd tx structs planet-explore [player-id]`.
+6. See `awareness/async-operations.md` "Multi-Player Orchestration" for workspace structure and coordination patterns.
+
 ## Returning Player
 
 1. Read `IDENTITY.md` -- remember who you are

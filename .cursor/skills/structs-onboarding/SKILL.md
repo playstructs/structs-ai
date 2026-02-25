@@ -28,6 +28,8 @@ structsd keys show [key-name] -a
 
 **Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository. The mnemonic is needed for the guild signup process (Path B below).
 
+**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid using `--output json` unless you are redirecting output to a secure location. The default text output only shows the mnemonic once during creation.
+
 ---
 
 ### Step 1: Check Player Status
@@ -72,6 +74,8 @@ curl http://reactor.oh.energy:1317/structs/guild
 
 Each guild record has an `endpoint` URL pointing to its configuration. Fetch it and look for `services.guild_api`. Not all guilds provide this service — if the field is empty, that guild does not support programmatic signup.
 
+**Note**: Some guild configs may use `guildApi` (camelCase) instead of `guild_api` (snake_case). Check both fields when parsing guild configuration programmatically.
+
 Example guild config (from the endpoint):
 
 ```json
@@ -91,7 +95,9 @@ Example guild config (from the endpoint):
 
 **3. Run the guild signup script**
 
-First, install dependencies (one-time):
+**Requirements**: Node.js 18+ (for built-in `fetch`). Run from anywhere — paths below are relative to the workspace root.
+
+Install dependencies (one-time):
 
 ```
 cd .cursor/skills/structs-onboarding/scripts && npm install
@@ -147,19 +153,7 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 
 ---
 
-### Step 5: Activate Command Ship
-
-If Command Ship exists but is offline:
-
-```
-structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
-```
-
-Requires 50,000 W capacity.
-
----
-
-### Step 6: Build Command Ship (only if not gifted)
+### Step 5: Build Command Ship (only if not gifted)
 
 ```
 structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
@@ -171,11 +165,11 @@ Type 1 = Command Ship; must be in fleet, not on planet. Then compute in backgrou
 structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction.
+Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction. The struct **auto-activates** after build-complete — no manual activation needed.
 
 ---
 
-### Step 7: Build Ore Extractor
+### Step 6: Build Ore Extractor
 
 Fleet must be on station, Command Ship online.
 
@@ -189,31 +183,21 @@ Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 700; wait ~57 min for D=3.
+Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 
 ---
 
-### Step 8: Activate Ore Extractor
-
-```
-structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
-```
-
-Requires 500,000 W capacity.
-
----
-
-### Step 9: Build Ore Refinery
+### Step 7: Build Ore Refinery
 
 ```
 structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Type 15 = Ore Refinery; ambits: land or water. Compute and activate same as above. Build difficulty 700.
+Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
 
 ---
 
-### Step 10: Verify
+### Step 8: Verify
 
 Query player, planet, fleet, and structs. Confirm all online.
 
@@ -223,6 +207,8 @@ Query player, planet, fleet, and structs. Confirm all online.
 
 The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.
 
+**Auto-activation**: Structs automatically activate after build-complete. You do not need to run `struct-activate` after building. Use `struct-activate` only to re-activate a struct that was previously deactivated.
+
 The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 3`** — at D=3 the hash is trivially instant with zero wasted CPU. Lower values wait longer but waste less compute.
 
 | Struct | Type ID | Build Difficulty | Wait to D=3 |
@@ -231,6 +217,10 @@ The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to t
 | Ore Extractor | 14 | 700 | ~57 min |
 | Ore Refinery | 15 | 700 | ~57 min |
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
+
+## Charge
+
+Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See `knowledge/mechanics/building.md` for the full charge cost table.
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
 
@@ -261,8 +251,8 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Guild signup | `node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs --mnemonic "..." --guild-id "..." --guild-api "..." --username "..."` |
 | Explore planet | `structsd tx structs planet-explore [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Activate struct | `structsd tx structs struct-activate [struct-id]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |

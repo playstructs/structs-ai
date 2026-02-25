@@ -120,6 +120,31 @@ You are not winning yet. You are alive, defended, and your pipeline is flowing. 
 
 ---
 
+## Canonical Build Sequence (timing reference)
+
+End-to-end ramp from player creation to first combat-ready state. All times are wait-to-D=3.
+
+| Step | Action | Wait | Cumulative |
+|------|--------|------|------------|
+| 1 | Create player + explore planet | ~30 sec | 0 min |
+| 2 | Initiate Command Ship (type 1) | ~17 min | 17 min |
+| 3 | Initiate Ore Extractor (type 14) | ~57 min | 17 min (parallel) |
+| 4 | Initiate Ore Refinery (type 15) | ~57 min | 17 min (parallel) |
+| 5 | Initiate Orbital Shield (type 16) | ~58 min | 17 min (parallel) |
+| 6 | Initiate all fleet structs (types 2-13) | 20 min - 1 hr each | 17 min (parallel) |
+| 7 | Compute Command Ship (ready ~17 min) | instant at D=3 | ~17 min |
+| 8 | Compute Extractor + Refinery (~57 min) | instant at D=3 | ~57 min |
+| 9 | Initiate first mine | ~17 hr | ~57 min |
+| 10 | Compute defense structs (PDC ~3.7 hr, Jamming ~3.7 hr) | instant at D=3 | ~4 hr |
+| 11 | Compute fleet structs (longest: Battleship ~1 hr) | instant at D=3 | ~4 hr |
+| 12 | Compute mine (ready ~17 hr from step 9) | instant at D=3 | ~17 hr |
+| 13 | Initiate refine | ~34 hr | ~17 hr |
+| 14 | Compute refine (ready ~34 hr from step 13) | instant at D=3 | ~51 hr |
+
+**Key insight**: Steps 2-6 should all be initiated within minutes of each other. They age in parallel. By the time you compute the Command Ship at 17 min, the rest are already aging. The total wall time from player creation to first Alpha Matter is ~51 hours (dominated by the mine-refine cycle), but you are combat-ready with a full fleet and defenses within ~4 hours.
+
+---
+
 ## See Also
 
 - [Mid Game](mid-game.md) — What comes next

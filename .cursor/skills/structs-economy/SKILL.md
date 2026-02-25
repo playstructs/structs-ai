@@ -8,8 +8,8 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 ## Procedure
 
 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.
-2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
-3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered.
+2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
+3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
 4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
 6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement --controller [id] TX_FLAGS`. Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
@@ -53,6 +53,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 
 ## See Also
 
+- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
 - `knowledge/economy/energy-market.md` — Provider/agreement flow, pricing
 - `knowledge/economy/guild-banking.md` — Central Bank tokens
 - `knowledge/mechanics/resources.md` — Alpha Matter, conversion rates

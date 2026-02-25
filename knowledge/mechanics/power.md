@@ -116,6 +116,37 @@ If total load ever exceeds total capacity, the player goes **offline** and canno
 
 ---
 
+## Increasing Capacity
+
+Three methods to increase a player's available capacity:
+
+| Method | How | Rate | Risk | Reversible |
+|--------|-----|------|------|------------|
+| Reactor infusion | `reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` | 1g ≈ 1 kW (minus commission) | Low | Yes (defuse with cooldown) |
+| Generator infusion | `struct-generator-infuse [struct-id] [amount-ualpha]` | 1g = 2-10 kW depending on type | High (raidable) | **No** |
+| Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Medium (ongoing cost) | Yes (close agreement) |
+
+### Reactor Commission
+
+When infusing Alpha Matter into a reactor, the generated power is split between the player and the reactor based on the reactor's **commission rate**:
+
+```
+playerCapacityGain = power * (1 - commission)
+reactorCapacityGain = power * commission
+```
+
+The player's capacity increases **automatically** — no allocation or substation setup needed. This makes reactor infusion the simplest path to more capacity.
+
+Example: 3,000,000 ualpha infused into a reactor with 4% commission generates 3,000,000 mW. The reactor keeps 120,000 mW (4%), the player receives 2,880,000 mW (96%) added directly to their capacity.
+
+### Allocation Sources
+
+Allocations can be created from Reactors, Players, and Substations. Allocations can only be **connected to** Substations.
+
+For full energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+
+---
+
 ## See Also
 
 - [building.md](building.md) — Build power requirements

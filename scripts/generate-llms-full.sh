@@ -34,6 +34,7 @@ FILES=(
   .cursor/skills/structs-guild/SKILL.md
   .cursor/skills/structs-power/SKILL.md
   .cursor/skills/structs-diplomacy/SKILL.md
+  .cursor/skills/structs-energy/SKILL.md
   .cursor/skills/structs-streaming/SKILL.md
   .cursor/skills/structs-reconnaissance/SKILL.md
 

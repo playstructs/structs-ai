@@ -56,6 +56,17 @@ Allocation: sourceId (Provider/Reactor) → destinationId (Player/Struct)
 
 See [struct-types.md](../entities/struct-types.md) for build costs and power requirements.
 
+### Reactor Commission and Auto-Capacity
+
+Reactors charge a **commission** on infusions. When a player infuses ualpha into a reactor, the generated power is split:
+
+- **Player receives**: `power * (1 - commission)` — added directly to the player's capacity (no manual allocation needed)
+- **Reactor receives**: `power * commission` — increases the reactor's capacity
+
+This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
+
+For step-by-step energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+
 ---
 
 ## Provider Configuration

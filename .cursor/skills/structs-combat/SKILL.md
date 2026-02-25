@@ -50,6 +50,18 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 - Target struct existence is validated before attack proceeds
 - Hashing for raid-compute is open by default -- any valid proof accepted
 
+## Combat Readiness Checklist
+
+Before engaging in combat, verify all conditions:
+
+- [ ] **Command Ship online** — `structsd query structs struct [cmd-ship-id]`, status = Online
+- [ ] **Fleet on station** (for defense) or **fleet away** (for raids) — `structsd query structs fleet [fleet-id]`
+- [ ] **Sufficient charge** — Weapons cost 1-20 charge. At ~6 sec/block, 20 charge = 2 minutes
+- [ ] **Power capacity headroom** — Total load must stay below capacity during combat
+- [ ] **Defense structs assigned** — PDC, Orbital Shield, defenders set via `struct-defense-set`
+- [ ] **Available struct slot** — If building combat structs, check planet slots (0-3 per ambit)
+- [ ] **Ore refined or secured** — Unrefined ore is stealable. Refine before engaging in raids that may invite retaliation
+
 ## Error Handling
 
 - **"insufficient charge"** — Weapon needs charge; check struct state.

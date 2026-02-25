@@ -23,6 +23,8 @@ Storage options (in order of preference):
 
 The guild signup script reads the mnemonic from its `--mnemonic` argument. Pass it from the environment: `--mnemonic "$STRUCTS_MNEMONIC"`.
 
+**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid `--output json` unless redirecting to a secure file. The default text output shows the mnemonic only once during creation.
+
 ---
 
 ## Deployment
@@ -44,6 +46,30 @@ Check which deployment you're connected to and update the URLs below accordingly
 - **Consensus API**: `http://reactor.oh.energy:1317`
 - **WebSocket**: `ws://reactor.oh.energy:26657`
 - **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
+
+---
+
+## Node Configuration
+
+By default, `structsd` commands connect to `localhost:26657`. If you are not running a local node, you **must** configure a remote node or every command will fail.
+
+**Option 1: Set the default node permanently** by editing `~/.structs/config/client.toml`:
+
+```
+broadcast-mode = "sync"
+chain-id = "structstestnet-109"
+keyring-backend = "test"
+node = "tcp://reactor.oh.energy:26657"
+output = "text"
+```
+
+**Option 2: Per-command flag** for one-off queries:
+
+```
+structsd query structs player 1-11 --node tcp://reactor.oh.energy:26657
+```
+
+If you see connection errors like "connection refused" on port 26657, you need to configure this.
 
 ---
 

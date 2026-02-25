@@ -38,15 +38,30 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 - **Substation**: `structsd query structs substation [id]` — connected allocations, players.
 - **Allocations**: `structsd query structs allocation-all-by-source [source-id]`, `allocation-all-by-destination [dest-id]` — power flow.
 
+## How to Increase Capacity
+
+If capacity is too low (or you're going offline), there are three paths:
+
+| Method | Requires | Speed | Risk | Rate |
+|--------|----------|-------|------|------|
+| Reactor infusion | Alpha Matter | Immediate | Low | 1g ≈ 1 kW (minus commission) |
+| Generator infusion | Alpha Matter + generator struct | Immediate | High (irreversible, raidable) | 1g = 2-10 kW |
+| Buy via agreement | A provider with capacity | Immediate | Medium (ongoing cost) | Varies by provider |
+
+**Most common**: Infuse Alpha Matter into your guild's reactor. Capacity increases automatically.
+
+For step-by-step workflows, see the **`structs-energy`** skill (`.cursor/skills/structs-energy/SKILL.md`).
+
 ## Error Handling
 
-- **Going offline**: Load exceeds capacity. Deactivate structs (`struct-deactivate`), add reactor/generator capacity, or reduce struct count before building more.
+- **Going offline**: Load exceeds capacity. Deactivate structs immediately (`struct-deactivate`), then increase capacity — see the `structs-energy` skill for options.
 - **Allocation exceeds source**: Source (reactor/provider) has limited capacity. Query source; create smaller allocation or add capacity.
 - **Substation delete failed**: Ensure no players or allocations connected. Disconnect first.
 - **Automated allocation limit**: One automated allocation per source. Use static/dynamic for multiple.
 
 ## See Also
 
+- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
 - `knowledge/mechanics/power.md` — Formulas, capacity, load, online status
 - `knowledge/mechanics/building.md` — Build power requirements
 - `knowledge/mechanics/resources.md` — Reactor vs generator conversion rates

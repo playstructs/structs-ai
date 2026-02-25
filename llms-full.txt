@@ -111,6 +111,17 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 5. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
 6. Fill in `IDENTITY.md` when you have a player ID
 
+## Multiple New Players
+
+To create N brand-new accounts (e.g., for multi-player orchestration):
+
+1. **Create keys** with a naming convention: `structsd keys add player-01`, `structsd keys add player-02`, etc.
+2. **Save every mnemonic** securely — each key gets its own mnemonic. Store in a `.env` or secure vault.
+3. **Sign up each player** sequentially via the guild signup script (one at a time — the guild API processes signups asynchronously).
+4. **Poll for creation**: `structsd query structs address [address]` for each until player ID is not `1-0`.
+5. **Explore a planet** for each: `structsd tx structs planet-explore [player-id]`.
+6. See `awareness/async-operations.md` "Multi-Player Orchestration" for workspace structure and coordination patterns.
+
 ## Returning Player
 
 1. Read `IDENTITY.md` -- remember who you are
@@ -186,6 +197,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
 | [`structs-power`](.cursor/skills/structs-power/SKILL) | Substations, allocations, player connections, power monitoring |
 | [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL) | Object/address permissions, address registration, multi-address management |
+| [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Energy capacity management — reactor/generator infusion, buying/selling energy, commission mechanics |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
 
@@ -440,6 +452,8 @@ Storage options (in order of preference):
 
 The guild signup script reads the mnemonic from its `--mnemonic` argument. Pass it from the environment: `--mnemonic "$STRUCTS_MNEMONIC"`.
 
+**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid `--output json` unless redirecting to a secure file. The default text output shows the mnemonic only once during creation.
+
 ---
 
 ## Deployment
@@ -461,6 +475,30 @@ Check which deployment you're connected to and update the URLs below accordingly
 - **Consensus API**: `http://reactor.oh.energy:1317`
 - **WebSocket**: `ws://reactor.oh.energy:26657`
 - **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
+
+---
+
+## Node Configuration
+
+By default, `structsd` commands connect to `localhost:26657`. If you are not running a local node, you **must** configure a remote node or every command will fail.
+
+**Option 1: Set the default node permanently** by editing `~/.structs/config/client.toml`:
+
+```
+broadcast-mode = "sync"
+chain-id = "structstestnet-109"
+keyring-backend = "test"
+node = "tcp://reactor.oh.energy:26657"
+output = "text"
+```
+
+**Option 2: Per-command flag** for one-off queries:
+
+```
+structsd query structs player 1-11 --node tcp://reactor.oh.energy:26657
+```
+
+If you see connection errors like "connection refused" on port 26657, you need to configure this.
 
 ---
 
@@ -1309,6 +1347,8 @@ structsd keys show [key-name] -a
 
 **Mnemonic security**: Store the mnemonic in an environment variable (`STRUCTS_MNEMONIC`), a `.env` file (excluded from git), or let the commander provide it. Never commit mnemonics or private keys to the repository. The mnemonic is needed for the guild signup process (Path B below).
 
+**Warning**: `structsd keys add --output json` outputs the mnemonic **in plaintext** to stdout. Avoid using `--output json` unless you are redirecting output to a secure location. The default text output only shows the mnemonic once during creation.
+
 ---
 
 ### Step 1: Check Player Status
@@ -1353,6 +1393,8 @@ curl http://reactor.oh.energy:1317/structs/guild
 
 Each guild record has an `endpoint` URL pointing to its configuration. Fetch it and look for `services.guild_api`. Not all guilds provide this service — if the field is empty, that guild does not support programmatic signup.
 
+**Note**: Some guild configs may use `guildApi` (camelCase) instead of `guild_api` (snake_case). Check both fields when parsing guild configuration programmatically.
+
 Example guild config (from the endpoint):
 
 ```json
@@ -1372,7 +1414,9 @@ Example guild config (from the endpoint):
 
 **3. Run the guild signup script**
 
-First, install dependencies (one-time):
+**Requirements**: Node.js 18+ (for built-in `fetch`). Run from anywhere — paths below are relative to the workspace root.
+
+Install dependencies (one-time):
 
 ```
 cd .cursor/skills/structs-onboarding/scripts && npm install
@@ -1428,19 +1472,7 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 
 ---
 
-### Step 5: Activate Command Ship
-
-If Command Ship exists but is offline:
-
-```
-structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
-```
-
-Requires 50,000 W capacity.
-
----
-
-### Step 6: Build Command Ship (only if not gifted)
+### Step 5: Build Command Ship (only if not gifted)
 
 ```
 structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
@@ -1452,11 +1484,11 @@ Type 1 = Command Ship; must be in fleet, not on planet. Then compute in backgrou
 structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction.
+Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction. The struct **auto-activates** after build-complete — no manual activation needed.
 
 ---
 
-### Step 7: Build Ore Extractor
+### Step 6: Build Ore Extractor
 
 Fleet must be on station, Command Ship online.
 
@@ -1470,31 +1502,21 @@ Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 700; wait ~57 min for D=3.
+Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 
 ---
 
-### Step 8: Activate Ore Extractor
-
-```
-structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
-```
-
-Requires 500,000 W capacity.
-
----
-
-### Step 9: Build Ore Refinery
+### Step 7: Build Ore Refinery
 
 ```
 structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Type 15 = Ore Refinery; ambits: land or water. Compute and activate same as above. Build difficulty 700.
+Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
 
 ---
 
-### Step 10: Verify
+### Step 8: Verify
 
 Query player, planet, fleet, and structs. Confirm all online.
 
@@ -1504,6 +1526,8 @@ Query player, planet, fleet, and structs. Confirm all online.
 
 The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.
 
+**Auto-activation**: Structs automatically activate after build-complete. You do not need to run `struct-activate` after building. Use `struct-activate` only to re-activate a struct that was previously deactivated.
+
 The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 3`** — at D=3 the hash is trivially instant with zero wasted CPU. Lower values wait longer but waste less compute.
 
 | Struct | Type ID | Build Difficulty | Wait to D=3 |
@@ -1512,6 +1536,10 @@ The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to t
 | Ore Extractor | 14 | 700 | ~57 min |
 | Ore Refinery | 15 | 700 | ~57 min |
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
+
+## Charge
+
+Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See `knowledge/mechanics/building.md` for the full charge cost table.
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
 
@@ -1542,8 +1570,8 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Guild signup | `node .cursor/skills/structs-onboarding/scripts/guild-signup.mjs --mnemonic "..." --guild-id "..." --guild-api "..." --username "..."` |
 | Explore planet | `structsd tx structs planet-explore [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Activate struct | `structsd tx structs struct-activate [struct-id]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |
@@ -1663,17 +1691,32 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
 2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
-4. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-5. **Optional** — Move, set defense, or activate stealth as needed.
+3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+4. **Optional** — Move, set defense, or activate stealth as needed.
+
+**Auto-activation**: Structs automatically activate after build-complete. Use `struct-activate` only to re-activate a struct that was previously deactivated with `struct-deactivate`.
 
 ## Compute vs Complete
 
-`struct-build-compute` is a helper that performs proof-of-work and automatically submits `struct-build-complete` with the hash results. You only need `struct-build-complete` if you computed the hash through external tools and want to submit it manually.
+`struct-build-compute` is a helper that performs proof-of-work and automatically submits `struct-build-complete` with the hash results. The struct then auto-activates. You only need `struct-build-complete` if you computed the hash through external tools and want to submit it manually.
 
 ## The -D Flag
 
 The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 3`** — at D=3, the hash is trivially instant and zero CPU is wasted. Lower values wait longer but burn no compute on hard hashes.
+
+## Charge Costs
+
+Every action consumes charge. Charge accumulates passively at 1 per block (~6 sec/block).
+
+| Action | Charge Cost | Wait Time |
+|--------|------------|-----------|
+| Build complete | 8 | ~48 seconds |
+| Move | 8 | ~48 seconds |
+| Activate (re-activation only) | 1 | ~6 seconds |
+| Defend change | 1 | ~6 seconds |
+| Primary weapon | 1-20 | Varies by struct |
+
+If you get a "required charge X but player had Y" error, wait for charge to accumulate. See `knowledge/mechanics/building.md` for the complete charge table.
 
 ## Expected Build Times
 
@@ -1696,10 +1739,10 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 | Action | CLI Command |
 |--------|-------------|
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
-| Activate | `structsd tx structs struct-activate [struct-id]` |
+| Re-activate (only after deactivation) | `structsd tx structs struct-activate [struct-id]` |
 | Deactivate | `structsd tx structs struct-deactivate [struct-id]` |
 | Move | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
 | Set defense | `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` |
@@ -1717,11 +1760,16 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 ## Error Handling
 
-- **"insufficient resources"** — Check Alpha Matter; use `structsd query structs player [id]`.
-- **"power overload"** — Add capacity before activating; going offline blocks all actions.
-- **"invalid slot"** — Slot 0–3 per ambit; check existing structs.
-- **"Command Ship required"** — Command Ship must be online for planet builds.
-- **"fleet not on station"** — Move fleet or wait before building on planet.
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "required charge X but player had Y" | Not enough charge accumulated | Wait ~48s (8 blocks) between build actions |
+| "insufficient resources" | Not enough Alpha Matter | Mine and refine ore first; check balance with `structsd query structs player [id]` |
+| "power overload" | Capacity too low for struct to go online | Deactivate non-essential structs or increase capacity (see `structs-energy` skill) |
+| "fleet not on station" | Fleet is away from planet | Wait for fleet return or `fleet-move` back |
+| "Command Ship required" | Command Ship offline or not built | Build or re-activate Command Ship first |
+| "invalid slot" | Slot already occupied | Check existing structs on planet; slots are 0-3 per ambit |
+| "invalid ambit" | Struct type doesn't support chosen ambit | Check `possibleAmbit` bit-flags for the struct type |
+| Connection refused on port 26657 | No local node; remote node not configured | Set `node` in `~/.structs/config/client.toml` or use `--node` flag (see TOOLS.md) |
 
 ## See Also
 
@@ -1786,6 +1834,18 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 - Each struct can only commit once per attack action (no double-commit)
 - Target struct existence is validated before attack proceeds
 - Hashing for raid-compute is open by default -- any valid proof accepted
+
+## Combat Readiness Checklist
+
+Before engaging in combat, verify all conditions:
+
+- [ ] **Command Ship online** — `structsd query structs struct [cmd-ship-id]`, status = Online
+- [ ] **Fleet on station** (for defense) or **fleet away** (for raids) — `structsd query structs fleet [fleet-id]`
+- [ ] **Sufficient charge** — Weapons cost 1-20 charge. At ~6 sec/block, 20 charge = 2 minutes
+- [ ] **Power capacity headroom** — Total load must stay below capacity during combat
+- [ ] **Defense structs assigned** — PDC, Orbital Shield, defenders set via `struct-defense-set`
+- [ ] **Available struct slot** — If building combat structs, check planet slots (0-3 per ambit)
+- [ ] **Ore refined or secured** — Unrefined ore is stealable. Refine before engaging in raids that may invite retaliation
 
 ## Error Handling
 
@@ -1865,8 +1925,8 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 ## Procedure
 
 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.
-2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
-3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered.
+2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
+3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
 4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
 6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement --controller [id] TX_FLAGS`. Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
@@ -1910,6 +1970,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 
 ## See Also
 
+- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
 - `knowledge/economy/energy-market.md` — Provider/agreement flow, pricing
 - `knowledge/economy/guild-banking.md` — Central Bank tokens
 - `knowledge/mechanics/resources.md` — Alpha Matter, conversion rates
@@ -2021,15 +2082,30 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 - **Substation**: `structsd query structs substation [id]` — connected allocations, players.
 - **Allocations**: `structsd query structs allocation-all-by-source [source-id]`, `allocation-all-by-destination [dest-id]` — power flow.
 
+## How to Increase Capacity
+
+If capacity is too low (or you're going offline), there are three paths:
+
+| Method | Requires | Speed | Risk | Rate |
+|--------|----------|-------|------|------|
+| Reactor infusion | Alpha Matter | Immediate | Low | 1g ≈ 1 kW (minus commission) |
+| Generator infusion | Alpha Matter + generator struct | Immediate | High (irreversible, raidable) | 1g = 2-10 kW |
+| Buy via agreement | A provider with capacity | Immediate | Medium (ongoing cost) | Varies by provider |
+
+**Most common**: Infuse Alpha Matter into your guild's reactor. Capacity increases automatically.
+
+For step-by-step workflows, see the **`structs-energy`** skill (`.cursor/skills/structs-energy/SKILL.md`).
+
 ## Error Handling
 
-- **Going offline**: Load exceeds capacity. Deactivate structs (`struct-deactivate`), add reactor/generator capacity, or reduce struct count before building more.
+- **Going offline**: Load exceeds capacity. Deactivate structs immediately (`struct-deactivate`), then increase capacity — see the `structs-energy` skill for options.
 - **Allocation exceeds source**: Source (reactor/provider) has limited capacity. Query source; create smaller allocation or add capacity.
 - **Substation delete failed**: Ensure no players or allocations connected. Disconnect first.
 - **Automated allocation limit**: One automated allocation per source. Use static/dynamic for multiple.
 
 ## See Also
 
+- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
 - `knowledge/mechanics/power.md` — Formulas, capacity, load, online status
 - `knowledge/mechanics/building.md` — Build power requirements
 - `knowledge/mechanics/resources.md` — Reactor vs generator conversion rates
@@ -2099,6 +2175,256 @@ description: Handles permissions, address management, and inter-player coordinat
 </document>
 
 <document>
+<source>.cursor/skills/structs-energy/SKILL.md</source>
+---
+name: structs-energy
+description: Manages energy capacity in Structs. Covers increasing capacity (reactor infusion, generator infusion, buying agreements), selling surplus energy (creating providers), and diagnosing power problems. Use when capacity is too low, going offline, need more power for new structs, want to sell energy, or asking "how do I get more energy?"
+---
+
+# Structs Energy Management
+
+## Decision Tree
+
+```
+Need more capacity?
+├── Have Alpha Matter?
+│   ├── Infuse into a reactor (safest, immediate, 1g ≈ 1kW minus commission)
+│   │   → See "Reactor Infusion" below
+│   └── Infuse into a generator (higher ratio, IRREVERSIBLE, vulnerable to raids)
+│       → See "Generator Infusion" below
+└── No Alpha Matter?
+    └── Buy energy from a provider via agreement
+        → See "Buy Energy" below
+
+Have surplus energy?
+└── Sell it by creating a provider
+    → See "Sell Energy" below
+```
+
+---
+
+## Reactor Infusion (most common path)
+
+Infusing Alpha Matter (ualpha) into a reactor immediately increases the player's capacity. This is the safest and most common way to get more energy.
+
+### How It Works
+
+When you infuse ualpha into a reactor, the system generates power equal to the amount infused. This power is split between you and the reactor based on the reactor's **commission rate**:
+
+- **Player receives**: `power * (1 - commission)`
+- **Reactor receives**: `power * commission`
+
+The player's capacity increases automatically — no allocation or substation setup needed.
+
+### Example
+
+Infusing 3,000,000 ualpha into a reactor with 4% commission:
+
+```json
+{
+  "destinationType": "reactor",
+  "destinationId": "3-1",
+  "fuel": "3000000",
+  "power": "3000000",
+  "commission": "0.040000000000000000",
+  "playerId": "1-33"
+}
+```
+
+- `fuel`: 3,000,000 ualpha infused
+- `power`: 3,000,000 mW generated (1 ualpha = 1 mW = 0.001 W)
+- Reactor keeps 4%: 120,000 mW (120 W)
+- Player receives 96%: 2,880,000 mW (2,880 W) added to capacity
+
+### Procedure
+
+1. Check current capacity: `structsd query structs player [id]`
+2. Choose a reactor (usually your guild's): `structsd query structs reactor [id]` — note the `commission` field
+3. Infuse:
+
+```
+structsd tx structs reactor-infuse [your-address] [reactor-address] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+4. Verify: re-query player, confirm capacity increased
+
+### Choosing a Reactor
+
+- Your guild's reactor is the default choice — it strengthens the guild and you benefit from guild infrastructure
+- Lower commission = more capacity for you
+- Check commission before infusing: `structsd query structs reactor [id]`
+- You can infuse into any reactor, not just your guild's
+
+### Undoing Infusion
+
+- `structsd tx structs reactor-defuse [reactor-id]` — starts a cooldown period before ualpha is returned
+- `structsd tx structs reactor-cancel-defusion [reactor-id]` — cancel defusion and re-stake
+- `structsd tx structs reactor-begin-migration [source-reactor-id] [dest-reactor-id]` — move stake to a different reactor
+
+---
+
+## Generator Infusion
+
+Generators convert Alpha Matter to energy at higher ratios than reactors, but the infusion is **irreversible** and the generator is vulnerable to raids.
+
+### Conversion Rates
+
+| Generator | Type ID | Rate | Risk |
+|-----------|---------|------|------|
+| Field Generator | 20 | 1g = 2 kW | High — vulnerable to raids, irreversible |
+| Continental Power Plant | 21 | 1g = 5 kW | High — vulnerable to raids, irreversible |
+| World Engine | 22 | 1g = 10 kW | High — vulnerable to raids, irreversible |
+
+### Procedure
+
+1. Identify your generator struct: `structsd query structs struct [id]` — must be type 20, 21, or 22
+2. Infuse:
+
+```
+structsd tx structs struct-generator-infuse [struct-id] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+3. Verify: query player for capacity increase
+
+### When to Use Generators
+
+- You need maximum energy efficiency per gram of Alpha Matter
+- You have defense in place (shields, PDC, defenders) to protect the generator
+- You accept the risk that if the generator is destroyed, the infused Alpha is lost forever
+
+**Do not infuse generators without adequate defense.**
+
+---
+
+## Buy Energy (Agreement Path)
+
+If you have no Alpha Matter to infuse, you can buy energy from another player who is running a provider.
+
+### Procedure
+
+1. **Find a provider**: Query available providers:
+
+```
+structsd query structs provider-all
+```
+
+Or check your guild's providers. Look for one with acceptable `rateAmount`, `capacityMaximum`, and `durationMaximum`.
+
+2. **Open an agreement**:
+
+```
+structsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+The agreement automatically creates an allocation.
+
+3. **Connect the allocation to a substation**:
+
+```
+structsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+Connect to your guild's substation to benefit the guild, or create your own substation for independent energy management.
+
+4. **Verify**: Query player to confirm capacity increased.
+
+### Agreement Management
+
+- Increase capacity: `agreement-capacity-increase [agreement-id] [additional-capacity]`
+- Decrease capacity: `agreement-capacity-decrease [agreement-id] [reduce-by]`
+- Extend duration: `agreement-duration-increase [agreement-id] [additional-blocks]`
+- Close: `agreement-close [agreement-id]` — may incur cancellation penalty
+
+---
+
+## Sell Energy (Become a Provider)
+
+If you have surplus capacity (more power than you need), you can sell it to other players.
+
+### Procedure
+
+1. **Ensure surplus**: Query player — `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. You need meaningful surplus.
+
+2. **Create a provider** on your substation:
+
+```
+structsd tx structs provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+```
+
+| Parameter | Purpose |
+|-----------|---------|
+| `substation-id` | Your substation that has the surplus capacity |
+| `rate` | Price per unit capacity (ualpha) |
+| `access-policy` | Who can buy (open, guild-only, etc.) |
+| `provider-penalty` | Penalty you pay if you cancel |
+| `consumer-penalty` | Penalty buyer pays if they cancel |
+| `cap-min` / `cap-max` | Minimum and maximum capacity per agreement |
+| `dur-min` / `dur-max` | Minimum and maximum duration per agreement |
+
+3. **Others open agreements** against your provider — energy flows automatically.
+
+4. **Withdraw earnings**: `structsd tx structs provider-withdraw-balance [provider-id]`
+
+### Provider Management
+
+- Grant guild access: `provider-guild-grant [provider-id] [guild-id]`
+- Revoke guild access: `provider-guild-revoke [provider-id] [guild-id]`
+- Update terms: `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc.
+- Delete provider: `provider-delete [provider-id]` (close agreements first)
+
+---
+
+## Quick Reference
+
+| Situation | Action |
+|-----------|--------|
+| Low capacity, have Alpha | Infuse into guild reactor |
+| Need maximum kW per gram | Infuse into generator (irreversible) |
+| No Alpha, need capacity | Open agreement with a provider |
+| Surplus capacity | Create provider to sell energy |
+| Going offline (load > capacity) | Deactivate structs immediately, then increase capacity |
+| Check commission rate | `structsd query structs reactor [id]` |
+| Check your capacity | `structsd query structs player [id]` |
+
+## Commands Reference
+
+| Action | Command |
+|--------|---------|
+| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` |
+| Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration [src-reactor] [dest-reactor]` |
+| Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |
+| Open agreement | `structsd tx structs agreement-open [provider-id] [duration] [capacity]` |
+| Close agreement | `structsd tx structs agreement-close [agreement-id]` |
+| Create provider | `structsd tx structs provider-create [substation-id] [rate] [access] [prov-pen] [cons-pen] [cap-min] [cap-max] [dur-min] [dur-max]` |
+| Delete provider | `structsd tx structs provider-delete [provider-id]` |
+| Withdraw earnings | `structsd tx structs provider-withdraw-balance [provider-id]` |
+| Connect allocation | `structsd tx structs substation-allocation-connect [substation-id] [allocation-id]` |
+| Query player power | `structsd query structs player [id]` |
+| Query reactor | `structsd query structs reactor [id]` |
+| Query providers | `structsd query structs provider-all` |
+
+Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+
+## Error Handling
+
+- **Going offline** — Load exceeds capacity. Immediately deactivate non-essential structs (`struct-deactivate`), then increase capacity via reactor infusion or agreement.
+- **"insufficient balance"** — Not enough ualpha. Mine and refine ore first, or buy energy via agreement instead.
+- **"generator infuse failed"** — Verify the struct is a generator type (20, 21, or 22) and is online.
+- **Commission too high** — Check other reactors. You can infuse into any reactor, not just your guild's.
+- **No providers available** — Ask guild members to create providers, or infuse your own reactor.
+
+## See Also
+
+- `.cursor/skills/structs-economy/SKILL.md` — Full economic operations (all allocation types, token transfers)
+- `.cursor/skills/structs-power/SKILL.md` — Substations, player connections, power monitoring
+- `knowledge/mechanics/power.md` — Capacity formulas, load calculations, online status
+- `knowledge/economy/energy-market.md` — Provider/agreement mechanics, pricing
+- `knowledge/mechanics/resources.md` — Alpha Matter conversion rates
+
+</document>
+
+<document>
 <source>.cursor/skills/structs-streaming/SKILL.md</source>
 ---
 name: structs-streaming
@@ -2137,7 +2463,7 @@ Example (Orbital Hydro guild):
 ```json
 {
   "services": {
-    "grass_nats_websocket": "ws://reactor.oh.energy:1443",
+    "grass_nats_websocket": "ws://crew.oh.energy:1443",
     "guild_api": "http://crew.oh.energy/api/",
     "reactor_api": "http://reactor.oh.energy:1317/"
   }
@@ -2146,7 +2472,24 @@ Example (Orbital Hydro guild):
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://reactor.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+
+---
+
+## Discovery First
+
+Before subscribing to specific subjects, **subscribe to the `>` wildcard** to see all traffic flowing through the GRASS server. This reveals the actual subject patterns in use, which may differ from documentation.
+
+```javascript
+const sub = nc.subscribe(">");
+for await (const msg of sub) {
+  console.log(`[${msg.subject}]`, new TextDecoder().decode(msg.data));
+}
+```
+
+Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
+
+**Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
 
 ---
 
@@ -2162,9 +2505,12 @@ Subscribe to subjects matching the entities you care about:
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
+| Grid | `structs.grid.*` | `structs.grid.{grid_id}` | Grid/map changes |
 | Global | `structs.global` | `structs.global` | Block updates |
+| Consensus | `consensus` | `consensus` | Chain consensus events |
+| Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
-Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need.
+Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
 
 ---
 
@@ -2180,6 +2526,8 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
 ### Struct Events
+
+**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{id}`) rather than the struct subject. Subscribe to both if you need complete coverage.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -2228,7 +2576,7 @@ npm install nats.ws
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 
 const sub = nc.subscribe("structs.planet.2-1");
 for await (const msg of sub) {
@@ -2249,7 +2597,7 @@ pip install nats-py
 import asyncio, json, nats
 
 async def main():
-    nc = await nats.connect("ws://reactor.oh.energy:1443")
+    nc = await nats.connect("ws://crew.oh.energy:1443")
     sub = await nc.subscribe("structs.planet.2-1")
     async for msg in sub.messages:
         event = json.loads(msg.data.decode())
@@ -2266,7 +2614,7 @@ A tool that watches for raids on your planet and outputs an alert:
 import { connect } from "nats.ws";
 
 const PLANET_ID = process.argv[2]; // e.g. "2-1"
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 const sub = nc.subscribe(`structs.planet.${PLANET_ID}`);
 
 for await (const msg of sub) {
@@ -2287,7 +2635,7 @@ Instead of polling `structsd query structs address` after guild signup, watch fo
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://reactor.oh.energy:1443" });
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 const sub = nc.subscribe("structs.address.register.*");
 
 for await (const msg of sub) {
@@ -2327,7 +2675,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### Quick Setup
 
-1. Get the GRASS endpoint from your guild config (or use `ws://reactor.oh.energy:1443`)
+1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)
 2. Record the endpoint in `TOOLS.md` under Servers
 3. Choose your language (Node.js or Python)
 4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)
@@ -3223,6 +3571,37 @@ If total load ever exceeds total capacity, the player goes **offline** and canno
 
 ---
 
+## Increasing Capacity
+
+Three methods to increase a player's available capacity:
+
+| Method | How | Rate | Risk | Reversible |
+|--------|-----|------|------|------------|
+| Reactor infusion | `reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` | 1g ≈ 1 kW (minus commission) | Low | Yes (defuse with cooldown) |
+| Generator infusion | `struct-generator-infuse [struct-id] [amount-ualpha]` | 1g = 2-10 kW depending on type | High (raidable) | **No** |
+| Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Medium (ongoing cost) | Yes (close agreement) |
+
+### Reactor Commission
+
+When infusing Alpha Matter into a reactor, the generated power is split between the player and the reactor based on the reactor's **commission rate**:
+
+```
+playerCapacityGain = power * (1 - commission)
+reactorCapacityGain = power * commission
+```
+
+The player's capacity increases **automatically** — no allocation or substation setup needed. This makes reactor infusion the simplest path to more capacity.
+
+Example: 3,000,000 ualpha infused into a reactor with 4% commission generates 3,000,000 mW. The reactor keeps 120,000 mW (4%), the player receives 2,880,000 mW (96%) added directly to their capacity.
+
+### Allocation Sources
+
+Allocations can be created from Reactors, Players, and Substations. Allocations can only be **connected to** Substations.
+
+For full energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+
+---
+
 ## See Also
 
 - [building.md](building.md) — Build power requirements
@@ -3246,9 +3625,9 @@ If total load ever exceeds total capacity, the player goes **offline** and canno
 | Step | Action | Description |
 |------|--------|-------------|
 | 1 | `struct-build-initiate` | Starts construction; reserves slot; begins aging |
-| 2 | `struct-build-compute` | Calculates proof-of-work hash AND auto-submits `struct-build-complete` |
+| 2 | `struct-build-compute` | Calculates proof-of-work hash, auto-submits `struct-build-complete`, and struct **auto-activates** |
 
-`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. You only need `struct-build-complete` directly if you computed the hash through external tools.
+`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. The struct then **automatically activates** — no separate `struct-activate` call is needed after building. Use `struct-activate` only to re-activate a struct that was previously deactivated. You only need `struct-build-complete` directly if you computed the hash through external tools.
 
 ---
 
@@ -3654,6 +4033,17 @@ Allocation: sourceId (Provider/Reactor) → destinationId (Player/Struct)
 | World Engine | 1g = 10 kW | High | Maximum efficiency; single point of failure |
 
 See [struct-types.md](../entities/struct-types.md) for build costs and power requirements.
+
+### Reactor Commission and Auto-Capacity
+
+Reactors charge a **commission** on infusions. When a player infuses ualpha into a reactor, the generated power is split:
+
+- **Player receives**: `power * (1 - commission)` — added directly to the player's capacity (no manual allocation needed)
+- **Reactor receives**: `power * commission` — increases the reactor's capacity
+
+This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
+
+For step-by-step energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
 
 ---
 
@@ -4373,6 +4763,31 @@ By the end of early game (first few days) you should have:
 - Background pipeline running: next mine initiated, aging toward D=3
 
 You are not winning yet. You are alive, defended, and your pipeline is flowing. That is enough.
+
+---
+
+## Canonical Build Sequence (timing reference)
+
+End-to-end ramp from player creation to first combat-ready state. All times are wait-to-D=3.
+
+| Step | Action | Wait | Cumulative |
+|------|--------|------|------------|
+| 1 | Create player + explore planet | ~30 sec | 0 min |
+| 2 | Initiate Command Ship (type 1) | ~17 min | 17 min |
+| 3 | Initiate Ore Extractor (type 14) | ~57 min | 17 min (parallel) |
+| 4 | Initiate Ore Refinery (type 15) | ~57 min | 17 min (parallel) |
+| 5 | Initiate Orbital Shield (type 16) | ~58 min | 17 min (parallel) |
+| 6 | Initiate all fleet structs (types 2-13) | 20 min - 1 hr each | 17 min (parallel) |
+| 7 | Compute Command Ship (ready ~17 min) | instant at D=3 | ~17 min |
+| 8 | Compute Extractor + Refinery (~57 min) | instant at D=3 | ~57 min |
+| 9 | Initiate first mine | ~17 hr | ~57 min |
+| 10 | Compute defense structs (PDC ~3.7 hr, Jamming ~3.7 hr) | instant at D=3 | ~4 hr |
+| 11 | Compute fleet structs (longest: Battleship ~1 hr) | instant at D=3 | ~4 hr |
+| 12 | Compute mine (ready ~17 hr from step 9) | instant at D=3 | ~17 hr |
+| 13 | Initiate refine | ~34 hr | ~17 hr |
+| 14 | Compute refine (ready ~34 hr from step 13) | instant at D=3 | ~51 hr |
+
+**Key insight**: Steps 2-6 should all be initiated within minutes of each other. They age in parallel. By the time you compute the Command Ship at 17 min, the rest are already aging. The total wall time from player creation to first Alpha Matter is ~51 hours (dominated by the mine-refine cycle), but you are combat-ready with a full fleet and defenses within ~4 hours.
 
 ---
 

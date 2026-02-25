@@ -9,9 +9,9 @@
 | Step | Action | Description |
 |------|--------|-------------|
 | 1 | `struct-build-initiate` | Starts construction; reserves slot; begins aging |
-| 2 | `struct-build-compute` | Calculates proof-of-work hash AND auto-submits `struct-build-complete` |
+| 2 | `struct-build-compute` | Calculates proof-of-work hash, auto-submits `struct-build-complete`, and struct **auto-activates** |
 
-`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. You only need `struct-build-complete` directly if you computed the hash through external tools.
+`struct-build-compute` is a CLI helper that performs the hash calculation and automatically submits the `struct-build-complete` transaction with the results. The struct then **automatically activates** — no separate `struct-activate` call is needed after building. Use `struct-activate` only to re-activate a struct that was previously deactivated. You only need `struct-build-complete` directly if you computed the hash through external tools.
 
 ---
 

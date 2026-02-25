@@ -9,17 +9,32 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
 2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
-4. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-5. **Optional** — Move, set defense, or activate stealth as needed.
+3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+4. **Optional** — Move, set defense, or activate stealth as needed.
+
+**Auto-activation**: Structs automatically activate after build-complete. Use `struct-activate` only to re-activate a struct that was previously deactivated with `struct-deactivate`.
 
 ## Compute vs Complete
 
-`struct-build-compute` is a helper that performs proof-of-work and automatically submits `struct-build-complete` with the hash results. You only need `struct-build-complete` if you computed the hash through external tools and want to submit it manually.
+`struct-build-compute` is a helper that performs proof-of-work and automatically submits `struct-build-complete` with the hash results. The struct then auto-activates. You only need `struct-build-complete` if you computed the hash through external tools and want to submit it manually.
 
 ## The -D Flag
 
 The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 3`** — at D=3, the hash is trivially instant and zero CPU is wasted. Lower values wait longer but burn no compute on hard hashes.
+
+## Charge Costs
+
+Every action consumes charge. Charge accumulates passively at 1 per block (~6 sec/block).
+
+| Action | Charge Cost | Wait Time |
+|--------|------------|-----------|
+| Build complete | 8 | ~48 seconds |
+| Move | 8 | ~48 seconds |
+| Activate (re-activation only) | 1 | ~6 seconds |
+| Defend change | 1 | ~6 seconds |
+| Primary weapon | 1-20 | Varies by struct |
+
+If you get a "required charge X but player had Y" error, wait for charge to accumulate. See `knowledge/mechanics/building.md` for the complete charge table.
 
 ## Expected Build Times
 
@@ -42,10 +57,10 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 | Action | CLI Command |
 |--------|-------------|
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
-| Activate | `structsd tx structs struct-activate [struct-id]` |
+| Re-activate (only after deactivation) | `structsd tx structs struct-activate [struct-id]` |
 | Deactivate | `structsd tx structs struct-deactivate [struct-id]` |
 | Move | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
 | Set defense | `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` |
@@ -63,11 +78,16 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 ## Error Handling
 
-- **"insufficient resources"** — Check Alpha Matter; use `structsd query structs player [id]`.
-- **"power overload"** — Add capacity before activating; going offline blocks all actions.
-- **"invalid slot"** — Slot 0–3 per ambit; check existing structs.
-- **"Command Ship required"** — Command Ship must be online for planet builds.
-- **"fleet not on station"** — Move fleet or wait before building on planet.
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "required charge X but player had Y" | Not enough charge accumulated | Wait ~48s (8 blocks) between build actions |
+| "insufficient resources" | Not enough Alpha Matter | Mine and refine ore first; check balance with `structsd query structs player [id]` |
+| "power overload" | Capacity too low for struct to go online | Deactivate non-essential structs or increase capacity (see `structs-energy` skill) |
+| "fleet not on station" | Fleet is away from planet | Wait for fleet return or `fleet-move` back |
+| "Command Ship required" | Command Ship offline or not built | Build or re-activate Command Ship first |
+| "invalid slot" | Slot already occupied | Check existing structs on planet; slots are 0-3 per ambit |
+| "invalid ambit" | Struct type doesn't support chosen ambit | Check `possibleAmbit` bit-flags for the struct type |
+| Connection refused on port 26657 | No local node; remote node not configured | Set `node` in `~/.structs/config/client.toml` or use `--node` flag (see TOOLS.md) |
 
 ## See Also
 

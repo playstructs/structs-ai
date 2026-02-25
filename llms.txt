@@ -43,6 +43,7 @@
 - [Guild](https://structs.ai/skills/structs-guild/SKILL): Guild creation, membership workflows, settings, Central Bank mint/redeem
 - [Power](https://structs.ai/skills/structs-power/SKILL): Substations, allocations, player connections, power monitoring
 - [Diplomacy](https://structs.ai/skills/structs-diplomacy/SKILL): Object/address permissions, address registration, multi-address management
+- [Energy](https://structs.ai/skills/structs-energy/SKILL): Energy capacity management -- reactor/generator infusion, buying/selling energy, commission mechanics
 - [Streaming](https://structs.ai/skills/structs-streaming/SKILL): GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools
 - [Reconnaissance](https://structs.ai/skills/structs-reconnaissance/SKILL): Full query catalog, intelligence persistence to memory/intel/
 
