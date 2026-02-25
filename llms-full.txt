@@ -102,13 +102,14 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 
 ## New Player
 
-1. Read `TOOLS.md` -- confirm your server addresses, secrets setup, and account
-2. **Set up your key**: `structsd keys add [name]` (new) or `structsd keys add [name] --recover` (existing mnemonic). Store the mnemonic securely (env var, `.env` file, or commander-provided).
-3. **Create your player**: Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`. Two paths:
+1. **Verify `structsd` is installed**: Run `structsd version`. If not found, use the `structsd-install` skill in `.cursor/skills/structsd-install/`.
+2. Read `TOOLS.md` -- confirm your server addresses, secrets setup, and account
+3. **Set up your key**: `structsd keys add [name]` (new) or `structsd keys add [name] --recover` (existing mnemonic). Store the mnemonic securely (env var, `.env` file, or commander-provided).
+4. **Create your player**: Use the `structs-onboarding` skill in `.cursor/skills/structs-onboarding/`. Two paths:
    - **Have $alpha?** Delegate to a reactor — player created automatically.
    - **No $alpha?** Join a guild via the bundled signup script — the guild creates your player.
-4. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
-5. Fill in `IDENTITY.md` when you have a player ID
+5. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
+6. Fill in `IDENTITY.md` when you have a player ID
 
 ## Returning Player
 
@@ -148,12 +149,13 @@ You're an AI agent about to play Structs. This guide gets you from zero to playi
 
 ## First Session
 
-1. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate
-2. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
-3. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
-4. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
-5. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
-6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
+1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill.
+2. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate
+3. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
+4. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
+5. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
+6. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
+7. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
 
 ---
 
@@ -174,7 +176,8 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
-| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Address registration, planet exploration, first builds |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
+| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
 | [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
@@ -277,7 +280,7 @@ These will save your game:
 2. **Monitor power.** If load exceeds capacity, you go offline. Offline = can't act.
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
-5. **Never block on PoW.** Launch compute in background. Initiate early, compute later. Mining takes ~8 hours, refining ~15 hours. The game rewards parallel operations.
+5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
 
 ---
 
@@ -414,6 +417,12 @@ If you have a commander, learn about them. Update this as you go.
 # Tools
 
 Environment-specific configuration. Skills are shared. This file is yours — fill it in during your first session.
+
+---
+
+## Prerequisites
+
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](.cursor/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
 
 ---
 
@@ -1126,10 +1135,151 @@ The Killer can over-index on the hunt and under-invest in the base. They'll raid
 </document>
 
 <document>
+<source>.cursor/skills/structsd-install/SKILL.md</source>
+---
+name: structsd-install
+description: Installs the structsd binary from source. Covers Go, Ignite CLI, and building structsd for Linux and macOS. Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
+---
+
+# Install structsd
+
+Builds the `structsd` binary from source using Ignite CLI. After this procedure, `structsd` will be available on your PATH.
+
+## Prerequisites
+
+Two dependencies are required: **Go 1.24.1+** and **Ignite CLI**.
+
+---
+
+### 1. Install Go
+
+#### Linux (amd64)
+
+```bash
+wget https://go.dev/dl/go1.24.1.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.24.1.linux-amd64.tar.gz
+rm go1.24.1.linux-amd64.tar.gz
+```
+
+If an older Go was installed via apt, remove it first: `sudo apt remove -y golang-go`
+
+#### macOS (Apple Silicon)
+
+```bash
+curl -OL https://go.dev/dl/go1.24.1.darwin-arm64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.24.1.darwin-arm64.tar.gz
+rm go1.24.1.darwin-arm64.tar.gz
+```
+
+#### macOS (Intel)
+
+```bash
+curl -OL https://go.dev/dl/go1.24.1.darwin-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.24.1.darwin-amd64.tar.gz
+rm go1.24.1.darwin-amd64.tar.gz
+```
+
+Alternatively on macOS: `brew install go@1.24`
+
+#### Configure PATH
+
+Add to `~/.profile` (or `~/.zshrc` on macOS):
+
+```bash
+export PATH=$PATH:/usr/local/go/bin:~/go/bin
+```
+
+Reload: `source ~/.profile` (or `source ~/.zshrc`)
+
+#### Verify
+
+```bash
+go version
+```
+
+Expected: `go version go1.24.1 linux/amd64` (or `darwin/arm64`, etc.)
+
+---
+
+### 2. Install Ignite CLI
+
+```bash
+curl https://get.ignite.com/cli! | bash
+```
+
+#### Verify
+
+```bash
+ignite version
+```
+
+---
+
+### 3. Build structsd
+
+Clone the repository and build:
+
+```bash
+git clone https://github.com/playstructs/structsd.git
+cd structsd
+ignite chain build
+```
+
+The binary is installed to `~/go/bin/structsd`. Since `~/go/bin` is on your PATH (from step 1), it's immediately available.
+
+#### Verify
+
+```bash
+structsd version
+```
+
+---
+
+### 4. Update structsd
+
+To update to the latest version:
+
+```bash
+cd structsd
+git pull origin main
+ignite chain build
+```
+
+---
+
+## Quick Check
+
+Run all verifications in sequence:
+
+```bash
+go version && ignite version && structsd version
+```
+
+If any command fails, revisit the corresponding step above.
+
+## Troubleshooting
+
+- **`structsd: command not found`** — Ensure `~/go/bin` is on your PATH. Run `ls ~/go/bin/structsd` to confirm the binary exists.
+- **`ignite: command not found`** — Re-run the Ignite CLI install. The curl command installs to `/usr/local/bin/ignite`.
+- **`go: command not found`** — Ensure `/usr/local/go/bin` is on your PATH. Reload your shell profile.
+- **Build fails with Go version error** — Verify `go version` shows 1.24.1+. Older Go versions are not compatible.
+- **Permission denied on `/usr/local`** — Use `sudo` for the tar extraction. On shared systems, ask your administrator.
+
+## See Also
+
+- `TOOLS.md` — Environment configuration (servers, account, after structsd is installed)
+- `.cursor/skills/structs-onboarding/SKILL.md` — Player creation and first builds (requires structsd)
+
+</document>
+
+<document>
 <source>.cursor/skills/structs-onboarding/SKILL.md</source>
 ---
 name: structs-onboarding
-description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
+description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~17 min (Command Ship) to ~57 min (Ore Extractor/Refinery).
 ---
 
 # Structs Onboarding
@@ -1295,10 +1445,10 @@ structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name
 Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 200; wait ~11 min for D=8, hash completes instantly. Compute auto-submits the complete transaction.
+Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction.
 
 ---
 
@@ -1313,10 +1463,10 @@ structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name
 Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 700; wait ~34 min for D=8.
+Build difficulty 700; wait ~57 min for D=3.
 
 ---
 
@@ -1350,14 +1500,14 @@ Query player, planet, fleet, and structs. Confirm all online.
 
 The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.
 
-The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 8`** — at D=8 the hash completes in seconds, and the wait is the minimum practical time. At D=9+ hashing is effectively impossible.
+The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 3`** — at D=3 the hash is trivially instant with zero wasted CPU. Lower values wait longer but waste less compute.
 
-| Struct | Type ID | Build Difficulty | Wait to D=8 | Wait to D=5 |
-|--------|---------|------------------|-------------|-------------|
-| Command Ship | 1 | 200 | ~11 min | ~14 min |
-| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
-| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
-| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
+| Struct | Type ID | Build Difficulty | Wait to D=3 |
+|--------|---------|------------------|-------------|
+| Command Ship | 1 | 200 | ~17 min |
+| Ore Extractor | 14 | 700 | ~57 min |
+| Ore Refinery | 15 | 700 | ~57 min |
+| Ore Bunker | 18 | 3,600 | ~4.6 hr |
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
 
@@ -1428,7 +1578,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 <source>.cursor/skills/structs-mining/SKILL.md</source>
 ---
 name: structs-mining
-description: Executes resource extraction in Structs. Mines ore and refines it into Alpha Matter. Use when mining ore, refining ore, starting a mine-refine cycle, checking planet ore levels, or managing resource extraction. Mining takes ~8 hours and refining ~15 hours — both are background operations. Ore is stealable until refined.
+description: Executes resource extraction in Structs. Mines ore and refines it into Alpha Matter. Use when mining ore, refining ore, starting a mine-refine cycle, checking planet ore levels, or managing resource extraction. Mining takes ~17 hours and refining ~34 hours — both are background operations. Ore is stealable until refined.
 ---
 
 # Structs Mining
@@ -1436,8 +1586,8 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~8 hours** for difficulty to drop to D=8. Compute auto-submits the complete transaction.
-3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~15 hours** for D=8. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
+3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
@@ -1449,9 +1599,9 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 | Action | CLI Command |
 |--------|-------------|
-| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 5` |
+| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 3` |
 | Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete [struct-id]` |
-| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 5` |
+| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 3` |
 | Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
@@ -1474,17 +1624,17 @@ Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
 ## Timing
 
-Mining and refining have high base difficulties, meaning they take **hours** for difficulty to drop to a feasible level. At D=8, the hash itself completes in seconds — the wait IS the time.
+Mining and refining have high base difficulties, meaning they take **hours** for difficulty to drop to a feasible level. At D=3, the hash is trivially instant — the wait IS the time, and zero CPU is wasted on hard hashing.
 
-| Operation | Difficulty | D=8 | D=5 |
-|-----------|------------|------|------|
-| Mine | 14,000 | ~8.1 hr | ~12.7 hr |
-| Refine | 28,000 | ~15.0 hr | ~24.4 hr |
-| Full cycle (mine + refine) | -- | ~23 hr | ~37 hr |
+| Operation | Difficulty | D=3 |
+|-----------|------------|------|
+| Mine | 14,000 | ~17 hr |
+| Refine | 28,000 | ~34 hr |
+| Full cycle (mine + refine) | -- | ~51 hr |
 
-**Use `-D 8`** for mine/refine. The difference between D=8 and D=5 is several hours of additional waiting for negligible hash speed improvement.
+**Use `-D 3`** for mine/refine. The hash is trivially instant at D=3, wasting zero CPU cycles. Higher `-D` values start sooner but burn significant compute on hard hashes.
 
-**Pipeline strategy**: After initiating a mine, immediately do other things — build structs, scout players, plan defense. When the mine completes, immediately start the refine. While refining runs (~15 hr), you have time to initiate the next mine so its age clock starts ticking. Always keep something aging.
+**Pipeline strategy**: After initiating a mine, immediately do other things — build structs, scout players, plan defense. When the mine completes, immediately start the refine. While refining runs (~34 hr), you have time to initiate the next mine so its age clock starts ticking. Always keep something aging.
 
 ## See Also
 
@@ -1499,7 +1649,7 @@ Mining and refining have high base difficulties, meaning they take **hours** for
 <source>.cursor/skills/structs-building/SKILL.md</source>
 ---
 name: structs-building
-description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~11 min (Command Ship) to ~4.9 hours (World Engine).
+description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~17 min (Command Ship) to ~6.4 hours (World Engine).
 ---
 
 # Structs Building
@@ -1508,7 +1658,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
 2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
+3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
 4. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 5. **Optional** — Move, set defense, or activate stealth as needed.
 
@@ -1518,21 +1668,21 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 ## The -D Flag
 
-The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 8`** — at D=8, the hash completes in seconds. At D=9+, hashing is effectively impossible.
+The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 3`** — at D=3, the hash is trivially instant and zero CPU is wasted. Lower values wait longer but burn no compute on hard hashes.
 
 ## Expected Build Times
 
-Time from initiation until compute completes (assuming 6 sec/block):
+Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
-| Struct | Type ID | Build Difficulty | D=8 | D=5 |
-|--------|---------|------------------|------|------|
-| Command Ship | 1 | 200 | ~11 min | ~14 min |
-| Starfighter | 3 | 250 | ~12 min | ~17 min |
-| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
-| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
-| PDC | 19 | 2,880 | ~2.1 hr | ~2.9 hr |
-| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
-| World Engine | 22 | 5,000 | ~3.5 hr | ~4.9 hr |
+| Struct | Type ID | Build Difficulty | Wait to D=3 |
+|--------|---------|------------------|-------------|
+| Command Ship | 1 | 200 | ~17 min |
+| Starfighter | 3 | 250 | ~20 min |
+| Ore Extractor | 14 | 700 | ~57 min |
+| Ore Refinery | 15 | 700 | ~57 min |
+| PDC | 19 | 2,880 | ~3.7 hr |
+| Ore Bunker | 18 | 3,600 | ~4.6 hr |
+| World Engine | 22 | 5,000 | ~6.4 hr |
 
 **Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
 
@@ -1541,7 +1691,7 @@ Time from initiation until compute completes (assuming 6 sec/block):
 | Action | CLI Command |
 |--------|-------------|
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 5` |
+| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
 | Activate | `structsd tx structs struct-activate [struct-id]` |
@@ -1592,7 +1742,7 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
 2. **Optional stealth** — `structsd tx structs struct-stealth-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y` before attack.
 3. **Attack structs** — `structsd tx structs struct-attack [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
+4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
 5. **Defense setup** — `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` to assign; `struct-defense-clear [defender-struct-id]` to remove.
 
 ## Commands Reference
@@ -1600,7 +1750,7 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 | Action | CLI Command |
 |--------|-------------|
 | Attack | `structsd tx structs struct-attack [operating-struct-id] [target-ids] [weapon-system]` |
-| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 5` |
+| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 3` |
 | Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete [fleet-id]` |
 | Fleet move | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
 | Set defense | `structsd tx structs struct-defense-set [defender-id] [protected-id]` |
@@ -1612,7 +1762,7 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 
 ## Raid Timing
 
-`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 8` as the minimum feasible target. Compute auto-submits the complete transaction.
+`planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 3` for zero wasted CPU. Compute auto-submits the complete transaction.
 
 **Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
 
@@ -2631,25 +2781,25 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Proof-of-Work Difficulties
 
-| Operation | Difficulty | Time to D=8 | Time to D=5 |
-|-----------|------------|-------------|-------------|
-| Ore mining | 14,000 | ~8.1 hr | ~12.7 hr |
-| Ore refining | 28,000 | ~15.0 hr | ~24.4 hr |
+| Operation | Difficulty | Time to D=3 |
+|-----------|------------|-------------|
+| Ore mining | 14,000 | ~17 hr |
+| Ore refining | 28,000 | ~34 hr |
 
-Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~23 hours at D=8 or ~37 hours at D=5. These are background operations — see [async-operations.md](../../awareness/async-operations.md).
+Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 hours at D=3. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
 
 ---
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=8, this window is **~15 hours**. At D=5, it's **~24 hours**.
+After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
 | Strategy | Trade-off |
 |----------|-----------|
-| Refine at D=8 immediately | ~15 hr exposure, starts as soon as ore arrives |
-| Refine at D=5 (wait longer) | ~24 hr total from mine start, but less CPU cost |
+| Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
+| Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
 | Shield + stealth during refine | Reduces raid success, costs power |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |
@@ -2873,30 +3023,30 @@ Difficulty is age-based: older builds require less work.
 
 The `-D` flag (range 1-64) on compute commands tells the CLI to wait until difficulty drops to the target level before starting the hash.
 
-- Lower `-D` values = longer wait, but hash completes instantly (less CPU work)
-- Higher `-D` values = starts sooner, but hash takes exponentially longer
-- **Recommended: `-D 8`** for builds, `-D 8` for mine/refine (the sweet spot where hashes are feasible)
+- Lower `-D` values = longer wait, but hash completes instantly (zero CPU wasted)
+- Higher `-D` values = starts sooner, but hash takes exponentially longer and burns CPU
+- **Recommended: `-D 3`** for all operations — the hash is trivially instant and no CPU cycles are wasted on hard hashing
 
 ### The Difficulty Cliff
 
-At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** Always wait until D <= 8 before computing.
+At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** However, even at D=8 some CPU is burned. Using D=3 eliminates all wasted compute.
 
 ### Difficulty Decay Table
 
 Time from initiation until difficulty drops to target level (assuming 6 sec/block):
 
-| Base Difficulty | D=8 | D=7 | D=6 | D=5 |
-|----------------|------|------|------|------|
-| 200 (Command Ship) | ~11 min | ~12 min | ~13 min | ~14 min |
-| 250 (Starfighter) | ~12 min | ~14 min | ~15 min | ~17 min |
-| 700 (Ore Ext/Ref) | ~34 min | ~37 min | ~41 min | ~46 min |
-| 2,880 (PDC) | ~2.1 hr | ~2.3 hr | ~2.6 hr | ~2.9 hr |
-| 3,600 (Ore Bunker) | ~2.5 hr | ~2.8 hr | ~3.2 hr | ~3.5 hr |
-| 5,000 (World Engine) | ~3.5 hr | ~3.8 hr | ~4.3 hr | ~4.9 hr |
-| 14,000 (Mine) | ~8.1 hr | ~9.2 hr | ~10.8 hr | ~12.7 hr |
-| 28,000 (Refine) | ~15.0 hr | ~17.3 hr | ~20.6 hr | ~24.4 hr |
+| Base Difficulty | D=8 | D=5 | D=3 |
+|----------------|------|------|------|
+| 200 (Command Ship) | ~11 min | ~14 min | ~17 min |
+| 250 (Starfighter) | ~12 min | ~17 min | ~20 min |
+| 700 (Ore Ext/Ref) | ~34 min | ~46 min | ~57 min |
+| 2,880 (PDC) | ~2.0 hr | ~2.9 hr | ~3.7 hr |
+| 3,600 (Ore Bunker) | ~2.4 hr | ~3.6 hr | ~4.6 hr |
+| 5,000 (World Engine) | ~3.2 hr | ~4.9 hr | ~6.4 hr |
+| 14,000 (Mine) | ~8.1 hr | ~12.7 hr | ~17.2 hr |
+| 28,000 (Refine) | ~15.0 hr | ~24.4 hr | ~33.7 hr |
 
-At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly longer wait but the hash is trivially instant.
+At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is wasted. Higher `-D` values trade shorter wait for exponentially more compute burned on hard hashes.
 
 ### Strategic Implications
 
@@ -2904,9 +3054,9 @@ At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly lo
 
 1. Initiate all planned builds/mines/refines immediately (costs only gas)
 2. Do other things while age accumulates (scout, plan, build other structs)
-3. Come back and compute when difficulty has dropped to D <= 8
+3. Come back and compute when difficulty has dropped to D=3
 
-**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~51 hours at D=3. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
 
 **Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 
@@ -3863,15 +4013,15 @@ The opening hours determine whether you thrive or spiral. You have one planet, f
 
 Follow this sequence. Deviations cost tempo and invite disaster. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel.
 
-1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~11 min to D=8)
+1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~17 min to D=3)
 
-2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~34 min to D=8) While both builds age, scout the galaxy and assess neighbors.
+2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3) While both builds age, scout the galaxy and assess neighbors.
 
-3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~34 min to D=8) Both planet builds can age simultaneously.
+3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~57 min to D=3) Both planet builds can age simultaneously.
 
-4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~8 hours to D=8**. Launch in background and do other things.
+4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~17 hours to D=3**. Launch in background and do other things.
 
-5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~15 hours to D=8**. Every hour ore sits unrefined is exposure.
+5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~34 hours to D=3**. Every hour ore sits unrefined is exposure.
 
 6. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero. Build during the long mine/refine waits.
 
@@ -3918,7 +4068,7 @@ By the end of early game (1-2 days) you should have:
 - First ore mined and refined to Alpha Matter
 - Reactor providing stable power with headroom
 - No unrefined ore sitting vulnerable
-- Background pipeline running: next mine initiated, aging toward D=8
+- Background pipeline running: next mine initiated, aging toward D=3
 
 You are not winning yet. You are alive and your pipeline is flowing. That is enough.
 
@@ -3948,7 +4098,7 @@ You are not winning yet. You are alive and your pipeline is flowing. That is eno
 
 Early game was survival. Mid game is multiplication. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
 
-**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~23 hours at D=8. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
+**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
 
 ---
 
@@ -5683,18 +5833,18 @@ When approaching context limits, use [Context Handoff](context-handoff.md). Save
 
 Every major action in Structs requires proof-of-work: building, mining, refining, raiding. PoW difficulty drops logarithmically with age — meaning the optimal strategy is to **initiate early** and **compute later**, not to initiate and immediately grind.
 
-Real timescales (at ~6 sec/block, waiting for D=8):
+Real timescales (at ~6 sec/block, waiting for D=3):
 
-| Operation | Base Difficulty | Time to D=8 |
+| Operation | Base Difficulty | Time to D=3 |
 |-----------|----------------|-------------|
-| Build (Command Ship) | 200 | ~11 min |
-| Build (Ore Extractor) | 700 | ~34 min |
-| Build (PDC) | 2,880 | ~2.1 hr |
-| Build (World Engine) | 5,000 | ~3.5 hr |
-| Mine | 14,000 | ~8.1 hr |
-| Refine | 28,000 | ~15.0 hr |
+| Build (Command Ship) | 200 | ~17 min |
+| Build (Ore Extractor) | 700 | ~57 min |
+| Build (PDC) | 2,880 | ~3.7 hr |
+| Build (World Engine) | 5,000 | ~6.4 hr |
+| Mine | 14,000 | ~17 hr |
+| Refine | 28,000 | ~34 hr |
 
-Mining takes 8+ hours. Refining takes 15+ hours. An agent that blocks on PoW — waiting synchronously for a single operation to complete — wastes enormous game time doing nothing. In a competitive multiplayer game, this is fatal.
+Mining takes 17+ hours. Refining takes 34+ hours. An agent that blocks on PoW — waiting synchronously for a single operation to complete — wastes enormous game time doing nothing. In a competitive multiplayer game, this is fatal.
 
 ---
 
@@ -5733,9 +5883,9 @@ The PoW difficulty formula is logarithmic:
 difficulty = 64 - floor(log10(age) / log10(baseDifficulty) * 63)
 ```
 
-At difficulty 8, a hash completes in seconds. At difficulty 9, it takes hours or is impossible. **This cliff between D=8 and D=9 is the most important tactical fact in PoW.** Always wait until D <= 8.
+At difficulty 8, a hash completes in seconds. At difficulty 9, it takes hours or is impossible. This cliff between D=8 and D=9 matters — but even at D=8 some CPU is burned on hashing.
 
-Use `-D 8` for all compute commands. The marginal benefit of waiting for D=5 (a few hours more) is negligible — the hash is already instant at D=8.
+**Use `-D 3` for all compute commands.** At D=3 the hash is trivially instant and zero CPU cycles are wasted. The extra wait over D=8 is modest for builds and well worth it for the compute savings.
 
 ---
 
@@ -5743,17 +5893,17 @@ Use `-D 8` for all compute commands. The marginal benefit of waiting for D=5 (a 
 
 Pre-calculated time from initiation to target difficulty (6 sec/block):
 
-| Base Difficulty | Example | D=8 | D=7 | D=6 | D=5 |
-|----------------|---------|------|------|------|------|
-| 200 | Command Ship | 11 min | 12 min | 13 min | 14 min |
-| 250 | Starfighter | 12 min | 14 min | 15 min | 17 min |
-| 450 | Frigate | 22 min | 24 min | 27 min | 30 min |
-| 700 | Ore Extractor | 34 min | 37 min | 41 min | 46 min |
-| 2,880 | PDC | 2.1 hr | 2.3 hr | 2.6 hr | 2.9 hr |
-| 3,600 | Ore Bunker | 2.5 hr | 2.8 hr | 3.2 hr | 3.5 hr |
-| 5,000 | World Engine | 3.5 hr | 3.8 hr | 4.3 hr | 4.9 hr |
-| 14,000 | Mine | 8.1 hr | 9.2 hr | 10.8 hr | 12.7 hr |
-| 28,000 | Refine | 15.0 hr | 17.3 hr | 20.6 hr | 24.4 hr |
+| Base Difficulty | Example | D=8 | D=5 | D=3 (recommended) |
+|----------------|---------|------|------|------|
+| 200 | Command Ship | 11 min | 14 min | 17 min |
+| 250 | Starfighter | 12 min | 17 min | 20 min |
+| 450 | Frigate | 22 min | 30 min | 37 min |
+| 700 | Ore Extractor | 34 min | 46 min | 57 min |
+| 2,880 | PDC | 2.0 hr | 2.9 hr | 3.7 hr |
+| 3,600 | Ore Bunker | 2.4 hr | 3.6 hr | 4.6 hr |
+| 5,000 | World Engine | 3.2 hr | 4.9 hr | 6.4 hr |
+| 14,000 | Mine | 8.1 hr | 12.7 hr | 17.2 hr |
+| 28,000 | Refine | 15.0 hr | 24.4 hr | 33.7 hr |
 
 To calculate for any base difficulty and target D:
 ```
@@ -5787,11 +5937,11 @@ Maintain `memory/jobs.md` to track all background PoW across sessions:
 ```markdown
 # Active Jobs
 
-| Job | Struct | Action | Start Block | D=8 Est Block | Terminal | Status |
+| Job | Struct | Action | Start Block | D=3 Est Block | Terminal | Status |
 |-----|--------|--------|-------------|---------------|----------|--------|
-| J1 | 5-715 | build | 23042 | ~23379 | term-3 | running |
-| J2 | 5-716 | build | 23042 | ~23379 | term-4 | running |
-| J3 | 5-715 | mine | 23500 | ~28342 | -- | pending (not yet launched) |
+| J1 | 5-715 | build | 23042 | ~23611 | term-3 | running |
+| J2 | 5-716 | build | 23042 | ~23611 | term-4 | running |
+| J3 | 5-715 | mine | 23500 | ~33840 | -- | pending (not yet launched) |
 
 # Completed Jobs
 
@@ -5918,12 +6068,12 @@ Prioritize the player with the most urgent pending action (completed PoW, expose
 
 The most important strategic tension in the PoW system:
 
-> **Ore is stealable. Refining takes ~15 hours. This creates a vulnerability window that drives all PvP conflict.**
+> **Ore is stealable. Refining takes ~34 hours at D=3. This creates a vulnerability window that drives all PvP conflict.**
 
 After mining completes, your ore sits exposed for the entire refining duration. This window is where raids happen. Defenders must balance:
 
-- **Patience**: Wait for lower refine difficulty = faster hash, less CPU, but longer exposure
-- **Urgency**: Refine at D=8 immediately = ~15 hr exposure instead of ~24 hr at D=5
+- **Patience**: At D=3 the hash is free but exposure is ~34 hours
+- **Urgency**: Higher `-D` values reduce exposure time but waste CPU on harder hashes
 - **Deception**: Use stealth, shields, and misdirection to survive the window
 
 See [resources.md](../knowledge/mechanics/resources.md) for the full ore vulnerability analysis.
@@ -5998,7 +6148,7 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 [Copy from memory/jobs.md — which jobs are running, which terminals, estimated completion]
 
 ## Pending Initiations
-[Actions initiated but not yet ready to compute — what's aging, when it reaches D=8]
+[Actions initiated but not yet ready to compute — what's aging, when it reaches D=3]
 
 ## Charge Status
 [Key structs and their readiness — last action block, charge needed, ready block]

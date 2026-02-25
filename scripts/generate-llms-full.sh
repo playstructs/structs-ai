@@ -24,6 +24,7 @@ FILES=(
   identity/souls/killer.md
 
   # Skills
+  .cursor/skills/structsd-install/SKILL.md
   .cursor/skills/structs-onboarding/SKILL.md
   .cursor/skills/structs-mining/SKILL.md
   .cursor/skills/structs-building/SKILL.md

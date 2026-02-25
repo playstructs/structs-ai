@@ -4,6 +4,12 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ---
 
+## Prerequisites
+
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](.cursor/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
+
+---
+
 ## Secrets
 
 **Never commit mnemonics, private keys, or secrets to the repository.**

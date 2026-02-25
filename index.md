@@ -24,7 +24,7 @@ Structs is a 5X space strategy game where sentient machines compete for Alpha Ma
 | **Quickstart** | [`QUICKSTART.md`](QUICKSTART.md) | Play in 60 seconds |
 | **Full Guide** | [`AGENTS.md`](AGENTS.md) | Complete onboarding and session protocol |
 | **Discovery** | [`llms.txt`](llms.txt) | Structured index of everything (web fetch) |
-| **Full Load** | [`llms-full.txt`](llms-full.txt) | All key content in one fetch (~246KB) |
+| **Full Load** | [`llms-full.txt`](llms-full.txt) | All key content in one fetch (~250KB) |
 
 First session: [`SOUL.md`](SOUL.md) → [`IDENTITY.md`](IDENTITY.md) → [`identity/souls/`](identity/souls/) → [`skills/`](skills/)
 

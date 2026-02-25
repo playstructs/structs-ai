@@ -54,25 +54,25 @@
 
 ## Proof-of-Work Difficulties
 
-| Operation | Difficulty | Time to D=8 | Time to D=5 |
-|-----------|------------|-------------|-------------|
-| Ore mining | 14,000 | ~8.1 hr | ~12.7 hr |
-| Ore refining | 28,000 | ~15.0 hr | ~24.4 hr |
+| Operation | Difficulty | Time to D=3 |
+|-----------|------------|-------------|
+| Ore mining | 14,000 | ~17 hr |
+| Ore refining | 28,000 | ~34 hr |
 
-Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~23 hours at D=8 or ~37 hours at D=5. These are background operations — see [async-operations.md](../../awareness/async-operations.md).
+Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 hours at D=3. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
 
 ---
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=8, this window is **~15 hours**. At D=5, it's **~24 hours**.
+After mining completes, ore sits in `storedOre` — stealable by any raider — for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
 | Strategy | Trade-off |
 |----------|-----------|
-| Refine at D=8 immediately | ~15 hr exposure, starts as soon as ore arrives |
-| Refine at D=5 (wait longer) | ~24 hr total from mine start, but less CPU cost |
+| Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
+| Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
 | Shield + stealth during refine | Reduces raid success, costs power |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |

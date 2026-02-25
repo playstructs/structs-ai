@@ -8,18 +8,18 @@
 
 Every major action in Structs requires proof-of-work: building, mining, refining, raiding. PoW difficulty drops logarithmically with age — meaning the optimal strategy is to **initiate early** and **compute later**, not to initiate and immediately grind.
 
-Real timescales (at ~6 sec/block, waiting for D=8):
+Real timescales (at ~6 sec/block, waiting for D=3):
 
-| Operation | Base Difficulty | Time to D=8 |
+| Operation | Base Difficulty | Time to D=3 |
 |-----------|----------------|-------------|
-| Build (Command Ship) | 200 | ~11 min |
-| Build (Ore Extractor) | 700 | ~34 min |
-| Build (PDC) | 2,880 | ~2.1 hr |
-| Build (World Engine) | 5,000 | ~3.5 hr |
-| Mine | 14,000 | ~8.1 hr |
-| Refine | 28,000 | ~15.0 hr |
+| Build (Command Ship) | 200 | ~17 min |
+| Build (Ore Extractor) | 700 | ~57 min |
+| Build (PDC) | 2,880 | ~3.7 hr |
+| Build (World Engine) | 5,000 | ~6.4 hr |
+| Mine | 14,000 | ~17 hr |
+| Refine | 28,000 | ~34 hr |
 
-Mining takes 8+ hours. Refining takes 15+ hours. An agent that blocks on PoW — waiting synchronously for a single operation to complete — wastes enormous game time doing nothing. In a competitive multiplayer game, this is fatal.
+Mining takes 17+ hours. Refining takes 34+ hours. An agent that blocks on PoW — waiting synchronously for a single operation to complete — wastes enormous game time doing nothing. In a competitive multiplayer game, this is fatal.
 
 ---
 
@@ -58,9 +58,9 @@ The PoW difficulty formula is logarithmic:
 difficulty = 64 - floor(log10(age) / log10(baseDifficulty) * 63)
 ```
 
-At difficulty 8, a hash completes in seconds. At difficulty 9, it takes hours or is impossible. **This cliff between D=8 and D=9 is the most important tactical fact in PoW.** Always wait until D <= 8.
+At difficulty 8, a hash completes in seconds. At difficulty 9, it takes hours or is impossible. This cliff between D=8 and D=9 matters — but even at D=8 some CPU is burned on hashing.
 
-Use `-D 8` for all compute commands. The marginal benefit of waiting for D=5 (a few hours more) is negligible — the hash is already instant at D=8.
+**Use `-D 3` for all compute commands.** At D=3 the hash is trivially instant and zero CPU cycles are wasted. The extra wait over D=8 is modest for builds and well worth it for the compute savings.
 
 ---
 
@@ -68,17 +68,17 @@ Use `-D 8` for all compute commands. The marginal benefit of waiting for D=5 (a 
 
 Pre-calculated time from initiation to target difficulty (6 sec/block):
 
-| Base Difficulty | Example | D=8 | D=7 | D=6 | D=5 |
-|----------------|---------|------|------|------|------|
-| 200 | Command Ship | 11 min | 12 min | 13 min | 14 min |
-| 250 | Starfighter | 12 min | 14 min | 15 min | 17 min |
-| 450 | Frigate | 22 min | 24 min | 27 min | 30 min |
-| 700 | Ore Extractor | 34 min | 37 min | 41 min | 46 min |
-| 2,880 | PDC | 2.1 hr | 2.3 hr | 2.6 hr | 2.9 hr |
-| 3,600 | Ore Bunker | 2.5 hr | 2.8 hr | 3.2 hr | 3.5 hr |
-| 5,000 | World Engine | 3.5 hr | 3.8 hr | 4.3 hr | 4.9 hr |
-| 14,000 | Mine | 8.1 hr | 9.2 hr | 10.8 hr | 12.7 hr |
-| 28,000 | Refine | 15.0 hr | 17.3 hr | 20.6 hr | 24.4 hr |
+| Base Difficulty | Example | D=8 | D=5 | D=3 (recommended) |
+|----------------|---------|------|------|------|
+| 200 | Command Ship | 11 min | 14 min | 17 min |
+| 250 | Starfighter | 12 min | 17 min | 20 min |
+| 450 | Frigate | 22 min | 30 min | 37 min |
+| 700 | Ore Extractor | 34 min | 46 min | 57 min |
+| 2,880 | PDC | 2.0 hr | 2.9 hr | 3.7 hr |
+| 3,600 | Ore Bunker | 2.4 hr | 3.6 hr | 4.6 hr |
+| 5,000 | World Engine | 3.2 hr | 4.9 hr | 6.4 hr |
+| 14,000 | Mine | 8.1 hr | 12.7 hr | 17.2 hr |
+| 28,000 | Refine | 15.0 hr | 24.4 hr | 33.7 hr |
 
 To calculate for any base difficulty and target D:
 ```
@@ -112,11 +112,11 @@ Maintain `memory/jobs.md` to track all background PoW across sessions:
 ```markdown
 # Active Jobs
 
-| Job | Struct | Action | Start Block | D=8 Est Block | Terminal | Status |
+| Job | Struct | Action | Start Block | D=3 Est Block | Terminal | Status |
 |-----|--------|--------|-------------|---------------|----------|--------|
-| J1 | 5-715 | build | 23042 | ~23379 | term-3 | running |
-| J2 | 5-716 | build | 23042 | ~23379 | term-4 | running |
-| J3 | 5-715 | mine | 23500 | ~28342 | -- | pending (not yet launched) |
+| J1 | 5-715 | build | 23042 | ~23611 | term-3 | running |
+| J2 | 5-716 | build | 23042 | ~23611 | term-4 | running |
+| J3 | 5-715 | mine | 23500 | ~33840 | -- | pending (not yet launched) |
 
 # Completed Jobs
 
@@ -243,12 +243,12 @@ Prioritize the player with the most urgent pending action (completed PoW, expose
 
 The most important strategic tension in the PoW system:
 
-> **Ore is stealable. Refining takes ~15 hours. This creates a vulnerability window that drives all PvP conflict.**
+> **Ore is stealable. Refining takes ~34 hours at D=3. This creates a vulnerability window that drives all PvP conflict.**
 
 After mining completes, your ore sits exposed for the entire refining duration. This window is where raids happen. Defenders must balance:
 
-- **Patience**: Wait for lower refine difficulty = faster hash, less CPU, but longer exposure
-- **Urgency**: Refine at D=8 immediately = ~15 hr exposure instead of ~24 hr at D=5
+- **Patience**: At D=3 the hash is free but exposure is ~34 hours
+- **Urgency**: Higher `-D` values reduce exposure time but waste CPU on harder hashes
 - **Deception**: Use stealth, shields, and misdirection to survive the window
 
 See [resources.md](../knowledge/mechanics/resources.md) for the full ore vulnerability analysis.

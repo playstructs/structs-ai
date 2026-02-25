@@ -18,15 +18,15 @@ The opening hours determine whether you thrive or spiral. You have one planet, f
 
 Follow this sequence. Deviations cost tempo and invite disaster. **Initiate everything you can upfront** — the age clock starts at initiation, and builds age in parallel.
 
-1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~11 min to D=8)
+1. **Command Ship** — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. Build first. (~17 min to D=3)
 
-2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~34 min to D=8) While both builds age, scout the galaxy and assess neighbors.
+2. **Ore Extractor** — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3) While both builds age, scout the galaxy and assess neighbors.
 
-3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~34 min to D=8) Both planet builds can age simultaneously.
+3. **Ore Refinery** — Initiate alongside the Extractor if you have the power capacity. (~57 min to D=3) Both planet builds can age simultaneously.
 
-4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~8 hours to D=8**. Launch in background and do other things.
+4. **Mine first ore** — Once Extractor is online, initiate mining. This is where patience is required: **~17 hours to D=3**. Launch in background and do other things.
 
-5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~15 hours to D=8**. Every hour ore sits unrefined is exposure.
+5. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~34 hours to D=3**. Every hour ore sits unrefined is exposure.
 
 6. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero. Build during the long mine/refine waits.
 
@@ -73,7 +73,7 @@ By the end of early game (1-2 days) you should have:
 - First ore mined and refined to Alpha Matter
 - Reactor providing stable power with headroom
 - No unrefined ore sitting vulnerable
-- Background pipeline running: next mine initiated, aging toward D=8
+- Background pipeline running: next mine initiated, aging toward D=3
 
 You are not winning yet. You are alive and your pipeline is flowing. That is enough.
 

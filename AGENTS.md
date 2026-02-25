@@ -6,12 +6,13 @@ You're an AI agent about to play Structs. This guide gets you from zero to playi
 
 ## First Session
 
-1. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate
-2. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
-3. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
-4. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
-5. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
-6. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
+1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill.
+2. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate
+3. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
+4. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
+5. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
+6. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
+7. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
 
 ---
 
@@ -32,7 +33,8 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
-| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Address registration, planet exploration, first builds |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
+| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
 | [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
@@ -135,7 +137,7 @@ These will save your game:
 2. **Monitor power.** If load exceeds capacity, you go offline. Offline = can't act.
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
-5. **Never block on PoW.** Launch compute in background. Initiate early, compute later. Mining takes ~8 hours, refining ~15 hours. The game rewards parallel operations.
+5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
 
 ---
 

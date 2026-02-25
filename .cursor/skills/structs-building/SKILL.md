@@ -1,6 +1,6 @@
 ---
 name: structs-building
-description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~11 min (Command Ship) to ~4.9 hours (World Engine).
+description: Builds and manages structures in Structs. Handles construction, activation, deactivation, movement, defense positioning, stealth, and generator infusion. Use when building a struct, activating or deactivating structs, moving structs between slots, setting defense assignments, enabling stealth, or infusing generators. Build times range from ~17 min (Command Ship) to ~6.4 hours (World Engine).
 ---
 
 # Structs Building
@@ -9,7 +9,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
 2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 5 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
+3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash AND auto-submits the complete transaction. No separate `struct-build-complete` needed.
 4. **Activate** — `structsd tx structs struct-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 5. **Optional** — Move, set defense, or activate stealth as needed.
 
@@ -19,21 +19,21 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 ## The -D Flag
 
-The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 8`** — at D=8, the hash completes in seconds. At D=9+, hashing is effectively impossible.
+The `-D` flag (range 1-64) tells compute to wait until difficulty drops to the specified level before starting the hash. Difficulty decreases logarithmically as the struct ages. **Use `-D 3`** — at D=3, the hash is trivially instant and zero CPU is wasted. Lower values wait longer but burn no compute on hard hashes.
 
 ## Expected Build Times
 
-Time from initiation until compute completes (assuming 6 sec/block):
+Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
-| Struct | Type ID | Build Difficulty | D=8 | D=5 |
-|--------|---------|------------------|------|------|
-| Command Ship | 1 | 200 | ~11 min | ~14 min |
-| Starfighter | 3 | 250 | ~12 min | ~17 min |
-| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
-| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
-| PDC | 19 | 2,880 | ~2.1 hr | ~2.9 hr |
-| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
-| World Engine | 22 | 5,000 | ~3.5 hr | ~4.9 hr |
+| Struct | Type ID | Build Difficulty | Wait to D=3 |
+|--------|---------|------------------|-------------|
+| Command Ship | 1 | 200 | ~17 min |
+| Starfighter | 3 | 250 | ~20 min |
+| Ore Extractor | 14 | 700 | ~57 min |
+| Ore Refinery | 15 | 700 | ~57 min |
+| PDC | 19 | 2,880 | ~3.7 hr |
+| Ore Bunker | 18 | 3,600 | ~4.6 hr |
+| World Engine | 22 | 5,000 | ~6.4 hr |
 
 **Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
 
@@ -42,7 +42,7 @@ Time from initiation until compute completes (assuming 6 sec/block):
 | Action | CLI Command |
 |--------|-------------|
 | Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 5` |
+| Build compute (PoW + auto-complete) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
 | Activate | `structsd tx structs struct-activate [struct-id]` |

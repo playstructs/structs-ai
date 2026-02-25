@@ -7,7 +7,7 @@
 - Entity IDs use `type-index` format (e.g. `1-11` for player type 1, index 11)
 - Ore is stealable. Alpha Matter is not. Refine immediately.
 - Load > capacity = offline = cannot act.
-- Never block on PoW. Mining takes ~8 hours, refining ~15 hours. Initiate early, compute later.
+- Never block on PoW. Use `-D 3` for zero wasted CPU. Mining takes ~17 hours, refining ~34 hours. Initiate early, compute later.
 
 ## Getting Started
 
@@ -33,6 +33,7 @@
 
 ## Skills
 
+- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install Go, Ignite CLI, and build the structsd binary from source
 - [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
 - [Mining](https://structs.ai/skills/structs-mining/SKILL): Ore extraction and refining (mine-compute/complete then refine-compute/complete)
 - [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion

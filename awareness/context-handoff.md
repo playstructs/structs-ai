@@ -53,7 +53,7 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 [Copy from memory/jobs.md — which jobs are running, which terminals, estimated completion]
 
 ## Pending Initiations
-[Actions initiated but not yet ready to compute — what's aging, when it reaches D=8]
+[Actions initiated but not yet ready to compute — what's aging, when it reaches D=3]
 
 ## Charge Status
 [Key structs and their readiness — last action block, charge needed, ready block]

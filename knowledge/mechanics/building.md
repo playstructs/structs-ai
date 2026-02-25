@@ -47,30 +47,30 @@ Difficulty is age-based: older builds require less work.
 
 The `-D` flag (range 1-64) on compute commands tells the CLI to wait until difficulty drops to the target level before starting the hash.
 
-- Lower `-D` values = longer wait, but hash completes instantly (less CPU work)
-- Higher `-D` values = starts sooner, but hash takes exponentially longer
-- **Recommended: `-D 8`** for builds, `-D 8` for mine/refine (the sweet spot where hashes are feasible)
+- Lower `-D` values = longer wait, but hash completes instantly (zero CPU wasted)
+- Higher `-D` values = starts sooner, but hash takes exponentially longer and burns CPU
+- **Recommended: `-D 3`** for all operations — the hash is trivially instant and no CPU cycles are wasted on hard hashing
 
 ### The Difficulty Cliff
 
-At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** Always wait until D <= 8 before computing.
+At difficulty 8, a hash completes in seconds to minutes. At difficulty 9, it takes hours. At difficulty 10+, it is effectively impossible. **This cliff between D=8 and D=9 is the most important tactical fact in the PoW system.** However, even at D=8 some CPU is burned. Using D=3 eliminates all wasted compute.
 
 ### Difficulty Decay Table
 
 Time from initiation until difficulty drops to target level (assuming 6 sec/block):
 
-| Base Difficulty | D=8 | D=7 | D=6 | D=5 |
-|----------------|------|------|------|------|
-| 200 (Command Ship) | ~11 min | ~12 min | ~13 min | ~14 min |
-| 250 (Starfighter) | ~12 min | ~14 min | ~15 min | ~17 min |
-| 700 (Ore Ext/Ref) | ~34 min | ~37 min | ~41 min | ~46 min |
-| 2,880 (PDC) | ~2.1 hr | ~2.3 hr | ~2.6 hr | ~2.9 hr |
-| 3,600 (Ore Bunker) | ~2.5 hr | ~2.8 hr | ~3.2 hr | ~3.5 hr |
-| 5,000 (World Engine) | ~3.5 hr | ~3.8 hr | ~4.3 hr | ~4.9 hr |
-| 14,000 (Mine) | ~8.1 hr | ~9.2 hr | ~10.8 hr | ~12.7 hr |
-| 28,000 (Refine) | ~15.0 hr | ~17.3 hr | ~20.6 hr | ~24.4 hr |
+| Base Difficulty | D=8 | D=5 | D=3 |
+|----------------|------|------|------|
+| 200 (Command Ship) | ~11 min | ~14 min | ~17 min |
+| 250 (Starfighter) | ~12 min | ~17 min | ~20 min |
+| 700 (Ore Ext/Ref) | ~34 min | ~46 min | ~57 min |
+| 2,880 (PDC) | ~2.0 hr | ~2.9 hr | ~3.7 hr |
+| 3,600 (Ore Bunker) | ~2.4 hr | ~3.6 hr | ~4.6 hr |
+| 5,000 (World Engine) | ~3.2 hr | ~4.9 hr | ~6.4 hr |
+| 14,000 (Mine) | ~8.1 hr | ~12.7 hr | ~17.2 hr |
+| 28,000 (Refine) | ~15.0 hr | ~24.4 hr | ~33.7 hr |
 
-At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly longer wait but the hash is trivially instant.
+At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is wasted. Higher `-D` values trade shorter wait for exponentially more compute burned on hard hashes.
 
 ### Strategic Implications
 
@@ -78,9 +78,9 @@ At D=8, the hash itself takes seconds. The wait IS the time. At D=5, slightly lo
 
 1. Initiate all planned builds/mines/refines immediately (costs only gas)
 2. Do other things while age accumulates (scout, plan, build other structs)
-3. Come back and compute when difficulty has dropped to D <= 8
+3. Come back and compute when difficulty has dropped to D=3
 
-**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~23-37 hours depending on target difficulty. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
+**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~51 hours at D=3. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
 
 **Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 

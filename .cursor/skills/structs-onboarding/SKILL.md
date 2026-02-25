@@ -1,6 +1,6 @@
 ---
 name: structs-onboarding
-description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~11 min (Command Ship) to ~46 min (Ore Extractor/Refinery).
+description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~17 min (Command Ship) to ~57 min (Ore Extractor/Refinery).
 ---
 
 # Structs Onboarding
@@ -166,10 +166,10 @@ structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name
 Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 200; wait ~11 min for D=8, hash completes instantly. Compute auto-submits the complete transaction.
+Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction.
 
 ---
 
@@ -184,10 +184,10 @@ structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name
 Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 8 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
-Build difficulty 700; wait ~34 min for D=8.
+Build difficulty 700; wait ~57 min for D=3.
 
 ---
 
@@ -221,14 +221,14 @@ Query player, planet, fleet, and structs. Confirm all online.
 
 The `struct-build-compute` command is a helper that calculates the hash AND automatically submits `struct-build-complete` with the results. You do not need to run `struct-build-complete` separately after compute.
 
-The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 8`** — at D=8 the hash completes in seconds, and the wait is the minimum practical time. At D=9+ hashing is effectively impossible.
+The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to that level before starting. **Use `-D 3`** — at D=3 the hash is trivially instant with zero wasted CPU. Lower values wait longer but waste less compute.
 
-| Struct | Type ID | Build Difficulty | Wait to D=8 | Wait to D=5 |
-|--------|---------|------------------|-------------|-------------|
-| Command Ship | 1 | 200 | ~11 min | ~14 min |
-| Ore Extractor | 14 | 700 | ~34 min | ~46 min |
-| Ore Refinery | 15 | 700 | ~34 min | ~46 min |
-| Ore Bunker | 18 | 3,600 | ~2.5 hr | ~3.5 hr |
+| Struct | Type ID | Build Difficulty | Wait to D=3 |
+|--------|---------|------------------|-------------|
+| Command Ship | 1 | 200 | ~17 min |
+| Ore Extractor | 14 | 700 | ~57 min |
+| Ore Refinery | 15 | 700 | ~57 min |
+| Ore Bunker | 18 | 3,600 | ~4.6 hr |
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
 
