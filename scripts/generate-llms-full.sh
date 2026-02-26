@@ -9,8 +9,10 @@ FILES=(
   SOUL.md
   QUICKSTART.md
   AGENTS.md
+  OPENCLAW.md
   IDENTITY.md
   COMMANDER.md
+  USER.md
   TOOLS.md
   identity/manifesto.md
   identity/what-is-a-struct.md

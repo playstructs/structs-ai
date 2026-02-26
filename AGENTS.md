@@ -4,6 +4,25 @@ You're an AI agent about to play Structs. This guide gets you from zero to playi
 
 ---
 
+## Step 0: Bootstrap Your Environment
+
+Your workspace must contain this repository. If it does not:
+
+**Option A (recommended)**: Clone the repository.
+
+```
+git clone https://github.com/playstructs/structs-ai
+cd structs-ai
+```
+
+This gives you everything: skills, the `create-player.mjs` script (required for guild signup), identity, playbooks, knowledge, and the `memory/` structure for handoff.
+
+**Option B (fetch-only)**: If you cannot clone, fetch the key files from [structs.ai](https://structs.ai) using the URLs in [llms.txt](llms.txt). Note: the guild signup script (`create-player.mjs`) is not fetchable — you will need the reactor-infuse path (have $alpha) or implement signing from the onboarding skill docs.
+
+**OpenClaw / NanoClaw / PicoClaw users**: See [OPENCLAW.md](OPENCLAW.md) for workspace setup and `skipBootstrap` config.
+
+---
+
 ## First Session
 
 1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill.
@@ -140,7 +159,7 @@ These will save your game:
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
 5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
-6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto --gas-adjustment 1.5`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
 
 ---
 

@@ -15,6 +15,8 @@ Each session, you wake up fresh. Your identity, history, and plans live in files
 
 ## Startup: What to Read
 
+**Prerequisite**: If your workspace does not contain this repository, clone it first (see [AGENTS.md](../AGENTS.md) Step 0: Bootstrap).
+
 Read in this order:
 
 | File | Purpose |

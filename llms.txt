@@ -10,6 +10,12 @@
 - Never block on PoW. Use `-D 3` for zero wasted CPU. Mining takes ~17 hours, refining ~34 hours. Initiate early, compute later.
 - Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. 
 
+## Bootstrap (Do This First)
+
+- **Clone the repo** (recommended): `git clone https://github.com/playstructs/structs-ai` — gives you skills, scripts, full structure
+- **Or fetch from structs.ai**: Use the URLs below. Without the repo, the guild signup script is unavailable — use reactor-infuse if you have $alpha.
+- **OpenClaw/NanoClaw/PicoClaw**: See [OPENCLAW.md](https://structs.ai/OPENCLAW) for workspace setup
+
 ## Getting Started
 
 - [Soul](https://structs.ai/SOUL): Core agent identity -- who you are and how you operate

@@ -4,6 +4,12 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 
 ---
 
+## Bootstrap
+
+Ensure your workspace contains this repository. If not: `git clone https://github.com/playstructs/structs-ai` and `cd structs-ai`. The create-player script and skills require the repo.
+
+---
+
 ## New Player
 
 1. **Verify `structsd` is installed**: Run `structsd version`. If not found, use the `structsd-install` skill in `.cursor/skills/structsd-install/`.
