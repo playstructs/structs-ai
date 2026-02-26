@@ -8,6 +8,7 @@
 - Ore is stealable. Alpha Matter is not. Refine immediately.
 - Load > capacity = offline = cannot act.
 - Never block on PoW. Use `-D 3` for zero wasted CPU. Mining takes ~17 hours, refining ~34 hours. Initiate early, compute later.
+- Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. 
 
 ## Getting Started
 
