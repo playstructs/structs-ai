@@ -14,6 +14,60 @@
 
 ---
 
+## Ambit Targeting
+
+Combat in Structs revolves around four ambits. Each struct operates in one ambit, and each weapon can only target specific ambits. This creates a strategic mesh where fleet composition and positioning determine what you can hit and what can hit you.
+
+| Ambit | Bit Value |
+|-------|-----------|
+| Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+
+### Weapon Target Matrix
+
+Which ambits each struct's primary weapon can hit:
+
+| Struct | Lives In | Targets (Primary) | Targets (Secondary) |
+|--------|----------|--------------------|---------------------|
+| Command Ship | Any (movable) | Current ambit only | — |
+| Battleship | Space | Space, Land, Water | — |
+| Starfighter | Space | Space | Space |
+| Frigate | Space | Space, Air | — |
+| Pursuit Fighter | Air | Air | — |
+| Stealth Bomber | Air | Land, Water | — |
+| High Altitude Interceptor | Air | Space, Air | — |
+| Mobile Artillery | Land | Land, Water | — |
+| Tank | Land | Land | — |
+| SAM Launcher | Land | Space, Air | — |
+| Cruiser | Water | Land, Water | Air |
+| Destroyer | Water | Air, Water | — |
+| Submersible | Water | Space, Water | — |
+
+### Threatened-By Matrix
+
+Which structs can attack into each ambit:
+
+| Target Ambit | Threatened By |
+|--------------|---------------|
+| Space | Battleship, Starfighter, Frigate, High Altitude Interceptor, SAM Launcher, Submersible |
+| Air | Frigate, Pursuit Fighter, High Altitude Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
+| Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
+| Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
+
+The Command Ship can attack into any ambit but must first move there (see below).
+
+### Command Ship Ambit Mobility
+
+The Command Ship is the **only struct that can change ambits**. All other structs are fixed in their operating ambit.
+
+- **Offensive use**: Move the Command Ship to the target's ambit before attacking. It can only hit structs in its current ambit.
+- **Defensive use**: If the enemy fleet can only target water, moving the Command Ship out of water protects it from direct attack.
+- **CLI**: `structsd tx structs struct-move [cmd-ship-id] [new-ambit] [new-slot] [new-location] --from [key] --gas auto --gas-adjustment 1.5 -y`
+
+---
+
 ## Health Points
 
 Each struct has a Max HP that determines how much damage it can absorb before destruction.
@@ -70,20 +124,37 @@ If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding 
 ### Blocking
 
 ```
-if defender exists and defender.operatingAmbit == attacker.operatingAmbit then
-  canBlock = IsSuccessful(defender.blockingSuccessRate)
+if defender exists and defender.operatingAmbit == target.operatingAmbit then
+  if weapon.blockable and defender.ReadinessCheck() then
+    canBlock = IsSuccessful(defender.blockingSuccessRate)
 ```
 
-Requires: defender assigned, defender online, same ambit as target.
+**Requirements** (all must be true):
+1. Weapon must be blockable (`GetWeaponBlockable` returns true)
+2. Defender must pass ReadinessCheck — struct online AND owner online
+3. Defender must be in the **same ambit as the target being defended** (not the attacker)
+
+A struct cannot block for a friendly in a different ambit. Blocking is strictly same-ambit defense.
 
 ### Counter-Attack
 
+Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct.
+
 | Scenario | Damage |
 |----------|--------|
-| Same ambit | `counterAttackDamage` (full) |
-| Different ambit | `counterAttackDamage / 2` |
+| Same ambit as attacker | `counterAttackDamage` (full) |
+| Different ambit from attacker | `counterAttackDamage / 2` |
 
-**Requirements**: Counter-attack requires a full readiness check. Offline structs cannot counter-attack. The counter-attack also validates weapon system existence on the defending struct.
+**Requirements** (all must be true):
+1. Weapon must be counterable (`GetWeaponCounterable` returns true)
+2. Neither counter-attacker nor attacker is destroyed
+3. Defender's weapons must be able to target the **attacker's ambit** (via `CanCounterTargetAmbit`)
+4. Location reachability to the attacker:
+   - If defender on planet: attacker's fleet must be at that planet
+   - If defender on fleet on-station: attacker must be reachable at the planet
+   - If defender on fleet away: attacker must be on same planet or adjacent in location list
+
+Defensive counter-attack is **in addition to** the normal counter-attack most fleet structs have. Most structs will deal at least 1 damage in return to an attacker if their weapons can reach the attacker's ambit.
 
 ### Planetary Defense Cannon
 
@@ -126,7 +197,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
-- **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
+- **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.
 - **Minimum damage**: After damage reduction, minimum damage is 1 -- attacks always deal at least 1 damage
 - **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
 - **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)

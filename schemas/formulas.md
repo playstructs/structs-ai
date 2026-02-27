@@ -113,17 +113,19 @@ if health == 0 and postDestructionDamage > 0 then
 **ID**: `blocking-calculation`
 **Code reference**: `x/structs/keeper/struct_cache.go:1072-1105` (CanBlock)
 
-Determines if defender blocks attack.
+Determines if defender blocks attack. The defender must be in the same ambit as the **target being defended** (not the attacker).
 
 ```
-if defender exists and defender.operatingAmbit == attacker.operatingAmbit then
-  canBlock = IsSuccessful(defender.blockingSuccessRate)
+if defender exists and weapon.blockable and defender.ReadinessCheck() then
+  if defender.operatingAmbit == target.operatingAmbit then
+    canBlock = IsSuccessful(defender.blockingSuccessRate)
 ```
 
 | Variable | Type | Description |
 |----------|------|-------------|
 | defender | object | Defender struct assigned to protect target |
-| attacker | object | Attacking struct |
+| target | object | The struct being defended (attacked) |
+| weapon | object | The attacking weapon system |
 | blockingSuccessRate | object | Success rate for blocking (Numerator/Denominator) |
 
 ### Counter-Attack Damage
@@ -131,20 +133,22 @@ if defender exists and defender.operatingAmbit == attacker.operatingAmbit then
 **ID**: `counter-attack-damage`
 **Code reference**: `x/structs/keeper/struct_cache.go:1107-1135` (TakeCounterAttackDamage)
 
-Damage from counter-attack after blocking.
+Damage from defensive counter-attack. Counter-attacks are **ambit-independent from the defended target** — a space defender can counter-attack a space attacker even while defending a land struct. Requires the defender's weapons to reach the attacker's ambit (`CanCounterTargetAmbit`).
 
 ```
-if blocked and defender.operatingAmbit == attacker.operatingAmbit then
-  counterDamage = defender.counterAttackDamage
-else
-  counterDamage = defender.counterAttackDamage / 2
+if weapon.counterable and !defender.destroyed and !attacker.destroyed then
+  if defender.CanCounterTargetAmbit(attacker.operatingAmbit) then
+    if defender.operatingAmbit == attacker.operatingAmbit then
+      counterDamage = defender.counterAttackDamage
+    else
+      counterDamage = defender.counterAttackDamage / 2
 ```
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| blocked | boolean | Whether attack was blocked |
-| defender | object | Defender struct |
-| attacker | object | Attacking struct |
+| weapon | object | The attacking weapon system (must be counterable) |
+| defender | object | Defender struct (must not be destroyed) |
+| attacker | object | Attacking struct (must not be destroyed) |
 | counterAttackDamage | integer | Counter-attack damage from defender |
 
 ### Planetary Defense Cannon Damage

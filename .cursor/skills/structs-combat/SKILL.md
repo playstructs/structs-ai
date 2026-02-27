@@ -25,6 +25,7 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 | Clear defense | `structsd tx structs struct-defense-clear [defender-id]` |
 | Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
 | Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
+| Move Command Ship (ambit) | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
 
 Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
@@ -35,6 +36,36 @@ Fleet movement (`fleet-move`) is instant — no transit time. The only time cost
 `planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 3` for zero wasted CPU. Compute auto-submits the complete transaction.
 
 **Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
+
+## Ambit Targeting
+
+Each weapon can only hit specific ambits. Before attacking, verify your struct's weapon can reach the target's ambit.
+
+| Struct | Lives In | Primary Targets | Secondary Targets |
+|--------|----------|-----------------|-------------------|
+| Command Ship | Any (movable) | Current ambit only | — |
+| Battleship | Space | Space, Land, Water | — |
+| Starfighter | Space | Space | Space |
+| Frigate | Space | Space, Air | — |
+| Pursuit Fighter | Air | Air | — |
+| Stealth Bomber | Air | Land, Water | — |
+| High Altitude Interceptor | Air | Space, Air | — |
+| Mobile Artillery | Land | Land, Water | — |
+| Tank | Land | Land | — |
+| SAM Launcher | Land | Space, Air | — |
+| Cruiser | Water | Land, Water | Air |
+| Destroyer | Water | Air, Water | — |
+| Submersible | Water | Space, Water | — |
+
+**Command Ship positioning**: The Command Ship is the only struct that can change ambits via `struct-move`. It can only attack structs in its current ambit. Move it to the target's ambit before attacking. Move it away from enemy weapon ranges as a defensive tactic.
+
+## Strategic Positioning
+
+**Offensive**: Move your Command Ship to the ambit where you want to deal damage. Use cross-ambit attackers (Battleship, Stealth Bomber, SAM Launcher, Submersible) for coverage without repositioning.
+
+**Defensive**: If the enemy fleet can only target specific ambits, move your Command Ship to an ambit they cannot reach. Diversify defenders across ambits so you can block attacks from any direction.
+
+**High-value cross-ambit units**: Battleship (Space→Space/Land/Water), SAM Launcher (Land→Space/Air), Stealth Bomber (Air→Land/Water), Submersible (Water→Space/Water), Cruiser (Water→Land/Water + Air secondary). These structs threaten multiple ambits and are the foundation of flexible fleet composition.
 
 ## Verification
 
@@ -83,7 +114,10 @@ structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --fr
 ```
 
 **Rules**:
-- Defenders must be in the same operating ambit as the attacker to block
+- Defenders must be in the **same ambit as the target being defended** to block (not the attacker's ambit)
+- A struct cannot block for a friendly in a different ambit
+- Defenders whose weapons can reach the attacker's ambit will **counter-attack automatically** — this is in addition to the normal counter-attack most structs have
+- Counter-attacks are ambit-independent from the defended target (a space defender can counter a space attacker while defending a land struct)
 - Each defender assignment costs 1 charge -- stagger 6s apart (same account)
 - Build defense BEFORE economy or offense -- always
 - Defense protects structs from destruction but does **NOT** prevent ore seizure -- the only defense for ore is immediate refining
@@ -92,6 +126,7 @@ structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --fr
 
 - **"insufficient charge"** — Weapon needs charge; check struct state.
 - **"target invalid"** — Target may be destroyed, stealthed, or out of range.
+- **"unreachable" / "out_of_range"** — Your weapon cannot target that ambit. Check the targeting matrix above and reposition your Command Ship or use a different struct.
 - **"fleet not away"** — Raids require fleet away; move fleet first.
 - **"proof invalid"** — Re-run raid-compute with correct difficulty.
 - **Stolen ore** — Refine immediately; ore is stealable until refined.

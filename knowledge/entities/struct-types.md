@@ -37,7 +37,7 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
+| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
 | 19 | PDC | 1 per player, planetary shield contribution |
@@ -48,6 +48,28 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 ### Combat Stats (Fleet)
 
 All fleet structs (IDs 1-13) have `primary_weapon_damage=2`. Only Starfighter (3) and Cruiser (11) have `secondary_weapon_damage` (1 and 2 respectively).
+
+### Weapon Target Ambits
+
+Each weapon can only hit specific ambits. The `primaryWeaponAmbits` field is a bitmask (Space=16, Air=8, Land=4, Water=2).
+
+| ID | Struct | Primary Weapon Targets | Secondary Weapon Targets |
+|----|--------|------------------------|--------------------------|
+| 1 | Command Ship | Current ambit only (special: 32) | — |
+| 2 | Battleship | Space, Land, Water | — |
+| 3 | Starfighter | Space | Space |
+| 4 | Frigate | Space, Air | — |
+| 5 | Pursuit Fighter | Air | — |
+| 6 | Stealth Bomber | Land, Water | — |
+| 7 | High Altitude Interceptor | Space, Air | — |
+| 8 | Mobile Artillery | Land, Water | — |
+| 9 | Tank | Land | — |
+| 10 | SAM Launcher | Space, Air | — |
+| 11 | Cruiser | Land, Water | Air |
+| 12 | Destroyer | Air, Water | — |
+| 13 | Submersible | Space, Water | — |
+
+All primary and secondary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for the full targeting and defense mechanics.
 
 ---
 
