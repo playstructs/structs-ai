@@ -8,7 +8,7 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 ## Procedure
 
 1. **Assess power state** — Query player: `structsd query structs player [id]`. Compute: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If `load + structsLoad > capacity + capacitySecondary`, player goes **OFFLINE** (cannot act). Player passive draw: 25,000 mW.
-2. **Create substation** — First create allocation from reactor/generator: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Then: `structsd tx structs substation-create [owner-id] [allocation-id] TX_FLAGS`.
+2. **Create substation** — First create allocation from reactor/generator: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address**, not a player ID. Then: `structsd tx structs substation-create [owner-id] [allocation-id] TX_FLAGS`.
 3. **Connect power** — `substation-allocation-connect [substation-id] [allocation-id]` to add source. `substation-allocation-disconnect` to remove.
 4. **Connect players** — `substation-player-connect [substation-id] [player-id]` to draw power. `substation-player-disconnect` to remove.
 5. **Migrate players** — `substation-player-migrate [source-substation-id] [dest-substation-id] [player-id,player-id2,...] TX_FLAGS`.

@@ -2137,7 +2137,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
 4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
-6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement --controller [id] TX_FLAGS`. Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
+6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address** (not a player ID). Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
 7. **Token transfer** — `player-send [from-address] [to-address] [amount] TX_FLAGS`.
 
 ## Commands Reference
@@ -2260,7 +2260,7 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 ## Procedure
 
 1. **Assess power state** — Query player: `structsd query structs player [id]`. Compute: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If `load + structsLoad > capacity + capacitySecondary`, player goes **OFFLINE** (cannot act). Player passive draw: 25,000 mW.
-2. **Create substation** — First create allocation from reactor/generator: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Then: `structsd tx structs substation-create [owner-id] [allocation-id] TX_FLAGS`.
+2. **Create substation** — First create allocation from reactor/generator: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address**, not a player ID. Then: `structsd tx structs substation-create [owner-id] [allocation-id] TX_FLAGS`.
 3. **Connect power** — `substation-allocation-connect [substation-id] [allocation-id]` to add source. `substation-allocation-disconnect` to remove.
 4. **Connect players** — `substation-player-connect [substation-id] [player-id]` to draw power. `substation-player-disconnect` to remove.
 5. **Migrate players** — `substation-player-migrate [source-substation-id] [dest-substation-id] [player-id,player-id2,...] TX_FLAGS`.
