@@ -18,7 +18,7 @@
 ## Alpha Ore
 
 - Mined from planets via Ore Extractor
-- Stored as `storedOre` on player (stealable in raids)
+- Stored in the player's `gridAttributes.ore` field (also referred to as `storedOre`). This is NOT the bank balance — bank balance holds only refined Alpha Matter (`ualpha`). Query `gridAttributes.ore` to check unrefined ore holdings.
 - Must be refined to Alpha Matter before secure use
 - **Extraction rate**: 1 ore per mining operation (fixed)
 - **Planet starting ore**: 5 (fixed for all planets)
@@ -66,7 +66,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 

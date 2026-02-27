@@ -57,6 +57,8 @@ Build one of every fleet type. This gives coverage across all four ambits and ma
 
 All fleet builds complete within ~1 hour. Total fleet draw: 1,230 kW.
 
+**As soon as fleet structs are online, assign defenders to your Command Ship immediately.** Use `struct-defense-set [defender-id] [command-ship-id]` for each defender. An undefended Command Ship can be destroyed in just a few attacks — and without it, your fleet is inoperable until you rebuild one. Prioritize at least one defender per ambit.
+
 ### Phase 4: Production Cycle (once infrastructure is online)
 
 7. **Mine first ore** — Once Extractor is online, initiate mining. **~17 hours to D=3**. Launch in background and do other things.

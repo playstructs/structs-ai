@@ -37,7 +37,7 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops |
+| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
 | 19 | PDC | 1 per player, planetary shield contribution |

@@ -50,6 +50,24 @@ initiate build A, build B, build C → scout players → check threats →
 
 ---
 
+## Transaction Sequencing
+
+The Cosmos SDK tracks a **sequence number** per account. Each transaction increments the sequence. If two transactions from the same account are submitted before the first is included in a block (~6 seconds), the second fails with `account sequence mismatch`.
+
+**Rule**: Submit transactions from the same account **sequentially** — wait ~6 seconds between TXs for the previous one to be included in a block.
+
+Transactions from **different accounts** can run in parallel with no issues. This is why the multi-player pattern works: each player account submits independently while the agent orchestrates them all.
+
+| Scenario | Parallel? | Notes |
+|----------|-----------|-------|
+| Two TXs from same account | No | Wait ~6s between submissions |
+| TXs from different accounts | Yes | No sequence conflict |
+| Queries (read-only) | Yes | No sequence tracking on reads |
+
+If you hit `account sequence mismatch, expected N, got N-1`: wait for the pending TX to confirm, then retry.
+
+---
+
 ## The Difficulty Cliff
 
 The PoW difficulty formula is logarithmic:

@@ -52,12 +52,22 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 
 ## Fleet Movement
 
+- **Fleet movement is instant** — a single transaction with no transit time. The fleet's location updates immediately.
 - Fleet moves with player between planets
 - Exploration: new planet created, fleet moves to new planet, old planet released
 - One planet ownership at a time
 - **Planet completion**: When a planet's ore depletes, all fleets are automatically sent away (peace deal)
 - Fleet movement validation does not block moves based on fleet-away state
 - Fleets can move to already-populated planets
+
+### Fleet Return Conditions
+
+Fleets stay "away" until one of these triggers:
+1. **Explicit move** — The player issues `fleet-move` to return home
+2. **Command Ship destroyed** — If the fleet's Command Ship is destroyed, the fleet auto-returns
+3. **Planet completed** — If the defending planet's owner depletes all ore and explores a new planet, visiting fleets are sent away
+
+Fleets do **not** auto-return on a timer. For raids, you have until one of the above triggers to complete the raid PoW and submit `planet-raid-complete`.
 
 ## Command Ship Details
 

@@ -30,6 +30,8 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 
 ## Raid Timing
 
+Fleet movement (`fleet-move`) is instant — no transit time. The only time cost in a raid cycle is the PoW compute.
+
 `planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 3` for zero wasted CPU. Compute auto-submits the complete transaction.
 
 **Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
@@ -49,6 +51,9 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 - Each struct can only commit once per attack action (no double-commit)
 - Target struct existence is validated before attack proceeds
 - Hashing for raid-compute is open by default -- any valid proof accepted
+- Successful raids seize ALL of the target's storedOre -- one raid takes everything
+- Destroyed structs are gone forever but can be replaced by building a new struct of the same type (full PoW required)
+- Protect your Command Ship -- losing it disables your entire fleet until a replacement is built
 
 ## Combat Readiness Checklist
 
@@ -61,6 +66,27 @@ Before engaging in combat, verify all conditions:
 - [ ] **Defense structs assigned** — PDC, Orbital Shield, defenders set via `struct-defense-set`
 - [ ] **Available struct slot** — If building combat structs, check planet slots (0-3 per ambit)
 - [ ] **Ore refined or secured** — Unrefined ore is stealable. Refine before engaging in raids that may invite retaliation
+
+## Defense Formations
+
+Assign defenders to protect high-value structs. Defenders absorb incoming attacks before the protected struct takes damage.
+
+**Minimum viable defense**: Assign at least one combat struct per ambit to defend your Command Ship. Command Ship has 6 HP; most fleet structs have 3 HP. Without defenders, a Command Ship can be destroyed in just a few attacks.
+
+**Example formation** (4 Starfighters defending Command Ship):
+
+```
+structsd tx structs struct-defense-set [starfighter-1-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-2-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-3-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --from [key] --gas auto -y
+```
+
+**Rules**:
+- Defenders must be in the same operating ambit as the attacker to block
+- Each defender assignment costs 1 charge -- stagger 6s apart (same account)
+- Build defense BEFORE economy or offense -- always
+- Defense protects structs from destruction but does **NOT** prevent ore seizure -- the only defense for ore is immediate refining
 
 ## Error Handling
 

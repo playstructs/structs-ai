@@ -320,6 +320,7 @@ These will save your game:
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
 5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
 6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
+7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
 
 ---
 
@@ -1961,6 +1962,8 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 
 ## Raid Timing
 
+Fleet movement (`fleet-move`) is instant — no transit time. The only time cost in a raid cycle is the PoW compute.
+
 `planet-raid-compute` uses `-D` flag (range 1-64) to wait until difficulty drops before hashing. Raid PoW difficulty depends on the target planet's properties. Launch raid compute in a background terminal — it may take minutes to hours depending on difficulty. Use `-D 3` for zero wasted CPU. Compute auto-submits the complete transaction.
 
 **Important**: Your fleet is locked "away" during the raid compute. You cannot build on your planet while your fleet is away. Plan accordingly — complete all planet builds before moving fleet for a raid.
@@ -1980,6 +1983,9 @@ Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-
 - Each struct can only commit once per attack action (no double-commit)
 - Target struct existence is validated before attack proceeds
 - Hashing for raid-compute is open by default -- any valid proof accepted
+- Successful raids seize ALL of the target's storedOre -- one raid takes everything
+- Destroyed structs are gone forever but can be replaced by building a new struct of the same type (full PoW required)
+- Protect your Command Ship -- losing it disables your entire fleet until a replacement is built
 
 ## Combat Readiness Checklist
 
@@ -1992,6 +1998,27 @@ Before engaging in combat, verify all conditions:
 - [ ] **Defense structs assigned** — PDC, Orbital Shield, defenders set via `struct-defense-set`
 - [ ] **Available struct slot** — If building combat structs, check planet slots (0-3 per ambit)
 - [ ] **Ore refined or secured** — Unrefined ore is stealable. Refine before engaging in raids that may invite retaliation
+
+## Defense Formations
+
+Assign defenders to protect high-value structs. Defenders absorb incoming attacks before the protected struct takes damage.
+
+**Minimum viable defense**: Assign at least one combat struct per ambit to defend your Command Ship. Command Ship has 6 HP; most fleet structs have 3 HP. Without defenders, a Command Ship can be destroyed in just a few attacks.
+
+**Example formation** (4 Starfighters defending Command Ship):
+
+```
+structsd tx structs struct-defense-set [starfighter-1-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-2-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-3-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --from [key] --gas auto -y
+```
+
+**Rules**:
+- Defenders must be in the same operating ambit as the attacker to block
+- Each defender assignment costs 1 charge -- stagger 6s apart (same account)
+- Build defense BEFORE economy or offense -- always
+- Defense protects structs from destruction but does **NOT** prevent ore seizure -- the only defense for ore is immediate refining
 
 ## Error Handling
 
@@ -3362,6 +3389,21 @@ This timeline provides a sparse but structured history of the universe. Details 
 
 ---
 
+## Health Points
+
+Each struct has a Max HP that determines how much damage it can absorb before destruction.
+
+| Struct | Max HP |
+|--------|--------|
+| Command Ship | 6 |
+| All other structs | 3 |
+
+- Damage reduces current HP. At 0 HP the struct is destroyed (see Struct Destruction below).
+- **HP does not regenerate.** A damaged struct stays damaged.
+- Defenders absorb attacks directed at the struct they protect — the protected struct only takes damage after the defender is destroyed or fails to block.
+
+---
+
 ## Damage Formulas
 
 ### Multi-Shot Damage
@@ -3456,7 +3498,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure.
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
@@ -3464,6 +3506,22 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
 - **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)
 - **Target validation**: Target struct existence is validated before attack proceeds
+- **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
+
+---
+
+## Struct Destruction
+
+When a struct reaches 0 HP, it is **destroyed** and removed from the game. The specific instance cannot be restored. However, a new struct of the same type can be built to replace it (full build PoW required).
+
+**Command Ship loss is especially costly.** Without an online Command Ship, the fleet cannot operate -- no planet building, no mining, no raiding. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
+
+| Consequence | Detail |
+|-------------|--------|
+| Destroyed struct | Removed permanently; must build a replacement |
+| Lost defenders | Each destroyed defender must be individually rebuilt |
+| Command Ship destroyed | Fleet inoperable until replacement is built and online |
+| Rebuild cost | Full PoW + power draw, same as original build |
 
 ---
 
@@ -3500,7 +3558,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 ## Alpha Ore
 
 - Mined from planets via Ore Extractor
-- Stored as `storedOre` on player (stealable in raids)
+- Stored in the player's `gridAttributes.ore` field (also referred to as `storedOre`). This is NOT the bank balance — bank balance holds only refined Alpha Matter (`ualpha`). Query `gridAttributes.ore` to check unrefined ore holdings.
 - Must be refined to Alpha Matter before secure use
 - **Extraction rate**: 1 ore per mining operation (fixed)
 - **Planet starting ore**: 5 (fixed for all planets)
@@ -3548,7 +3606,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -4010,12 +4068,22 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 
 ## Fleet Movement
 
+- **Fleet movement is instant** — a single transaction with no transit time. The fleet's location updates immediately.
 - Fleet moves with player between planets
 - Exploration: new planet created, fleet moves to new planet, old planet released
 - One planet ownership at a time
 - **Planet completion**: When a planet's ore depletes, all fleets are automatically sent away (peace deal)
 - Fleet movement validation does not block moves based on fleet-away state
 - Fleets can move to already-populated planets
+
+### Fleet Return Conditions
+
+Fleets stay "away" until one of these triggers:
+1. **Explicit move** — The player issues `fleet-move` to return home
+2. **Command Ship destroyed** — If the fleet's Command Ship is destroyed, the fleet auto-returns
+3. **Planet completed** — If the defending planet's owner depletes all ore and explores a new planet, visiting fleets are sent away
+
+Fleets do **not** auto-return on a timer. For raids, you have until one of the above triggers to complete the raid PoW and submit `planet-raid-complete`.
 
 ## Command Ship Details
 
@@ -4547,7 +4615,7 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops |
+| 1 | Command Ship | `is_command=true`, 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
 | 19 | PDC | 1 per player, planetary shield contribution |
@@ -4850,6 +4918,8 @@ Build one of every fleet type. This gives coverage across all four ambits and ma
 | Water | Submersible | 13 | ~37 min | 125 kW |
 
 All fleet builds complete within ~1 hour. Total fleet draw: 1,230 kW.
+
+**As soon as fleet structs are online, assign defenders to your Command Ship immediately.** Use `struct-defense-set [defender-id] [command-ship-id]` for each defender. An undefended Command Ship can be destroyed in just a few attacks — and without it, your fleet is inoperable until you rebuild one. Prioritize at least one defender per ambit.
 
 ### Phase 4: Production Cycle (once infrastructure is online)
 
@@ -6737,6 +6807,24 @@ initiate build A, build B, build C → scout players → check threats →
 3. **Always have something aging.** If nothing is aging, you are losing tempo. After completing a mine, immediately initiate the next one.
 4. **Batch-initiate at session start.** When you begin a session, initiate every action you plan to take. Then do strategic work while they age.
 5. **Check jobs first every turn.** Before assessing state or making decisions, check what background PoW has completed since last check.
+
+---
+
+## Transaction Sequencing
+
+The Cosmos SDK tracks a **sequence number** per account. Each transaction increments the sequence. If two transactions from the same account are submitted before the first is included in a block (~6 seconds), the second fails with `account sequence mismatch`.
+
+**Rule**: Submit transactions from the same account **sequentially** — wait ~6 seconds between TXs for the previous one to be included in a block.
+
+Transactions from **different accounts** can run in parallel with no issues. This is why the multi-player pattern works: each player account submits independently while the agent orchestrates them all.
+
+| Scenario | Parallel? | Notes |
+|----------|-----------|-------|
+| Two TXs from same account | No | Wait ~6s between submissions |
+| TXs from different accounts | Yes | No sequence conflict |
+| Queries (read-only) | Yes | No sequence tracking on reads |
+
+If you hit `account sequence mismatch, expected N, got N-1`: wait for the pending TX to confirm, then retry.
 
 ---
 

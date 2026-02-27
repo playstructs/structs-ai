@@ -14,6 +14,21 @@
 
 ---
 
+## Health Points
+
+Each struct has a Max HP that determines how much damage it can absorb before destruction.
+
+| Struct | Max HP |
+|--------|--------|
+| Command Ship | 6 |
+| All other structs | 3 |
+
+- Damage reduces current HP. At 0 HP the struct is destroyed (see Struct Destruction below).
+- **HP does not regenerate.** A damaged struct stays damaged.
+- Defenders absorb attacks directed at the struct they protect — the protected struct only takes damage after the defender is destroyed or fails to block.
+
+---
+
 ## Damage Formulas
 
 ### Multi-Shot Damage
@@ -108,7 +123,7 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure.
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in same operating ambit as attacker for full counter-attack
@@ -116,6 +131,22 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
 - **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)
 - **Target validation**: Target struct existence is validated before attack proceeds
+- **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
+
+---
+
+## Struct Destruction
+
+When a struct reaches 0 HP, it is **destroyed** and removed from the game. The specific instance cannot be restored. However, a new struct of the same type can be built to replace it (full build PoW required).
+
+**Command Ship loss is especially costly.** Without an online Command Ship, the fleet cannot operate -- no planet building, no mining, no raiding. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
+
+| Consequence | Detail |
+|-------------|--------|
+| Destroyed struct | Removed permanently; must build a replacement |
+| Lost defenders | Each destroyed defender must be individually rebuilt |
+| Command Ship destroyed | Fleet inoperable until replacement is built and online |
+| Rebuild cost | Full PoW + power draw, same as original build |
 
 ---
 
