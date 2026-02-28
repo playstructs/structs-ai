@@ -37,39 +37,97 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
-| 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
-| 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
-| 19 | PDC | 1 per player, planetary shield contribution |
-| 20 | Field Generator | `generating_rate=2` (2 kW per gram) |
-| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram) |
-| 22 | World Engine | `generating_rate=10` (10 kW per gram) |
+| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, the specific instance is gone forever and **cannot be repaired**. However, you **can build a new Command Ship** (type 1) as a replacement — full build PoW required. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
+| 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
+| 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
+| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player |
+| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player |
+| 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player |
 
-### Combat Stats (Fleet)
+### Planetary Shield Contributions
 
-All fleet structs (IDs 1-13) have `primary_weapon_damage=2`. Only Starfighter (3) and Cruiser (11) have `secondary_weapon_damage` (1 and 2 respectively).
+Planet structs that contribute to your planet's shield (reduces raid PoW difficulty for attackers):
+
+| ID | Type | Shield Contribution | Build Limit |
+|----|------|--------------------:|-------------|
+| 16 | Orbital Shield Generator | 1,500 | 1 per player |
+| 17 | Jamming Satellite | 4,500 | 1 per player |
+| 18 | Ore Bunker | **9,000** | 1 per player |
+| 19 | Planetary Defense Cannon | 4,500 | 1 per player |
+
+Total maximum shield per player: 19,500 (from all four). All planet structs have a build limit of 1 per player.
+
+### Detailed Fleet Combat Properties
+
+All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified values below.
+
+#### Attack Properties
+
+| Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
+|--------|--------|-------------|--------------------|-----------| ------|
+| Command Ship | 1 | guided | Current ambit only | — | Must `struct-move` to target's ambit first |
+| Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
+| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
+| Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
+| Pursuit Fighter | 1 | guided | Air | — | Cheapest air offense |
+| Stealth Bomber | 8 | guided | Land, Water | — | Stealth (1 charge to activate) |
+| High Alt Interceptor | 8 | guided | Space, Air | — | Air-to-space capability |
+| Mobile Artillery | 8 | unguided | Land, Water | — | Cannot counter-attack when attacked |
+| Tank | 1 | unguided | Land | — | Damage reduction: 1 (takes 3 hits to kill) |
+| SAM Launcher | 8 | guided | Space, Air | — | Land-based anti-air/space |
+| Cruiser | 8 / 1 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
+| Destroyer | 8 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
+| Submersible | 8 | guided | Space, Water | — | Stealth (1 charge to activate) |
+
+All primary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+
+#### Defensive Properties
+
+| Struct | Counter-Attack (cross / same ambit) | Evasion | Damage Reduction | Stealth | Special |
+|--------|--------------------------------------|---------|------------------|---------|---------|
+| Command Ship | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
+| Battleship | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Starfighter | 1 / 1 | — | 0 | No | — |
+| Frigate | 1 / 1 | — | 0 | No | — |
+| Pursuit Fighter | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Stealth Bomber | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+| High Alt Interceptor | 1 / 1 | 66% vs unguided (2/3) | 0 | No | Armour vs unguided |
+| Mobile Artillery | **none** | — | 0 | No | Pure offense; cannot counter-attack |
+| Tank | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
+| SAM Launcher | 1 / 1 | — | 0 | No | — |
+| Cruiser | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Destroyer | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
+| Submersible | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+
+#### Charge Costs (All Struct Types)
+
+| Action | Charge Cost |
+|--------|-------------|
+| Build initiate | 8 |
+| Activate | 1 |
+| Attack (primary) | 1-20 (varies per struct, see table above) |
+| Defend change | 1 |
+| Move (Command Ship only) | 8 |
+| Stealth activate | 1 |
+
+At 1 charge per block (~6 seconds), plan ~48 seconds between actions costing 8 charge.
 
 ### Weapon Target Ambits
 
 Each weapon can only hit specific ambits. The `primaryWeaponAmbits` field is a bitmask (Space=16, Air=8, Land=4, Water=2).
 
-| ID | Struct | Primary Weapon Targets | Secondary Weapon Targets |
-|----|--------|------------------------|--------------------------|
-| 1 | Command Ship | Current ambit only (special: 32) | — |
-| 2 | Battleship | Space, Land, Water | — |
-| 3 | Starfighter | Space | Space |
-| 4 | Frigate | Space, Air | — |
-| 5 | Pursuit Fighter | Air | — |
-| 6 | Stealth Bomber | Land, Water | — |
-| 7 | High Altitude Interceptor | Space, Air | — |
-| 8 | Mobile Artillery | Land, Water | — |
-| 9 | Tank | Land | — |
-| 10 | SAM Launcher | Space, Air | — |
-| 11 | Cruiser | Land, Water | Air |
-| 12 | Destroyer | Air, Water | — |
-| 13 | Submersible | Space, Water | — |
+#### Threatened-By Matrix
 
-All primary and secondary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for the full targeting and defense mechanics.
+Which structs can attack into each ambit:
+
+| Target Ambit | Threatened By |
+|--------------|---------------|
+| Space | Battleship, Starfighter, Frigate, High Alt Interceptor, SAM Launcher, Submersible |
+| Air | Frigate, Pursuit Fighter, High Alt Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
+| Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
+| Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
+
+The Command Ship can attack into any ambit but must first move there via `struct-move`.
 
 ---
 
@@ -130,7 +188,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-compute` handles hash + submit |
 
-`activateCharge` = 1 for all struct types. Build limits: 1 PDC and 1 Command Ship per player.
+`activateCharge` = 1, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types. All planet structs have a build limit of 1 per player. Command Ship is limited to 1 per player. Fleet combat structs (IDs 2-13) have no build limit.
 
 ---
 

@@ -65,8 +65,10 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 3. Infuse:
 
 ```
-structsd tx structs reactor-infuse [your-address] [reactor-address] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
+
+**Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
 
 4. Verify: re-query player, confirm capacity increased
 
@@ -103,8 +105,10 @@ Generators convert Alpha Matter to energy at higher ratios than reactors, but th
 2. Infuse:
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
+
+**Important**: Amount must include denomination, e.g. `5000000ualpha`.
 
 3. Verify: query player for capacity increase
 
@@ -177,7 +181,7 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 |-----------|---------|
 | `substation-id` | Your substation that has the surplus capacity |
 | `rate` | Price per unit capacity (ualpha) |
-| `access-policy` | Who can buy (open, guild-only, etc.) |
+| `access-policy` | `open-market` (anyone), `guild-market` (guild members), `closed-market` (invite-only) |
 | `provider-penalty` | Penalty you pay if you cancel |
 | `consumer-penalty` | Penalty buyer pays if they cancel |
 | `cap-min` / `cap-max` | Minimum and maximum capacity per agreement |

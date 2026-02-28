@@ -77,7 +77,8 @@ Subscribe to subjects matching the entities you care about:
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
-| Grid | `structs.grid.*` | `structs.grid.{grid_id}` | Grid/map changes |
+| Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
+| Grid | `structs.grid.*` | `structs.grid.{object_id}` | Attribute changes (ore, power, load, etc.) |
 | Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
@@ -124,6 +125,44 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 |-------|-------------|----------|
 | `guild_consensus` | Guild chain data updated | Update guild status |
 | `guild_membership` | Member joined/left guild | Update relationship map |
+
+### Inventory Events
+
+Subject: `structs.inventory.{denom}.{guild_id}.{player_id}.{address}`
+
+Track token movements — Alpha Matter, guild tokens, ore, etc.
+
+| Category | Description | React By |
+|----------|-------------|----------|
+| `sent` | Tokens sent from this player | Update balance tracking |
+| `received` | Tokens received by this player | Update balance tracking |
+| `seized` | Tokens seized via raid | Trigger counter-raid or refine alert |
+| `mined` | Ore mined | Start refining immediately |
+| `refined` | Ore refined into Alpha | Update wealth tracking |
+| `minted` | Guild tokens minted | Track guild economy |
+| `infused` | Alpha infused into reactor/generator | Update capacity tracking |
+| `forfeited` | Tokens lost (penalties, etc.) | Investigate cause |
+
+### Grid Events
+
+Subject: `structs.grid.{object_id}`
+
+Track attribute changes on any game object (players, structs, planets).
+
+| Category | Description | React By |
+|----------|-------------|----------|
+| `capacity` | Power capacity changed | Check if approaching offline |
+| `connectionCapacity` | Connection capacity changed | Update power routing |
+| `connectionCount` | Connection count changed | Update power routing |
+| `fuel` | Fuel level changed | Monitor generator/reactor |
+| `lastAction` | Last action timestamp updated | Track activity |
+| `load` | Power load changed | Check if approaching offline |
+| `nonce` | Player nonce incremented | Detect activity (useful for scouting) |
+| `ore` | Ore balance changed | **Refine immediately** if yours; raid target if theirs |
+| `player_consensus` | Player consensus data updated | Update intel |
+| `power` | Power level changed | Monitor energy infrastructure |
+| `proxyNonce` | Proxy nonce changed | Detect proxy activity |
+| `structsLoad` | Structs load changed | Assess fleet strength changes |
 
 ### Global Events
 

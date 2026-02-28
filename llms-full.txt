@@ -2133,11 +2133,11 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 ## Procedure
 
 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.
-2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
+2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. The `amount` **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
 3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
-4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
+4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Valid `access-policy` values: `open-market` (anyone can buy), `guild-market` (guild members only), `closed-market` (invite-only via `provider-guild-grant`). Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
-6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address** (not a player ID). Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
+6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address** (not a player ID). Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]` — only the controlling address can delete an allocation. Automated allocations cannot be deleted. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
 7. **Token transfer** — `player-send [from-address] [to-address] [amount] TX_FLAGS`.
 
 ## Commands Reference
@@ -2451,8 +2451,10 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 3. Infuse:
 
 ```
-structsd tx structs reactor-infuse [your-address] [reactor-address] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
+
+**Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
 
 4. Verify: re-query player, confirm capacity increased
 
@@ -2489,8 +2491,10 @@ Generators convert Alpha Matter to energy at higher ratios than reactors, but th
 2. Infuse:
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount-in-ualpha] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
+
+**Important**: Amount must include denomination, e.g. `5000000ualpha`.
 
 3. Verify: query player for capacity increase
 
@@ -2563,7 +2567,7 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 |-----------|---------|
 | `substation-id` | Your substation that has the surplus capacity |
 | `rate` | Price per unit capacity (ualpha) |
-| `access-policy` | Who can buy (open, guild-only, etc.) |
+| `access-policy` | `open-market` (anyone), `guild-market` (guild members), `closed-market` (invite-only) |
 | `provider-penalty` | Penalty you pay if you cancel |
 | `consumer-penalty` | Penalty buyer pays if they cancel |
 | `cap-min` / `cap-max` | Minimum and maximum capacity per agreement |
@@ -2713,7 +2717,8 @@ Subscribe to subjects matching the entities you care about:
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
-| Grid | `structs.grid.*` | `structs.grid.{grid_id}` | Grid/map changes |
+| Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
+| Grid | `structs.grid.*` | `structs.grid.{object_id}` | Attribute changes (ore, power, load, etc.) |
 | Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
@@ -2760,6 +2765,44 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 |-------|-------------|----------|
 | `guild_consensus` | Guild chain data updated | Update guild status |
 | `guild_membership` | Member joined/left guild | Update relationship map |
+
+### Inventory Events
+
+Subject: `structs.inventory.{denom}.{guild_id}.{player_id}.{address}`
+
+Track token movements — Alpha Matter, guild tokens, ore, etc.
+
+| Category | Description | React By |
+|----------|-------------|----------|
+| `sent` | Tokens sent from this player | Update balance tracking |
+| `received` | Tokens received by this player | Update balance tracking |
+| `seized` | Tokens seized via raid | Trigger counter-raid or refine alert |
+| `mined` | Ore mined | Start refining immediately |
+| `refined` | Ore refined into Alpha | Update wealth tracking |
+| `minted` | Guild tokens minted | Track guild economy |
+| `infused` | Alpha infused into reactor/generator | Update capacity tracking |
+| `forfeited` | Tokens lost (penalties, etc.) | Investigate cause |
+
+### Grid Events
+
+Subject: `structs.grid.{object_id}`
+
+Track attribute changes on any game object (players, structs, planets).
+
+| Category | Description | React By |
+|----------|-------------|----------|
+| `capacity` | Power capacity changed | Check if approaching offline |
+| `connectionCapacity` | Connection capacity changed | Update power routing |
+| `connectionCount` | Connection count changed | Update power routing |
+| `fuel` | Fuel level changed | Monitor generator/reactor |
+| `lastAction` | Last action timestamp updated | Track activity |
+| `load` | Power load changed | Check if approaching offline |
+| `nonce` | Player nonce incremented | Detect activity (useful for scouting) |
+| `ore` | Ore balance changed | **Refine immediately** if yours; raid target if theirs |
+| `player_consensus` | Player consensus data updated | Update intel |
+| `power` | Power level changed | Monitor energy infrastructure |
+| `proxyNonce` | Proxy nonce changed | Detect proxy activity |
+| `structsLoad` | Structs load changed | Assess fleet strength changes |
 
 ### Global Events
 
@@ -3618,15 +3661,15 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Struct Destruction
 
-When a struct reaches 0 HP, it is **destroyed** and removed from the game. The specific instance cannot be restored. However, a new struct of the same type can be built to replace it (full build PoW required).
+When a struct reaches 0 HP, it is **destroyed** and removed from the game. The destroyed instance is gone forever and **cannot be repaired**. However, you **can build a new struct** of the same type as a replacement — full build PoW required.
 
-**Command Ship loss is especially costly.** Without an online Command Ship, the fleet cannot operate -- no planet building, no mining, no raiding. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
+**Command Ship loss is especially costly.** The destroyed Command Ship cannot be repaired, but you **can build a new Command Ship** (type 1) to replace it. Until the replacement is online, the fleet cannot move, raid, or build in space. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
 
 | Consequence | Detail |
 |-------------|--------|
-| Destroyed struct | Removed permanently; must build a replacement |
+| Destroyed struct | Instance gone forever; build a replacement (full PoW) |
 | Lost defenders | Each destroyed defender must be individually rebuilt |
-| Command Ship destroyed | Fleet inoperable until replacement is built and online |
+| Command Ship destroyed | Fleet inoperable until a **new** Command Ship is built and online |
 | Rebuild cost | Full PoW + power draw, same as original build |
 
 ---
@@ -4721,39 +4764,97 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, fleet is inoperable until a replacement is built (full PoW). Protect at all costs. |
-| 14 | Ore Extractor | `ore_mining_difficulty=14,000` |
-| 15 | Ore Refinery | `ore_refining_difficulty=28,000` |
-| 19 | PDC | 1 per player, planetary shield contribution |
-| 20 | Field Generator | `generating_rate=2` (2 kW per gram) |
-| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram) |
-| 22 | World Engine | `generating_rate=10` (10 kW per gram) |
+| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, the specific instance is gone forever and **cannot be repaired**. However, you **can build a new Command Ship** (type 1) as a replacement — full build PoW required. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
+| 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
+| 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
+| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player |
+| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player |
+| 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player |
 
-### Combat Stats (Fleet)
+### Planetary Shield Contributions
 
-All fleet structs (IDs 1-13) have `primary_weapon_damage=2`. Only Starfighter (3) and Cruiser (11) have `secondary_weapon_damage` (1 and 2 respectively).
+Planet structs that contribute to your planet's shield (reduces raid PoW difficulty for attackers):
+
+| ID | Type | Shield Contribution | Build Limit |
+|----|------|--------------------:|-------------|
+| 16 | Orbital Shield Generator | 1,500 | 1 per player |
+| 17 | Jamming Satellite | 4,500 | 1 per player |
+| 18 | Ore Bunker | **9,000** | 1 per player |
+| 19 | Planetary Defense Cannon | 4,500 | 1 per player |
+
+Total maximum shield per player: 19,500 (from all four). All planet structs have a build limit of 1 per player.
+
+### Detailed Fleet Combat Properties
+
+All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified values below.
+
+#### Attack Properties
+
+| Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
+|--------|--------|-------------|--------------------|-----------| ------|
+| Command Ship | 1 | guided | Current ambit only | — | Must `struct-move` to target's ambit first |
+| Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
+| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
+| Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
+| Pursuit Fighter | 1 | guided | Air | — | Cheapest air offense |
+| Stealth Bomber | 8 | guided | Land, Water | — | Stealth (1 charge to activate) |
+| High Alt Interceptor | 8 | guided | Space, Air | — | Air-to-space capability |
+| Mobile Artillery | 8 | unguided | Land, Water | — | Cannot counter-attack when attacked |
+| Tank | 1 | unguided | Land | — | Damage reduction: 1 (takes 3 hits to kill) |
+| SAM Launcher | 8 | guided | Space, Air | — | Land-based anti-air/space |
+| Cruiser | 8 / 1 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
+| Destroyer | 8 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
+| Submersible | 8 | guided | Space, Water | — | Stealth (1 charge to activate) |
+
+All primary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+
+#### Defensive Properties
+
+| Struct | Counter-Attack (cross / same ambit) | Evasion | Damage Reduction | Stealth | Special |
+|--------|--------------------------------------|---------|------------------|---------|---------|
+| Command Ship | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
+| Battleship | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Starfighter | 1 / 1 | — | 0 | No | — |
+| Frigate | 1 / 1 | — | 0 | No | — |
+| Pursuit Fighter | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Stealth Bomber | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+| High Alt Interceptor | 1 / 1 | 66% vs unguided (2/3) | 0 | No | Armour vs unguided |
+| Mobile Artillery | **none** | — | 0 | No | Pure offense; cannot counter-attack |
+| Tank | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
+| SAM Launcher | 1 / 1 | — | 0 | No | — |
+| Cruiser | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
+| Destroyer | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
+| Submersible | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+
+#### Charge Costs (All Struct Types)
+
+| Action | Charge Cost |
+|--------|-------------|
+| Build initiate | 8 |
+| Activate | 1 |
+| Attack (primary) | 1-20 (varies per struct, see table above) |
+| Defend change | 1 |
+| Move (Command Ship only) | 8 |
+| Stealth activate | 1 |
+
+At 1 charge per block (~6 seconds), plan ~48 seconds between actions costing 8 charge.
 
 ### Weapon Target Ambits
 
 Each weapon can only hit specific ambits. The `primaryWeaponAmbits` field is a bitmask (Space=16, Air=8, Land=4, Water=2).
 
-| ID | Struct | Primary Weapon Targets | Secondary Weapon Targets |
-|----|--------|------------------------|--------------------------|
-| 1 | Command Ship | Current ambit only (special: 32) | — |
-| 2 | Battleship | Space, Land, Water | — |
-| 3 | Starfighter | Space | Space |
-| 4 | Frigate | Space, Air | — |
-| 5 | Pursuit Fighter | Air | — |
-| 6 | Stealth Bomber | Land, Water | — |
-| 7 | High Altitude Interceptor | Space, Air | — |
-| 8 | Mobile Artillery | Land, Water | — |
-| 9 | Tank | Land | — |
-| 10 | SAM Launcher | Space, Air | — |
-| 11 | Cruiser | Land, Water | Air |
-| 12 | Destroyer | Air, Water | — |
-| 13 | Submersible | Space, Water | — |
+#### Threatened-By Matrix
 
-All primary and secondary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for the full targeting and defense mechanics.
+Which structs can attack into each ambit:
+
+| Target Ambit | Threatened By |
+|--------------|---------------|
+| Space | Battleship, Starfighter, Frigate, High Alt Interceptor, SAM Launcher, Submersible |
+| Air | Frigate, Pursuit Fighter, High Alt Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
+| Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
+| Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
+
+The Command Ship can attack into any ambit but must first move there via `struct-move`.
 
 ---
 
@@ -4814,7 +4915,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-compute` handles hash + submit |
 
-`activateCharge` = 1 for all struct types. Build limits: 1 PDC and 1 Command Ship per player.
+`activateCharge` = 1, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types. All planet structs have a build limit of 1 per player. Command Ship is limited to 1 per player. Fleet combat structs (IDs 2-13) have no build limit.
 
 ---
 

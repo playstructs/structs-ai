@@ -208,15 +208,15 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ## Struct Destruction
 
-When a struct reaches 0 HP, it is **destroyed** and removed from the game. The specific instance cannot be restored. However, a new struct of the same type can be built to replace it (full build PoW required).
+When a struct reaches 0 HP, it is **destroyed** and removed from the game. The destroyed instance is gone forever and **cannot be repaired**. However, you **can build a new struct** of the same type as a replacement — full build PoW required.
 
-**Command Ship loss is especially costly.** Without an online Command Ship, the fleet cannot operate -- no planet building, no mining, no raiding. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
+**Command Ship loss is especially costly.** The destroyed Command Ship cannot be repaired, but you **can build a new Command Ship** (type 1) to replace it. Until the replacement is online, the fleet cannot move, raid, or build in space. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
 
 | Consequence | Detail |
 |-------------|--------|
-| Destroyed struct | Removed permanently; must build a replacement |
+| Destroyed struct | Instance gone forever; build a replacement (full PoW) |
 | Lost defenders | Each destroyed defender must be individually rebuilt |
-| Command Ship destroyed | Fleet inoperable until replacement is built and online |
+| Command Ship destroyed | Fleet inoperable until a **new** Command Ship is built and online |
 | Rebuild cost | Full PoW + power draw, same as original build |
 
 ---
