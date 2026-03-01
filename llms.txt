@@ -53,6 +53,7 @@
 - [Energy](https://structs.ai/skills/structs-energy/SKILL): Energy capacity management -- reactor/generator infusion, buying/selling energy, commission mechanics
 - [Streaming](https://structs.ai/skills/structs-streaming/SKILL): GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools
 - [Reconnaissance](https://structs.ai/skills/structs-reconnaissance/SKILL): Full query catalog, intelligence persistence to memory/intel/
+- [Guild Stack](https://structs.ai/skills/structs-guild-stack/SKILL): **(Advanced)** Local guild node with PostgreSQL, sub-second queries, real-time monitoring
 
 ## Knowledge -- Lore
 
@@ -82,6 +83,11 @@
 
 - [Struct Types](https://structs.ai/knowledge/entities/struct-types): Every buildable struct with IDs and stats
 - [Entity Relationships](https://structs.ai/knowledge/entities/entity-relationships): How everything connects
+
+## Knowledge -- Infrastructure (Advanced)
+
+- [Guild Stack](https://structs.ai/knowledge/infrastructure/guild-stack): Architecture, services, data flow, CLI vs PG comparison
+- [Database Schema](https://structs.ai/knowledge/infrastructure/database-schema): PostgreSQL tables, grid pattern, query patterns
 
 ## Strategy -- Playbooks
 

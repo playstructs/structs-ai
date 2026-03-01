@@ -225,6 +225,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Energy capacity management — reactor/generator infusion, buying/selling energy, commission mechanics |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
+| [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
 
 ---
 
@@ -294,6 +295,10 @@ Reference material in `knowledge/`.
 ### Entities
 - [`struct-types`](knowledge/entities/struct-types.md) -- Every buildable struct
 - [`entity-relationships`](knowledge/entities/entity-relationships.md) -- How everything connects
+
+### Infrastructure (Advanced)
+- [`guild-stack`](knowledge/infrastructure/guild-stack.md) -- Guild Stack architecture, services, data flow
+- [`database-schema`](knowledge/infrastructure/database-schema.md) -- PostgreSQL tables, query patterns, grid gotcha
 
 ---
 
@@ -596,6 +601,16 @@ Structs can run in several configurations:
 - **Hosted** — Managed deployment with provided endpoints.
 
 Check which deployment you're connected to and update the URLs below accordingly.
+
+### Guild Stack (Advanced)
+
+For sub-second game state queries, real-time threat detection, and combat automation, deploy the **Guild Stack** locally via Docker Compose. It provides PostgreSQL-indexed game state, a local GRASS/NATS server, MCP server, and transaction signing agent.
+
+**Repository**: `https://github.com/playstructs/docker-structs-guild`
+
+Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) skill for the full procedure.
+
+The guild stack is optional -- CLI commands via a remote node work for basic gameplay. PG access becomes essential for combat automation and galaxy-wide intelligence.
 
 ---
 
@@ -3195,6 +3210,34 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 5. Update `memory/intel/threats.md` with ranked threats and response notes.
 6. Include "Last Updated" date in each file.
 
+## PostgreSQL Queries (Advanced)
+
+If the Guild Stack is running locally, all reconnaissance queries can be done in **< 1 second** via PostgreSQL instead of CLI. This is essential for combat automation, real-time threat monitoring, and galaxy-wide scouting.
+
+Example -- find all players with stealable ore, ranked by amount:
+
+```sql
+SELECT p.id, p.guild_id, COALESCE(g_ore.val, 0) as ore
+FROM structs.player p
+JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
+WHERE g_ore.val > 0
+ORDER BY g_ore.val DESC;
+```
+
+Example -- enemy fleet composition at a planet:
+
+```sql
+SELECT s.id, st.class_abbreviation, s.operating_ambit, st.unit_defenses
+FROM structs.struct s
+JOIN structs.struct_type st ON st.id = s.type
+JOIN structs.fleet f ON f.id = s.location_id
+WHERE f.location_id = '2-105' AND s.is_destroyed = false AND s.location_type = 'fleet';
+```
+
+**Important**: The `structs.grid` table is key-value, not columnar. See `knowledge/infrastructure/database-schema.md` for the grid pattern and more query examples.
+
+For setup: `.cursor/skills/structs-guild-stack/SKILL.md`
+
 ## See Also
 
 - `memory/intel/README.md` — Dossier formats, territory map, threat board
@@ -3202,6 +3245,297 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 - `awareness/opportunity-identification.md` — Spotting opportunities
 - `knowledge/mechanics/combat.md` — Raid mechanics, fleet status
 - `playbooks/meta/reading-opponents.md` — Soul type identification
+- `.cursor/skills/structs-guild-stack/SKILL.md` — Guild Stack setup for PG access
+- `knowledge/infrastructure/database-schema.md` — Full PG schema and query patterns
+
+</document>
+
+<document>
+<source>.cursor/skills/structs-guild-stack/SKILL.md</source>
+---
+name: structs-guild-stack
+description: Deploys the Guild Stack (Docker Compose) for local PostgreSQL access to game state. Use when you need faster queries for combat automation, real-time threat detection, raid target scouting, fleet composition analysis, or galaxy-wide intelligence. Advanced/optional -- CLI works for basic gameplay, but PG access transforms what is possible.
+---
+
+# Structs Guild Stack
+
+The Guild Stack is a Docker Compose application that runs a full guild node with PostgreSQL indexing, GRASS real-time events, a webapp, MCP server, and transaction signing agent. It provides sub-second database queries for game state that would take 1-60 seconds via CLI.
+
+**This is an advanced/optional upgrade.** CLI commands work for basic gameplay. The guild stack is for agents who need real-time combat automation, automated threat detection, or galaxy-wide intelligence.
+
+**Repository**: `https://github.com/playstructs/docker-structs-guild`
+
+---
+
+## When to Use the Guild Stack
+
+| Situation | CLI | Guild Stack (PG) |
+|-----------|-----|-------------------|
+| Simple single-object query | 1-5s (fine) | <1s |
+| Galaxy-wide scouting (all players, all planets) | 30-60s (too slow) | <1s |
+| Real-time threat detection (poll every block) | Impossible (query > block time) | Trivial |
+| Combat targeting (weapon/defense matching) | Minutes to gather data | <1s |
+| Submitting transactions | CLI required | CLI required |
+
+**Rule**: Use PG for reads, CLI for writes.
+
+---
+
+## Prerequisites
+
+- Docker and `docker compose` installed
+- ~10 GB disk space
+- Several hours for initial chain sync (one-time cost; subsequent starts catch up in minutes)
+
+---
+
+## Setup Procedure
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/playstructs/docker-structs-guild
+cd docker-structs-guild
+```
+
+### 2. Configure Environment
+
+Copy or create `.env` with at minimum:
+
+```
+MONIKER=MyAgentNode
+NETWORK_VERSION=109b
+NETWORK_CHAIN_ID=structstestnet-109
+```
+
+### 3. Start the Stack
+
+```bash
+docker compose up -d
+```
+
+### 4. Wait for Chain Sync
+
+The blockchain node must sync from genesis or a snapshot. This takes hours on first run. Monitor progress:
+
+```bash
+docker compose logs -f structsd --tail 20
+```
+
+The node is synced when the health check passes. Check with:
+
+```bash
+docker compose ps
+```
+
+All services should show `healthy` or `running`. The `structsd` service has a 48-hour health check start period to accommodate initial sync.
+
+### 5. Verify PG Access
+
+Run a test query (see "Connecting to PostgreSQL" below):
+
+```bash
+docker exec docker-structs-guild-structs-grass-1 \
+  psql "postgres://structs_indexer@structs-pg:5432/structs?sslmode=require" \
+  -t -A -c "SELECT count(*) FROM structs.player;"
+```
+
+If this returns a number, the stack is working.
+
+---
+
+## Connecting to PostgreSQL
+
+Use the **GRASS container** for `psql` access -- it has network access to the PG service via Docker DNS and the `structs_indexer` role has broad read access.
+
+```bash
+PG_CONTAINER="docker-structs-guild-structs-grass-1"
+PG_CONN="postgres://structs_indexer@structs-pg:5432/structs?sslmode=require"
+
+docker exec "$PG_CONTAINER" psql "$PG_CONN" -t -A -c "SELECT ..."
+```
+
+For JSON output:
+
+```bash
+docker exec "$PG_CONTAINER" psql "$PG_CONN" -t -A -c \
+  "SELECT COALESCE(json_agg(row_to_json(t)), '[]') FROM (...) t;"
+```
+
+The container name may vary by installation. Find it with `docker compose ps` and look for the `structs-grass` service.
+
+---
+
+## The Grid Table Gotcha
+
+The `structs.grid` table is a **key-value store**, not a columnar table. Each row is one attribute for one object.
+
+```sql
+-- WRONG: There is no 'ore' column
+SELECT ore FROM structs.grid WHERE object_id = '1-142';
+
+-- CORRECT: Filter by attribute_type
+SELECT val FROM structs.grid WHERE object_id = '1-142' AND attribute_type = 'ore';
+```
+
+For multiple attributes on the same object, use multiple JOINs:
+
+```sql
+SELECT p.id,
+    COALESCE(g_ore.val, 0) as ore,
+    COALESCE(g_load.val, 0) as structs_load
+FROM structs.player p
+LEFT JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
+LEFT JOIN structs.grid g_load ON g_load.object_id = p.id AND g_load.attribute_type = 'structsLoad'
+WHERE p.id = '1-142';
+```
+
+---
+
+## Common Queries
+
+### Player Resources
+
+```sql
+SELECT p.id, p.guild_id, p.planet_id, p.fleet_id,
+    COALESCE(g_ore.val, 0) as ore,
+    COALESCE(g_load.val, 0) as structs_load
+FROM structs.player p
+LEFT JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
+LEFT JOIN structs.grid g_load ON g_load.object_id = p.id AND g_load.attribute_type = 'structsLoad'
+WHERE p.id = '1-142';
+```
+
+### Fleet Composition with Weapon Stats
+
+```sql
+SELECT s.id, st.class_abbreviation, s.operating_ambit,
+    st.primary_weapon_control, st.primary_weapon_damage,
+    st.primary_weapon_ambits_array, st.unit_defenses,
+    st.counter_attack_same_ambit
+FROM structs.struct s
+JOIN structs.struct_type st ON st.id = s.type
+WHERE s.owner = '1-142' AND s.location_type = 'fleet'
+    AND s.is_destroyed = false
+ORDER BY s.operating_ambit, s.slot;
+```
+
+### Raid Target Scouting
+
+```sql
+SELECT pl.id as planet, pl.owner, g_ore.val as ore,
+    COALESCE(pa_shield.val, 0) as shield,
+    COALESCE(g_load.val, 0) as structs_load
+FROM structs.planet pl
+JOIN structs.grid g_ore ON g_ore.object_id = pl.owner AND g_ore.attribute_type = 'ore'
+LEFT JOIN structs.planet_attribute pa_shield ON pa_shield.object_id = pl.id
+    AND pa_shield.attribute_type = 'planetaryShield'
+LEFT JOIN structs.grid g_load ON g_load.object_id = pl.owner
+    AND g_load.attribute_type = 'structsLoad'
+WHERE g_ore.val > 0
+ORDER BY g_ore.val DESC, shield ASC;
+```
+
+### Enemy Structs at a Planet
+
+```sql
+SELECT s.id, st.class_abbreviation, s.operating_ambit,
+    st.primary_weapon_control, st.primary_weapon_damage,
+    st.unit_defenses
+FROM structs.struct s
+JOIN structs.struct_type st ON st.id = s.type
+JOIN structs.fleet f ON f.id = s.location_id
+WHERE f.location_id = '2-105' AND s.is_destroyed = false
+    AND s.location_type = 'fleet'
+ORDER BY s.operating_ambit;
+```
+
+### Real-Time Threat Detection (Poll Pattern)
+
+```sql
+-- Set high-water mark on startup
+SELECT COALESCE(MAX(seq), 0) FROM structs.planet_activity
+WHERE planet_id IN ('2-105');
+
+-- Poll every ~6 seconds (one block interval)
+SELECT seq, planet_id, category, detail::text
+FROM structs.planet_activity
+WHERE planet_id IN ('2-105', '2-127')
+    AND seq > $LAST_SEQ
+ORDER BY seq ASC;
+```
+
+Watch for `fleet_arrive`, `raid_status`, and `struct_attack` categories.
+
+### Struct Health and Defense Assignments
+
+```sql
+SELECT sa.object_id as struct_id, sa.attribute_type, sa.val
+FROM structs.struct_attribute sa
+WHERE sa.object_id = '5-1165';
+
+SELECT defending_struct_id, protected_struct_id
+FROM structs.struct_defender
+WHERE protected_struct_id = '5-100';
+```
+
+---
+
+## Stack Management
+
+```bash
+# Start all services
+docker compose up -d
+
+# Check service status
+docker compose ps
+
+# View blockchain sync progress
+docker compose logs -f structsd --tail 20
+
+# Stop (preserves all data)
+docker compose down
+
+# Destroy all data (start fresh)
+docker compose down -v
+```
+
+---
+
+## Port Summary
+
+| Port | Service | Purpose |
+|------|---------|---------|
+| 26656 | structsd | P2P blockchain networking |
+| 26657 | structsd | CometBFT RPC (transactions + queries) |
+| 1317 | structsd | Cosmos SDK REST API |
+| 5432 | structs-pg | PostgreSQL database |
+| 80 | structs-proxy | Webapp (via reverse proxy) |
+| 8080 | structs-webapp | Webapp (direct access) |
+| 4222 | structs-nats | NATS client connections |
+| 1443 | structs-nats | NATS WebSocket (GRASS events) |
+| 3000 | structs-mcp | MCP server for AI agents |
+
+---
+
+## Error Handling
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "connection refused" on PG | Stack not started or PG not healthy yet | `docker compose ps` to check; wait for PG healthy |
+| Query returns 0 rows | Chain sync not complete; data not indexed yet | Check `docker compose logs structsd` for sync progress |
+| Container name not found | Container naming varies by installation | Run `docker compose ps` to find actual container names |
+| "role does not exist" | Wrong PG role in connection string | Use `structs_indexer` role via the GRASS container |
+| Slow PoW with guild stack | Multiple agents running concurrent PoW | CPU contention; stagger PoW operations or reduce parallelism |
+
+---
+
+## See Also
+
+- `knowledge/infrastructure/guild-stack.md` -- Architecture overview and data flow
+- `knowledge/infrastructure/database-schema.md` -- Full table schemas and query patterns
+- `.cursor/skills/structs-reconnaissance/SKILL.md` -- Intelligence gathering (CLI + PG)
+- `.cursor/skills/structs-streaming/SKILL.md` -- GRASS real-time events via NATS
 
 </document>
 
@@ -5341,6 +5675,505 @@ Struct.passiveDraw (when online)
 - [schemas/entities.md](../../schemas/entities.md) — Full entity definitions
 - [schemas/formats.md](../../schemas/formats.md) — ID format specification
 - [power.md](../mechanics/power.md) — Capacity, load, substation connection
+
+</document>
+
+<document>
+<source>knowledge/infrastructure/guild-stack.md</source>
+# Guild Stack Architecture
+
+**Purpose**: AI-readable reference for the Structs Guild Stack -- a Docker Compose application that provides local PostgreSQL access to indexed game state, GRASS real-time events, a webapp, MCP server, and transaction signing. This is an advanced/optional upgrade for agents who need sub-second query performance.
+
+**Repository**: `https://github.com/playstructs/docker-structs-guild`
+
+---
+
+## Overview
+
+The Guild Stack runs a full Structs guild node locally via Docker Compose. A single `docker compose up -d` brings up everything needed to participate in the network with fast indexed data access. The key benefit for agents is PostgreSQL: every game state query that takes 1-60 seconds via CLI completes in under 1 second via PG.
+
+Three compose variants exist:
+
+| Variant | File | Purpose |
+|---------|------|---------|
+| Guild node | `compose.yaml` | Standard deployment with indexer, PG, GRASS, webapp, MCP, TSA |
+| Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no indexer/webapp/MCP) |
+| Guild + Discord | `compose-discord.yaml` | Standard + Discord bot integration |
+
+---
+
+## Why PostgreSQL Matters
+
+The performance difference between CLI queries and PG is not incremental -- it determines what operations are physically possible.
+
+### The Combat Math
+
+One blockchain block is ~6 seconds. Fast-fire units (Command Ship, Pursuit Fighter, Tank, Starfighter) recharge in 1 block. In active combat, the decision loop is:
+
+1. Query enemy state (who's alive, what defenses)
+2. Pick optimal attacker + target + weapon
+3. Submit attack transaction
+4. Wait for charge (~6s)
+5. Repeat
+
+**With CLI**: Steps 1-2 take 5-10 seconds. Your 6-second combat cycle becomes 15 seconds. You fire at half rate, and state may be stale by the time you act.
+
+**With PG**: Steps 1-2 take < 1 second. Your combat cycle matches the chain's block time. Targeting decisions use current-block state.
+
+### What PG Enables
+
+| Capability | CLI | PG |
+|------------|-----|-----|
+| Real-time threat detection | Impossible (query > block time) | Poll every 6s |
+| Defense-aware combat targeting | Minutes to gather, stale by execution | Full matrix in <1s |
+| Automated raid target selection | 2-5 min to scout | Score all planets in <1s |
+| Fleet composition analysis | Fetch all structs, parse, cross-reference | Single JOIN, instant |
+| Multi-step combat sequences | 5-10s gaps between shots | Re-query between shots in <1s |
+| Galaxy-wide intelligence | 30-60s for player-all, often times out | Arbitrary filters and JOINs in <1s |
+
+---
+
+## Service Catalog
+
+| Service | Ports | Purpose |
+|---------|-------|---------|
+| `structsd` | 26656, 26657, 1317 | Blockchain node (CometBFT + Cosmos SDK). Indexes events to PG. |
+| `structs-pg` | 5432 | PostgreSQL 17 + TimescaleDB. Central data store. |
+| `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443. |
+| `structs-grass` | — | Event bridge: PG `NOTIFY 'grass'` -> NATS subjects. |
+| `structs-webapp` | 8080, 80 (proxy) | Guild webapp (PHP/Symfony). Guild API at `/api/`. |
+| `structs-proxy` | 80 | Reverse proxy to webapp. |
+| `structs-mcp` | 3000 | MCP server for AI agents. `DANGER=true` enables writes. |
+| `structs-tsa` | — | Transaction Signing Agent. Manages signing account pool. |
+| `structs-crawler` | — | Supplementary data crawler. |
+| `structs-pg-auto-migrate` | — | Runs Sqitch migrations periodically. |
+
+Init services (`structsd-network-config`, `structsd-indexer-config`, `structs-pg-init`) run once at startup and exit.
+
+---
+
+## Data Flow
+
+```
+Blockchain Network (P2P :26656)
+    |
+    v
+structsd (CometBFT + Cosmos SDK)
+    |
+    +---> REST API (:1317) ---> External queries
+    +---> RPC (:26657) ---> Transaction submission
+    |
+    +---> PostgreSQL Indexer ---> structs-pg (:5432)
+                                      |
+                +---------------------+
+                |                     |
+                v                     v
+          PG NOTIFY 'grass'     Direct queries
+                |               (webapp, mcp, tsa)
+                v
+          structs-grass
+                |
+                v
+          structs-nats (:4222 / :1443 WebSocket)
+                |
+                +---> Internal services
+                +---> Browser/agent WebSocket clients
+```
+
+**Write path**: Transactions go through `structsd` RPC (:26657) or via the TSA signer schema (services insert rows into `signer.tx`, TSA signs and broadcasts).
+
+**Read path (fast)**: PostgreSQL queries via any service with PG access.
+
+**Read path (slow)**: CLI queries via `structsd query` (hits node's local state store).
+
+**Real-time path**: CometBFT indexer writes to PG -> PG `NOTIFY 'grass'` -> `structs-grass` -> NATS -> WebSocket clients.
+
+---
+
+## GRASS Bridge
+
+The `structs-grass` service bridges PostgreSQL change notifications to NATS:
+
+- Listens on PG channel: `grass`
+- Publishes to NATS subjects matching entity types (see streaming skill for subject patterns)
+- Game events (attacks, fleet moves, raids, builds) flow through this bridge
+- `consensus` and `healthcheck` subjects fire constantly as baseline traffic
+
+This is the same system documented in the `structs-streaming` skill. The guild stack runs it locally rather than connecting to a remote GRASS endpoint.
+
+---
+
+## MCP Server
+
+The `structs-mcp` service provides an AI-agent-friendly interface:
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Port | 3000 | Configurable via `MCP_HTTP_PORT` |
+| `DANGER` | `true`/`false` | `true` enables write operations (tx submission via signer) |
+| `TARGET_DIFFICULTY_START` | 7 (default) | Starting difficulty for PoW computations |
+| User | 1001:1001 | Non-root for security |
+
+Connects to: PG (`structs_webapp` role), consensus RPC/API, webapp API, NATS.
+
+---
+
+## Startup Timing
+
+| Phase | Duration | Notes |
+|-------|----------|-------|
+| PG init + healthy | 10-30 seconds | Database creation and role setup |
+| Network config | Seconds | Chain config, genesis, peers |
+| **Initial chain sync** | **Hours** (first run) | Syncing from genesis. 48-hour health check start period. |
+| Warm start catch-up | 1-5 minutes | Syncing from last checkpoint |
+| PG-dependent services | After PG healthy | GRASS, TSA, crawler, MCP start once PG is ready |
+
+The initial sync is the main cost. After that, warm starts are fast.
+
+---
+
+## Platform Notes
+
+- All Docker images are `linux/amd64`. On Apple Silicon, they run via Rosetta (expect ~10-20% performance overhead).
+- Concurrent PoW operations compete for CPU. Many agents refining simultaneously can cause extreme slowdowns.
+- The `timeout` command is not available on macOS by default. Use `gtimeout` from coreutils.
+
+---
+
+## See Also
+
+- `.cursor/skills/structs-guild-stack/SKILL.md` -- Setup procedure and common queries
+- `knowledge/infrastructure/database-schema.md` -- Full table schemas and query patterns
+- `.cursor/skills/structs-streaming/SKILL.md` -- GRASS real-time events via NATS
+- `TOOLS.md` -- Environment configuration and deployment options
+
+</document>
+
+<document>
+<source>knowledge/infrastructure/database-schema.md</source>
+# Database Schema Reference
+
+**Purpose**: AI-readable reference for the Structs Guild Stack PostgreSQL database. Covers core game state tables, the key-value grid pattern, event categories, and ready-to-use query patterns.
+
+**Requires**: Guild Stack running locally. See `.cursor/skills/structs-guild-stack/SKILL.md` for setup.
+
+---
+
+## Schema Overview
+
+PostgreSQL 17 with TimescaleDB extension. Four schemas:
+
+| Schema | Purpose |
+|--------|---------|
+| `structs` | Game state (~50 tables covering all game objects) |
+| `cache` | Blockchain event indexing (event-sourcing from chain to game state) |
+| `signer` | Transaction signing queue (TSA account/role/tx management) |
+| `sqitch` | Schema migration tracking |
+
+### Database Roles
+
+| Role | Access | Used By |
+|------|--------|---------|
+| `structs` | Superuser (owner) | Administration, migrations |
+| `structs_indexer` | Read/write on `structs.*`, `cache.*` | `structsd` (indexer), `structs-grass` |
+| `structs_webapp` | Read/write on most `structs.*`, full on `signer.*` | Webapp, MCP, TSA |
+| `structs_crawler` | Read-only on select tables | Crawler |
+
+For agent queries, use `structs_indexer` via the GRASS container (see guild-stack skill).
+
+---
+
+## Core Game State Tables
+
+### `structs.player`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `1-{index}` (e.g., `1-142`) |
+| `index` | integer | Numeric portion of ID |
+| `guild_id` | varchar | Guild membership (e.g., `0-1`) |
+| `planet_id` | varchar | Home planet (e.g., `2-105`) |
+| `fleet_id` | varchar | Fleet (e.g., `9-142`) |
+| `primary_address` | varchar | Cosmos address |
+| `creator` | varchar | Who created this player |
+
+### `structs.fleet`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `9-{index}` |
+| `owner` | varchar | Player ID |
+| `status` | varchar | `on_station`, `away` |
+| `location_type` | varchar | `planet` |
+| `location_id` | varchar | Planet ID where fleet is located |
+| `command_struct` | varchar | Command Ship struct ID |
+| `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Available slots per ambit |
+
+### `structs.struct`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `5-{index}` |
+| `type` | integer | FK to `struct_type.id` (1-22) |
+| `owner` | varchar | Player ID |
+| `location_type` | varchar | `fleet` or `planet` |
+| `location_id` | varchar | Fleet/planet ID |
+| `operating_ambit` | varchar | `space`, `air`, `land`, `water` |
+| `slot` | integer | Position within ambit (0-3) |
+| `is_destroyed` | boolean | Destruction state |
+| `destroyed_block` | bigint | Block height when destroyed |
+
+### `structs.struct_type`
+
+The authoritative reference for all game balance data (~60 columns). Key columns:
+
+**Weapons (primary + secondary prefixed):**
+- `*_weapon_control` -- `guided` or `unguided`
+- `*_weapon_charge` -- charge cost per attack
+- `*_weapon_ambits` -- bitmask of targetable ambits
+- `*_weapon_ambits_array` -- JSONB readable form
+- `*_weapon_shots`, `*_weapon_damage` -- shots per attack, damage per shot
+- `*_weapon_blockable`, `*_weapon_counterable` -- boolean
+- `*_weapon_recoil_damage` -- self-damage after firing
+- `*_weapon_shot_success_rate_numerator/denominator` -- per-shot hit rate
+
+**Defense:**
+- `unit_defenses` -- `signalJamming`, `armour`, `defensiveManeuver`, `stealthMode`, `indirectCombatModule`, `noUnitDefenses`
+- `guided_defensive_success_rate_numerator/denominator` -- evasion vs guided
+- `unguided_defensive_success_rate_numerator/denominator` -- evasion vs unguided
+- `counter_attack` -- counter-attack damage (cross-ambit)
+- `counter_attack_same_ambit` -- counter-attack damage (same ambit)
+
+**Other:**
+- `planetary_shield_contribution` -- shield value for planet structs
+- `generating_rate` -- power generation per gram (generators)
+- `ore_mining_difficulty`, `ore_refining_difficulty` -- PoW difficulty
+- `build_difficulty` -- PoW difficulty for construction
+- Charge costs: `activate_charge`, `build_charge`, `defend_change_charge`, `move_charge`, `stealth_activate_charge`
+- Display: `class`, `class_abbreviation`, `unit_description`
+
+### `structs.struct_attribute`
+
+Key-value attributes per struct instance.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `object_id` | varchar | Struct ID |
+| `attribute_type` | varchar | `health`, `status`, `protectedStructIndex`, etc. |
+| `val` | integer | Attribute value |
+
+### `structs.struct_defender`
+
+Defense assignments.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `defending_struct_id` | varchar PK | The defender |
+| `protected_struct_id` | varchar | The struct being protected |
+
+### `structs.planet`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `2-{index}` |
+| `owner` | varchar | Player ID |
+| `max_ore` | integer | Maximum ore capacity |
+| `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts |
+| `status` | varchar | Planet status |
+
+### `structs.planet_attribute`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `object_id` | varchar | Planet ID |
+| `attribute_type` | varchar | `planetaryShield`, etc. |
+| `val` | integer | Attribute value |
+
+### `structs.planet_raid`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `planet_id` | varchar | Target planet |
+| `fleet_id` | varchar | Raiding fleet |
+| `status` | varchar | `initiated`, `completed`, etc. |
+| `seized_ore` | numeric | Ore taken |
+
+---
+
+## The Grid Table (Key-Value Pattern)
+
+`structs.grid` is a **key-value store** for resource attributes. This is the most common source of query errors.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `object_id` | varchar | Player/planet/struct/etc ID |
+| `attribute_type` | varchar | `ore`, `alpha`, `structsLoad`, `capacity`, `fuel`, `power`, etc. |
+| `val` | numeric | The value |
+
+**Wrong** (no `ore` column exists):
+```sql
+SELECT ore FROM structs.grid WHERE object_id = '1-142';
+```
+
+**Correct** (filter by `attribute_type`):
+```sql
+SELECT val FROM structs.grid WHERE object_id = '1-142' AND attribute_type = 'ore';
+```
+
+**Multiple attributes** (use JOINs):
+```sql
+SELECT p.id,
+    COALESCE(g_ore.val, 0) as ore,
+    COALESCE(g_cap.val, 0) as capacity,
+    COALESCE(g_load.val, 0) as structs_load
+FROM structs.player p
+LEFT JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
+LEFT JOIN structs.grid g_cap ON g_cap.object_id = p.id AND g_cap.attribute_type = 'capacity'
+LEFT JOIN structs.grid g_load ON g_load.object_id = p.id AND g_load.attribute_type = 'structsLoad'
+WHERE p.id = '1-142';
+```
+
+### Grid Attribute Types
+
+| attribute_type | Found On | Meaning |
+|----------------|----------|---------|
+| `ore` | player, planet | Ore balance (player = mined/stealable; planet = remaining) |
+| `capacity` | player, reactor, substation | Energy capacity |
+| `structsLoad` | player | Energy consumed by active structs |
+| `fuel` | reactor | Total ualpha infused |
+| `power` | infusion | Energy generated from fuel |
+| `connectionCapacity` | substation | Available capacity per connection |
+| `connectionCount` | substation | Active connections |
+| `load` | player | Base player load |
+
+---
+
+## planet_activity (Event Log)
+
+TimescaleDB hypertable for all planet-level events.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `time` | timestamp | Event time |
+| `seq` | integer | Sequence number (monotonically increasing, use as high-water mark) |
+| `planet_id` | varchar | Planet where event occurred |
+| `category` | enum | Event type (see below) |
+| `detail` | JSONB | Event-specific data |
+
+### Event Categories
+
+| Category | Description |
+|----------|-------------|
+| `block` | New block committed |
+| `raid_status` | Raid initiated/completed/failed |
+| `fleet_arrive` | Fleet arrived at planet |
+| `fleet_advance` | Fleet movement in progress |
+| `fleet_depart` | Fleet departed from planet |
+| `struct_attack` | Combat attack event |
+| `struct_defense_add` | Defense assignment added |
+| `struct_defense_remove` | Defense assignment removed |
+| `struct_status` | Struct status change (online/offline/destroyed) |
+| `struct_move` | Struct moved between slots/ambits |
+| `struct_block_build_start` | Build PoW started |
+| `struct_block_ore_mine_start` | Mining PoW started |
+| `struct_block_ore_refine_start` | Refining PoW started |
+| `struct_health` | Struct health changed (damage) |
+| `guild_consensus` | Guild consensus events |
+| `guild_meta` | Guild metadata changes |
+| `guild_membership` | Membership changes |
+| `player_consensus` | Player consensus events |
+| `player_meta` | Player metadata changes |
+
+### Polling Pattern (Real-Time Monitoring)
+
+```sql
+-- Initialize: set high-water mark
+SELECT COALESCE(MAX(seq), 0) as last_seq
+FROM structs.planet_activity
+WHERE planet_id IN ('2-105');
+
+-- Poll every ~6 seconds
+SELECT seq, planet_id, category, detail::text
+FROM structs.planet_activity
+WHERE planet_id IN ('2-105', '2-127')
+    AND seq > $LAST_SEQ
+ORDER BY seq ASC;
+```
+
+The `detail` column for `struct_attack` includes `attackerStructId`, `targetStructId`, and `eventAttackShotDetail` with per-shot damage breakdowns.
+
+---
+
+## Energy Commerce Tables
+
+| Table | Key Columns | Notes |
+|-------|-------------|-------|
+| `reactor` | `id`, `guild_id`, `validator` | Links validator address to guild |
+| `infusion` | `destination_id`, `address`, `fuel`, `power`, `commission` | Composite PK: `(destination_id, address)` |
+| `allocation` | `id`, `source_id`, `destination_id`, `locked` | Energy routing |
+| `substation` | `id`, `owner` | Power distribution nodes |
+| `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
+| `agreement` | `id`, provider/consumer refs, capacity, duration | Active purchase contracts |
+
+---
+
+## Other Time-Series Tables (TimescaleDB)
+
+| Hypertable | Purpose | Key Columns |
+|------------|---------|-------------|
+| `ledger` | Financial transaction log | `time`, `address`, `amount`, `action`, `direction`, `denom` |
+| `stat_ore` | Ore value history | `time`, `object_type`, `object_index`, `value` |
+| `stat_capacity` | Capacity history | Same pattern |
+| `stat_fuel` | Fuel history | Same pattern |
+| `stat_load` | Load history | Same pattern |
+| `stat_power` | Power history | Same pattern |
+| `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` |
+| `stat_struct_status` | Struct status over time | Same pattern |
+| `stat_structs_load` | structsLoad over time | Same pattern |
+
+### Ledger Action Types
+
+`genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed`
+
+---
+
+## Signer Schema (Transaction Signing Agent)
+
+The TSA manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
+
+| Table | Key Columns | Notes |
+|-------|-------------|-------|
+| `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
+| `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
+| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 90+ command types. |
+
+---
+
+## ID Format Reference
+
+All game object IDs follow `{type_prefix}-{index}`. See [entity-relationships.md](../entities/entity-relationships.md) for the complete type code table.
+
+| Prefix | Object Type | Example |
+|--------|-------------|---------|
+| `0-` | Guild | `0-1` |
+| `1-` | Player | `1-142` |
+| `2-` | Planet | `2-105` |
+| `3-` | Reactor | `3-1` |
+| `4-` | Substation | `4-5` |
+| `5-` | Struct | `5-1165` |
+| `6-` | Allocation | `6-10` |
+| `9-` | Fleet | `9-142` |
+| `10-` | Provider | `10-2` |
+| `11-` | Agreement | `11-1` |
+
+---
+
+## See Also
+
+- `.cursor/skills/structs-guild-stack/SKILL.md` -- Setup and common queries
+- `knowledge/infrastructure/guild-stack.md` -- Architecture overview
+- `knowledge/entities/entity-relationships.md` -- Full entity graph and ID format
+- `knowledge/entities/struct-types.md` -- Struct type stats (mirrors `struct_type` table)
 
 </document>
 

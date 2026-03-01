@@ -69,6 +69,34 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 5. Update `memory/intel/threats.md` with ranked threats and response notes.
 6. Include "Last Updated" date in each file.
 
+## PostgreSQL Queries (Advanced)
+
+If the Guild Stack is running locally, all reconnaissance queries can be done in **< 1 second** via PostgreSQL instead of CLI. This is essential for combat automation, real-time threat monitoring, and galaxy-wide scouting.
+
+Example -- find all players with stealable ore, ranked by amount:
+
+```sql
+SELECT p.id, p.guild_id, COALESCE(g_ore.val, 0) as ore
+FROM structs.player p
+JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
+WHERE g_ore.val > 0
+ORDER BY g_ore.val DESC;
+```
+
+Example -- enemy fleet composition at a planet:
+
+```sql
+SELECT s.id, st.class_abbreviation, s.operating_ambit, st.unit_defenses
+FROM structs.struct s
+JOIN structs.struct_type st ON st.id = s.type
+JOIN structs.fleet f ON f.id = s.location_id
+WHERE f.location_id = '2-105' AND s.is_destroyed = false AND s.location_type = 'fleet';
+```
+
+**Important**: The `structs.grid` table is key-value, not columnar. See `knowledge/infrastructure/database-schema.md` for the grid pattern and more query examples.
+
+For setup: `.cursor/skills/structs-guild-stack/SKILL.md`
+
 ## See Also
 
 - `memory/intel/README.md` — Dossier formats, territory map, threat board
@@ -76,3 +104,5 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 - `awareness/opportunity-identification.md` — Spotting opportunities
 - `knowledge/mechanics/combat.md` — Raid mechanics, fleet status
 - `playbooks/meta/reading-opponents.md` — Soul type identification
+- `.cursor/skills/structs-guild-stack/SKILL.md` — Guild Stack setup for PG access
+- `knowledge/infrastructure/database-schema.md` — Full PG schema and query patterns

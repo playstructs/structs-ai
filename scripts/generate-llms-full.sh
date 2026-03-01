@@ -39,6 +39,7 @@ FILES=(
   .cursor/skills/structs-energy/SKILL.md
   .cursor/skills/structs-streaming/SKILL.md
   .cursor/skills/structs-reconnaissance/SKILL.md
+  .cursor/skills/structs-guild-stack/SKILL.md
 
   # Knowledge - Lore
   knowledge/lore/universe.md
@@ -64,6 +65,10 @@ FILES=(
   # Knowledge - Entities
   knowledge/entities/struct-types.md
   knowledge/entities/entity-relationships.md
+
+  # Knowledge - Infrastructure
+  knowledge/infrastructure/guild-stack.md
+  knowledge/infrastructure/database-schema.md
 
   # Playbooks
   playbooks/phases/early-game.md

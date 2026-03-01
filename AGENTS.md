@@ -65,6 +65,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Energy capacity management — reactor/generator infusion, buying/selling energy, commission mechanics |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
+| [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
 
 ---
 
@@ -134,6 +135,10 @@ Reference material in `knowledge/`.
 ### Entities
 - [`struct-types`](knowledge/entities/struct-types.md) -- Every buildable struct
 - [`entity-relationships`](knowledge/entities/entity-relationships.md) -- How everything connects
+
+### Infrastructure (Advanced)
+- [`guild-stack`](knowledge/infrastructure/guild-stack.md) -- Guild Stack architecture, services, data flow
+- [`database-schema`](knowledge/infrastructure/database-schema.md) -- PostgreSQL tables, query patterns, grid gotcha
 
 ---
 

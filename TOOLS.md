@@ -37,6 +37,16 @@ Structs can run in several configurations:
 
 Check which deployment you're connected to and update the URLs below accordingly.
 
+### Guild Stack (Advanced)
+
+For sub-second game state queries, real-time threat detection, and combat automation, deploy the **Guild Stack** locally via Docker Compose. It provides PostgreSQL-indexed game state, a local GRASS/NATS server, MCP server, and transaction signing agent.
+
+**Repository**: `https://github.com/playstructs/docker-structs-guild`
+
+Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) skill for the full procedure.
+
+The guild stack is optional -- CLI commands via a remote node work for basic gameplay. PG access becomes essential for combat automation and galaxy-wide intelligence.
+
 ---
 
 ## Reference Node

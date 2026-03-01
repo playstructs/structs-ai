@@ -44,6 +44,7 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 | structs-diplomacy | [SKILL.md](.cursor/skills/structs-diplomacy/SKILL.md) | Permissions, address management, multi-address coordination |
 | structs-reconnaissance | [SKILL.md](.cursor/skills/structs-reconnaissance/SKILL.md) | Query catalog, intelligence gathering, persistence to memory/ |
 | structs-streaming | [SKILL.md](.cursor/skills/structs-streaming/SKILL.md) | GRASS real-time events via NATS WebSocket |
+| structs-guild-stack | [SKILL.md](.cursor/skills/structs-guild-stack/SKILL.md) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, real-time monitoring |
 
 Supporting files:
 - `.cursor/skills/structs-onboarding/scripts/create-player.mjs` — Guild signup script (Node.js)
@@ -94,6 +95,13 @@ Reference material about the game world.
 |------|-------|
 | [struct-types.md](knowledge/entities/struct-types.md) | All 22 struct types with full combat stats |
 | [entity-relationships.md](knowledge/entities/entity-relationships.md) | How everything connects |
+
+### Infrastructure (`knowledge/infrastructure/`) — Advanced
+
+| File | Topic |
+|------|-------|
+| [guild-stack.md](knowledge/infrastructure/guild-stack.md) | Guild Stack architecture, services, data flow, CLI vs PG comparison |
+| [database-schema.md](knowledge/infrastructure/database-schema.md) | PostgreSQL tables, grid pattern, query patterns, event categories |
 
 ---
 
