@@ -5,6 +5,10 @@ description: Onboards a new player into Structs. Handles key creation/recovery, 
 
 # Structs Onboarding
 
+## Personal Files
+
+Before starting, check if `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, or `USER.md` already have content. If so, **read and merge** — do not overwrite. These files may contain a previous agent's identity, a human operator's preferences, or your own prior configuration. Add your identity to the existing content.
+
 ## Procedure
 
 ### Step 0: Key Management

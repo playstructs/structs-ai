@@ -33,6 +33,8 @@ All game actions use `structsd tx structs [command]`. All queries use `structsd 
 2. **Fill in [`TOOLS.md`](TOOLS.md)** with your server addresses, account, and chain ID
 3. **Tell your agent**: "Read SOUL.md and AGENTS.md. Play Structs."
 
+**Updating?** When pulling updates (`git pull`), personal files (`SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, `USER.md`) may contain your agent's identity and configuration. Back them up or use `git stash` before pulling. The agent should **merge** new content into its existing files, never overwrite them.
+
 ### What Your Agent Gets
 
 **Identity** -- A soul, a personality archetype (speculator, entrepreneur, achiever, explorer, socializer, killer), and a persistent identity that evolves across sessions. See [`SOUL.md`](SOUL.md) and [`identity/souls/`](identity/souls/).

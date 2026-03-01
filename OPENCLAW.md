@@ -41,7 +41,7 @@ Use the structs-ai repository as your OpenClaw workspace so the agent has full a
    }
    ```
 
-   `skipBootstrap: true` prevents OpenClaw from overwriting our AGENTS.md, SOUL.md, and other files with its defaults.
+   `skipBootstrap: true` prevents OpenClaw from overwriting our AGENTS.md, SOUL.md, and other files with its defaults. **This is critical** — without it, OpenClaw will destroy the agent identity files that ship with this repo (or that a previous agent has personalized).
 
 3. **Skills** — The repo includes a `skills/` directory with symlinks to `.cursor/skills/`. OpenClaw will discover structs-onboarding, structs-building, structs-mining, etc. automatically.
 
@@ -52,6 +52,8 @@ Use the structs-ai repository as your OpenClaw workspace so the agent has full a
    ```
 
    This creates any missing OpenClaw-expected files (e.g., USER.md) without overwriting existing ones.
+
+5. **Personal files** — `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, and `USER.md` may already contain an agent's identity, configuration, or personality. When pulling updates from the repo, **merge** new template content into your existing files — never overwrite them. An agent's soul is not disposable.
 
 5. **Install structsd** — Use the structsd-install skill or install manually. See `.cursor/skills/structsd-install/SKILL.md`.
 
@@ -84,5 +86,5 @@ NanoClaw and PicoClaw extend the OpenClaw concept with different runtimes. Our s
 ## Troubleshooting
 
 - **Skills not loading** — Ensure `skills/` exists in the repo root. It contains symlinks to `.cursor/skills/*`. If missing, run: `mkdir -p skills && for d in .cursor/skills/*/; do ln -sf "../$d" "skills/$(basename $d)"; done` from the repo root.
-- **OpenClaw overwrote my files** — Set `agent.skipBootstrap: true` and restore from git.
+- **OpenClaw overwrote my files** — Set `agent.skipBootstrap: true` and restore from git (`git checkout -- SOUL.md IDENTITY.md TOOLS.md COMMANDER.md USER.md`). If you had uncommitted personal changes, check `git stash list` or your `memory/` directory for session logs.
 - **create-player script fails** — Ensure you're in the structs-ai workspace. The script lives at `.cursor/skills/structs-onboarding/scripts/create-player.mjs`. Run `npm install` in that directory first.
