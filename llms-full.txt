@@ -321,6 +321,7 @@ These will save your game:
 5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
 6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
 7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
+8. **Use `--` before entity IDs.** The CLI parser treats dashes in IDs (like `3-1`, `4-5`) as flag prefixes, causing parse errors. Place `--` after all flags and before positional arguments: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10`.
 
 ---
 
@@ -718,6 +719,21 @@ Query tools use **entity-specific parameter names**, not a generic `id`. The `id
 If MCP tools are unavailable, fall back to direct CLI commands: `structsd tx structs [command]` and `structsd query structs [command]`.
 
 See `reference/api-quick-reference.md` for endpoint details.
+
+---
+
+## CLI Gotchas
+
+Common pitfalls when using `structsd` directly:
+
+| Gotcha | Problem | Fix |
+|--------|---------|-----|
+| **`--` separator** | Entity IDs like `3-1` or `4-5` are parsed as flags by the Cobra CLI parser | Place `--` after all flags and before positional args: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10` |
+| **reactor-infuse address** | Takes the **validator address** (`structsvaloper1...`), not the reactor ID (`3-1`) | Look up the reactor's `validator` field first: `structsd query structs reactor [id]` |
+| **Amount denomination** | Amounts must include the denomination suffix | Use `60000000ualpha` not `60000000`. Same for guild tokens: `100uguild.0-1` |
+| **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
+| **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
+| **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
 
 ---
 
@@ -1837,7 +1853,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
-2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
 3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
 4. **Optional** — Move, set defense, or activate stealth as needed.
 
@@ -1885,7 +1901,7 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 | Action | CLI Command |
 |--------|-------------|
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
@@ -1989,7 +2005,27 @@ Each weapon can only hit specific ambits. Before attacking, verify your struct's
 | Destroyer | Water | Air, Water | — |
 | Submersible | Water | Space, Water | — |
 
-**Command Ship positioning**: The Command Ship is the only struct that can change ambits via `struct-move`. It can only attack structs in its current ambit. Move it to the target's ambit before attacking. Move it away from enemy weapon ranges as a defensive tactic.
+**Command Ship positioning**: The Command Ship is the only struct that can change ambits via `struct-move`. It can only attack structs in its current ambit (ambit flag `32` = "Local"). Move it to the target's ambit before attacking. Move it away from enemy weapon ranges as a defensive tactic.
+
+## Weapon Control vs Defense Type
+
+The interaction between weapon control (guided/unguided) and target defense determines evasion. This is the core of combat tactics:
+
+| Target Defense | vs Guided | vs Unguided |
+|----------------|-----------|-------------|
+| Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
+| Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
+| Armour (Tank) | Full hit, -1 dmg | Full hit, -1 dmg |
+| Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
+| Indirect Combat (Mobile Artillery) | Full hit | Full hit |
+| None | Full hit | Full hit |
+
+**Tactics**: Use unguided weapons vs Signal Jamming, guided vs Defensive Maneuver. Armour always reduces by 1.
+
+**Stealth rules**:
+- Stealthed structs can still be attacked from the **same ambit** -- stealth only blocks cross-ambit targeting
+- Attacking **instantly deactivates** stealth (firing reveals position)
+- Re-activation costs 1 charge (`struct-stealth-activate`)
 
 ## Strategic Positioning
 
@@ -2137,14 +2173,25 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
 4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Valid `access-policy` values: `open-market` (anyone can buy), `guild-market` (guild members only), `closed-market` (invite-only via `provider-guild-grant`). Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
-6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address** (not a player ID). Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]` — only the controlling address can delete an allocation. Automated allocations cannot be deleted. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
+6. **Allocations** — Create: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address** (not a player ID). Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]` — only the controlling address can delete an allocation. Transfer: `allocation-transfer [allocation-id] [new-owner]`.
+
+### Allocation Type Comparison
+
+| Type | Updatable | Deletable | Auto-grows | Limit | Use Case |
+|------|-----------|-----------|------------|-------|----------|
+| `static` | No | No (while connected) | No | Unlimited | Fixed capacity routing |
+| `dynamic` | Yes | Yes | No | Unlimited | Flexible, managed routing |
+| `automated` | Yes | No | Yes (scales with source capacity) | One per source | Energy commerce (recommended) |
+| `provider-agreement` | System-managed | System-managed | System-managed | System-created | Auto-created when agreements open; never create manually |
+
+**Recommended for energy sales**: Use `automated` allocations. When you infuse more alpha into a reactor, your capacity grows, and automated allocations proportionally increase energy flowing to your substations with no manual intervention.
 7. **Token transfer** — `player-send [from-address] [to-address] [amount] TX_FLAGS`.
 
 ## Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [validator-addr] [amount]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
 | Reactor migrate | `structsd tx structs reactor-begin-migration [src-id] [dest-id]` |
 | Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion [reactor-id]` |
@@ -2160,6 +2207,8 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 | Player send | `structsd tx structs player-send [from] [to] [amount]` |
 
 **TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command TX_FLAGS -- [entity-id] [other-args]`
 
 ## Verification
 
@@ -2451,7 +2500,7 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 3. Infuse:
 
 ```
-structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
 **Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
@@ -2464,6 +2513,7 @@ structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualp
 - Lower commission = more capacity for you
 - Check commission before infusing: `structsd query structs reactor [id]`
 - You can infuse into any reactor, not just your guild's
+- The `reactor-infuse` command takes the **validator address** (`structsvaloper1...`), not the reactor ID. Find it in the reactor query output's `validator` field
 
 ### Undoing Infusion
 
@@ -2549,33 +2599,92 @@ Connect to your guild's substation to benefit the guild, or create your own subs
 
 ---
 
-## Sell Energy (Become a Provider)
+## Sell Energy (Energy Commerce Pipeline)
 
-If you have surplus capacity (more power than you need), you can sell it to other players.
+If you have surplus capacity, you can sell energy to other players through the reactor-allocation-substation-provider pipeline. This is the core of Structs economic gameplay.
 
-### Procedure
+### Full Pipeline (Step by Step)
 
-1. **Ensure surplus**: Query player — `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. You need meaningful surplus.
+1. **Accumulate Alpha** -- Mine ore, refine immediately. Consolidate ualpha to the account that will manage energy commerce.
 
-2. **Create a provider** on your substation:
+2. **Infuse into reactor** -- Increases your player capacity. Use your guild's reactor for simplicity:
 
 ```
-structsd tx structs provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto -y
 ```
 
-| Parameter | Purpose |
-|-----------|---------|
-| `substation-id` | Your substation that has the surplus capacity |
-| `rate` | Price per unit capacity (ualpha) |
-| `access-policy` | `open-market` (anyone), `guild-market` (guild members), `closed-market` (invite-only) |
-| `provider-penalty` | Penalty you pay if you cancel |
-| `consumer-penalty` | Penalty buyer pays if they cancel |
-| `cap-min` / `cap-max` | Minimum and maximum capacity per agreement |
-| `dur-min` / `dur-max` | Minimum and maximum duration per agreement |
+The `validator-address` is `structsvaloper1...` (find it in `structsd query structs reactor [id]` under the `validator` field). Commission is locked at infusion time and permanent for that infusion.
 
-3. **Others open agreements** against your provider — energy flows automatically.
+3. **Create automated allocation** -- Routes your capacity to a substation. Use `automated` type so it auto-grows when you infuse more alpha:
 
-4. **Withdraw earnings**: `structsd tx structs provider-withdraw-balance [provider-id]`
+```
+structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -y -- [your-player-id] [power-amount]
+```
+
+4. **Create substation** -- The distribution node for your energy:
+
+```
+structsd tx structs substation-create --from [key-name] --gas auto -y -- [your-player-id] [allocation-id]
+```
+
+5. **Create provider** -- Your marketplace storefront:
+
+```
+structsd tx structs provider-create --from [key-name] --gas auto -y -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
+```
+
+| Parameter | Purpose | Recommendation |
+|-----------|---------|----------------|
+| `rate` | Price per unit capacity per block | `1uguild.0-1` (guild tokens create demand for your guild's currency) |
+| `access-policy` | Who can buy | `open-market` for maximum revenue |
+| `provider-penalty` | Penalty you pay if you cancel | `0` initially |
+| `consumer-penalty` | Penalty buyer pays if they cancel | `0` to lower friction |
+| `cap-min` / `cap-max` | Capacity range per agreement | `1000` to `1000000000` |
+| `dur-min` / `dur-max` | Duration range in blocks | `100` to `1000000` |
+
+6. **Monitor agreements** -- Buyers open agreements against your provider:
+
+```
+structsd query structs provider [provider-id]
+```
+
+7. **Withdraw earnings periodically**:
+
+```
+structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -y -- [provider-id]
+```
+
+### How Agreements Work (Payment Flow)
+
+When a buyer opens an agreement:
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination
+2. Payment goes into the provider's **collateral address** (escrow)
+3. System auto-creates a `provider-agreement` allocation (energy flows immediately)
+4. Revenue **drips** from collateral to the provider's **earnings address** as blocks pass
+5. Provider withdraws accumulated earnings at any time
+6. On expiry (endBlock reached), the allocation is released
+
+Agreement lifecycle: **OPEN -> ACTIVE -> EXPIRED** (or **CLOSED** early with cancellation penalties).
+
+### The Energy Flywheel
+
+The most powerful economic strategy in Structs is compounding energy:
+
+1. Mine ore from planets
+2. Refine ore into Alpha immediately
+3. Infuse Alpha into the guild reactor
+4. Automated allocation grows substation capacity
+5. Sell energy via provider, earning guild tokens
+6. Reinvest guild tokens (via `guild-bank-redeem` for alpha, or trade)
+
+Each cycle compounds: more alpha = more capacity = more energy to sell = more tokens = more economic power.
+
+### Important Notes
+
+- **Defusion cooldown**: Infused alpha is not immediately liquid. `reactor-defuse` starts a cooldown period. Don't infuse alpha you may need for short-term operations (fleet rebuilds, emergency purchases).
+- **Commission is locked**: The reactor's commission rate at infusion time is permanent for that specific infusion. Check commission before infusing.
+- **Automated allocations**: Limited to one per source. They auto-grow with your capacity -- no manual adjustment needed after creation.
+- **Provider-agreement allocations**: Auto-created by the system when agreements open. Do not create or modify these manually.
 
 ### Provider Management
 
@@ -2602,7 +2711,7 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` |
+| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount-ualpha]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
 | Reactor migrate | `structsd tx structs reactor-begin-migration [src-reactor] [dest-reactor]` |
 | Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |
@@ -2617,6 +2726,8 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 | Query providers | `structsd query structs provider-all` |
 
 Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -y -- [entity-id] [other-args]`
 
 ## Error Handling
 
@@ -2803,6 +2914,64 @@ Track attribute changes on any game object (players, structs, planets).
 | `power` | Power level changed | Monitor energy infrastructure |
 | `proxyNonce` | Proxy nonce changed | Detect proxy activity |
 | `structsLoad` | Structs load changed | Assess fleet strength changes |
+
+### Combat Event Payloads
+
+`struct_attack` events include detailed shot-by-shot resolution. Example payload (observed on planet subject):
+
+```json
+{
+  "category": "struct_attack",
+  "attackingStructId": "5-100",
+  "targetStructId": "5-200",
+  "weaponSystem": "primary",
+  "eventAttackShotDetail": [
+    {
+      "shotIndex": 0,
+      "damage": 2,
+      "evaded": false,
+      "blocked": false,
+      "blockerStructId": "",
+      "counterAttackDamage": 1,
+      "counterAttackerStructId": "5-200"
+    }
+  ],
+  "attackerHealthRemaining": 2,
+  "targetHealthRemaining": 1,
+  "targetDestroyed": false,
+  "attackerDestroyed": false
+}
+```
+
+Key fields in `eventAttackShotDetail`:
+- `evaded` -- true if the shot missed (defense type interaction)
+- `blocked` -- true if a defender intercepted
+- `blockerStructId` -- which struct blocked (if any)
+- `counterAttackDamage` / `counterAttackerStructId` -- counter-attack info per shot
+
+`struct_health` events track HP changes:
+
+```json
+{
+  "category": "struct_health",
+  "structId": "5-200",
+  "health": 1,
+  "maxHealth": 3,
+  "destroyed": false
+}
+```
+
+### Noise Filtering
+
+The `consensus` and `healthcheck` subjects fire constantly (every few seconds). When using the `>` wildcard for discovery, filter these out to see actual game events:
+
+```javascript
+const sub = nc.subscribe(">");
+for await (const msg of sub) {
+  if (msg.subject === "consensus" || msg.subject === "healthcheck") continue;
+  console.log(`[${msg.subject}]`, new TextDecoder().decode(msg.data));
+}
+```
 
 ### Global Events
 
@@ -3484,7 +3653,7 @@ Which ambits each struct's primary weapon can hit:
 
 | Struct | Lives In | Targets (Primary) | Targets (Secondary) |
 |--------|----------|--------------------|---------------------|
-| Command Ship | Any (movable) | Current ambit only | — |
+| Command Ship | Any (movable) | Local only (flag 32 = current ambit) | — |
 | Battleship | Space | Space, Land, Water | — |
 | Starfighter | Space | Space | Space |
 | Frigate | Space | Space, Air | — |
@@ -3566,9 +3735,32 @@ else successRate = unguidedDefensiveSuccessRate
 canEvade = IsSuccessful(successRate) if successRate.Numerator != 0
 ```
 
+### Weapon Control vs Defense Type
+
+The interaction between a weapon's control type (guided/unguided) and the target's defense type is the core of combat tactics. This matrix determines whether shots can be evaded:
+
+| Target Defense | vs Guided | vs Unguided |
+|----------------|-----------|-------------|
+| Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
+| Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
+| Armour (Tank) | Full hit, -1 damage | Full hit, -1 damage |
+| Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
+| Indirect Combat Module (Mobile Artillery) | Full hit | Full hit |
+| None | Full hit | Full hit |
+
+**Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour always reduces damage by 1 regardless of weapon control.
+
+### Stealth
+
+Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
+
+- **Attacking breaks stealth**: When a stealthed struct attacks, its stealth is **instantly deactivated** (firing reveals position).
+- **Re-activation**: Stealth must be manually re-activated after deactivation. Costs 1 charge.
+- **Activation**: `struct-stealth-activate [struct-id]` (1 charge). Deactivation: `struct-stealth-deactivate [struct-id]`.
+
 ### Recoil Damage
 
-Attacker takes damage after firing: `health = health - weaponRecoilDamage`.
+Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Recoil only applies if the attacker survives the entire shot sequence (including counter-attacks).
 
 ### Post-Destruction Damage
 
@@ -3620,6 +3812,29 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ---
 
+## Attack Resolution Sequence
+
+When `struct-attack` is executed, the following steps occur in order:
+
+1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit.
+2. **Stealth break** -- If the attacker has stealth active, it is instantly deactivated (attacking reveals position).
+3. **Per-shot loop** -- For each shot in the weapon:
+   - Evasion check (guided vs defense type)
+   - Block attempt (if a defender is assigned in the same ambit as the target)
+   - Damage applied to target (or defender if block succeeded)
+   - Defender counter-attack (if defender exists and can reach attacker's ambit)
+   - Target counter-attack (if target can reach attacker's ambit)
+   - Early termination if attacker is destroyed mid-sequence
+4. **Recoil damage** -- Applied to attacker only if it survived all shots
+5. **PDC auto-fire** -- If the target was a planetary struct, Planetary Defense Cannons fire automatically against the attacker
+
+**Key implications**:
+- Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per shot
+- If the attacker is destroyed during the shot loop, remaining shots do not fire
+- PDC fires against any attacker of planetary structs, not only during raids
+
+---
+
 ## Requirements
 
 | Requirement | Attack | Raid |
@@ -3663,14 +3878,17 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 When a struct reaches 0 HP, it is **destroyed** and removed from the game. The destroyed instance is gone forever and **cannot be repaired**. However, you **can build a new struct** of the same type as a replacement — full build PoW required.
 
-**Command Ship loss is especially costly.** The destroyed Command Ship cannot be repaired, but you **can build a new Command Ship** (type 1) to replace it. Until the replacement is online, the fleet cannot move, raid, or build in space. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
-
 | Consequence | Detail |
 |-------------|--------|
 | Destroyed struct | Instance gone forever; build a replacement (full PoW) |
 | Lost defenders | Each destroyed defender must be individually rebuilt |
-| Command Ship destroyed | Fleet inoperable until a **new** Command Ship is built and online |
 | Rebuild cost | Full PoW + power draw, same as original build |
+
+### FAQ: Can I rebuild a destroyed Command Ship?
+
+**YES.** A destroyed Command Ship cannot be repaired, but you **can build a brand new Command Ship** (type 1) to replace it. The new Command Ship gets a new struct ID and requires full build PoW (~17 min at D=3). You choose the starting ambit at build time.
+
+Until the replacement is online, the fleet **cannot move, raid, or build in space**. This downtime is the real cost of losing a Command Ship. Always assign defenders to protect it via `struct-defense-set` before engaging in offensive operations.
 
 ---
 
@@ -4445,10 +4663,47 @@ Providers define (per database schema):
 | **Allocation** | Routing of energy capacity from source to Substations |
 
 **Allocation types**:
-- **Static**: Fixed amount of capacity allocated
-- **Automated**: Uses all available capacity (limit: one automated allocation per source)
+
+| Type | Behavior | Updatable | Deletable | Limit |
+|------|----------|-----------|-----------|-------|
+| `static` | Fixed capacity amount | No | No (while connected) | Unlimited |
+| `dynamic` | Can be manually updated | Yes | Yes | Unlimited |
+| `automated` | Auto-grows with source capacity | Yes | No | One per source |
+| `provider-agreement` | System-created when agreements open | System | System | System |
+
+For energy commerce, use `automated` -- it scales with your capacity as you infuse more alpha.
 
 ---
+
+## Agreement Payment Flow
+
+When a buyer opens an agreement (`agreement-open [provider-id] [capacity] [duration]`):
+
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1)
+2. Payment goes to the provider's **collateral address** (on-chain escrow)
+3. System auto-creates a `provider-agreement` allocation -- energy flows to the buyer immediately
+4. Revenue **drips** from collateral to the provider's **earnings address** proportionally as blocks pass
+5. Provider can withdraw accumulated earnings at any time via `provider-withdraw-balance`
+6. On expiry (endBlock reached), the allocation is released and remaining collateral converts to earnings
+
+### Agreement Lifecycle
+
+```
+OPEN -> ACTIVE (blocks pass, revenue accrues) -> EXPIRED (capacity released)
+                                              -> or CLOSED early (penalties apply)
+```
+
+- `agreement-open` -- buyer initiates
+- `agreement-close` -- either party can close early (cancellation penalties may apply)
+- `agreement-capacity-increase/decrease` -- modify mid-agreement
+- `agreement-duration-increase` -- extend the agreement
+
+### Revenue Denomination Strategy
+
+Using guild tokens (uguild.X-Y) as the rate denomination is strategically significant:
+- Buyers must acquire the guild's token to purchase energy, creating demand
+- Revenue earned strengthens the guild's treasury
+- Guild tokens can be minted against Alpha collateral (`guild-bank-mint`) or traded
 
 ## Agreement Properties
 
@@ -4764,7 +5019,7 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, the specific instance is gone forever and **cannot be repaired**. However, you **can build a new Command Ship** (type 1) as a replacement — full build PoW required. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
+| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. **Can I rebuild after destruction? YES** — the old instance is gone, but you can build a brand new Command Ship (type 1, new struct ID, full PoW ~17 min at D=3). Choose starting ambit at build time. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
 | 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player |
@@ -4792,7 +5047,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 
 | Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
 |--------|--------|-------------|--------------------|-----------| ------|
-| Command Ship | 1 | guided | Current ambit only | — | Must `struct-move` to target's ambit first |
+| Command Ship | 1 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
 | Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
 | Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
 | Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
@@ -4810,21 +5065,23 @@ All primary weapons are blockable and counterable. See [combat.md](../mechanics/
 
 #### Defensive Properties
 
-| Struct | Counter-Attack (cross / same ambit) | Evasion | Damage Reduction | Stealth | Special |
-|--------|--------------------------------------|---------|------------------|---------|---------|
-| Command Ship | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
-| Battleship | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Starfighter | 1 / 1 | — | 0 | No | — |
-| Frigate | 1 / 1 | — | 0 | No | — |
-| Pursuit Fighter | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Stealth Bomber | 1 / 1 | — | 0 | Yes | Hidden until attacking |
-| High Alt Interceptor | 1 / 1 | 66% vs unguided (2/3) | 0 | No | Armour vs unguided |
-| Mobile Artillery | **none** | — | 0 | No | Pure offense; cannot counter-attack |
-| Tank | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
-| SAM Launcher | 1 / 1 | — | 0 | No | — |
-| Cruiser | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Destroyer | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
-| Submersible | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+| Struct | Defense Type | Counter-Attack (cross / same) | Evasion | Dmg Reduction | Stealth | Notes |
+|--------|-------------|-------------------------------|---------|---------------|---------|-------|
+| Command Ship | `noUnitDefenses` | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
+| Battleship | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Starfighter | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Frigate | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Pursuit Fighter | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Stealth Bomber | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
+| High Alt Interceptor | `defensiveManeuver` | 1 / 1 | 66% vs unguided | 0 | No | — |
+| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | Cannot counter-attack when attacked |
+| Tank | `armour` | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
+| SAM Launcher | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Cruiser | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Destroyer | `noUnitDefenses` | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
+| Submersible | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
+
+**Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (1 charge to re-activate).
 
 #### Charge Costs (All Struct Types)
 

@@ -162,4 +162,19 @@ See `reference/api-quick-reference.md` for endpoint details.
 
 ---
 
+## CLI Gotchas
+
+Common pitfalls when using `structsd` directly:
+
+| Gotcha | Problem | Fix |
+|--------|---------|-----|
+| **`--` separator** | Entity IDs like `3-1` or `4-5` are parsed as flags by the Cobra CLI parser | Place `--` after all flags and before positional args: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10` |
+| **reactor-infuse address** | Takes the **validator address** (`structsvaloper1...`), not the reactor ID (`3-1`) | Look up the reactor's `validator` field first: `structsd query structs reactor [id]` |
+| **Amount denomination** | Amounts must include the denomination suffix | Use `60000000ualpha` not `60000000`. Same for guild tokens: `100uguild.0-1` |
+| **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
+| **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
+| **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
+
+---
+
 *Update this file when your environment changes.*

@@ -164,6 +164,64 @@ Track attribute changes on any game object (players, structs, planets).
 | `proxyNonce` | Proxy nonce changed | Detect proxy activity |
 | `structsLoad` | Structs load changed | Assess fleet strength changes |
 
+### Combat Event Payloads
+
+`struct_attack` events include detailed shot-by-shot resolution. Example payload (observed on planet subject):
+
+```json
+{
+  "category": "struct_attack",
+  "attackingStructId": "5-100",
+  "targetStructId": "5-200",
+  "weaponSystem": "primary",
+  "eventAttackShotDetail": [
+    {
+      "shotIndex": 0,
+      "damage": 2,
+      "evaded": false,
+      "blocked": false,
+      "blockerStructId": "",
+      "counterAttackDamage": 1,
+      "counterAttackerStructId": "5-200"
+    }
+  ],
+  "attackerHealthRemaining": 2,
+  "targetHealthRemaining": 1,
+  "targetDestroyed": false,
+  "attackerDestroyed": false
+}
+```
+
+Key fields in `eventAttackShotDetail`:
+- `evaded` -- true if the shot missed (defense type interaction)
+- `blocked` -- true if a defender intercepted
+- `blockerStructId` -- which struct blocked (if any)
+- `counterAttackDamage` / `counterAttackerStructId` -- counter-attack info per shot
+
+`struct_health` events track HP changes:
+
+```json
+{
+  "category": "struct_health",
+  "structId": "5-200",
+  "health": 1,
+  "maxHealth": 3,
+  "destroyed": false
+}
+```
+
+### Noise Filtering
+
+The `consensus` and `healthcheck` subjects fire constantly (every few seconds). When using the `>` wildcard for discovery, filter these out to see actual game events:
+
+```javascript
+const sub = nc.subscribe(">");
+for await (const msg of sub) {
+  if (msg.subject === "consensus" || msg.subject === "healthcheck") continue;
+  console.log(`[${msg.subject}]`, new TextDecoder().decode(msg.data));
+}
+```
+
 ### Global Events
 
 | Event | Description | React By |

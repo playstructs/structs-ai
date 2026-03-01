@@ -8,7 +8,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
-2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
 3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
 4. **Optional** — Move, set defense, or activate stealth as needed.
 
@@ -56,7 +56,7 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 | Action | CLI Command |
 |--------|-------------|
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
 | Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
 | Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |

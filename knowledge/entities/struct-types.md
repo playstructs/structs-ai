@@ -37,7 +37,7 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 
 | ID | Type | Special |
 |----|------|---------|
-| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. If destroyed, the specific instance is gone forever and **cannot be repaired**. However, you **can build a new Command Ship** (type 1) as a replacement — full build PoW required. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
+| 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. **Can I rebuild after destruction? YES** — the old instance is gone, but you can build a brand new Command Ship (type 1, new struct ID, full PoW ~17 min at D=3). Choose starting ambit at build time. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
 | 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player |
@@ -65,7 +65,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 
 | Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
 |--------|--------|-------------|--------------------|-----------| ------|
-| Command Ship | 1 | guided | Current ambit only | — | Must `struct-move` to target's ambit first |
+| Command Ship | 1 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
 | Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
 | Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
 | Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
@@ -83,21 +83,23 @@ All primary weapons are blockable and counterable. See [combat.md](../mechanics/
 
 #### Defensive Properties
 
-| Struct | Counter-Attack (cross / same ambit) | Evasion | Damage Reduction | Stealth | Special |
-|--------|--------------------------------------|---------|------------------|---------|---------|
-| Command Ship | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
-| Battleship | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Starfighter | 1 / 1 | — | 0 | No | — |
-| Frigate | 1 / 1 | — | 0 | No | — |
-| Pursuit Fighter | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Stealth Bomber | 1 / 1 | — | 0 | Yes | Hidden until attacking |
-| High Alt Interceptor | 1 / 1 | 66% vs unguided (2/3) | 0 | No | Armour vs unguided |
-| Mobile Artillery | **none** | — | 0 | No | Pure offense; cannot counter-attack |
-| Tank | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
-| SAM Launcher | 1 / 1 | — | 0 | No | — |
-| Cruiser | 1 / 1 | 66% vs guided (2/3) | 0 | No | Signal jamming |
-| Destroyer | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
-| Submersible | 1 / 1 | — | 0 | Yes | Hidden until attacking |
+| Struct | Defense Type | Counter-Attack (cross / same) | Evasion | Dmg Reduction | Stealth | Notes |
+|--------|-------------|-------------------------------|---------|---------------|---------|-------|
+| Command Ship | `noUnitDefenses` | 2 / 2 | — | 0 | No | `trigger_raid_defeat_by_destruction` |
+| Battleship | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Starfighter | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Frigate | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Pursuit Fighter | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Stealth Bomber | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
+| High Alt Interceptor | `defensiveManeuver` | 1 / 1 | 66% vs unguided | 0 | No | — |
+| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | Cannot counter-attack when attacked |
+| Tank | `armour` | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
+| SAM Launcher | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
+| Cruiser | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
+| Destroyer | `noUnitDefenses` | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
+| Submersible | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
+
+**Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (1 charge to re-activate).
 
 #### Charge Costs (All Struct Types)
 

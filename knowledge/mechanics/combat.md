@@ -31,7 +31,7 @@ Which ambits each struct's primary weapon can hit:
 
 | Struct | Lives In | Targets (Primary) | Targets (Secondary) |
 |--------|----------|--------------------|---------------------|
-| Command Ship | Any (movable) | Current ambit only | — |
+| Command Ship | Any (movable) | Local only (flag 32 = current ambit) | — |
 | Battleship | Space | Space, Land, Water | — |
 | Starfighter | Space | Space | Space |
 | Frigate | Space | Space, Air | — |
@@ -113,9 +113,32 @@ else successRate = unguidedDefensiveSuccessRate
 canEvade = IsSuccessful(successRate) if successRate.Numerator != 0
 ```
 
+### Weapon Control vs Defense Type
+
+The interaction between a weapon's control type (guided/unguided) and the target's defense type is the core of combat tactics. This matrix determines whether shots can be evaded:
+
+| Target Defense | vs Guided | vs Unguided |
+|----------------|-----------|-------------|
+| Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
+| Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
+| Armour (Tank) | Full hit, -1 damage | Full hit, -1 damage |
+| Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
+| Indirect Combat Module (Mobile Artillery) | Full hit | Full hit |
+| None | Full hit | Full hit |
+
+**Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour always reduces damage by 1 regardless of weapon control.
+
+### Stealth
+
+Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
+
+- **Attacking breaks stealth**: When a stealthed struct attacks, its stealth is **instantly deactivated** (firing reveals position).
+- **Re-activation**: Stealth must be manually re-activated after deactivation. Costs 1 charge.
+- **Activation**: `struct-stealth-activate [struct-id]` (1 charge). Deactivation: `struct-stealth-deactivate [struct-id]`.
+
 ### Recoil Damage
 
-Attacker takes damage after firing: `health = health - weaponRecoilDamage`.
+Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Recoil only applies if the attacker survives the entire shot sequence (including counter-attacks).
 
 ### Post-Destruction Damage
 
@@ -167,6 +190,29 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 ---
 
+## Attack Resolution Sequence
+
+When `struct-attack` is executed, the following steps occur in order:
+
+1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit.
+2. **Stealth break** -- If the attacker has stealth active, it is instantly deactivated (attacking reveals position).
+3. **Per-shot loop** -- For each shot in the weapon:
+   - Evasion check (guided vs defense type)
+   - Block attempt (if a defender is assigned in the same ambit as the target)
+   - Damage applied to target (or defender if block succeeded)
+   - Defender counter-attack (if defender exists and can reach attacker's ambit)
+   - Target counter-attack (if target can reach attacker's ambit)
+   - Early termination if attacker is destroyed mid-sequence
+4. **Recoil damage** -- Applied to attacker only if it survived all shots
+5. **PDC auto-fire** -- If the target was a planetary struct, Planetary Defense Cannons fire automatically against the attacker
+
+**Key implications**:
+- Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per shot
+- If the attacker is destroyed during the shot loop, remaining shots do not fire
+- PDC fires against any attacker of planetary structs, not only during raids
+
+---
+
 ## Requirements
 
 | Requirement | Attack | Raid |
@@ -210,14 +256,17 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 When a struct reaches 0 HP, it is **destroyed** and removed from the game. The destroyed instance is gone forever and **cannot be repaired**. However, you **can build a new struct** of the same type as a replacement — full build PoW required.
 
-**Command Ship loss is especially costly.** The destroyed Command Ship cannot be repaired, but you **can build a new Command Ship** (type 1) to replace it. Until the replacement is online, the fleet cannot move, raid, or build in space. Rebuilding requires a full PoW cycle (~17 min at D=3). Assign defenders to your Command Ship via `struct-defense-set` before engaging in any offensive operations.
-
 | Consequence | Detail |
 |-------------|--------|
 | Destroyed struct | Instance gone forever; build a replacement (full PoW) |
 | Lost defenders | Each destroyed defender must be individually rebuilt |
-| Command Ship destroyed | Fleet inoperable until a **new** Command Ship is built and online |
 | Rebuild cost | Full PoW + power draw, same as original build |
+
+### FAQ: Can I rebuild a destroyed Command Ship?
+
+**YES.** A destroyed Command Ship cannot be repaired, but you **can build a brand new Command Ship** (type 1) to replace it. The new Command Ship gets a new struct ID and requires full build PoW (~17 min at D=3). You choose the starting ambit at build time.
+
+Until the replacement is online, the fleet **cannot move, raid, or build in space**. This downtime is the real cost of losing a Command Ship. Always assign defenders to protect it via `struct-defense-set` before engaging in offensive operations.
 
 ---
 

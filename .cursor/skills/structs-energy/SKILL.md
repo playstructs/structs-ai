@@ -65,7 +65,7 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 3. Infuse:
 
 ```
-structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
 ```
 
 **Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
@@ -78,6 +78,7 @@ structsd tx structs reactor-infuse [your-address] [reactor-address] [amount]ualp
 - Lower commission = more capacity for you
 - Check commission before infusing: `structsd query structs reactor [id]`
 - You can infuse into any reactor, not just your guild's
+- The `reactor-infuse` command takes the **validator address** (`structsvaloper1...`), not the reactor ID. Find it in the reactor query output's `validator` field
 
 ### Undoing Infusion
 
@@ -163,33 +164,92 @@ Connect to your guild's substation to benefit the guild, or create your own subs
 
 ---
 
-## Sell Energy (Become a Provider)
+## Sell Energy (Energy Commerce Pipeline)
 
-If you have surplus capacity (more power than you need), you can sell it to other players.
+If you have surplus capacity, you can sell energy to other players through the reactor-allocation-substation-provider pipeline. This is the core of Structs economic gameplay.
 
-### Procedure
+### Full Pipeline (Step by Step)
 
-1. **Ensure surplus**: Query player — `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. You need meaningful surplus.
+1. **Accumulate Alpha** -- Mine ore, refine immediately. Consolidate ualpha to the account that will manage energy commerce.
 
-2. **Create a provider** on your substation:
+2. **Infuse into reactor** -- Increases your player capacity. Use your guild's reactor for simplicity:
 
 ```
-structsd tx structs provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto -y
 ```
 
-| Parameter | Purpose |
-|-----------|---------|
-| `substation-id` | Your substation that has the surplus capacity |
-| `rate` | Price per unit capacity (ualpha) |
-| `access-policy` | `open-market` (anyone), `guild-market` (guild members), `closed-market` (invite-only) |
-| `provider-penalty` | Penalty you pay if you cancel |
-| `consumer-penalty` | Penalty buyer pays if they cancel |
-| `cap-min` / `cap-max` | Minimum and maximum capacity per agreement |
-| `dur-min` / `dur-max` | Minimum and maximum duration per agreement |
+The `validator-address` is `structsvaloper1...` (find it in `structsd query structs reactor [id]` under the `validator` field). Commission is locked at infusion time and permanent for that infusion.
 
-3. **Others open agreements** against your provider — energy flows automatically.
+3. **Create automated allocation** -- Routes your capacity to a substation. Use `automated` type so it auto-grows when you infuse more alpha:
 
-4. **Withdraw earnings**: `structsd tx structs provider-withdraw-balance [provider-id]`
+```
+structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -y -- [your-player-id] [power-amount]
+```
+
+4. **Create substation** -- The distribution node for your energy:
+
+```
+structsd tx structs substation-create --from [key-name] --gas auto -y -- [your-player-id] [allocation-id]
+```
+
+5. **Create provider** -- Your marketplace storefront:
+
+```
+structsd tx structs provider-create --from [key-name] --gas auto -y -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
+```
+
+| Parameter | Purpose | Recommendation |
+|-----------|---------|----------------|
+| `rate` | Price per unit capacity per block | `1uguild.0-1` (guild tokens create demand for your guild's currency) |
+| `access-policy` | Who can buy | `open-market` for maximum revenue |
+| `provider-penalty` | Penalty you pay if you cancel | `0` initially |
+| `consumer-penalty` | Penalty buyer pays if they cancel | `0` to lower friction |
+| `cap-min` / `cap-max` | Capacity range per agreement | `1000` to `1000000000` |
+| `dur-min` / `dur-max` | Duration range in blocks | `100` to `1000000` |
+
+6. **Monitor agreements** -- Buyers open agreements against your provider:
+
+```
+structsd query structs provider [provider-id]
+```
+
+7. **Withdraw earnings periodically**:
+
+```
+structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -y -- [provider-id]
+```
+
+### How Agreements Work (Payment Flow)
+
+When a buyer opens an agreement:
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination
+2. Payment goes into the provider's **collateral address** (escrow)
+3. System auto-creates a `provider-agreement` allocation (energy flows immediately)
+4. Revenue **drips** from collateral to the provider's **earnings address** as blocks pass
+5. Provider withdraws accumulated earnings at any time
+6. On expiry (endBlock reached), the allocation is released
+
+Agreement lifecycle: **OPEN -> ACTIVE -> EXPIRED** (or **CLOSED** early with cancellation penalties).
+
+### The Energy Flywheel
+
+The most powerful economic strategy in Structs is compounding energy:
+
+1. Mine ore from planets
+2. Refine ore into Alpha immediately
+3. Infuse Alpha into the guild reactor
+4. Automated allocation grows substation capacity
+5. Sell energy via provider, earning guild tokens
+6. Reinvest guild tokens (via `guild-bank-redeem` for alpha, or trade)
+
+Each cycle compounds: more alpha = more capacity = more energy to sell = more tokens = more economic power.
+
+### Important Notes
+
+- **Defusion cooldown**: Infused alpha is not immediately liquid. `reactor-defuse` starts a cooldown period. Don't infuse alpha you may need for short-term operations (fleet rebuilds, emergency purchases).
+- **Commission is locked**: The reactor's commission rate at infusion time is permanent for that specific infusion. Check commission before infusing.
+- **Automated allocations**: Limited to one per source. They auto-grow with your capacity -- no manual adjustment needed after creation.
+- **Provider-agreement allocations**: Auto-created by the system when agreements open. Do not create or modify these manually.
 
 ### Provider Management
 
@@ -216,7 +276,7 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` |
+| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount-ualpha]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
 | Reactor migrate | `structsd tx structs reactor-begin-migration [src-reactor] [dest-reactor]` |
 | Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |
@@ -231,6 +291,8 @@ structsd tx structs provider-create [substation-id] [rate] [access-policy] [prov
 | Query providers | `structsd query structs provider-all` |
 
 Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -y -- [entity-id] [other-args]`
 
 ## Error Handling
 

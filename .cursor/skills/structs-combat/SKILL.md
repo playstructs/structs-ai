@@ -57,7 +57,27 @@ Each weapon can only hit specific ambits. Before attacking, verify your struct's
 | Destroyer | Water | Air, Water | — |
 | Submersible | Water | Space, Water | — |
 
-**Command Ship positioning**: The Command Ship is the only struct that can change ambits via `struct-move`. It can only attack structs in its current ambit. Move it to the target's ambit before attacking. Move it away from enemy weapon ranges as a defensive tactic.
+**Command Ship positioning**: The Command Ship is the only struct that can change ambits via `struct-move`. It can only attack structs in its current ambit (ambit flag `32` = "Local"). Move it to the target's ambit before attacking. Move it away from enemy weapon ranges as a defensive tactic.
+
+## Weapon Control vs Defense Type
+
+The interaction between weapon control (guided/unguided) and target defense determines evasion. This is the core of combat tactics:
+
+| Target Defense | vs Guided | vs Unguided |
+|----------------|-----------|-------------|
+| Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
+| Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
+| Armour (Tank) | Full hit, -1 dmg | Full hit, -1 dmg |
+| Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
+| Indirect Combat (Mobile Artillery) | Full hit | Full hit |
+| None | Full hit | Full hit |
+
+**Tactics**: Use unguided weapons vs Signal Jamming, guided vs Defensive Maneuver. Armour always reduces by 1.
+
+**Stealth rules**:
+- Stealthed structs can still be attacked from the **same ambit** -- stealth only blocks cross-ambit targeting
+- Attacking **instantly deactivates** stealth (firing reveals position)
+- Re-activation costs 1 charge (`struct-stealth-activate`)
 
 ## Strategic Positioning
 

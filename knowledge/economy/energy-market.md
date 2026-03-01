@@ -102,10 +102,47 @@ Providers define (per database schema):
 | **Allocation** | Routing of energy capacity from source to Substations |
 
 **Allocation types**:
-- **Static**: Fixed amount of capacity allocated
-- **Automated**: Uses all available capacity (limit: one automated allocation per source)
+
+| Type | Behavior | Updatable | Deletable | Limit |
+|------|----------|-----------|-----------|-------|
+| `static` | Fixed capacity amount | No | No (while connected) | Unlimited |
+| `dynamic` | Can be manually updated | Yes | Yes | Unlimited |
+| `automated` | Auto-grows with source capacity | Yes | No | One per source |
+| `provider-agreement` | System-created when agreements open | System | System | System |
+
+For energy commerce, use `automated` -- it scales with your capacity as you infuse more alpha.
 
 ---
+
+## Agreement Payment Flow
+
+When a buyer opens an agreement (`agreement-open [provider-id] [capacity] [duration]`):
+
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1)
+2. Payment goes to the provider's **collateral address** (on-chain escrow)
+3. System auto-creates a `provider-agreement` allocation -- energy flows to the buyer immediately
+4. Revenue **drips** from collateral to the provider's **earnings address** proportionally as blocks pass
+5. Provider can withdraw accumulated earnings at any time via `provider-withdraw-balance`
+6. On expiry (endBlock reached), the allocation is released and remaining collateral converts to earnings
+
+### Agreement Lifecycle
+
+```
+OPEN -> ACTIVE (blocks pass, revenue accrues) -> EXPIRED (capacity released)
+                                              -> or CLOSED early (penalties apply)
+```
+
+- `agreement-open` -- buyer initiates
+- `agreement-close` -- either party can close early (cancellation penalties may apply)
+- `agreement-capacity-increase/decrease` -- modify mid-agreement
+- `agreement-duration-increase` -- extend the agreement
+
+### Revenue Denomination Strategy
+
+Using guild tokens (uguild.X-Y) as the rate denomination is strategically significant:
+- Buyers must acquire the guild's token to purchase energy, creating demand
+- Revenue earned strengthens the guild's treasury
+- Guild tokens can be minted against Alpha collateral (`guild-bank-mint`) or traded
 
 ## Agreement Properties
 
