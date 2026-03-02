@@ -149,10 +149,10 @@ Power capacity and consumption.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| capacity | number | Yes | Primary power capacity (from substation) |
-| capacitySecondary | number | Yes | Secondary power capacity (from secondary substation) |
-| load | number | Yes | Current power consumption (active operations) |
-| structsLoad | number | Yes | Total power consumption from all structs (passive draw) |
+| capacity | number | Yes | Personal generation — energy the player produces via their own infusions (reactor/generator). Only this can be allocated out. |
+| capacitySecondary | number | Yes | Substation-provided — energy received from the player's connected substation (`connectionCapacity`). |
+| load | number | Yes | Energy allocated out — total power routed to others via allocations the player created. |
+| structsLoad | number | Yes | Struct consumption — sum of PassiveDraw from all the player's online structs. |
 | availableCapacity | number | No | Available: `(capacity + capacitySecondary) - (load + structsLoad)` |
 | allocatableCapacity | number | No | Allocatable: `capacity - load` |
 | playerOnline | boolean | Yes | Online status: `(load + structsLoad) <= (capacity + capacitySecondary)` |

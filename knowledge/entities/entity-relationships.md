@@ -92,7 +92,7 @@ Player.capacity, Player.capacitySecondary
 Struct.passiveDraw (when online)
 ```
 
-**Allocatable capacity**: Primary substation capacity only (`capacity - load`) can be allocated to reactors/generators. See [power.md](../mechanics/power.md).
+**Allocatable capacity**: Only the player's personal `capacity` (from infusions) can be allocated out. `capacitySecondary` (substation-provided) cannot. Formula: `capacity - load`. See [power.md](../mechanics/power.md).
 
 ---
 

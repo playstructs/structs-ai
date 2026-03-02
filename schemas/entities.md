@@ -386,10 +386,10 @@
 | primaryAddress | string | blockchain-address | -- | Primary blockchain address for this player |
 | planetId | string | entity-id | `^2-[0-9]+$` | Planet ID if player owns a planet, empty string if not. Type 2 = Planet. |
 | fleetId | string | entity-id | `^9-[0-9]+$` | Fleet ID if player owns a fleet, empty string if not. Type 9 = Fleet. |
-| capacity | integer | milliwatts | -- | Primary power capacity from substation connection |
-| capacitySecondary | integer | milliwatts | -- | Secondary power capacity from additional substation connection |
-| load | integer | milliwatts | -- | Current power consumption (active operations) |
-| structsLoad | integer | milliwatts | -- | Total power consumption from all active structs (passive draw). Formula: Sum of all struct PassiveDraw values |
+| capacity | integer | milliwatts | -- | Personal generation — energy the player produces via their own infusions (reactor/generator). Only this can be allocated out. |
+| capacitySecondary | integer | milliwatts | -- | Substation-provided — energy received from the player's connected substation. Matches substation `connectionCapacity`. |
+| load | integer | milliwatts | -- | Energy allocated out — total power routed to others via allocations the player created. |
+| structsLoad | integer | milliwatts | -- | Struct consumption — sum of PassiveDraw from all the player's online structs. |
 | availableCapacity | integer | milliwatts | -- | Available power capacity. Formula: `(Capacity + CapacitySecondary) - (Load + StructsLoad)` |
 | allocatableCapacity | integer | milliwatts | -- | Allocatable capacity (primary capacity only). Formula: `Capacity - Load` |
 | playerOnline | boolean | -- | -- | Player online status. Formula: `(Load + StructsLoad) <= (Capacity + CapacitySecondary)` |

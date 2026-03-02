@@ -4659,7 +4659,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 ## Critical Concepts
 
-**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only capacity (how much you can produce per block) and load (how much you consume per block). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
+**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only total capacity (personal generation + substation-provided) and total load (energy allocated out + struct consumption). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
 
 **Transaction fees come from energy, not Alpha.** Players never need a separate token balance to submit transactions. TX fees pull from the player's connected power source. This means any player connected to a substation with capacity can transact. Validators earn from all transactions through energy connected to their reactor.
 
@@ -4675,8 +4675,8 @@ totalCapacity = capacity + capacitySecondary
 
 | Term | Source |
 |------|--------|
-| capacity | Primary (substation connection) |
-| capacitySecondary | Secondary (additional substation) |
+| capacity | Personal generation — energy the player produces via their own infusions (reactor or generator). Only this capacity can be used to create allocations. |
+| capacitySecondary | Substation-provided — energy received from the player's connected substation. Matches the substation's `connectionCapacity`. |
 
 ### Load
 
@@ -4686,8 +4686,8 @@ totalLoad = load + structsLoad
 
 | Term | Source |
 |------|--------|
-| load | Base player load (active operations) |
-| structsLoad | Sum of all online struct PassiveDraw |
+| load | Energy allocated out — total power the player has routed to others via allocations they created. |
+| structsLoad | Sum of all online struct PassiveDraw — energy consumed by the player's active structs. |
 
 ### Available Power
 
@@ -4742,7 +4742,7 @@ Each struct has:
 allocatableCapacity = capacity - load
 ```
 
-Primary capacity only; used for allocation to reactors/generators.
+Only the player's personal `capacity` (from infusions) counts here — `capacitySecondary` (substation-provided) cannot be allocated out. `load` is the amount already allocated, so the remainder is what's available to create new allocations from.
 
 ---
 
@@ -4759,7 +4759,7 @@ Primary capacity only; used for allocation to reactors/generators.
 
 ## New Player Power Budget
 
-New players receive power capacity through their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
+New players typically start with zero personal `capacity` (no infusions yet) and rely entirely on `capacitySecondary` from their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
 
 | Item | Build Draw | Passive Draw | Cumulative Load |
 |------|------------|--------------|-----------------|
@@ -5369,7 +5369,7 @@ Using guild tokens (uguild.X-Y) as the rate denomination is strategically signif
 - **Self-enforcing**: Agreements execute on-chain; no trust required for fulfillment.
 - **Lock-out**: Energy agreements can exclude raiders (no capacity = no operations).
 - **Diversification**: Relying on single provider = vulnerability; agreements can expire or be cancelled.
-- **Allocatable capacity**: Only primary substation capacity is allocatable to reactors/generators; see [power.md](../mechanics/power.md).
+- **Allocatable capacity**: Only the player's personal `capacity` (from infusions) is allocatable — `capacitySecondary` (substation-provided) cannot be allocated out. See [power.md](../mechanics/power.md).
 
 ---
 
@@ -5940,7 +5940,7 @@ Player.capacity, Player.capacitySecondary
 Struct.passiveDraw (when online)
 ```
 
-**Allocatable capacity**: Primary substation capacity only (`capacity - load`) can be allocated to reactors/generators. See [power.md](../mechanics/power.md).
+**Allocatable capacity**: Only the player's personal `capacity` (from infusions) can be allocated out. `capacitySecondary` (substation-provided) cannot. Formula: `capacity - load`. See [power.md](../mechanics/power.md).
 
 ---
 

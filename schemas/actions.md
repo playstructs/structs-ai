@@ -481,7 +481,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 
 **Required Fields**: `creator`, `substationId`
 
-**Effects**: Player gains power capacity from substation.
+**Effects**: Player gains `capacitySecondary` from the substation's `connectionCapacity`.
 
 | Requirement | Details |
 |-------------|---------|

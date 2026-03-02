@@ -166,7 +166,7 @@ Using guild tokens (uguild.X-Y) as the rate denomination is strategically signif
 - **Self-enforcing**: Agreements execute on-chain; no trust required for fulfillment.
 - **Lock-out**: Energy agreements can exclude raiders (no capacity = no operations).
 - **Diversification**: Relying on single provider = vulnerability; agreements can expire or be cancelled.
-- **Allocatable capacity**: Only primary substation capacity is allocatable to reactors/generators; see [power.md](../mechanics/power.md).
+- **Allocatable capacity**: Only the player's personal `capacity` (from infusions) is allocatable — `capacitySecondary` (substation-provided) cannot be allocated out. See [power.md](../mechanics/power.md).
 
 ---
 

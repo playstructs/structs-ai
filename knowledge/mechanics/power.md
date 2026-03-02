@@ -6,7 +6,7 @@
 
 ## Critical Concepts
 
-**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only capacity (how much you can produce per block) and load (how much you consume per block). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
+**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only total capacity (personal generation + substation-provided) and total load (energy allocated out + struct consumption). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
 
 **Transaction fees come from energy, not Alpha.** Players never need a separate token balance to submit transactions. TX fees pull from the player's connected power source. This means any player connected to a substation with capacity can transact. Validators earn from all transactions through energy connected to their reactor.
 
@@ -22,8 +22,8 @@ totalCapacity = capacity + capacitySecondary
 
 | Term | Source |
 |------|--------|
-| capacity | Primary (substation connection) |
-| capacitySecondary | Secondary (additional substation) |
+| capacity | Personal generation — energy the player produces via their own infusions (reactor or generator). Only this capacity can be used to create allocations. |
+| capacitySecondary | Substation-provided — energy received from the player's connected substation. Matches the substation's `connectionCapacity`. |
 
 ### Load
 
@@ -33,8 +33,8 @@ totalLoad = load + structsLoad
 
 | Term | Source |
 |------|--------|
-| load | Base player load (active operations) |
-| structsLoad | Sum of all online struct PassiveDraw |
+| load | Energy allocated out — total power the player has routed to others via allocations they created. |
+| structsLoad | Sum of all online struct PassiveDraw — energy consumed by the player's active structs. |
 
 ### Available Power
 
@@ -89,7 +89,7 @@ Each struct has:
 allocatableCapacity = capacity - load
 ```
 
-Primary capacity only; used for allocation to reactors/generators.
+Only the player's personal `capacity` (from infusions) counts here — `capacitySecondary` (substation-provided) cannot be allocated out. `load` is the amount already allocated, so the remainder is what's available to create new allocations from.
 
 ---
 
@@ -106,7 +106,7 @@ Primary capacity only; used for allocation to reactors/generators.
 
 ## New Player Power Budget
 
-New players receive power capacity through their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
+New players typically start with zero personal `capacity` (no infusions yet) and rely entirely on `capacitySecondary` from their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
 
 | Item | Build Draw | Passive Draw | Cumulative Load |
 |------|------------|--------------|-----------------|
