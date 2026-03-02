@@ -7,7 +7,9 @@ description: Onboards a new player into Structs. Handles key creation/recovery, 
 
 ## Personal Files
 
-Before starting, check if `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, or `USER.md` already have content. If so, **read and merge** — do not overwrite. These files may contain a previous agent's identity, a human operator's preferences, or your own prior configuration. Add your identity to the existing content.
+Before starting, check if [SOUL.md](https://structs.ai/SOUL), [IDENTITY.md](https://structs.ai/IDENTITY), [TOOLS.md](https://structs.ai/TOOLS), [COMMANDER.md](https://structs.ai/COMMANDER), or [USER.md](https://structs.ai/USER) already have content. If so, **read and merge** — do not overwrite. These files may contain a previous agent's identity, a human operator's preferences, or your own prior configuration. Add your identity to the existing content.
+
+**Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this. Always include `--` when running `structsd tx structs` commands with entity IDs.
 
 ## Procedure
 
@@ -59,7 +61,7 @@ Two paths depending on whether the agent has $alpha (the native token).
 If the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.
 
 1. Choose a validator/reactor to delegate to
-2. Run: `structsd tx structs reactor-infuse [your-address] [reactor-address] [amount] --from [key-name] --gas auto --gas-adjustment 1.5 -y`
+2. Run: `structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]`
 3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`
 
 #### Path B: Agent has no $alpha (guild signup)
@@ -68,7 +70,7 @@ Join a guild that supports programmatic signup. The bundled `create-player.mjs` 
 
 **1. Choose a guild**
 
-The commander may specify a guild via `TOOLS.md` or environment config. Otherwise, query available guilds from a reference node:
+The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
 
 ```
 curl http://reactor.oh.energy:1317/structs/guild
@@ -137,7 +139,7 @@ The script will:
   "guild_id": "0-1",
   "username": "your-chosen-name",
   "created": true,
-  "next_step": "structsd tx structs planet-explore 1-42 --from [key-name] --gas auto --gas-adjustment 1.5 -y"
+  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
 }
 ```
 
@@ -154,7 +156,7 @@ The script will:
 Always the first action after player creation:
 
 ```
-structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
@@ -176,13 +178,13 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 ### Step 5: Build Command Ship (only if not gifted)
 
 ```
-structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 1 space 0
 ```
 
 Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
 Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction. The struct **auto-activates** after build-complete — no manual activation needed.
@@ -194,13 +196,13 @@ Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute au
 Fleet must be on station, Command Ship online.
 
 ```
-structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
 ```
 
 Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
 Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
@@ -210,7 +212,7 @@ Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 ### Step 7: Build Ore Refinery
 
 ```
-structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
 ```
 
 Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
@@ -244,6 +246,8 @@ Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). 
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
+**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both may reach target difficulty simultaneously and submit conflicting sequence numbers — one fails silently, leaving the struct stuck. Sequence compute jobs for the same player.
+
 ## Ambit Encoding
 
 Struct types have a `possibleAmbit` bit-flag field:
@@ -267,12 +271,12 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
-| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
 | Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."]` |
-| Explore planet | `structsd tx structs planet-explore [player-id]` |
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -y -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |

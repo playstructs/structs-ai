@@ -84,7 +84,7 @@ structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ua
 
 - `structsd tx structs reactor-defuse [reactor-id]` — starts a cooldown period before ualpha is returned
 - `structsd tx structs reactor-cancel-defusion [reactor-id]` — cancel defusion and re-stake
-- `structsd tx structs reactor-begin-migration [source-reactor-id] [dest-reactor-id]` — move stake to a different reactor
+- `structsd tx structs reactor-begin-migration [player-address] [source-validator-address] [dest-validator-address] [amount]` — move stake to a different reactor (takes addresses, not IDs)
 
 ---
 
@@ -248,7 +248,7 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 
 - **Defusion cooldown**: Infused alpha is not immediately liquid. `reactor-defuse` starts a cooldown period. Don't infuse alpha you may need for short-term operations (fleet rebuilds, emergency purchases).
 - **Commission is locked**: The reactor's commission rate at infusion time is permanent for that specific infusion. Check commission before infusing.
-- **Automated allocations**: Limited to one per source. They auto-grow with your capacity -- no manual adjustment needed after creation.
+- **Automated allocations**: Limited to **one per source**. They auto-grow with your capacity -- no manual adjustment needed after creation. If you attempt to create a second automated allocation from the same source, the transaction will error. Delete the existing one first, or use `dynamic` type for additional allocations.
 - **Provider-agreement allocations**: Auto-created by the system when agreements open. Do not create or modify these manually.
 
 ### Provider Management
@@ -278,7 +278,7 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 |--------|---------|
 | Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount-ualpha]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration [src-reactor] [dest-reactor]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-validator-addr] [dest-validator-addr] [amount]` |
 | Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |
 | Open agreement | `structsd tx structs agreement-open [provider-id] [duration] [capacity]` |
 | Close agreement | `structsd tx structs agreement-close [agreement-id]` |

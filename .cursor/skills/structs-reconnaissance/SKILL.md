@@ -21,10 +21,10 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 2. **Assess targets** — For players: structs, power capacity, fleet status (onStation = can build; away = raiding). For planets: ore remaining, defense structs, shield. For guilds: members, Central Bank status.
 3. **Identify vulnerabilities** — Unrefined ore stockpile, power near capacity, undefended planet, fleet away (raiding).
 4. **Persist intelligence** — After gathering, update:
-   - `memory/intel/players/{player-id}.md` — Player dossier (profile, behavior, vulnerabilities, relationship)
-   - `memory/intel/guilds/{guild-id}.md` — Guild profile (members, bank status, strengths, weaknesses)
-   - `memory/intel/territory.md` — Planet ownership, ore, defense levels
-   - `memory/intel/threats.md` — Threat board ranked by severity
+   - [memory/intel/players/{player-id}.md](https://structs.ai/memory/intel) — Player dossier (profile, behavior, vulnerabilities, relationship)
+   - [memory/intel/guilds/{guild-id}.md](https://structs.ai/memory/intel) — Guild profile (members, bank status, strengths, weaknesses)
+   - [memory/intel/territory.md](https://structs.ai/memory/intel) — Planet ownership, ore, defense levels
+   - [memory/intel/threats.md](https://structs.ai/memory/intel) — Threat board ranked by severity
 
 ## Commands Reference
 
@@ -58,15 +58,15 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 
 - **Entity not found**: ID may be invalid or entity destroyed. Try `-all` variants to discover current IDs.
 - **Stale data**: Query `block-height`; re-run queries if chain has progressed.
-- **Missing intel files**: Create `memory/intel/players/`, `memory/intel/guilds/` if absent. Follow formats in `memory/intel/README.md`.
+- **Missing intel files**: Create `memory/intel/players/`, `memory/intel/guilds/` if absent. Follow formats in [memory/intel/README](https://structs.ai/memory/intel/README).
 
 ## Intelligence Persistence Loop
 
 1. Run reconnaissance queries for target(s).
 2. Parse results: owner, structs, power, shield, fleet status, guild.
-3. Write/update `memory/intel/players/{player-id}.md`, `memory/intel/guilds/{guild-id}.md` per `memory/intel/README.md` formats.
-4. Update `memory/intel/territory.md` with planet ownership table.
-5. Update `memory/intel/threats.md` with ranked threats and response notes.
+3. Write/update [memory/intel/players/](https://structs.ai/memory/intel), [memory/intel/guilds/](https://structs.ai/memory/intel) per [README](https://structs.ai/memory/intel/README) formats.
+4. Update [memory/intel/territory.md](https://structs.ai/memory/intel) with planet ownership table.
+5. Update [memory/intel/threats.md](https://structs.ai/memory/intel) with ranked threats and response notes.
 6. Include "Last Updated" date in each file.
 
 ## PostgreSQL Queries (Advanced)
@@ -95,7 +95,7 @@ WHERE f.location_id = '2-105' AND s.is_destroyed = false AND s.location_type = '
 
 **Important**: The `structs.grid` table is key-value, not columnar. See [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) for the grid pattern and more query examples.
 
-For setup: `.cursor/skills/structs-guild-stack/SKILL.md`
+For setup: [structs-guild-stack skill](https://structs.ai/skills/structs-guild-stack/SKILL)
 
 ## See Also
 

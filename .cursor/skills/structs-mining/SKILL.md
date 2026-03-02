@@ -5,11 +5,13 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 # Structs Mining
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
-3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
+3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
@@ -21,10 +23,10 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 | Action | CLI Command |
 |--------|-------------|
-| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 3` |
-| Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete [struct-id]` |
-| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 3` |
-| Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete [struct-id]` |
+| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute -D 3 -- [struct-id]` |
+| Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete -- [struct-id]` |
+| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute -D 3 -- [struct-id]` |
+| Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 | Query player | `structsd query structs player [id]` |

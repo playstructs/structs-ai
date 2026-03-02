@@ -54,6 +54,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
+| [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
 | [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |

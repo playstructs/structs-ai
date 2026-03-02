@@ -5,11 +5,13 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 # Structs Building
 
+**Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
-2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+2. **Initiate build** — `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
+3. **Proof-of-work** — `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
 4. **Optional** — Move, set defense, or activate stealth as needed.
 
 **Auto-activation**: Structs automatically activate after build-complete. Use `struct-activate` only to re-activate a struct that was previously deactivated with `struct-deactivate`.
@@ -52,22 +54,24 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 **Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
+**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both jobs may reach the target difficulty simultaneously and submit transactions with conflicting sequence numbers — one fails silently, leaving the struct stuck in build status. Use separate signing keys for separate players, and sequence compute jobs for the same player.
+
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
-| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
-| Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
-| Re-activate (only after deactivation) | `structsd tx structs struct-activate [struct-id]` |
-| Deactivate | `structsd tx structs struct-deactivate [struct-id]` |
-| Move | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
-| Set defense | `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` |
-| Clear defense | `structsd tx structs struct-defense-clear [defender-struct-id]` |
-| Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
-| Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
-| Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Build cancel | `structsd tx structs struct-build-cancel --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Re-activate (only after deactivation) | `structsd tx structs struct-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Deactivate | `structsd tx structs struct-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Move | `structsd tx structs struct-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [new-ambit] [new-slot] [new-location]` |
+| Set defense | `structsd tx structs struct-defense-set --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id] [protected-struct-id]` |
+| Clear defense | `structsd tx structs struct-defense-clear --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id]` |
+| Stealth on | `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Stealth off | `structsd tx structs struct-stealth-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Generator infuse | `structsd tx structs struct-generator-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [amount]` |
 
 **Limits**: 1 PDC per player, 1 Command Ship per player. Command Ship must be in fleet. Generator infusion is IRREVERSIBLE. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 

@@ -31,6 +31,7 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 
 | Skill | File | Purpose |
 |-------|------|---------|
+| **play-structs** | [SKILL.md](.cursor/skills/play-structs/SKILL.md) | **Start here.** Zero to mining Alpha Matter in one skill |
 | structsd-install | [SKILL.md](.cursor/skills/structsd-install/SKILL.md) | Install Go, Ignite CLI, and build `structsd` binary |
 | structs-onboarding | [SKILL.md](.cursor/skills/structs-onboarding/SKILL.md) | Address creation, player registration, planet exploration, first builds |
 | structs-mining | [SKILL.md](.cursor/skills/structs-mining/SKILL.md) | Ore extraction and refining (mine-compute → refine-compute) |

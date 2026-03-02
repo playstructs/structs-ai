@@ -5,28 +5,30 @@ description: Handles permissions, address management, and inter-player coordinat
 
 # Structs Diplomacy
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Query permissions** — `structsd query structs permission [id]`, `permission-by-object [object-id]`, `permission-by-player [player-id]`.
-2. **Grant on object** — `structsd tx structs permission-grant-on-object [object-id] [player-id] [permissions] TX_FLAGS`. Permissions are additive.
-3. **Revoke on object** — `permission-revoke-on-object [object-id] [player-id] [permissions]`.
-4. **Set on object** — `permission-set-on-object [object-id] [player-id] [permissions]` — clears existing and applies new set.
-5. **Address-level permissions** — `permission-grant-on-address [address] [permissions]`, `permission-revoke-on-address`, `permission-set-on-address`.
-6. **Address management** — Register: `address-register [player-id] [address] [proof-pubkey] [proof-signature] [permissions] TX_FLAGS`. Revoke: `address-revoke [address]`. Update primary: `player-update-primary-address [player-id] [new-address]`.
+2. **Grant on object** — `structsd tx structs permission-grant-on-object TX_FLAGS -- [object-id] [player-id] [permissions]`. Permissions are additive.
+3. **Revoke on object** — `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]`.
+4. **Set on object** — `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` — clears existing and applies new set.
+5. **Address-level permissions** — `structsd tx structs permission-grant-on-address -- [address] [permissions]`, `permission-revoke-on-address -- [address] [permissions]`, `permission-set-on-address -- [address] [permissions]`.
+6. **Address management** — Register: `structsd tx structs address-register TX_FLAGS -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]`. Revoke: `structsd tx structs address-revoke -- [address]`. Update primary: `structsd tx structs player-update-primary-address -- [player-id] [new-address]`.
 
 ## Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Grant on object | `structsd tx structs permission-grant-on-object [object-id] [player-id] [permissions]` |
-| Revoke on object | `structsd tx structs permission-revoke-on-object [object-id] [player-id] [permissions]` |
-| Set on object | `structsd tx structs permission-set-on-object [object-id] [player-id] [permissions]` |
-| Grant on address | `structsd tx structs permission-grant-on-address [address] [permissions]` |
-| Revoke on address | `structsd tx structs permission-revoke-on-address [address] [permissions]` |
-| Set on address | `structsd tx structs permission-set-on-address [address] [permissions]` |
-| Address register | `structsd tx structs address-register [player-id] [address] [proof-pubkey] [proof-sig] [permissions]` |
-| Address revoke | `structsd tx structs address-revoke [address]` |
-| Update primary address | `structsd tx structs player-update-primary-address [player-id] [new-address]` |
+| Grant on object | `structsd tx structs permission-grant-on-object -- [object-id] [player-id] [permissions]` |
+| Revoke on object | `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]` |
+| Set on object | `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` |
+| Grant on address | `structsd tx structs permission-grant-on-address -- [address] [permissions]` |
+| Revoke on address | `structsd tx structs permission-revoke-on-address -- [address] [permissions]` |
+| Set on address | `structsd tx structs permission-set-on-address -- [address] [permissions]` |
+| Address register | `structsd tx structs address-register -- [player-id] [address] [proof-pubkey] [proof-sig] [permissions]` |
+| Address revoke | `structsd tx structs address-revoke -- [address]` |
+| Update primary address | `structsd tx structs player-update-primary-address -- [player-id] [new-address]` |
 
 **TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 

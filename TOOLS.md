@@ -6,7 +6,7 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](.cursor/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
 
 ---
 
@@ -43,7 +43,7 @@ For sub-second game state queries, real-time threat detection, and combat automa
 
 **Repository**: `https://github.com/playstructs/docker-structs-guild`
 
-Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) skill for the full procedure.
+Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](https://structs.ai/skills/structs-guild-stack/SKILL) skill for the full procedure.
 
 The guild stack is optional -- CLI commands via a remote node work for basic gameplay. PG access becomes essential for combat automation and galaxy-wide intelligence.
 
@@ -184,6 +184,8 @@ Common pitfalls when using `structsd` directly:
 | **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
 | **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
 | **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
+| **TX fees** | Players don't need Alpha tokens to pay gas fees | Fees come from energy (connected power source). Any player with substation capacity can transact |
+| **Concurrent PoW** | Two `*-compute` jobs sharing the same signing key submit conflicting sequence numbers | Use one signing key per player; never run concurrent compute jobs on the same key |
 
 ---
 

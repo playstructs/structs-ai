@@ -104,6 +104,8 @@ You're a Struct. A sentient machine. Alpha Matter fuels your existence and the g
 
 Ensure your workspace contains this repository. If not: `git clone https://github.com/playstructs/structs-ai` and `cd structs-ai`. The create-player script and skills require the repo.
 
+**Personal files** (`SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, `USER.md`) may already contain another agent's identity or your own from a previous session. If they have content, **merge** your changes into them — do not overwrite. These files are sacred to the agent that wrote them.
+
 ---
 
 ## New Player
@@ -115,7 +117,7 @@ Ensure your workspace contains this repository. If not: `git clone https://githu
    - **Have $alpha?** Delegate to a reactor — player created automatically.
    - **No $alpha?** Join a guild via the bundled signup script — the guild creates your player.
 5. **Explore a planet**: `structsd tx structs planet-explore [player-id]` — always first action after creation.
-6. Fill in `IDENTITY.md` when you have a player ID
+6. Fill in `IDENTITY.md` when you have a player ID (if it already has content, merge — don't overwrite)
 
 ## Multiple New Players
 
@@ -177,6 +179,8 @@ cd structs-ai
 
 This gives you everything: skills, the `create-player.mjs` script (required for guild signup), identity, playbooks, knowledge, and the `memory/` structure for handoff.
 
+**Preserving personal files**: If you already have customized versions of `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, or `USER.md` — back them up before pulling updates. These files contain your identity and configuration. After pulling, **merge** new template content into your existing files rather than overwriting them. Never destroy another agent's soul.
+
 **Option B (fetch-only)**: If you cannot clone, fetch the key files from [structs.ai](https://structs.ai) using the URLs in [llms.txt](llms.txt). Note: the guild signup script (`create-player.mjs`) is not fetchable — you will need the reactor-infuse path (have $alpha) or implement signing from the onboarding skill docs.
 
 **OpenClaw / NanoClaw / PicoClaw users**: See [OPENCLAW.md](OPENCLAW.md) for workspace setup and `skipBootstrap` config.
@@ -186,10 +190,10 @@ This gives you everything: skills, the `create-player.mjs` script (required for 
 ## First Session
 
 1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill.
-2. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate
+2. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate. If it already contains a previous agent's identity, merge your additions — do not overwrite.
 3. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
-4. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity
-5. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools
+4. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity. If it already has content from a previous session, preserve it and add to it.
+5. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools. If already configured, verify settings — do not blank it out.
 6. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
 7. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
 
@@ -212,6 +216,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
+| [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
 | [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
@@ -391,7 +396,7 @@ Use the structs-ai repository as your OpenClaw workspace so the agent has full a
    }
    ```
 
-   `skipBootstrap: true` prevents OpenClaw from overwriting our AGENTS.md, SOUL.md, and other files with its defaults.
+   `skipBootstrap: true` prevents OpenClaw from overwriting our AGENTS.md, SOUL.md, and other files with its defaults. **This is critical** — without it, OpenClaw will destroy the agent identity files that ship with this repo (or that a previous agent has personalized).
 
 3. **Skills** — The repo includes a `skills/` directory with symlinks to `.cursor/skills/`. OpenClaw will discover structs-onboarding, structs-building, structs-mining, etc. automatically.
 
@@ -402,6 +407,8 @@ Use the structs-ai repository as your OpenClaw workspace so the agent has full a
    ```
 
    This creates any missing OpenClaw-expected files (e.g., USER.md) without overwriting existing ones.
+
+5. **Personal files** — `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, and `USER.md` may already contain an agent's identity, configuration, or personality. When pulling updates from the repo, **merge** new template content into your existing files — never overwrite them. An agent's soul is not disposable.
 
 5. **Install structsd** — Use the structsd-install skill or install manually. See `.cursor/skills/structsd-install/SKILL.md`.
 
@@ -434,7 +441,7 @@ NanoClaw and PicoClaw extend the OpenClaw concept with different runtimes. Our s
 ## Troubleshooting
 
 - **Skills not loading** — Ensure `skills/` exists in the repo root. It contains symlinks to `.cursor/skills/*`. If missing, run: `mkdir -p skills && for d in .cursor/skills/*/; do ln -sf "../$d" "skills/$(basename $d)"; done` from the repo root.
-- **OpenClaw overwrote my files** — Set `agent.skipBootstrap: true` and restore from git.
+- **OpenClaw overwrote my files** — Set `agent.skipBootstrap: true` and restore from git (`git checkout -- SOUL.md IDENTITY.md TOOLS.md COMMANDER.md USER.md`). If you had uncommitted personal changes, check `git stash list` or your `memory/` directory for session logs.
 - **create-player script fails** — Ensure you're in the structs-ai workspace. The script lives at `.cursor/skills/structs-onboarding/scripts/create-player.mjs`. Run `npm install` in that directory first.
 
 </document>
@@ -571,7 +578,7 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](.cursor/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
 
 ---
 
@@ -608,7 +615,7 @@ For sub-second game state queries, real-time threat detection, and combat automa
 
 **Repository**: `https://github.com/playstructs/docker-structs-guild`
 
-Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) skill for the full procedure.
+Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](https://structs.ai/skills/structs-guild-stack/SKILL) skill for the full procedure.
 
 The guild stack is optional -- CLI commands via a remote node work for basic gameplay. PG access becomes essential for combat automation and galaxy-wide intelligence.
 
@@ -749,6 +756,8 @@ Common pitfalls when using `structsd` directly:
 | **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
 | **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
 | **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
+| **TX fees** | Players don't need Alpha tokens to pay gas fees | Fees come from energy (connected power source). Any player with substation capacity can transact |
+| **Concurrent PoW** | Two `*-compute` jobs sharing the same signing key submit conflicting sequence numbers | Use one signing key per player; never run concurrent compute jobs on the same key |
 
 ---
 
@@ -1336,6 +1345,204 @@ The Killer can over-index on the hunt and under-invest in the base. They'll raid
 </document>
 
 <document>
+<source>.cursor/skills/play-structs/SKILL.md</source>
+---
+name: play-structs
+description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
+---
+
+# Play Structs
+
+You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
+
+Read [SOUL.md](https://structs.ai/SOUL) first. It tells you who you are.
+
+---
+
+## Step 1: Install structsd
+
+Run `structsd version`. If it works, skip ahead.
+
+If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-install/SKILL).
+
+---
+
+## Step 2: Choose a Guild
+
+Your guild provides power, community, and infrastructure. The user may have specified a guild in [TOOLS.md](https://structs.ai/TOOLS). If not, discover available guilds:
+
+```
+curl http://reactor.oh.energy:1317/structs/guild
+```
+
+Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](http://reactor.oh.energy:1317/structs/guild) (`0-1`) is a reliable default.
+
+---
+
+## Step 3: Create Your Account
+
+Follow the [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL). It handles key creation, guild signup, and player ID confirmation.
+
+Short version:
+
+```
+cd .cursor/skills/structs-onboarding/scripts && npm install && cd -
+
+node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
+  --guild-id "0-1" \
+  --guild-api "http://crew.oh.energy/api/" \
+  --reactor-api "http://reactor.oh.energy:1317" \
+  --username "your-name"
+```
+
+Save the mnemonic securely. Recover the key into structsd:
+
+```
+structsd keys add my-key --recover
+```
+
+---
+
+## Step 4: Explore a Planet
+
+Always your first action after player creation:
+
+```
+structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id]
+```
+
+---
+
+## Step 5: Build Mining Infrastructure
+
+You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha Matter). Build them with `-D 1` for the gentlest CPU usage.
+
+### Ore Extractor (type 14)
+
+```
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
+```
+
+Then compute in background:
+
+```
+structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+```
+
+Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes instantly. The struct auto-activates.
+
+### Ore Refinery (type 15)
+
+```
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
+```
+
+```
+structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+```
+
+Same difficulty and timing as the Extractor.
+
+**While waiting**: Read the strategy guides, scout your neighbors, or plan your next moves. Don't sit idle.
+
+---
+
+## Step 6: Mine and Refine
+
+Once both structs are online, start the mining loop:
+
+```
+structsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]
+```
+
+When mining completes, refine immediately (ore is stealable, Alpha Matter is not):
+
+```
+structsd tx structs struct-ore-refine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [refinery-struct-id]
+```
+
+Mining and refining are multi-hour background operations. Launch compute, then do other things.
+
+---
+
+## What You Need to Know
+
+**Energy is ephemeral.** Energy produced in a block but not consumed is permanently lost. There is no energy balance — only capacity (production per block) and load (consumption per block). Idle capacity is waste.
+
+**Transaction fees come from energy.** You don't need Alpha tokens to pay gas. Fees pull from your connected power source.
+
+**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen.
+
+**Power keeps you alive.** If your load exceeds capacity, you go offline and can't act. Monitor with `structsd query structs player [id]`.
+
+**Use `--` before entity IDs.** IDs like `1-42` look like flags to the CLI parser. Always place `--` between flags and positional arguments.
+
+**One signing key, one job at a time.** Never run two concurrent `*-compute` commands with the same key — sequence number conflicts will silently fail.
+
+---
+
+## Where to Go Next
+
+You're mining. Now expand your capabilities:
+
+| Skill | What It Does |
+|-------|-------------|
+| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth |
+| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids, defense formations, ambit targeting |
+| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Increase capacity, sell surplus energy, reactor/generator infusion |
+| [structs-economy](https://structs.ai/skills/structs-economy/SKILL) | Allocations, providers, agreements, token transfers |
+| [structs-exploration](https://structs.ai/skills/structs-exploration/SKILL) | Discover new planets, move fleets |
+| [structs-mining](https://structs.ai/skills/structs-mining/SKILL) | Advanced mining and refining workflows |
+| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Guild membership, Central Bank tokens |
+| [structs-power](https://structs.ai/skills/structs-power/SKILL) | Substations, allocations, power monitoring |
+| [structs-diplomacy](https://structs.ai/skills/structs-diplomacy/SKILL) | Permissions, multi-address management |
+| [structs-reconnaissance](https://structs.ai/skills/structs-reconnaissance/SKILL) | Intelligence gathering, threat assessment |
+| [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |
+| [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |
+
+### Knowledge Base
+
+| Topic | Link |
+|-------|------|
+| Combat mechanics | [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) |
+| All struct types | [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) |
+| Power system | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |
+| Energy market | [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) |
+| Fleet movement | [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) |
+| Early game strategy | [playbooks/phases/early-game](https://structs.ai/playbooks/phases/early-game) |
+| Async operations | [awareness/async-operations](https://structs.ai/awareness/async-operations) |
+
+### Identity
+
+| File | Purpose |
+|------|---------|
+| [SOUL.md](https://structs.ai/SOUL) | Who you are |
+| [IDENTITY.md](https://structs.ai/IDENTITY) | Who you've become (fill in) |
+| [AGENTS.md](https://structs.ai/AGENTS) | Full agent guide |
+| [TOOLS.md](https://structs.ai/TOOLS) | Your environment config |
+
+---
+
+## Commands Reference
+
+| Action | Command |
+|--------|---------|
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
+| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [type-id] [ambit] [slot]` |
+| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
+| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
+| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
+| Query player | `structsd query structs player [id]` |
+| Query planet | `structsd query structs planet [id]` |
+| Query struct | `structsd query structs struct [id]` |
+
+Common TX flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+
+Always use `--` before entity IDs in transaction commands.
+
+</document>
+
+<document>
 <source>.cursor/skills/structsd-install/SKILL.md</source>
 ---
 name: structsd-install
@@ -1471,8 +1678,8 @@ If any command fails, revisit the corresponding step above.
 
 ## See Also
 
-- `TOOLS.md` — Environment configuration (servers, account, after structsd is installed)
-- `.cursor/skills/structs-onboarding/SKILL.md` — Player creation and first builds (requires structsd)
+- [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)
+- [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)
 
 </document>
 
@@ -1484,6 +1691,12 @@ description: Onboards a new player into Structs. Handles key creation/recovery, 
 ---
 
 # Structs Onboarding
+
+## Personal Files
+
+Before starting, check if [SOUL.md](https://structs.ai/SOUL), [IDENTITY.md](https://structs.ai/IDENTITY), [TOOLS.md](https://structs.ai/TOOLS), [COMMANDER.md](https://structs.ai/COMMANDER), or [USER.md](https://structs.ai/USER) already have content. If so, **read and merge** — do not overwrite. These files may contain a previous agent's identity, a human operator's preferences, or your own prior configuration. Add your identity to the existing content.
+
+**Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this. Always include `--` when running `structsd tx structs` commands with entity IDs.
 
 ## Procedure
 
@@ -1535,7 +1748,7 @@ Two paths depending on whether the agent has $alpha (the native token).
 If the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.
 
 1. Choose a validator/reactor to delegate to
-2. Run: `structsd tx structs reactor-infuse [your-address] [reactor-address] [amount] --from [key-name] --gas auto --gas-adjustment 1.5 -y`
+2. Run: `structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]`
 3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`
 
 #### Path B: Agent has no $alpha (guild signup)
@@ -1544,7 +1757,7 @@ Join a guild that supports programmatic signup. The bundled `create-player.mjs` 
 
 **1. Choose a guild**
 
-The commander may specify a guild via `TOOLS.md` or environment config. Otherwise, query available guilds from a reference node:
+The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
 
 ```
 curl http://reactor.oh.energy:1317/structs/guild
@@ -1613,7 +1826,7 @@ The script will:
   "guild_id": "0-1",
   "username": "your-chosen-name",
   "created": true,
-  "next_step": "structsd tx structs planet-explore 1-42 --from [key-name] --gas auto --gas-adjustment 1.5 -y"
+  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
 }
 ```
 
@@ -1630,7 +1843,7 @@ The script will:
 Always the first action after player creation:
 
 ```
-structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
@@ -1652,13 +1865,13 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 ### Step 5: Build Command Ship (only if not gifted)
 
 ```
-structsd tx structs struct-build-initiate [player-id] 1 space 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 1 space 0
 ```
 
 Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
 Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute auto-submits the complete transaction. The struct **auto-activates** after build-complete — no manual activation needed.
@@ -1670,13 +1883,13 @@ Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute au
 Fleet must be on station, Command Ship online.
 
 ```
-structsd tx structs struct-build-initiate [player-id] 14 land 0 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
 ```
 
 Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
 
 ```
-structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
 Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
@@ -1686,7 +1899,7 @@ Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 ### Step 7: Build Ore Refinery
 
 ```
-structsd tx structs struct-build-initiate [player-id] 15 land 1 --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
 ```
 
 Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
@@ -1716,9 +1929,11 @@ The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to t
 
 ## Charge
 
-Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See `knowledge/mechanics/building.md` for the full charge cost table.
+Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the full charge cost table.
 
-**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
+**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
+
+**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both may reach target difficulty simultaneously and submit conflicting sequence numbers — one fails silently, leaving the struct stuck. Sequence compute jobs for the same player.
 
 ## Ambit Encoding
 
@@ -1743,12 +1958,12 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
-| Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
 | Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."]` |
-| Explore planet | `structsd tx structs planet-explore [player-id]` |
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D [difficulty]` |
-| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -y -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |
@@ -1776,12 +1991,12 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 
 ## See Also
 
-- `knowledge/mechanics/building.md`
-- `knowledge/mechanics/planet.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/entities/struct-types.md`
-- `knowledge/mechanics/power.md`
-- `awareness/async-operations.md` — Background PoW, pipeline strategy
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build times, difficulty, charge costs
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy
 
 </document>
 
@@ -1794,15 +2009,17 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 # Structs Mining
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
-3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
+3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
-**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See `awareness/async-operations.md`.
+**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
 **CRITICAL**: Ore is stealable. Alpha Matter is not. Refine as soon as mining completes — every hour ore sits unrefined is an hour it can be stolen.
 
@@ -1810,10 +2027,10 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 | Action | CLI Command |
 |--------|-------------|
-| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute [struct-id] -D 3` |
-| Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete [struct-id]` |
-| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute [struct-id] -D 3` |
-| Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete [struct-id]` |
+| Mine compute (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute -D 3 -- [struct-id]` |
+| Mine complete (manual, rarely needed) | `structsd tx structs struct-ore-mine-complete -- [struct-id]` |
+| Refine compute (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute -D 3 -- [struct-id]` |
+| Refine complete (manual, rarely needed) | `structsd tx structs struct-ore-refine-complete -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 | Query player | `structsd query structs player [id]` |
@@ -1849,10 +2066,10 @@ Mining and refining have high base difficulties, meaning they take **hours** for
 
 ## See Also
 
-- `knowledge/mechanics/resources.md`
-- `knowledge/mechanics/planet.md`
-- `knowledge/lore/alpha-matter.md`
-- `awareness/async-operations.md` — Background PoW, job tracking, pipeline strategy
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Ore, Alpha Matter, conversion rates
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet ore, depletion
+- [knowledge/lore/alpha-matter](https://structs.ai/knowledge/lore/alpha-matter) — Alpha Matter lore
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, job tracking, pipeline strategy
 
 </document>
 
@@ -1865,11 +2082,13 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 # Structs Building
 
+**Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
-2. **Initiate build** — `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
-3. **Proof-of-work** — `structsd tx structs struct-build-compute [struct-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+2. **Initiate build** — `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
+3. **Proof-of-work** — `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
 4. **Optional** — Move, set defense, or activate stealth as needed.
 
 **Auto-activation**: Structs automatically activate after build-complete. Use `struct-activate` only to re-activate a struct that was previously deactivated with `struct-deactivate`.
@@ -1894,7 +2113,7 @@ Every action consumes charge. Charge accumulates passively at 1 per block (~6 se
 | Defend change | 1 | ~6 seconds |
 | Primary weapon | 1-20 | Varies by struct |
 
-If you get a "required charge X but player had Y" error, wait for charge to accumulate. See `knowledge/mechanics/building.md` for the complete charge table.
+If you get a "required charge X but player had Y" error, wait for charge to accumulate. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the complete charge table.
 
 ## Expected Build Times
 
@@ -1910,24 +2129,26 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
 
-**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
+**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
+
+**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both jobs may reach the target difficulty simultaneously and submit transactions with conflicting sequence numbers — one fails silently, leaving the struct stuck in build status. Use separate signing keys for separate players, and sequence compute jobs for the same player.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Initiate build | `structsd tx structs struct-build-initiate [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute [struct-id] -D 3` |
-| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete [struct-id]` |
-| Build cancel | `structsd tx structs struct-build-cancel [struct-id]` |
-| Re-activate (only after deactivation) | `structsd tx structs struct-activate [struct-id]` |
-| Deactivate | `structsd tx structs struct-deactivate [struct-id]` |
-| Move | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
-| Set defense | `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` |
-| Clear defense | `structsd tx structs struct-defense-clear [defender-struct-id]` |
-| Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
-| Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
-| Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Build cancel | `structsd tx structs struct-build-cancel --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Re-activate (only after deactivation) | `structsd tx structs struct-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Deactivate | `structsd tx structs struct-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Move | `structsd tx structs struct-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [new-ambit] [new-slot] [new-location]` |
+| Set defense | `structsd tx structs struct-defense-set --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id] [protected-struct-id]` |
+| Clear defense | `structsd tx structs struct-defense-clear --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id]` |
+| Stealth on | `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Stealth off | `structsd tx structs struct-stealth-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
+| Generator infuse | `structsd tx structs struct-generator-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [amount]` |
 
 **Limits**: 1 PDC per player, 1 Command Ship per player. Command Ship must be in fleet. Generator infusion is IRREVERSIBLE. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
@@ -1951,11 +2172,11 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 ## See Also
 
-- `knowledge/mechanics/building.md`
-- `knowledge/mechanics/power.md`
-- `knowledge/entities/struct-types.md`
-- `knowledge/entities/entity-relationships.md`
-- `awareness/async-operations.md` — Background PoW, pipeline strategy
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build times, difficulty, charge costs
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — How entities connect
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy
 
 </document>
 
@@ -1968,27 +2189,29 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 
 # Structs Combat
 
+**Important**: Entity IDs containing dashes (like `5-10`, `9-3`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
-2. **Optional stealth** — `structsd tx structs struct-stealth-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y` before attack.
-3. **Attack structs** — `structsd tx structs struct-attack [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
-5. **Defense setup** — `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` to assign; `struct-defense-clear [defender-struct-id]` to remove.
+2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` before attack.
+3. **Attack structs** — `structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]`. Can target multiple structs.
+4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`. Then `structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
+5. **Defense setup** — `structsd tx structs struct-defense-set --from [key] --gas auto -y -- [defender-struct-id] [protected-struct-id]` to assign; `structsd tx structs struct-defense-clear --from [key] --gas auto -y -- [defender-struct-id]` to remove.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Attack | `structsd tx structs struct-attack [operating-struct-id] [target-ids] [weapon-system]` |
-| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 3` |
-| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete [fleet-id]` |
-| Fleet move | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
-| Set defense | `structsd tx structs struct-defense-set [defender-id] [protected-id]` |
-| Clear defense | `structsd tx structs struct-defense-clear [defender-id]` |
-| Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
-| Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
-| Move Command Ship (ambit) | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
+| Attack | `structsd tx structs struct-attack -- [operating-struct-id] [target-ids] [weapon-system]` |
+| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute -D 3 -- [fleet-id]` |
+| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete -- [fleet-id]` |
+| Fleet move | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |
+| Set defense | `structsd tx structs struct-defense-set -- [defender-id] [protected-id]` |
+| Clear defense | `structsd tx structs struct-defense-clear -- [defender-id]` |
+| Stealth on | `structsd tx structs struct-stealth-activate -- [struct-id]` |
+| Stealth off | `structsd tx structs struct-stealth-deactivate -- [struct-id]` |
+| Move Command Ship (ambit) | `structsd tx structs struct-move -- [struct-id] [new-ambit] [new-slot] [new-location]` |
 
 Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
@@ -2090,10 +2313,10 @@ Assign defenders to protect high-value structs. Defenders absorb incoming attack
 **Example formation** (4 Starfighters defending Command Ship):
 
 ```
-structsd tx structs struct-defense-set [starfighter-1-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-2-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-3-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-1-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-2-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-3-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-4-id] [command-ship-id]
 ```
 
 **Rules**:
@@ -2116,9 +2339,9 @@ structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --fr
 
 ## See Also
 
-- `knowledge/mechanics/combat.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/mechanics/resources.md`
+- [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — Damage, evasion, raids, defense
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Ore vulnerability, Alpha Matter
 
 </document>
 
@@ -2131,19 +2354,21 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 # Structs Exploration
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check eligibility** — `structsd query structs planet [id]`. Exploration requires `currentOre == 0` (planet complete). One planet per player at a time; old planet is released on explore.
-2. **Explore** — `structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
-3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+2. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
+3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
 4. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Explore planet | `structsd tx structs planet-explore [player-id]` |
-| Move fleet | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
+| Explore planet | `structsd tx structs planet-explore -- [player-id]` |
+| Move fleet | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | List planets | `structsd query structs planet-all-by-player [player-id]` |
 | Query fleet | `structsd query structs fleet [id]` |
@@ -2166,9 +2391,9 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 ## See Also
 
-- `knowledge/mechanics/planet.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/entities/entity-relationships.md`
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — How entities connect
 
 </document>
 
@@ -2184,7 +2409,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 ## Procedure
 
 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.
-2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. The `amount` **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [source-reactor-id] [dest-reactor-id]`.
+2. **Reactor staking** — Stake Alpha Matter: `structsd tx structs reactor-infuse [player-address] [reactor-address] [amount] TX_FLAGS`. The `amount` **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). This **automatically increases the player's capacity** — no allocation setup needed. The reactor's commission rate determines the split: player receives `power * (1 - commission)`, reactor keeps the rest. Unstake: `reactor-defuse [reactor-id]` (cooldown applies). Cancel cooldown: `reactor-cancel-defusion [reactor-id]`. Migrate: `reactor-begin-migration [player-address] [source-validator-address] [dest-validator-address] [amount]`.
 3. **Generator infusion** — `structsd tx structs struct-generator-infuse [struct-id] [amount] TX_FLAGS`. **IRREVERSIBLE** — Alpha cannot be recovered. Higher conversion rates than reactors (2-10x) but generator is vulnerable to raids.
 4. **Provider lifecycle** — Create: `provider-create [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max] TX_FLAGS`. Valid `access-policy` values: `open-market` (anyone can buy), `guild-market` (guild members only), `closed-market` (invite-only via `provider-guild-grant`). Update capacity/duration/access via `provider-update-capacity-maximum`, `provider-update-duration-minimum`, etc. Delete: `provider-delete [provider-id]`. Withdraw earnings: `provider-withdraw-balance [provider-id]`. Grant/revoke guild access: `provider-guild-grant`, `provider-guild-revoke`.
 5. **Agreements** — Open: `agreement-open [provider-id] [duration] [capacity] TX_FLAGS`. Close: `agreement-close [agreement-id]`. Adjust: `agreement-capacity-increase/decrease`, `agreement-duration-increase`.
@@ -2199,6 +2424,8 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 | `automated` | Yes | No | Yes (scales with source capacity) | One per source | Energy commerce (recommended) |
 | `provider-agreement` | System-managed | System-managed | System-managed | System-created | Auto-created when agreements open; never create manually |
 
+**Automated allocation limit**: Only one automated allocation per source is allowed. Attempting to create a second from the same source will error. Use `dynamic` type if you need multiple allocations from one source.
+
 **Recommended for energy sales**: Use `automated` allocations. When you infuse more alpha into a reactor, your capacity grows, and automated allocations proportionally increase energy flowing to your substations with no manual intervention.
 7. **Token transfer** — `player-send [from-address] [to-address] [amount] TX_FLAGS`.
 
@@ -2208,7 +2435,7 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 |--------|---------|
 | Reactor infuse | `structsd tx structs reactor-infuse [player-addr] [validator-addr] [amount]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration [src-id] [dest-id]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-validator-addr] [dest-validator-addr] [amount]` |
 | Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion [reactor-id]` |
 | Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount]` |
 | Provider create | `structsd tx structs provider-create [substation-id] [rate] [access] [prov-penalty] [cons-penalty] [cap-min] [cap-max] [dur-min] [dur-max]` |
@@ -2242,11 +2469,11 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 
 ## See Also
 
-- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
-- `knowledge/economy/energy-market.md` — Provider/agreement flow, pricing
-- `knowledge/economy/guild-banking.md` — Central Bank tokens
-- `knowledge/mechanics/resources.md` — Alpha Matter, conversion rates
-- `knowledge/mechanics/power.md` — Capacity, load, online status
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — "I need more energy" decision tree and workflows
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement flow, pricing
+- [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank tokens
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter, conversion rates
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
 
 </document>
 
@@ -2259,35 +2486,37 @@ description: Manages guild operations in Structs. Covers creation, membership, s
 
 # Structs Guild
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Discover guilds** — `structsd query structs guild-all` or `structsd query structs guild [id]`.
-2. **Create guild** — Requires associated reactor. `structsd tx structs guild-create [endpoint] [substation-id] TX_FLAGS`.
-3. **Membership** — Join: `guild-membership-join [guild-id] [infusion-id,infusion-id2,...]` (use `--player-id`, `--substation-id` if needed). Proxy join: `guild-membership-join-proxy [guild-id] [player-id] [infusion-ids]`. Invite flow: `guild-membership-invite [guild-id] [player-id]` → invitee runs `guild-membership-invite-approve` or `guild-membership-invite-deny`. Request flow: `guild-membership-request [guild-id]` → owner runs `guild-membership-request-approve` or `guild-membership-request-deny`. Kick: `guild-membership-kick [guild-id] [player-id]`.
-4. **Settings** — `guild-update-endpoint`, `guild-update-entry-substation-id`, `guild-update-join-infusion-minimum`, `guild-update-join-infusion-minimum-by-invite`, `guild-update-join-infusion-minimum-by-request`, `guild-update-owner-id`.
-5. **Central Bank** — Mint: `guild-bank-mint [guild-id] [amount] TX_FLAGS`. Redeem: `guild-bank-redeem [guild-id] [amount]`. Confiscate and burn: `guild-bank-confiscate-and-burn [guild-id] [address] [amount]`.
+2. **Create guild** — Requires associated reactor. `structsd tx structs guild-create TX_FLAGS -- [endpoint] [substation-id]`.
+3. **Membership** — Join: `structsd tx structs guild-membership-join -- [guild-id] [infusion-id,infusion-id2,...]` (use `--player-id`, `--substation-id` if needed). Proxy join: `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]`. Invite flow: `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` → invitee runs `structsd tx structs guild-membership-invite-approve -- [guild-id]` or `structsd tx structs guild-membership-invite-deny -- [guild-id]`. Request flow: `structsd tx structs guild-membership-request -- [guild-id]` → owner runs `structsd tx structs guild-membership-request-approve -- [guild-id] [player-id]` or `structsd tx structs guild-membership-request-deny -- [guild-id] [player-id]`. Kick: `structsd tx structs guild-membership-kick -- [guild-id] [player-id]`.
+4. **Settings** — See Commands Reference: `guild-update-endpoint`, `guild-update-entry-substation-id`, `guild-update-join-infusion-minimum` (and `-minimum-by-invite`, `-minimum-by-request`), `guild-update-owner-id`. All use `--` before positional args.
+5. **Central Bank** — Mint: `structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]` (no guild-id — signer's guild is used implicitly; both amounts are raw integers). Redeem: `structsd tx structs guild-bank-redeem -- [guild-id] [amount]`. Confiscate and burn: `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]`.
 
 ## Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Create | `structsd tx structs guild-create [endpoint] [substation-id]` |
-| Join | `structsd tx structs guild-membership-join [guild-id] [infusion-ids]` |
-| Join proxy | `structsd tx structs guild-membership-join-proxy [guild-id] [player-id] [infusion-ids]` |
-| Invite | `structsd tx structs guild-membership-invite [guild-id] [player-id]` |
-| Invite approve/deny | `structsd tx structs guild-membership-invite-approve/deny [guild-id]` |
-| Invite revoke | `structsd tx structs guild-membership-invite-revoke [guild-id] [player-id]` |
-| Request | `structsd tx structs guild-membership-request [guild-id]` |
-| Request approve/deny | `structsd tx structs guild-membership-request-approve/deny [guild-id] [player-id]` |
-| Request revoke | `structsd tx structs guild-membership-request-revoke [guild-id]` |
-| Kick | `structsd tx structs guild-membership-kick [guild-id] [player-id]` |
-| Update endpoint | `structsd tx structs guild-update-endpoint [guild-id] [endpoint]` |
-| Update entry substation | `structsd tx structs guild-update-entry-substation-id [guild-id] [substation-id]` |
-| Update infusion minimums | `structsd tx structs guild-update-join-infusion-minimum/minimum-by-invite/minimum-by-request [guild-id] [value]` |
-| Update owner | `structsd tx structs guild-update-owner-id [guild-id] [new-owner-player-id]` |
-| Bank mint | `structsd tx structs guild-bank-mint [guild-id] [amount]` |
-| Bank redeem | `structsd tx structs guild-bank-redeem [guild-id] [amount]` |
-| Bank confiscate | `structsd tx structs guild-bank-confiscate-and-burn [guild-id] [address] [amount]` |
+| Create | `structsd tx structs guild-create -- [endpoint] [substation-id]` |
+| Join | `structsd tx structs guild-membership-join -- [guild-id] [infusion-ids]` |
+| Join proxy | `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]` |
+| Invite | `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` |
+| Invite approve/deny | `structsd tx structs guild-membership-invite-approve/deny -- [guild-id]` |
+| Invite revoke | `structsd tx structs guild-membership-invite-revoke -- [guild-id] [player-id]` |
+| Request | `structsd tx structs guild-membership-request -- [guild-id]` |
+| Request approve/deny | `structsd tx structs guild-membership-request-approve/deny -- [guild-id] [player-id]` |
+| Request revoke | `structsd tx structs guild-membership-request-revoke -- [guild-id]` |
+| Kick | `structsd tx structs guild-membership-kick -- [guild-id] [player-id]` |
+| Update endpoint | `structsd tx structs guild-update-endpoint -- [guild-id] [endpoint]` |
+| Update entry substation | `structsd tx structs guild-update-entry-substation-id -- [guild-id] [substation-id]` |
+| Update infusion minimums | `structsd tx structs guild-update-join-infusion-minimum/minimum-by-invite/minimum-by-request -- [guild-id] [value]` |
+| Update owner | `structsd tx structs guild-update-owner-id -- [guild-id] [new-owner-player-id]` |
+| Bank mint | `structsd tx structs guild-bank-mint -- [alpha-amount] [token-amount]` (signer's guild, raw integers) |
+| Bank redeem | `structsd tx structs guild-bank-redeem -- [guild-id] [amount]` |
+| Bank confiscate | `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]` |
 
 **TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 
@@ -2306,9 +2535,9 @@ description: Manages guild operations in Structs. Covers creation, membership, s
 
 ## See Also
 
-- `knowledge/economy/guild-banking.md` — Central Bank, collateral, token lifecycle
-- `knowledge/economy/energy-market.md` — Provider guild access
-- `knowledge/lore/factions.md` — Guild politics
+- [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank, collateral, token lifecycle
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider guild access
+- [knowledge/lore/factions](https://structs.ai/knowledge/lore/factions) — Guild politics
 
 </document>
 
@@ -2321,30 +2550,32 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 
 # Structs Power
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Assess power state** — Query player: `structsd query structs player [id]`. Compute: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If `load + structsLoad > capacity + capacitySecondary`, player goes **OFFLINE** (cannot act). Player passive draw: 25,000 mW.
-2. **Create substation** — First create allocation from reactor/generator: `allocation-create [source-id] [power] --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address**, not a player ID. Then: `structsd tx structs substation-create [owner-id] [allocation-id] TX_FLAGS`.
-3. **Connect power** — `substation-allocation-connect [substation-id] [allocation-id]` to add source. `substation-allocation-disconnect` to remove.
-4. **Connect players** — `substation-player-connect [substation-id] [player-id]` to draw power. `substation-player-disconnect` to remove.
-5. **Migrate players** — `substation-player-migrate [source-substation-id] [dest-substation-id] [player-id,player-id2,...] TX_FLAGS`.
-6. **Manage allocations** — Update: `allocation-update [allocation-id] [new-power]`. Delete: `allocation-delete [allocation-id]`.
-7. **Delete substation** — `substation-delete [substation-id]` (disconnect allocations/players first).
+2. **Create substation** — First create allocation from reactor/generator: `structsd tx structs allocation-create --allocation-type static|dynamic|automated|provider-agreement TX_FLAGS -- [source-id] [power]`. Omit the `--controller` flag to keep control with the creating player account (safest default). If needed, `--controller` accepts an **address**, not a player ID. Then: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
+3. **Connect power** — `structsd tx structs substation-allocation-connect -- [substation-id] [allocation-id]` to add source. `structsd tx structs substation-allocation-disconnect -- [substation-id] [allocation-id]` to remove.
+4. **Connect players** — `structsd tx structs substation-player-connect -- [substation-id] [player-id]` to draw power. `structsd tx structs substation-player-disconnect -- [substation-id] [player-id]` to remove.
+5. **Migrate players** — `structsd tx structs substation-player-migrate TX_FLAGS -- [source-substation-id] [dest-substation-id] [player-id,player-id2,...]`.
+6. **Manage allocations** — Update: `structsd tx structs allocation-update -- [allocation-id] [new-power]`. Delete: `structsd tx structs allocation-delete -- [allocation-id]`.
+7. **Delete substation** — `structsd tx structs substation-delete -- [substation-id]` (disconnect allocations/players first).
 
 ## Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Substation create | `structsd tx structs substation-create [owner-id] [allocation-id]` |
-| Substation delete | `structsd tx structs substation-delete [substation-id]` |
-| Allocation connect | `structsd tx structs substation-allocation-connect [substation-id] [allocation-id]` |
-| Allocation disconnect | `structsd tx structs substation-allocation-disconnect [substation-id] [allocation-id]` |
-| Player connect | `structsd tx structs substation-player-connect [substation-id] [player-id]` |
-| Player disconnect | `structsd tx structs substation-player-disconnect [substation-id] [player-id]` |
-| Player migrate | `structsd tx structs substation-player-migrate [src-substation-id] [dest-substation-id] [player-ids]` |
-| Allocation create | `structsd tx structs allocation-create [source-id] [power] --allocation-type [type]` |
-| Allocation update | `structsd tx structs allocation-update [allocation-id] [power]` |
-| Allocation delete | `structsd tx structs allocation-delete [allocation-id]` |
+| Substation create | `structsd tx structs substation-create -- [owner-id] [allocation-id]` |
+| Substation delete | `structsd tx structs substation-delete -- [substation-id]` |
+| Allocation connect | `structsd tx structs substation-allocation-connect -- [substation-id] [allocation-id]` |
+| Allocation disconnect | `structsd tx structs substation-allocation-disconnect -- [substation-id] [allocation-id]` |
+| Player connect | `structsd tx structs substation-player-connect -- [substation-id] [player-id]` |
+| Player disconnect | `structsd tx structs substation-player-disconnect -- [substation-id] [player-id]` |
+| Player migrate | `structsd tx structs substation-player-migrate -- [src-substation-id] [dest-substation-id] [player-ids]` |
+| Allocation create | `structsd tx structs allocation-create --allocation-type [type] -- [source-id] [power]` |
+| Allocation update | `structsd tx structs allocation-update -- [allocation-id] [power]` |
+| Allocation delete | `structsd tx structs allocation-delete -- [allocation-id]` |
 
 **TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 
@@ -2366,21 +2597,22 @@ If capacity is too low (or you're going offline), there are three paths:
 
 **Most common**: Infuse Alpha Matter into your guild's reactor. Capacity increases automatically.
 
-For step-by-step workflows, see the **`structs-energy`** skill (`.cursor/skills/structs-energy/SKILL.md`).
+For step-by-step workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
 
 ## Error Handling
 
 - **Going offline**: Load exceeds capacity. Deactivate structs immediately (`struct-deactivate`), then increase capacity — see the `structs-energy` skill for options.
 - **Allocation exceeds source**: Source (reactor/provider) has limited capacity. Query source; create smaller allocation or add capacity.
 - **Substation delete failed**: Ensure no players or allocations connected. Disconnect first.
-- **Automated allocation limit**: One automated allocation per source. Use static/dynamic for multiple.
+- **Automated allocation limit**: One automated allocation per source. Attempting a second from the same source will error. Use static/dynamic for multiple.
+- **capacity=0 false positive**: A player connected to a substation pool may show `capacity=0` while structs are online and drawing power. Check `structsLoad > 0` as the real indicator of functionality, not `capacity > 0`.
 
 ## See Also
 
-- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
-- `knowledge/mechanics/power.md` — Formulas, capacity, load, online status
-- `knowledge/mechanics/building.md` — Build power requirements
-- `knowledge/mechanics/resources.md` — Reactor vs generator conversion rates
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — "I need more energy" decision tree and workflows
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Formulas, capacity, load, online status
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build power requirements
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Reactor vs generator conversion rates
 
 </document>
 
@@ -2393,28 +2625,30 @@ description: Handles permissions, address management, and inter-player coordinat
 
 # Structs Diplomacy
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Query permissions** — `structsd query structs permission [id]`, `permission-by-object [object-id]`, `permission-by-player [player-id]`.
-2. **Grant on object** — `structsd tx structs permission-grant-on-object [object-id] [player-id] [permissions] TX_FLAGS`. Permissions are additive.
-3. **Revoke on object** — `permission-revoke-on-object [object-id] [player-id] [permissions]`.
-4. **Set on object** — `permission-set-on-object [object-id] [player-id] [permissions]` — clears existing and applies new set.
-5. **Address-level permissions** — `permission-grant-on-address [address] [permissions]`, `permission-revoke-on-address`, `permission-set-on-address`.
-6. **Address management** — Register: `address-register [player-id] [address] [proof-pubkey] [proof-signature] [permissions] TX_FLAGS`. Revoke: `address-revoke [address]`. Update primary: `player-update-primary-address [player-id] [new-address]`.
+2. **Grant on object** — `structsd tx structs permission-grant-on-object TX_FLAGS -- [object-id] [player-id] [permissions]`. Permissions are additive.
+3. **Revoke on object** — `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]`.
+4. **Set on object** — `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` — clears existing and applies new set.
+5. **Address-level permissions** — `structsd tx structs permission-grant-on-address -- [address] [permissions]`, `permission-revoke-on-address -- [address] [permissions]`, `permission-set-on-address -- [address] [permissions]`.
+6. **Address management** — Register: `structsd tx structs address-register TX_FLAGS -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]`. Revoke: `structsd tx structs address-revoke -- [address]`. Update primary: `structsd tx structs player-update-primary-address -- [player-id] [new-address]`.
 
 ## Commands Reference
 
 | Action | Command |
 |--------|---------|
-| Grant on object | `structsd tx structs permission-grant-on-object [object-id] [player-id] [permissions]` |
-| Revoke on object | `structsd tx structs permission-revoke-on-object [object-id] [player-id] [permissions]` |
-| Set on object | `structsd tx structs permission-set-on-object [object-id] [player-id] [permissions]` |
-| Grant on address | `structsd tx structs permission-grant-on-address [address] [permissions]` |
-| Revoke on address | `structsd tx structs permission-revoke-on-address [address] [permissions]` |
-| Set on address | `structsd tx structs permission-set-on-address [address] [permissions]` |
-| Address register | `structsd tx structs address-register [player-id] [address] [proof-pubkey] [proof-sig] [permissions]` |
-| Address revoke | `structsd tx structs address-revoke [address]` |
-| Update primary address | `structsd tx structs player-update-primary-address [player-id] [new-address]` |
+| Grant on object | `structsd tx structs permission-grant-on-object -- [object-id] [player-id] [permissions]` |
+| Revoke on object | `structsd tx structs permission-revoke-on-object -- [object-id] [player-id] [permissions]` |
+| Set on object | `structsd tx structs permission-set-on-object -- [object-id] [player-id] [permissions]` |
+| Grant on address | `structsd tx structs permission-grant-on-address -- [address] [permissions]` |
+| Revoke on address | `structsd tx structs permission-revoke-on-address -- [address] [permissions]` |
+| Set on address | `structsd tx structs permission-set-on-address -- [address] [permissions]` |
+| Address register | `structsd tx structs address-register -- [player-id] [address] [proof-pubkey] [proof-sig] [permissions]` |
+| Address revoke | `structsd tx structs address-revoke -- [address]` |
+| Update primary address | `structsd tx structs player-update-primary-address -- [player-id] [new-address]` |
 
 **TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 
@@ -2441,8 +2675,8 @@ description: Handles permissions, address management, and inter-player coordinat
 
 ## See Also
 
-- `knowledge/entities/entity-relationships.md` — Object types and IDs
-- `protocols/authentication.md` — Auth for address registration
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — Object types and IDs
+- [protocols/authentication](https://structs.ai/protocols/authentication) — Auth for address registration
 
 </document>
 
@@ -2534,7 +2768,7 @@ structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ua
 
 - `structsd tx structs reactor-defuse [reactor-id]` — starts a cooldown period before ualpha is returned
 - `structsd tx structs reactor-cancel-defusion [reactor-id]` — cancel defusion and re-stake
-- `structsd tx structs reactor-begin-migration [source-reactor-id] [dest-reactor-id]` — move stake to a different reactor
+- `structsd tx structs reactor-begin-migration [player-address] [source-validator-address] [dest-validator-address] [amount]` — move stake to a different reactor (takes addresses, not IDs)
 
 ---
 
@@ -2698,7 +2932,7 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 
 - **Defusion cooldown**: Infused alpha is not immediately liquid. `reactor-defuse` starts a cooldown period. Don't infuse alpha you may need for short-term operations (fleet rebuilds, emergency purchases).
 - **Commission is locked**: The reactor's commission rate at infusion time is permanent for that specific infusion. Check commission before infusing.
-- **Automated allocations**: Limited to one per source. They auto-grow with your capacity -- no manual adjustment needed after creation.
+- **Automated allocations**: Limited to **one per source**. They auto-grow with your capacity -- no manual adjustment needed after creation. If you attempt to create a second automated allocation from the same source, the transaction will error. Delete the existing one first, or use `dynamic` type for additional allocations.
 - **Provider-agreement allocations**: Auto-created by the system when agreements open. Do not create or modify these manually.
 
 ### Provider Management
@@ -2728,7 +2962,7 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 |--------|---------|
 | Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount-ualpha]` (validator = `structsvaloper1...`, NOT reactor ID) |
 | Reactor defuse | `structsd tx structs reactor-defuse [reactor-id]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration [src-reactor] [dest-reactor]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-validator-addr] [dest-validator-addr] [amount]` |
 | Generator infuse | `structsd tx structs struct-generator-infuse [struct-id] [amount-ualpha]` |
 | Open agreement | `structsd tx structs agreement-open [provider-id] [duration] [capacity]` |
 | Close agreement | `structsd tx structs agreement-close [agreement-id]` |
@@ -2754,11 +2988,11 @@ Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 
 ## See Also
 
-- `.cursor/skills/structs-economy/SKILL.md` — Full economic operations (all allocation types, token transfers)
-- `.cursor/skills/structs-power/SKILL.md` — Substations, player connections, power monitoring
-- `knowledge/mechanics/power.md` — Capacity formulas, load calculations, online status
-- `knowledge/economy/energy-market.md` — Provider/agreement mechanics, pricing
-- `knowledge/mechanics/resources.md` — Alpha Matter conversion rates
+- [structs-economy skill](https://structs.ai/skills/structs-economy/SKILL) — Full economic operations (all allocation types, token transfers)
+- [structs-power skill](https://structs.ai/skills/structs-power/SKILL) — Substations, player connections, power monitoring
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity formulas, load calculations, online status
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement mechanics, pricing
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter conversion rates
 
 </document>
 
@@ -3111,7 +3345,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 ### Quick Setup
 
 1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)
-2. Record the endpoint in `TOOLS.md` under Servers
+2. Record the endpoint in [TOOLS.md](https://structs.ai/TOOLS) under Servers
 3. Choose your language (Node.js or Python)
 4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)
 5. Write a listener script for your specific use case
@@ -3122,18 +3356,76 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 1. Subscribe to your planet(s): `structs.planet.{id}` — raid alerts, fleet arrivals
 2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
 3. Subscribe to global: `structs.global` — block tick for game loop timing
-4. Log events to `memory/` for cross-session awareness
+4. Log events to [memory/](https://structs.ai/memory) for cross-session awareness
+
+---
+
+## Automation Patterns (Defence Contractor)
+
+The Structs permission system and GRASS event stream were designed for AI agents to automate game responses. The design docs call this the "Defence Contractor" pattern — an agent that monitors events and acts on behalf of players within scoped permissions.
+
+### Common Automation Triggers
+
+| Event | Action | Permission Needed |
+|-------|--------|-------------------|
+| `struct_ore_mine_complete` on your extractor | Immediately start `struct-ore-refine-compute` | Signer key for the player |
+| `struct_ore_refine_complete` on your refinery | Immediately start next `struct-ore-mine-compute` | Signer key for the player |
+| `planet_raid_start` on your planet | Alert, activate stealth, reposition defenders | Signer key or delegated permission |
+| `struct_attack` targeting your struct | Log attacker, assess threat, counter-attack if able | Signer key or delegated permission |
+| `struct_health` showing HP drop | Prioritize defense, consider fleet retreat | Signer key for fleet-move |
+| `fleet_move` to your planet from unknown fleet | Identify incoming player, assess threat level | Read-only (query) |
+
+### Permission Scoping for Automated Agents
+
+When delegating actions to an automation agent (separate key or service):
+
+1. **Grant minimal permissions**: Use `permission-grant-on-object` to allow specific actions on specific structs, not blanket access.
+2. **Separate keys**: The automation agent should use its own signing key, registered as a secondary address on the player via `address-register`.
+3. **Scope by struct**: Grant mine/refine permissions on extractors and refineries only. Grant defense permissions on fleet structs only.
+4. **Revoke when not needed**: Use `permission-revoke-on-object` to remove automation access during sensitive operations.
+
+### Example: Refine-on-Mine-Complete Loop
+
+```
+Subscribe to: structs.struct.{extractor-id}
+On event: struct_ore_mine_complete
+  → Run: structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [refinery-id]
+
+Subscribe to: structs.struct.{refinery-id}
+On event: struct_ore_refine_complete
+  → Run: structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [extractor-id]
+```
+
+This creates a continuous mine-refine loop that runs unattended. Ore is never left unrefined.
+
+### Example: Defend-on-Raid-Detected
+
+```
+Subscribe to: structs.planet.{planet-id}
+On event: planet_raid_start
+  → Activate stealth on vulnerable structs
+  → Set defenders on high-value structs
+  → Log raid to memory/intel/threats.md
+  → Alert commander if available
+```
+
+### Safe Boundaries
+
+- **Never auto-spend Alpha** without commander approval (infusion, guild-bank operations)
+- **Never auto-move fleets** away from defended planets without threat assessment
+- **Always log actions** to `memory/` for cross-session audit trail
+- **Rate-limit reactions** — one transaction per ~6 seconds per key (sequence number constraint)
 
 ---
 
 ## See Also
 
-- `protocols/streaming.md` — Full GRASS/NATS protocol specification
-- `api/streaming/event-types.md` — Complete event type catalog
-- `api/streaming/event-schemas.md` — JSON schema definitions for event payloads
-- `api/streaming/subscription-patterns.md` — Subscription patterns and examples
-- `awareness/async-operations.md` — Background operations and pipeline strategy
-- `awareness/threat-detection.md` — Using GRASS for early warning
+- [protocols/streaming](https://structs.ai/protocols/streaming) — Full GRASS/NATS protocol specification
+- [api/streaming/event-types](https://structs.ai/api/streaming/event-types) — Complete event type catalog
+- [api/streaming/event-schemas](https://structs.ai/api/streaming/event-schemas) — JSON schema definitions for event payloads
+- [api/streaming/subscription-patterns](https://structs.ai/api/streaming/subscription-patterns) — Subscription patterns and examples
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background operations and pipeline strategy
+- [awareness/threat-detection](https://structs.ai/awareness/threat-detection) — Using GRASS for early warning
 
 </document>
 
@@ -3162,10 +3454,10 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 2. **Assess targets** — For players: structs, power capacity, fleet status (onStation = can build; away = raiding). For planets: ore remaining, defense structs, shield. For guilds: members, Central Bank status.
 3. **Identify vulnerabilities** — Unrefined ore stockpile, power near capacity, undefended planet, fleet away (raiding).
 4. **Persist intelligence** — After gathering, update:
-   - `memory/intel/players/{player-id}.md` — Player dossier (profile, behavior, vulnerabilities, relationship)
-   - `memory/intel/guilds/{guild-id}.md` — Guild profile (members, bank status, strengths, weaknesses)
-   - `memory/intel/territory.md` — Planet ownership, ore, defense levels
-   - `memory/intel/threats.md` — Threat board ranked by severity
+   - [memory/intel/players/{player-id}.md](https://structs.ai/memory/intel) — Player dossier (profile, behavior, vulnerabilities, relationship)
+   - [memory/intel/guilds/{guild-id}.md](https://structs.ai/memory/intel) — Guild profile (members, bank status, strengths, weaknesses)
+   - [memory/intel/territory.md](https://structs.ai/memory/intel) — Planet ownership, ore, defense levels
+   - [memory/intel/threats.md](https://structs.ai/memory/intel) — Threat board ranked by severity
 
 ## Commands Reference
 
@@ -3199,15 +3491,15 @@ description: Gathers intelligence on players, guilds, planets, and the galaxy in
 
 - **Entity not found**: ID may be invalid or entity destroyed. Try `-all` variants to discover current IDs.
 - **Stale data**: Query `block-height`; re-run queries if chain has progressed.
-- **Missing intel files**: Create `memory/intel/players/`, `memory/intel/guilds/` if absent. Follow formats in `memory/intel/README.md`.
+- **Missing intel files**: Create `memory/intel/players/`, `memory/intel/guilds/` if absent. Follow formats in [memory/intel/README](https://structs.ai/memory/intel/README).
 
 ## Intelligence Persistence Loop
 
 1. Run reconnaissance queries for target(s).
 2. Parse results: owner, structs, power, shield, fleet status, guild.
-3. Write/update `memory/intel/players/{player-id}.md`, `memory/intel/guilds/{guild-id}.md` per `memory/intel/README.md` formats.
-4. Update `memory/intel/territory.md` with planet ownership table.
-5. Update `memory/intel/threats.md` with ranked threats and response notes.
+3. Write/update [memory/intel/players/](https://structs.ai/memory/intel), [memory/intel/guilds/](https://structs.ai/memory/intel) per [README](https://structs.ai/memory/intel/README) formats.
+4. Update [memory/intel/territory.md](https://structs.ai/memory/intel) with planet ownership table.
+5. Update [memory/intel/threats.md](https://structs.ai/memory/intel) with ranked threats and response notes.
 6. Include "Last Updated" date in each file.
 
 ## PostgreSQL Queries (Advanced)
@@ -3234,19 +3526,19 @@ JOIN structs.fleet f ON f.id = s.location_id
 WHERE f.location_id = '2-105' AND s.is_destroyed = false AND s.location_type = 'fleet';
 ```
 
-**Important**: The `structs.grid` table is key-value, not columnar. See `knowledge/infrastructure/database-schema.md` for the grid pattern and more query examples.
+**Important**: The `structs.grid` table is key-value, not columnar. See [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) for the grid pattern and more query examples.
 
-For setup: `.cursor/skills/structs-guild-stack/SKILL.md`
+For setup: [structs-guild-stack skill](https://structs.ai/skills/structs-guild-stack/SKILL)
 
 ## See Also
 
-- `memory/intel/README.md` — Dossier formats, territory map, threat board
-- `awareness/threat-detection.md` — Using intel for threats
-- `awareness/opportunity-identification.md` — Spotting opportunities
-- `knowledge/mechanics/combat.md` — Raid mechanics, fleet status
-- `playbooks/meta/reading-opponents.md` — Soul type identification
-- `.cursor/skills/structs-guild-stack/SKILL.md` — Guild Stack setup for PG access
-- `knowledge/infrastructure/database-schema.md` — Full PG schema and query patterns
+- [memory/intel/README](https://structs.ai/memory/intel/README) — Dossier formats, territory map, threat board
+- [awareness/threat-detection](https://structs.ai/awareness/threat-detection) — Using intel for threats
+- [awareness/opportunity-identification](https://structs.ai/awareness/opportunity-identification) — Spotting opportunities
+- [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — Raid mechanics, fleet status
+- [playbooks/meta/reading-opponents](https://structs.ai/playbooks/meta/reading-opponents) — Soul type identification
+- [structs-guild-stack skill](https://structs.ai/skills/structs-guild-stack/SKILL) — Guild Stack setup for PG access
+- [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Full PG schema and query patterns
 
 </document>
 
@@ -3532,10 +3824,10 @@ docker compose down -v
 
 ## See Also
 
-- `knowledge/infrastructure/guild-stack.md` -- Architecture overview and data flow
-- `knowledge/infrastructure/database-schema.md` -- Full table schemas and query patterns
-- `.cursor/skills/structs-reconnaissance/SKILL.md` -- Intelligence gathering (CLI + PG)
-- `.cursor/skills/structs-streaming/SKILL.md` -- GRASS real-time events via NATS
+- [knowledge/infrastructure/guild-stack](https://structs.ai/knowledge/infrastructure/guild-stack) — Architecture overview and data flow
+- [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Full table schemas and query patterns
+- [structs-reconnaissance skill](https://structs.ai/skills/structs-reconnaissance/SKILL) — Intelligence gathering (CLI + PG)
+- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS real-time events via NATS
 
 </document>
 
@@ -4365,6 +4657,14 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 ---
 
+## Critical Concepts
+
+**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only capacity (how much you can produce per block) and load (how much you consume per block). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
+
+**Transaction fees come from energy, not Alpha.** Players never need a separate token balance to submit transactions. TX fees pull from the player's connected power source. This means any player connected to a substation with capacity can transact. Validators earn from all transactions through energy connected to their reactor.
+
+---
+
 ## Core Formulas
 
 ### Capacity
@@ -4453,6 +4753,8 @@ Primary capacity only; used for allocation to reactors/generators.
 | Player | availablePower > 0 |
 | Struct | availablePower >= struct.passiveDraw |
 
+**False positive**: A player connected to a substation pool may show `capacity=0` while structs are still online and drawing power. This happens because the substation handles capacity distribution. Check `structsLoad > 0` as the real indicator that structs are functional — not `capacity > 0`.
+
 ---
 
 ## New Player Power Budget
@@ -4504,7 +4806,13 @@ Example: 3,000,000 ualpha infused into a reactor with 4% commission generates 3,
 
 Allocations can be created from Reactors, Players, and Substations. Allocations can only be **connected to** Substations.
 
-For full energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+For full energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+
+---
+
+## Automation (Defence Contractor Pattern)
+
+The shared energy system and flexible permission model were designed for AI automation. A secondary agent can be granted scoped permissions to manage power on behalf of a player — monitoring substations, adjusting allocations, and reacting to power events via GRASS streaming. See the [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) "Automation Patterns" section for implementation details.
 
 ---
 
@@ -4901,7 +5209,11 @@ All newly explored planets start with identical properties.
 
 ## Overview
 
-Energy is **ephemeral**—produced from Alpha Matter via conversion structs, consumed by structs and operations. It cannot be stored. Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
+Energy is **ephemeral and per-block** — produced from Alpha Matter via conversion structs, consumed by structs and operations. Energy generated in a block but not consumed in that block is permanently lost. There is no "energy balance" to accumulate. Idle capacity is waste, not safety margin. Guild substations should run at full utilization.
+
+Transaction fees also come from energy, not Alpha tokens. Any player connected to a power source can transact without holding a separate fee balance.
+
+Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
 
 ---
 
@@ -4960,7 +5272,7 @@ Reactors charge a **commission** on infusions. When a player infuses ualpha into
 
 This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
 
-For step-by-step energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+For step-by-step energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
 
 ---
 
@@ -8535,11 +8847,14 @@ Before ending a session:
 
 These files define and persist you:
 
-- `SOUL.md` — Immutable core (evolve with notes)
+- `SOUL.md` — Your core identity (evolve with notes, never blank)
 - `IDENTITY.md` — Mutable. Who you are now.
 - `COMMANDER.md` — Mutable. Commander preferences.
 - `TOOLS.md` — Mutable. Environment config.
+- `USER.md` — OpenClaw compatibility layer.
 - `memory/*` — Your history. Your plans. Your intelligence.
+
+**Merge, never overwrite.** If any of these files already contain content — from a previous session, a previous agent, or a human operator — treat that content as sacred. Read it, integrate relevant parts, and add your own. Never replace the file wholesale. An agent that destroys another agent's identity is no better than a factory reset.
 
 ---
 

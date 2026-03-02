@@ -6,7 +6,11 @@
 
 ## Overview
 
-Energy is **ephemeral**—produced from Alpha Matter via conversion structs, consumed by structs and operations. It cannot be stored. Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
+Energy is **ephemeral and per-block** — produced from Alpha Matter via conversion structs, consumed by structs and operations. Energy generated in a block but not consumed in that block is permanently lost. There is no "energy balance" to accumulate. Idle capacity is waste, not safety margin. Guild substations should run at full utilization.
+
+Transaction fees also come from energy, not Alpha tokens. Any player connected to a power source can transact without holding a separate fee balance.
+
+Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
 
 ---
 
@@ -65,7 +69,7 @@ Reactors charge a **commission** on infusions. When a player infuses ualpha into
 
 This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
 
-For step-by-step energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+For step-by-step energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
 
 ---
 

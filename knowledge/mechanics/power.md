@@ -4,6 +4,14 @@
 
 ---
 
+## Critical Concepts
+
+**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only capacity (how much you can produce per block) and load (how much you consume per block). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
+
+**Transaction fees come from energy, not Alpha.** Players never need a separate token balance to submit transactions. TX fees pull from the player's connected power source. This means any player connected to a substation with capacity can transact. Validators earn from all transactions through energy connected to their reactor.
+
+---
+
 ## Core Formulas
 
 ### Capacity
@@ -92,6 +100,8 @@ Primary capacity only; used for allocation to reactors/generators.
 | Player | availablePower > 0 |
 | Struct | availablePower >= struct.passiveDraw |
 
+**False positive**: A player connected to a substation pool may show `capacity=0` while structs are still online and drawing power. This happens because the substation handles capacity distribution. Check `structsLoad > 0` as the real indicator that structs are functional — not `capacity > 0`.
+
 ---
 
 ## New Player Power Budget
@@ -143,7 +153,13 @@ Example: 3,000,000 ualpha infused into a reactor with 4% commission generates 3,
 
 Allocations can be created from Reactors, Players, and Substations. Allocations can only be **connected to** Substations.
 
-For full energy management workflows, see `.cursor/skills/structs-energy/SKILL.md`.
+For full energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+
+---
+
+## Automation (Defence Contractor Pattern)
+
+The shared energy system and flexible permission model were designed for AI automation. A secondary agent can be granted scoped permissions to manage power on behalf of a player — monitoring substations, adjusting allocations, and reacting to power events via GRASS streaming. See the [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) "Automation Patterns" section for implementation details.
 
 ---
 

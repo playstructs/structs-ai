@@ -5,19 +5,21 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 # Structs Exploration
 
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Check eligibility** — `structsd query structs planet [id]`. Exploration requires `currentOre == 0` (planet complete). One planet per player at a time; old planet is released on explore.
-2. **Explore** — `structsd tx structs planet-explore [player-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
-3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+2. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
+3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
 4. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Explore planet | `structsd tx structs planet-explore [player-id]` |
-| Move fleet | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
+| Explore planet | `structsd tx structs planet-explore -- [player-id]` |
+| Move fleet | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | List planets | `structsd query structs planet-all-by-player [player-id]` |
 | Query fleet | `structsd query structs fleet [id]` |

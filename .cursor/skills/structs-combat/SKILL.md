@@ -5,27 +5,29 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 
 # Structs Combat
 
+**Important**: Entity IDs containing dashes (like `5-10`, `9-3`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
+
 ## Procedure
 
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
-2. **Optional stealth** — `structsd tx structs struct-stealth-activate [struct-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y` before attack.
-3. **Attack structs** — `structsd tx structs struct-attack [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move [fleet-id] [destination-location-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Then `structsd tx structs planet-raid-compute [fleet-id] -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
-5. **Defense setup** — `structsd tx structs struct-defense-set [defender-struct-id] [protected-struct-id]` to assign; `struct-defense-clear [defender-struct-id]` to remove.
+2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` before attack.
+3. **Attack structs** — `structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]`. Can target multiple structs.
+4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`. Then `structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
+5. **Defense setup** — `structsd tx structs struct-defense-set --from [key] --gas auto -y -- [defender-struct-id] [protected-struct-id]` to assign; `structsd tx structs struct-defense-clear --from [key] --gas auto -y -- [defender-struct-id]` to remove.
 
 ## Commands Reference
 
 | Action | CLI Command |
 |--------|-------------|
-| Attack | `structsd tx structs struct-attack [operating-struct-id] [target-ids] [weapon-system]` |
-| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute [fleet-id] -D 3` |
-| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete [fleet-id]` |
-| Fleet move | `structsd tx structs fleet-move [fleet-id] [destination-location-id]` |
-| Set defense | `structsd tx structs struct-defense-set [defender-id] [protected-id]` |
-| Clear defense | `structsd tx structs struct-defense-clear [defender-id]` |
-| Stealth on | `structsd tx structs struct-stealth-activate [struct-id]` |
-| Stealth off | `structsd tx structs struct-stealth-deactivate [struct-id]` |
-| Move Command Ship (ambit) | `structsd tx structs struct-move [struct-id] [new-ambit] [new-slot] [new-location]` |
+| Attack | `structsd tx structs struct-attack -- [operating-struct-id] [target-ids] [weapon-system]` |
+| Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute -D 3 -- [fleet-id]` |
+| Raid complete (manual, rarely needed) | `structsd tx structs planet-raid-complete -- [fleet-id]` |
+| Fleet move | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |
+| Set defense | `structsd tx structs struct-defense-set -- [defender-id] [protected-id]` |
+| Clear defense | `structsd tx structs struct-defense-clear -- [defender-id]` |
+| Stealth on | `structsd tx structs struct-stealth-activate -- [struct-id]` |
+| Stealth off | `structsd tx structs struct-stealth-deactivate -- [struct-id]` |
+| Move Command Ship (ambit) | `structsd tx structs struct-move -- [struct-id] [new-ambit] [new-slot] [new-location]` |
 
 Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
 
@@ -127,10 +129,10 @@ Assign defenders to protect high-value structs. Defenders absorb incoming attack
 **Example formation** (4 Starfighters defending Command Ship):
 
 ```
-structsd tx structs struct-defense-set [starfighter-1-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-2-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-3-id] [command-ship-id] --from [key] --gas auto -y
-structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --from [key] --gas auto -y
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-1-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-2-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-3-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-4-id] [command-ship-id]
 ```
 
 **Rules**:
