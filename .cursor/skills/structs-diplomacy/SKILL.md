@@ -53,5 +53,5 @@ description: Handles permissions, address management, and inter-player coordinat
 
 ## See Also
 
-- `knowledge/entities/entity-relationships.md` — Object types and IDs
-- `protocols/authentication.md` — Auth for address registration
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — Object types and IDs
+- [protocols/authentication](https://structs.ai/protocols/authentication) — Auth for address registration

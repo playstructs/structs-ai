@@ -34,7 +34,7 @@ Every action consumes charge. Charge accumulates passively at 1 per block (~6 se
 | Defend change | 1 | ~6 seconds |
 | Primary weapon | 1-20 | Varies by struct |
 
-If you get a "required charge X but player had Y" error, wait for charge to accumulate. See `knowledge/mechanics/building.md` for the complete charge table.
+If you get a "required charge X but player had Y" error, wait for charge to accumulate. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the complete charge table.
 
 ## Expected Build Times
 
@@ -50,7 +50,7 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
 
-**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See `awareness/async-operations.md`.
+**Initiate early, compute later.** The age clock starts at initiation. Batch-initiate all planned builds, then launch compute in background terminals. Do other things while waiting. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
 ## Commands Reference
 
@@ -91,8 +91,8 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 ## See Also
 
-- `knowledge/mechanics/building.md`
-- `knowledge/mechanics/power.md`
-- `knowledge/entities/struct-types.md`
-- `knowledge/entities/entity-relationships.md`
-- `awareness/async-operations.md` — Background PoW, pipeline strategy
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build times, difficulty, charge costs
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — How entities connect
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy

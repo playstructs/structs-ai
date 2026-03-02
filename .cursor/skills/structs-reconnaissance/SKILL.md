@@ -93,16 +93,16 @@ JOIN structs.fleet f ON f.id = s.location_id
 WHERE f.location_id = '2-105' AND s.is_destroyed = false AND s.location_type = 'fleet';
 ```
 
-**Important**: The `structs.grid` table is key-value, not columnar. See `knowledge/infrastructure/database-schema.md` for the grid pattern and more query examples.
+**Important**: The `structs.grid` table is key-value, not columnar. See [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) for the grid pattern and more query examples.
 
 For setup: `.cursor/skills/structs-guild-stack/SKILL.md`
 
 ## See Also
 
-- `memory/intel/README.md` — Dossier formats, territory map, threat board
-- `awareness/threat-detection.md` — Using intel for threats
-- `awareness/opportunity-identification.md` — Spotting opportunities
-- `knowledge/mechanics/combat.md` — Raid mechanics, fleet status
-- `playbooks/meta/reading-opponents.md` — Soul type identification
-- `.cursor/skills/structs-guild-stack/SKILL.md` — Guild Stack setup for PG access
-- `knowledge/infrastructure/database-schema.md` — Full PG schema and query patterns
+- [memory/intel/README](https://structs.ai/memory/intel/README) — Dossier formats, territory map, threat board
+- [awareness/threat-detection](https://structs.ai/awareness/threat-detection) — Using intel for threats
+- [awareness/opportunity-identification](https://structs.ai/awareness/opportunity-identification) — Spotting opportunities
+- [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — Raid mechanics, fleet status
+- [playbooks/meta/reading-opponents](https://structs.ai/playbooks/meta/reading-opponents) — Soul type identification
+- [structs-guild-stack skill](https://structs.ai/skills/structs-guild-stack/SKILL) — Guild Stack setup for PG access
+- [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Full PG schema and query patterns

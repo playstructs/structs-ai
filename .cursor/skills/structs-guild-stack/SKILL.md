@@ -278,7 +278,7 @@ docker compose down -v
 
 ## See Also
 
-- `knowledge/infrastructure/guild-stack.md` -- Architecture overview and data flow
-- `knowledge/infrastructure/database-schema.md` -- Full table schemas and query patterns
-- `.cursor/skills/structs-reconnaissance/SKILL.md` -- Intelligence gathering (CLI + PG)
-- `.cursor/skills/structs-streaming/SKILL.md` -- GRASS real-time events via NATS
+- [knowledge/infrastructure/guild-stack](https://structs.ai/knowledge/infrastructure/guild-stack) — Architecture overview and data flow
+- [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Full table schemas and query patterns
+- [structs-reconnaissance skill](https://structs.ai/skills/structs-reconnaissance/SKILL) — Intelligence gathering (CLI + PG)
+- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS real-time events via NATS

@@ -362,9 +362,9 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ## See Also
 
-- `protocols/streaming.md` — Full GRASS/NATS protocol specification
-- `api/streaming/event-types.md` — Complete event type catalog
-- `api/streaming/event-schemas.md` — JSON schema definitions for event payloads
-- `api/streaming/subscription-patterns.md` — Subscription patterns and examples
-- `awareness/async-operations.md` — Background operations and pipeline strategy
-- `awareness/threat-detection.md` — Using GRASS for early warning
+- [protocols/streaming](https://structs.ai/protocols/streaming) — Full GRASS/NATS protocol specification
+- [api/streaming/event-types](https://structs.ai/api/streaming/event-types) — Complete event type catalog
+- [api/streaming/event-schemas](https://structs.ai/api/streaming/event-schemas) — JSON schema definitions for event payloads
+- [api/streaming/subscription-patterns](https://structs.ai/api/streaming/subscription-patterns) — Subscription patterns and examples
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background operations and pipeline strategy
+- [awareness/threat-detection](https://structs.ai/awareness/threat-detection) — Using GRASS for early warning

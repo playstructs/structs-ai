@@ -40,6 +40,6 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 ## See Also
 
-- `knowledge/mechanics/planet.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/entities/entity-relationships.md`
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — How entities connect

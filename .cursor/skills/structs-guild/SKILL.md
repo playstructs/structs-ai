@@ -52,6 +52,6 @@ description: Manages guild operations in Structs. Covers creation, membership, s
 
 ## See Also
 
-- `knowledge/economy/guild-banking.md` — Central Bank, collateral, token lifecycle
-- `knowledge/economy/energy-market.md` — Provider guild access
-- `knowledge/lore/factions.md` — Guild politics
+- [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank, collateral, token lifecycle
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider guild access
+- [knowledge/lore/factions](https://structs.ai/knowledge/lore/factions) — Guild politics

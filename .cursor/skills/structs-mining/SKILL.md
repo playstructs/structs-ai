@@ -13,7 +13,7 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
-**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See `awareness/async-operations.md`.
+**CRITICAL**: Mining and refining are **multi-hour background operations**. Launch compute in a background terminal and do other things while waiting. Never sit idle watching a hash grind. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
 **CRITICAL**: Ore is stealable. Alpha Matter is not. Refine as soon as mining completes — every hour ore sits unrefined is an hour it can be stolen.
 
@@ -60,7 +60,7 @@ Mining and refining have high base difficulties, meaning they take **hours** for
 
 ## See Also
 
-- `knowledge/mechanics/resources.md`
-- `knowledge/mechanics/planet.md`
-- `knowledge/lore/alpha-matter.md`
-- `awareness/async-operations.md` — Background PoW, job tracking, pipeline strategy
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Ore, Alpha Matter, conversion rates
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet ore, depletion
+- [knowledge/lore/alpha-matter](https://structs.ai/knowledge/lore/alpha-matter) — Alpha Matter lore
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, job tracking, pipeline strategy

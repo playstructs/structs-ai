@@ -153,6 +153,6 @@ structsd tx structs struct-defense-set [starfighter-4-id] [command-ship-id] --fr
 
 ## See Also
 
-- `knowledge/mechanics/combat.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/mechanics/resources.md`
+- [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — Damage, evasion, raids, defense
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Ore vulnerability, Alpha Matter

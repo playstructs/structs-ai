@@ -66,8 +66,8 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 
 ## See Also
 
-- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
-- `knowledge/economy/energy-market.md` — Provider/agreement flow, pricing
-- `knowledge/economy/guild-banking.md` — Central Bank tokens
-- `knowledge/mechanics/resources.md` — Alpha Matter, conversion rates
-- `knowledge/mechanics/power.md` — Capacity, load, online status
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — "I need more energy" decision tree and workflows
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement flow, pricing
+- [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank tokens
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter, conversion rates
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status

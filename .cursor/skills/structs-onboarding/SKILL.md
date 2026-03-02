@@ -240,9 +240,9 @@ The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to t
 
 ## Charge
 
-Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See `knowledge/mechanics/building.md` for the full charge cost table.
+Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the full charge cost table.
 
-**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See `awareness/async-operations.md`.
+**Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
 ## Ambit Encoding
 
@@ -300,9 +300,9 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 
 ## See Also
 
-- `knowledge/mechanics/building.md`
-- `knowledge/mechanics/planet.md`
-- `knowledge/mechanics/fleet.md`
-- `knowledge/entities/struct-types.md`
-- `knowledge/mechanics/power.md`
-- `awareness/async-operations.md` — Background PoW, pipeline strategy
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build times, difficulty, charge costs
+- [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
+- [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
+- [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy

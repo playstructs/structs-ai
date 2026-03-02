@@ -304,8 +304,8 @@ Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
 
 ## See Also
 
-- `.cursor/skills/structs-economy/SKILL.md` — Full economic operations (all allocation types, token transfers)
-- `.cursor/skills/structs-power/SKILL.md` — Substations, player connections, power monitoring
-- `knowledge/mechanics/power.md` — Capacity formulas, load calculations, online status
-- `knowledge/economy/energy-market.md` — Provider/agreement mechanics, pricing
-- `knowledge/mechanics/resources.md` — Alpha Matter conversion rates
+- [structs-economy skill](https://structs.ai/skills/structs-economy/SKILL) — Full economic operations (all allocation types, token transfers)
+- [structs-power skill](https://structs.ai/skills/structs-power/SKILL) — Substations, player connections, power monitoring
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity formulas, load calculations, online status
+- [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider/agreement mechanics, pricing
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha Matter conversion rates

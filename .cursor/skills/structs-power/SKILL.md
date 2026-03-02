@@ -61,7 +61,7 @@ For step-by-step workflows, see the **`structs-energy`** skill (`.cursor/skills/
 
 ## See Also
 
-- `.cursor/skills/structs-energy/SKILL.md` — "I need more energy" decision tree and workflows
-- `knowledge/mechanics/power.md` — Formulas, capacity, load, online status
-- `knowledge/mechanics/building.md` — Build power requirements
-- `knowledge/mechanics/resources.md` — Reactor vs generator conversion rates
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — "I need more energy" decision tree and workflows
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Formulas, capacity, load, online status
+- [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — Build power requirements
+- [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Reactor vs generator conversion rates

@@ -132,5 +132,5 @@ If any command fails, revisit the corresponding step above.
 
 ## See Also
 
-- `TOOLS.md` — Environment configuration (servers, account, after structsd is installed)
-- `.cursor/skills/structs-onboarding/SKILL.md` — Player creation and first builds (requires structsd)
+- [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)
+- [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)
