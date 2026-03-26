@@ -123,6 +123,7 @@ Reference material in `knowledge/`.
 
 ### Mechanics
 - [`combat`](knowledge/mechanics/combat.md) -- Damage, evasion, raids
+- [`permissions`](knowledge/mechanics/permissions.md) -- 24-bit permission flags, guild rank permissions, handler reference
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work

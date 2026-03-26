@@ -32,7 +32,7 @@ Allocation: sourceId (Provider/Reactor) → destinationId (Player/Struct)
 
 - **Provider**: Player creates via `provider-create`. Provider exposes capacity from substation.
 - **Agreement**: Consumer opens via `agreement-open`. Links provider to consumer; specifies capacity, blocks, rate.
-- **Allocation**: On-chain record of energy flow. Source = Provider or Reactor; destination = Player or Struct.
+- **Allocation**: On-chain record of energy flow. Source = Provider or Reactor; destination = Player or Struct. The `controller` is a PlayerId (not an address).
 
 ---
 

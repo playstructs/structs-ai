@@ -53,7 +53,8 @@ Returns a single player by their entity ID.
     "creator": "structs1...",
     "primaryAddress": "structs1...",
     "planetId": "2-1",
-    "fleetId": "11-11"
+    "fleetId": "11-11",
+    "guildRank": "101"
   },
   "gridAttributes": {},
   "playerInventory": {},

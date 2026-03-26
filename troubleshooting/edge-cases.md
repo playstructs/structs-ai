@@ -3,7 +3,7 @@
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
 **Status**: Stable  
-**Last Updated**: January 1, 2026
+**Last Updated**: March 26, 2026
 
 ## Overview
 
@@ -75,15 +75,17 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Combining permissions may produce unexpected values
 
 **Details**:
-- Permission values are bit-based flags (0-127 range)
+- Permission values are 24-bit flags (0-16777215 range, PermAll = 16777215)
 - Combining permissions uses bitwise OR: `value1 | value2`
 - Values outside valid range may cause issues
-- Hash permission (64) combined with others: `63 | 64 = 127`
+- Hash permissions (bits 20-23) are now four separate bits: PermHashBuild (1048576), PermHashMine (2097152), PermHashRefine (4194304), PermHashRaid (8388608), composite PermHashAll = 15728640
+- Permission checks use HasAll semantics: `(value & required) == required` — all required bits must be present
 
 **Implications**:
-- Always verify permission values are within valid range (0-127)
+- Always verify permission values are within valid range (0-16777215)
 - Test permission combinations before applying
-- Use bitwise operations correctly: OR to combine, AND to check
+- Use HasAll checks: `(value & required) == required`, not `(value & required) != 0`
+- Grant only the specific hash bits needed for the operation
 
 **Reference**: `schemas/game-state.md#/definitions/Permission`
 
@@ -94,14 +96,14 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Permission hash exists in database but not in API response
 
 **Details**:
-- `permission_hash` level added to database (2025-12-18)
-- Maps to Hash permission bit (64) in API layer
-- Database view may show `permission_hash = true` but API shows `value = 63`
+- Hash permission levels exist in database as granular columns (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
+- Maps to hash permission bits 20-23 in API layer (PermHashBuild=1048576, PermHashMine=2097152, PermHashRefine=4194304, PermHashRaid=8388608)
+- Database view may show hash columns as true but API value may not include all hash bits
 
 **Implications**:
 - Check both database and API for permission state
-- Account for permission_hash level in database queries
-- Verify API permission value includes bit 64 for Hash permission
+- Account for granular hash permission columns in database queries
+- Verify API permission value includes the required hash bits (e.g., `(value & 15728640) == 15728640` for all hash permissions)
 
 **Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
 
@@ -212,18 +214,18 @@ This document documents edge cases and gotchas that AI agents should be aware of
 
 ### Edge Case 11: Permission Hash in Database vs API
 
-**Issue**: Database permission_hash may not match API permission value
+**Issue**: Database hash permission columns may not match API permission value
 
 **Details**:
-- Database has `permission_hash` level (added 2025-12-18)
-- API uses permission value with bit 64 for Hash permission
-- Database view may show `permission_hash = true` but API shows different value
+- Database has granular hash permission columns (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
+- API uses permission value with bits 20-23 for hash permissions (PermHashAll = 15728640)
+- Database view may show individual hash columns as true but API value may differ
 - Must check both database and API for complete picture
 
 **Implications**:
 - Check both database and API for permission state
-- Account for permission_hash level in database queries
-- Verify API permission value includes bit 64
+- Account for granular hash columns in database queries
+- Verify API permission value includes required hash bits: `(value & 15728640) == 15728640`
 - Don't rely on single source for permission information
 
 **Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
@@ -232,19 +234,23 @@ This document documents edge cases and gotchas that AI agents should be aware of
 
 ### Edge Case 12: Signer TX Permission Levels
 
-**Issue**: Transaction signing requires Hash permission but permission not set
+**Issue**: Transaction signing requires specific hash permission but permission not set
 
 **Details**:
-- Signer_tx table updated to support Hash permission (2025-12-18)
-- Transaction signing may require Hash permission bit (64)
-- Permission not set causes signing to fail
-- Must grant Hash permission before signing
+- Signer_tx table supports granular hash permissions (bits 20-23)
+- Transaction signing requires the specific hash permission for the operation type:
+  - Build operations: PermHashBuild (1048576)
+  - Mine operations: PermHashMine (2097152)
+  - Refine operations: PermHashRefine (4194304)
+  - Raid operations: PermHashRaid (8388608)
+- Missing the specific hash bit causes signing to fail
+- Must grant the correct hash permission before signing
 
 **Implications**:
-- Verify Hash permission is granted before transaction signing
+- Verify the specific hash permission is granted before transaction signing
 - Check signer_tx permission levels
-- Grant Hash permission if signing fails
-- Account for permission_hash level in database
+- Grant the required hash permission bit (or PermHashAll = 15728640 for all operations) if signing fails
+- Account for granular hash permission columns in database
 
 **Reference**: `schemas/database-schema.md#/tables/signer_tx`, `schemas/entities.md#/definitions/Permission`
 

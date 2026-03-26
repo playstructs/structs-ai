@@ -836,7 +836,13 @@
   </url>
   <url>
     <loc>https://structs.ai/knowledge/mechanics/combat</loc>
-    <lastmod>2026-02-27</lastmod>
+    <lastmod>2026-03-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://structs.ai/knowledge/mechanics/permissions</loc>
+    <lastmod>2026-03-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

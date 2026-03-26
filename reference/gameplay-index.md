@@ -101,7 +101,7 @@
 |----------|-------------|--------|
 | Evasion | Structs can evade attacks | [gameplay.md](../schemas/gameplay.md#evasion) |
 | Blocking | Defenders can block attacks | [gameplay.md](../schemas/gameplay.md#blocking) |
-| Counter Attack | Structs counter-attack automatically | [gameplay.md](../schemas/gameplay.md#counterattack) |
+| Counter Attack | Each struct counter-attacks at most once per struct-attack invocation. Defender counter fires before block (even on evaded shots). Target counter fires after all shots resolve. | [gameplay.md](../schemas/gameplay.md#counterattack) |
 
 ### Building
 

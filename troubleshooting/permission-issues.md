@@ -1,43 +1,60 @@
-# Hash Permission Troubleshooting
+# Permission Troubleshooting
 
-**Version**: 1.0.0  
+**Version**: 2.0.0  
 **Category**: Troubleshooting  
 **Status**: Stable  
-**Last Updated**: January 1, 2026
+**Last Updated**: March 26, 2026
 
 ## Overview
 
-This guide helps troubleshoot issues with Hash permissions and permission bit manipulation. Permission values are bit-based flags that can be combined using bitwise OR.
+This guide helps troubleshoot issues with permissions and permission bit manipulation. Permission values are 24-bit flags (bits 0-23) combined using bitwise OR. The maximum value (PermAll) is `16777215`.
+
+The permission system uses **HasAll** semantics: all required bits must be present in the permission value. A check like `(value & required) == required` must match every bit — a single matching bit is not sufficient.
+
+### Hash Permission Split
+
+The old single Hash permission has been replaced by four granular hash permissions:
+
+| Permission | Bit | Value | Description |
+|------------|-----|-------|-------------|
+| PermHashBuild | 20 | 1048576 | Hash permission for building |
+| PermHashMine | 21 | 2097152 | Hash permission for mining |
+| PermHashRefine | 22 | 4194304 | Hash permission for refining |
+| PermHashRaid | 23 | 8388608 | Hash permission for raiding |
+| **PermHashAll** | 20-23 | **15728640** | All hash permissions combined |
 
 ---
 
 ## Common Issues
 
-### Issue 1: Permission Check Fails - Hash Permission Not Set
+### Issue 1: Permission Check Fails — Hash Permission Not Set
 
 **Symptom**: Permission check fails even though permission should be granted
 
-**Cause**: Hash permission bit (64) not included in permission value
+**Cause**: Required hash permission bits not included in permission value. With the split hash permissions, you may have some hash bits but not the specific one required for the operation.
 
 **Diagnosis**:
 1. Query permission: `GET /structs/permission/{permissionId}`
 2. Check `permission.value` (numeric string)
-3. Convert to integer and check bit 64: `(value & 64) == 64`
-4. If false, Hash permission not set
+3. Identify which hash bit is needed (e.g., PermHashMine = 2097152 for mining)
+4. Check: `(value & 2097152) == 2097152`
+5. If false, that specific hash permission is not set
 
 **Solution**:
-1. Grant Hash permission: Set permission value with bit 64
-2. Combine with existing permissions: `newValue = oldValue | 64`
-3. Verify permission: `(newValue & 64) == 64`
+1. Grant the specific hash permission bit needed for the operation
+2. Or grant PermHashAll (15728640) for all hash operations
+3. Combine with existing permissions: `newValue = oldValue | 15728640`
+4. Verify: `(newValue & 15728640) == 15728640`
 
 **Example**:
 ```json
 {
   "permissionId": "0-1@1-11",
-  "oldValue": "63",
-  "newValue": "127",
-  "calculation": "63 | 64 = 127",
-  "hashPermission": "(127 & 64) == 64 ✓"
+  "oldValue": "1048575",
+  "newValue": "16777215",
+  "calculation": "1048575 | 15728640 = 16777215",
+  "hashAllCheck": "(16777215 & 15728640) == 15728640 ✓",
+  "hashMineCheck": "(16777215 & 2097152) == 2097152 ✓"
 }
 ```
 
@@ -45,26 +62,28 @@ This guide helps troubleshoot issues with Hash permissions and permission bit ma
 
 ---
 
-### Issue 2: Permission Value Incorrect - Bit Manipulation Error
+### Issue 2: Permission Value Incorrect — Bit Manipulation Error
 
 **Symptom**: Permission value doesn't match expected combination
 
-**Cause**: Incorrect bitwise OR operation
+**Cause**: Incorrect bitwise OR operation or using old 8-bit values
 
 **Diagnosis**:
 1. Query permission: `GET /structs/permission/{permissionId}`
 2. Check `permission.value`
 3. Verify bit combination logic
-4. Common values: 127 (all permissions), 64 (Hash only), 63 (all except Hash)
+4. Common values:
+   - `16777215` — PermAll (all 24-bit permissions)
+   - `15728640` — PermHashAll only (all four hash bits)
+   - `1048576` — PermHashBuild only
+   - `2097152` — PermHashMine only
+   - `4194304` — PermHashRefine only
+   - `8388608` — PermHashRaid only
 
 **Solution**:
 1. Use bitwise OR to combine permissions: `value = permission1 | permission2`
-2. Use bitwise AND to check permissions: `(value & permission) == permission`
-3. Common combinations:
-   - All permissions: `127` (bits 0-6)
-   - Hash only: `64` (bit 6)
-   - All except Hash: `63` (bits 0-5)
-   - Hash + others: `63 | 64 = 127`
+2. Use HasAll to check permissions: `(value & required) == required`
+3. Remember: there is no single "non-hash" composite value — use specific flags for the bits you need
 
 **Reference**: `schemas/game-state.md#/definitions/Permission`, `schemas/entities.md#/definitions/Permission`
 
@@ -92,78 +111,111 @@ This guide helps troubleshoot issues with Hash permissions and permission bit ma
 
 ---
 
-### Issue 4: Database Permission Hash Not Found
+### Issue 4: HasAll vs HasOneOf Semantics Mismatch
 
-**Symptom**: Database query for `permission_hash` returns no results
+**Symptom**: Permission check passes when it should fail, or fails when it should pass
 
-**Cause**: Permission hash level not set or query incorrect
+**Cause**: Using old HasOneOf check (`(value & required) != 0`) instead of new HasAll check (`(value & required) == required`)
+
+**Diagnosis**:
+1. Identify the check pattern in your code
+2. Old pattern (wrong): `(value & required) != 0` — passes if *any* required bit is set
+3. New pattern (correct): `(value & required) == required` — passes only if *all* required bits are set
+
+**Example**:
+```json
+{
+  "value": 1048576,
+  "required": 15728640,
+  "hasOneOf_WRONG": "(1048576 & 15728640) != 0 → true (only PermHashBuild set)",
+  "hasAll_CORRECT": "(1048576 & 15728640) == 15728640 → false (missing Mine, Refine, Raid)"
+}
+```
+
+**Solution**:
+1. Replace all `!= 0` permission checks with `== required` checks
+2. If you only need to check a single bit, both patterns are equivalent
+3. For composite checks (e.g., PermHashAll), HasAll ensures all bits are present
+
+**Reference**: `schemas/game-state.md#/definitions/Permission`
+
+---
+
+### Issue 5: Database Permission Hash Not Found
+
+**Symptom**: Database query for hash permission returns no results
+
+**Cause**: Hash permission levels not set or query references old schema
 
 **Diagnosis**:
 1. Check database schema: `structs.permission` table
-2. Verify `permission_hash` level exists (added 2025-12-18)
+2. Verify hash permission columns exist (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
 3. Check permission view: `view.permission`
-4. Verify Hash permission bit (64) is set
+4. Verify the relevant hash permission bits are set in the API value
 
 **Solution**:
-1. Verify permission_hash level exists in database
-2. Check permission value includes bit 64
-3. Query permission view: `SELECT * FROM view.permission WHERE permission_hash = true`
-4. Verify API permission has Hash permission bit set
+1. Verify hash permission columns exist in database
+2. Check permission value includes the relevant hash bits (e.g., `& 2097152` for mine)
+3. Query permission view for hash permissions
+4. Verify API permission value matches database state
 
 **Reference**: `schemas/database-schema.md`, `api/queries/permission.md`
 
 ---
 
-### Issue 5: Transaction Signing Fails - Hash Permission Required
+### Issue 6: Transaction Signing Fails — Hash Permission Required
 
 **Symptom**: Transaction signing fails with permission error
 
-**Cause**: Hash permission not granted for transaction signing
+**Cause**: Specific hash permission not granted for the operation type
 
 **Diagnosis**:
-1. Check signer_tx table: `structs.signer_tx`
-2. Verify permission levels support Hash permission (updated 2025-12-18)
-3. Check player address permissions
-4. Verify Hash permission bit (64) is set
+1. Identify which operation is being attempted (build, mine, refine, raid)
+2. Check if the corresponding hash permission bit is set:
+   - Build operations: `(value & 1048576) == 1048576`
+   - Mine operations: `(value & 2097152) == 2097152`
+   - Refine operations: `(value & 4194304) == 4194304`
+   - Raid operations: `(value & 8388608) == 8388608`
+3. Check signer_tx permission levels
 
 **Solution**:
-1. Grant Hash permission to player address
-2. Verify permission value includes bit 64
-3. Check signer_tx permission levels
+1. Grant the specific hash permission for the operation type
+2. Or grant PermHashAll (15728640) for all hash operations
+3. Verify permission value includes the correct hash bit
 4. Retry transaction signing
 
 **Reference**: `schemas/database-schema.md#/tables/signer_tx`, `schemas/entities.md#/definitions/Permission`
 
 ---
 
-### Issue 6: Permission Combination Produces Unexpected Value
+### Issue 7: Permission Combination Produces Unexpected Value
 
 **Symptom**: Combining permissions produces wrong value
 
-**Cause**: Incorrect bitwise operation or value overflow
+**Cause**: Incorrect bitwise operation, using old values, or value overflow
 
 **Diagnosis**:
 1. Check permission values being combined
 2. Verify bitwise OR operation: `value1 | value2`
-3. Check for value overflow (should be within valid range)
-4. Verify permission bits are valid (0-6 for standard permissions, 6 for Hash)
+3. Verify permission bits are valid (0-23 for standard permissions)
+4. Maximum valid value: 16777215 (PermAll)
 
 **Solution**:
 1. Use correct bitwise operations:
    - Combine: `value = value1 | value2`
-   - Check: `(value & bit) == bit`
-   - Remove: `value = value & ~bit`
-2. Verify values are within valid range
+   - Check (HasAll): `(value & required) == required`
+   - Remove: `value = value & ~bits`
+2. Verify values are within valid range (0 to 16777215)
 3. Test bit combinations before applying
 
 **Example**:
 ```json
 {
-  "permission1": 63,
-  "permission2": 64,
-  "combined": "63 | 64 = 127",
-  "checkHash": "(127 & 64) == 64 ✓",
-  "removeHash": "127 & ~64 = 63"
+  "permission1": 1048575,
+  "permission2": 15728640,
+  "combined": "1048575 | 15728640 = 16777215",
+  "checkHashAll": "(16777215 & 15728640) == 15728640 ✓",
+  "removeHashAll": "16777215 & ~15728640 = 1048575"
 }
 ```
 
@@ -171,49 +223,91 @@ This guide helps troubleshoot issues with Hash permissions and permission bit ma
 
 ---
 
+### Issue 8: Guild Rank Permission Not Applied
+
+**Symptom**: Player cannot perform action despite having object-level permission
+
+**Cause**: Guild rank permissions override or supplement object-level permissions. The permission check flow is: address → ownership → object permission → guild rank permission. A missing guild rank permission can block an action even if the object permission is set.
+
+**Diagnosis**:
+1. Verify the player's guild membership
+2. Query guild rank permissions for the player
+3. Check that guild rank includes the required permission bits
+4. Remember HasAll semantics — all required bits must be present in the guild rank
+
+**Solution**:
+1. Use `permission-guild-rank-set` to grant the required permissions at the guild rank level
+2. Verify the guild rank permission value includes all required bits
+3. If the player's guild rank was recently changed, re-query to confirm the new rank's permissions
+
+**CLI Example**:
+```bash
+# Set guild rank permissions (grant PermAll to rank)
+structsd tx structs permission-guild-rank-set \
+  --from keyname --gas auto -y -- 0-1 1 16777215
+
+# Revoke guild rank permissions
+structsd tx structs permission-guild-rank-revoke \
+  --from keyname --gas auto -y -- 0-1 1
+```
+
+**Reference**: `schemas/actions.md`, `api/queries/permission.md`
+
+---
+
 ## Permission Bit Reference
 
-### Standard Permission Bits
+### 24-Bit Permission Flags
 
-- **Bit 0**: Permission type 0
-- **Bit 1**: Permission type 1
-- **Bit 2**: Permission type 2
-- **Bit 3**: Permission type 3
-- **Bit 4**: Permission type 4
-- **Bit 5**: Permission type 5
-- **Bit 6 (Hash)**: Hash permission
+| Bits | Name | Value | Description |
+|------|------|-------|-------------|
+| 0-19 | Standard permissions | 1 - 524288 | Various gameplay permissions |
+| 20 | PermHashBuild | 1048576 | Hash permission for building |
+| 21 | PermHashMine | 2097152 | Hash permission for mining |
+| 22 | PermHashRefine | 4194304 | Hash permission for refining |
+| 23 | PermHashRaid | 8388608 | Hash permission for raiding |
 
 ### Common Permission Values
 
 - **0**: No permissions
-- **63**: All standard permissions (bits 0-5)
-- **64**: Hash permission only (bit 6)
-- **127**: All permissions including Hash (bits 0-6)
+- **1048576**: PermHashBuild only
+- **2097152**: PermHashMine only
+- **4194304**: PermHashRefine only
+- **8388608**: PermHashRaid only
+- **15728640**: PermHashAll (all four hash bits, bits 20-23)
+- **16777215**: PermAll (all permissions, bits 0-23)
 
 ---
 
 ## Verification Steps
 
-### Check Hash Permission
+### Check Hash Permission (All Hash Bits)
 
 1. Query permission: `GET /structs/permission/{permissionId}`
 2. Convert value to integer: `value = parseInt(permission.value)`
-3. Check bit 64: `(value & 64) == 64`
-4. If true, Hash permission is set
+3. Check PermHashAll: `(value & 15728640) == 15728640`
+4. If true, all hash permissions are set
 
-### Grant Hash Permission
+### Check Specific Hash Permission
+
+1. Query permission: `GET /structs/permission/{permissionId}`
+2. Convert value to integer: `value = parseInt(permission.value)`
+3. Check specific bit (e.g., PermHashMine): `(value & 2097152) == 2097152`
+4. If true, that specific hash permission is set
+
+### Grant Hash Permissions
 
 1. Get current permission value
-2. Combine with Hash bit: `newValue = currentValue | 64`
+2. Combine with hash bits: `newValue = currentValue | 15728640`
 3. Update permission with new value
-4. Verify: `(newValue & 64) == 64`
+4. Verify: `(newValue & 15728640) == 15728640`
 
-### Remove Hash Permission
+### Remove Hash Permissions
 
 1. Get current permission value
-2. Remove Hash bit: `newValue = currentValue & ~64`
+2. Remove hash bits: `newValue = currentValue & ~15728640`
 3. Update permission with new value
-4. Verify: `(newValue & 64) == 0`
+4. Verify: `(newValue & 15728640) == 0`
 
 ---
 
@@ -230,23 +324,31 @@ This guide helps troubleshoot issues with Hash permissions and permission bit ma
 
 ## Best Practices
 
-### 1. Use Bitwise Operations
+### 1. Use HasAll Semantics
 
-Always use bitwise OR to combine permissions, bitwise AND to check permissions.
+Always check permissions with `(value & required) == required`. Do not use `!= 0` which only verifies any single bit.
 
-### 2. Verify Permission Values
+### 2. Grant Specific Hash Bits
+
+Grant only the hash permissions needed. Use PermHashBuild for builders, PermHashMine for miners, etc. Use PermHashAll only when all hash operations are needed.
+
+### 3. Verify Permission Values
 
 After setting permissions, always verify the value matches expected combination.
 
-### 3. Check Object and Player IDs
+### 4. Check the Full Permission Flow
+
+Permissions are resolved in order: address → ownership → object → guild rank. A failure at any step blocks the action. Check all levels when troubleshooting.
+
+### 5. Check Object and Player IDs
 
 Verify permission applies to correct object and player.
 
-### 4. Handle Permission Hash in Database
+### 6. Handle Permission Hash in Database
 
-When querying database, account for permission_hash level.
+When querying database, account for granular hash permission columns.
 
-### 5. Test Permission Combinations
+### 7. Test Permission Combinations
 
 Test permission combinations before applying to production.
 
@@ -262,5 +364,4 @@ Test permission combinations before applying to production.
 
 ---
 
-*Last Updated: January 1, 2026*
-
+*Last Updated: March 26, 2026*

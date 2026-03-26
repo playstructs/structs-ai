@@ -68,6 +68,33 @@ Extends [BaseEvent](#base-event). Category: `guild_membership`
 
 **Data Fields**: Guild membership change data object.
 
+### EventGuildRankPermission
+
+Extends [BaseEvent](#base-event). Category: `guild_rank_permission`
+
+Fires when guild rank permissions are set or revoked on an object.
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| guildRankPermissionRecord | object | Guild rank permission record |
+| guildRankPermissionRecord.objectId | string | Object the permission applies to |
+| guildRankPermissionRecord.guildId | string | Guild ID |
+| guildRankPermissionRecord.permissions | integer | Permission bitmask (single bit, decomposed) |
+| guildRankPermissionRecord.rank | integer | Worst-allowed rank for this permission bit (0 = revoked) |
+
+```json
+{
+  "guildRankPermissionRecord": {
+    "objectId": "6-1",
+    "guildId": "4-1",
+    "permissions": 4,
+    "rank": 3
+  }
+}
+```
+
 ### PlanetRaidStatusEvent
 
 Extends [BaseEvent](#base-event). Category: `raid_status`
@@ -122,10 +149,18 @@ Extends [BaseEvent](#base-event). Category: `block`
 | Category Group | Event Types |
 |----------------|-------------|
 | consensus | `block` |
-| guild | `guild_consensus`, `guild_meta`, `guild_membership` |
+| guild | `guild_consensus`, `guild_meta`, `guild_membership`, `guild_rank_permission` |
 | planet | `raid_status`, `fleet_arrive`, `fleet_advance`, `fleet_depart`, `planet_activity` |
 | struct | `struct_attack`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
 | player | `player_consensus`, `player_meta` |
+
+---
+
+---
+
+## Breaking Changes
+
+- **`targetPlayerId` moved**: The `targetPlayerId` field has moved from `EventAttackDetail` to `EventAttackShotDetail`. Clients parsing attack events must update to read this field from the shot detail level instead of the top-level attack detail.
 
 ---
 

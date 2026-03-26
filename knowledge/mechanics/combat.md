@@ -147,19 +147,22 @@ If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding 
 ### Blocking
 
 ```
-if defender exists and defender.operatingAmbit == target.operatingAmbit then
+if !evaded and defender exists and defender.operatingAmbit == target.operatingAmbit then
   if weapon.blockable and defender.ReadinessCheck() then
     canBlock = IsSuccessful(defender.blockingSuccessRate)
 ```
 
 **Requirements** (all must be true):
-1. Weapon must be blockable (`GetWeaponBlockable` returns true)
-2. Defender must pass ReadinessCheck — struct online AND owner online
-3. Defender must be in the **same ambit as the target being defended** (not the attacker)
+1. The shot was NOT evaded -- block does not fire on evaded shots
+2. Weapon must be blockable (`GetWeaponBlockable` returns true)
+3. Defender must pass ReadinessCheck -- struct online AND owner online
+4. Defender must be in the **same ambit as the target being defended** (not the attacker)
 
-A struct cannot block for a friendly in a different ambit. Blocking is strictly same-ambit defense.
+A struct cannot block for a friendly in a different ambit. Blocking is strictly same-ambit defense. Unlike counter-attacks, block is attempted on every shot (not limited to once per attack).
 
 ### Counter-Attack
+
+Each struct can counter-attack **at most once per `struct-attack` invocation**. Counter-spent state is tracked per struct per attack command (not per target, not per shot). For a 3-shot Attack Run: the defender counters on the first shot only, but can attempt to block all 3 shots. The target counters once after all shots resolve.
 
 Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct.
 
@@ -177,7 +180,11 @@ Counter-attacks are **ambit-independent from the defended target**. A space-base
    - If defender on fleet on-station: attacker must be reachable at the planet
    - If defender on fleet away: attacker must be on same planet or adjacent in location list
 
-Defensive counter-attack is **in addition to** the normal counter-attack most fleet structs have. Most structs will deal at least 1 damage in return to an attacker if their weapons can reach the attacker's ambit.
+**Two types of counter-attack**:
+- **Defender counter-attack**: Fires before the block attempt, once per `struct-attack` invocation. Fires even on evaded shots.
+- **Target counter-attack**: Fires after all shots resolve damage against the target, once per `struct-attack` invocation. Destroyed targets cannot counter.
+
+Both the defender and the target can counter-attack -- an attacker may take damage from two sources per target.
 
 ### Planetary Defense Cannon
 
@@ -186,29 +193,41 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 ```
 
 - **Limit**: 1 Planetary Defense Cannon per player
-- Special damage when planet is attacked
+- PDC fires automatically **after all targets are resolved**, not as a counter-attack
+- PDC does NOT counter-attack -- it only auto-fires at the end of the attack sequence
+- Multiple players' PDCs on the same planet stack correctly
 
 ---
 
 ## Attack Resolution Sequence
 
-When `struct-attack` is executed, the following steps occur in order:
+When `struct-attack` is executed, the following steps occur in order per target:
 
-1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit.
+1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit. Verify target struct exists.
 2. **Stealth break** -- If the attacker has stealth active, it is instantly deactivated (attacking reveals position).
-3. **Per-shot loop** -- For each shot in the weapon:
-   - Evasion check (guided vs defense type)
-   - Block attempt (if a defender is assigned in the same ambit as the target)
-   - Damage applied to target (or defender if block succeeded)
-   - Defender counter-attack (if defender exists and can reach attacker's ambit)
-   - Target counter-attack (if target can reach attacker's ambit)
-   - Early termination if attacker is destroyed mid-sequence
-4. **Recoil damage** -- Applied to attacker only if it survived all shots
-5. **PDC auto-fire** -- If the target was a planetary struct, Planetary Defense Cannons fire automatically against the attacker
+3. **Evasion check** (per-target, not per-shot) -- Evaluate weapon control (guided/unguided) vs target defense type. If evaded, ALL shots against this target miss but counters still fire.
+4. **Per-shot loop** (inside `ResolveDefenders`) -- For each projectile:
+   - **Defender counter-attack** (once per `struct-attack` invocation) -- fires regardless of evasion. Only on the first shot where the defender hasn't already countered.
+   - **Block attempt** (only if NOT evaded) -- weapon must be blockable, defender must be in the same ambit as the target.
+   - **Damage** (only if NOT evaded) -- per-shot success rate applied, damage reduction from armor. Minimum damage after reduction is 1.
+5. **Target counter-attack** (once per `struct-attack` invocation) -- fires after all shots resolve. Destroyed targets cannot counter.
+6. **Early termination** -- If the attacker is destroyed mid-sequence, remaining targets do not process.
+
+After **all targets** are resolved:
+
+7. **Recoil damage** -- Applied to attacker if it survived all shots
+8. **Planetary Defense Cannon auto-fire** -- If any target was a planetary struct, PDCs fire against the attacker
+
+### Per-Projectile Events
+
+Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Run, the attack event contains 3 separate shot detail entries with per-projectile hit/miss breakdowns. `targetPlayerId` is on `EventAttackShotDetail` (not `EventAttackDetail`).
 
 **Key implications**:
-- Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per shot
-- If the attacker is destroyed during the shot loop, remaining shots do not fire
+- Evasion is per-target (entire volley evaded), while shot accuracy is per-projectile
+- Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per target
+- Each struct counters at most once per `struct-attack` invocation, regardless of how many shots or targets
+- Counter-attacks fire even on evaded shots (defender counter) -- only block is suppressed by evasion
+- If the attacker is destroyed during the target loop, remaining targets do not process
 - PDC fires against any attacker of planetary structs, not only during raids
 
 ---
@@ -240,15 +259,18 @@ When `struct-attack` is executed, the following steps occur in order:
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen — not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen -- not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
-- **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.
+- **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Block does NOT fire on evaded shots. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.
 - **Minimum damage**: After damage reduction, minimum damage is 1 -- attacks always deal at least 1 damage
 - **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
-- **Multi-commit prevention**: Each struct can only commit once per attack action (prevents double-commit on same target)
+- **Counter-attack limit**: Each struct can counter-attack at most once per `struct-attack` invocation. For multi-shot weapons (Attack Run with 3 projectiles), the defender counters on the first shot only but can attempt to block all 3 shots. The target counters once after all shots.
+- **Counter on evaded shots**: Defender counter-attacks fire even when the shot is evaded. Only the block attempt is suppressed by evasion.
+- **EvadedCause**: Only set on successful evasion. Not populated on failed evasion attempts.
 - **Target validation**: Target struct existence is validated before attack proceeds
 - **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
+- **PDC stacking**: Multiple players' Planetary Defense Cannons on the same planet stack correctly.
 
 ---
 

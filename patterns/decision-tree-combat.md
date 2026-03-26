@@ -46,6 +46,25 @@ flowchart TD
     outcome -->|No| recover["Rebuild forces,\nstrengthen defenses"]
 ```
 
+### Combat Resolution Order (Per struct-attack)
+
+```mermaid
+flowchart TD
+    shot["Each projectile"] --> evasion{"Evasion check"}
+    evasion -->|Evaded| defCounter["Defender counter-attack\n(once per struct-attack,\nbefore block, even on evaded)"]
+    evasion -->|Not evaded| defCounter2["Defender counter-attack\n(once per struct-attack,\nbefore block)"]
+    defCounter --> nextShot["Next projectile\n(no block on evaded)"]
+    defCounter2 --> block{"Block check"}
+    block -->|Blocked| nextShot2["Next projectile"]
+    block -->|Not blocked| damage["Apply damage"]
+    damage --> nextShot3["Next projectile"]
+    nextShot --> allDone{"All shots done?"}
+    nextShot2 --> allDone
+    nextShot3 --> allDone
+    allDone -->|No| shot
+    allDone -->|Yes| targetCounter["Target counter-attack\n(once per struct-attack,\nafter all shots)"]
+```
+
 ## Condition Table
 
 | Condition | True Path | False Path | Notes |
@@ -86,6 +105,13 @@ Defense operates differently from offensive actions:
 1. **Automatic Fire** -- Defensive structures engage attackers automatically without player input.
 2. **Monitor** -- The player monitors the battle as it resolves.
 3. **Respond** -- After resolution, the player either secures their position (on victory) or rebuilds forces and strengthens defenses (on defeat).
+
+**Combat Resolution Order** (per struct-attack invocation):
+1. Each projectile undergoes an **evasion** check.
+2. **Defender counter-attack** fires once (before block, even on evaded shots).
+3. **Block** check occurs only if the shot was not evaded.
+4. **Damage** is applied per-projectile.
+5. After all shots resolve, **target counter-attack** fires once.
 
 ## Requirements Summary
 

@@ -323,7 +323,7 @@
 
 - **ID**: `permission`
 - **Category**: core
-- **Description**: A permission (access control). Permission values are bit-based flags. Hash permission bit value is 64.
+- **Description**: A permission (access control). Permission values are 24-bit flags (bits 0-23). `PermAll` = 16777215. See `knowledge/mechanics/permissions.md` for the full reference.
 - **Endpoint**: `/structs/permission/{permissionId}`
 - **List Endpoint**: `/structs/permission`
 
@@ -332,7 +332,7 @@
 | Relationship | Target Entities |
 |-------------|-----------------|
 | grantedTo | Player |
-| appliesTo | Planet, Struct, Fleet |
+| appliesTo | Guild, Planet, Struct, Fleet, Substation, Allocation, Reactor, Provider, Agreement |
 
 **Query Patterns**:
 
@@ -342,6 +342,8 @@
 | all | `/structs/permission` |
 | byObject | `/structs/permission/object/{objectId}` |
 | byPlayer | `/structs/permission/player/{playerId}` |
+| guildRankByObject | `/structs/guild_rank_permission_by_object/{objectId}` |
+| guildRankByObjectAndGuild | `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` |
 
 ### Infusion
 

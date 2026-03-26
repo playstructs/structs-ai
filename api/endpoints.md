@@ -266,6 +266,8 @@ Response schema: `schemas/entities.md#Address[]`
 | GET | `/structs/permission` | List all permissions | Yes |
 | GET | `/structs/permission/object/{objectId}` | Get permissions by object | No |
 | GET | `/structs/permission/player/{playerId}` | Get permissions by player | No |
+| GET | `/structs/guild_rank_permission_by_object/{objectId}` | Get guild rank permissions by object | Yes |
+| GET | `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` | Get guild rank permissions by object and guild | No |
 
 **`GET /structs/permission/{permissionId}`** (`permission-by-id`)
 
@@ -290,6 +292,25 @@ Response schema: `schemas/entities.md#Permission[]`
 | playerId | string | Yes | `^1-[0-9]+$` | Player identifier in format `type-index` (e.g., `1-11`). Type 1 = Player. |
 
 Response schema: `schemas/entities.md#Permission[]`
+
+**`GET /structs/guild_rank_permission_by_object/{objectId}`** (`guild-rank-permission-by-object`)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| objectId | string | Yes | Object identifier |
+| pagination.key | string | No | Pagination key |
+| pagination.limit | integer | No | Page size |
+
+Response schema: Guild rank permission records array
+
+**`GET /structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}`** (`guild-rank-permission-by-object-and-guild`)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| objectId | string | Yes | Object identifier |
+| guildId | string | Yes | Guild identifier |
+
+Response schema: Guild rank permission records array (at most 24 records)
 
 ### Block Height and Parameters
 

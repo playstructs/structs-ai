@@ -896,15 +896,15 @@ Transaction may broadcast but planet ownership unchanged if current planet has o
 - **Name**: Create Guild
 - **Message Type**: `/structs.structs.MsgGuildCreate`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Create a new guild
+- **Description**: Create a new guild from a reactor
 
-**Required Fields**: `creator`
-**Optional Fields**: `endpoint`, `primaryReactorId`, `entrySubstationId`
+**Required Fields**: `creator`, `reactorId`, `endpoint`, `entrySubstationId`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| notInGuild | Player must not already be in a guild. Check: query player.guildId, must be null or empty. |
+| permReactorGuildCreate | Requires `PermReactorGuildCreate` (524288) on the reactor |
+| permSubstationConnection | Also requires `PermSubstationConnection` (1024) on the entry substation |
 
 ```json
 {
@@ -1038,6 +1038,72 @@ Transaction may broadcast but planet ownership unchanged if current planet has o
   }
 }
 ```
+
+### MsgGuildUpdateEntryRank
+
+- **ID**: `guild-update-entry-rank`
+- **Name**: Update Guild Entry Rank
+- **Message Type**: `/structs.structs.MsgGuildUpdateEntryRank`
+- **Description**: Update the default rank assigned to new guild members
+
+**Required Fields**: `creator`, `newEntryRank`
+
+| Requirement | Details |
+|-------------|---------|
+| permUpdate | Requires `PermUpdate` (4) on the guild |
+| rankConstraint | New entry rank must be >= caller's own rank |
+
+### MsgPlayerUpdateGuildRank
+
+- **ID**: `player-update-guild-rank`
+- **Name**: Update Player Guild Rank
+- **Message Type**: `/structs.structs.MsgPlayerUpdateGuildRank`
+- **Description**: Set a player's rank within their guild
+
+**Required Fields**: `creator`, `playerId`, `guildRank`
+
+| Requirement | Details |
+|-------------|---------|
+| permAdmin | Requires `PermAdmin` (2) on the guild; falls back to rank-based authority (actor rank must be strictly better than target's current rank) |
+
+### MsgPlayerSend
+
+- **ID**: `player-send`
+- **Name**: Player Send Tokens
+- **Message Type**: `/structs.structs.MsgPlayerSend`
+- **Description**: Send tokens via the structs module (separate from bank-module send)
+
+**Required Fields**: `creator`, `fromAddress`, `toAddress`, `amount`
+
+| Requirement | Details |
+|-------------|---------|
+| permTokenTransfer | Requires `PermTokenTransfer` (16) on the player |
+
+### MsgPermissionGuildRankSet
+
+- **ID**: `permission-guild-rank-set`
+- **Name**: Set Guild Rank Permission
+- **Message Type**: `/structs.structs.MsgPermissionGuildRankSet`
+- **Description**: Set guild rank permissions on an object. Combined bitmasks are decomposed into individual bits.
+
+**Required Fields**: `creator`, `objectId`, `guildId`, `permission`, `rank`
+
+| Requirement | Details |
+|-------------|---------|
+| callerHasPermission | Caller must already have the specified permission on the object |
+
+### MsgPermissionGuildRankRevoke
+
+- **ID**: `permission-guild-rank-revoke`
+- **Name**: Revoke Guild Rank Permission
+- **Message Type**: `/structs.structs.MsgPermissionGuildRankRevoke`
+- **Description**: Revoke guild rank permissions from an object. Only specified bits are zeroed.
+
+**Required Fields**: `creator`, `objectId`, `guildId`, `permission`
+
+| Requirement | Details |
+|-------------|---------|
+| callerHasPermission | Caller must already have the specified permission on the object |
 
 ---
 

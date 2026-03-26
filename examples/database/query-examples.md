@@ -138,12 +138,13 @@ Useful for finding struct types by searching their cheatsheet content.
 
 ## Permission Hash
 
-**Database change** (2025-12-18): Added `permission_hash` level to the `permission` view. The Hash permission bit has value 64 in the API layer.
+**Database change**: Hash permissions are stored as granular columns in the `permission` view, mapping to bits 20-23 in the 24-bit API permission value. PermHashAll = 15728640, PermAll = 16777215.
 
-### Get Permission Hash for a Specific Permission
+### Get Hash Permissions for a Specific Permission
 
 ```sql
-SELECT permission_hash FROM permission WHERE object_id = ? AND player_id = ?
+SELECT permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid
+FROM permission WHERE object_id = ? AND player_id = ?
 ```
 
 Parameters: `object_id` = `0-1`, `player_id` = `1-11`
@@ -154,31 +155,37 @@ Example result:
 {
   "object_id": "0-1",
   "player_id": "1-11",
-  "permission_hash": true
+  "permission_hash_build": true,
+  "permission_hash_mine": true,
+  "permission_hash_refine": true,
+  "permission_hash_raid": true
 }
 ```
 
-`permission_hash = true` maps to `permission.value & 64 !== 0` in the API.
+All hash columns `true` maps to `(permission.value & 15728640) == 15728640` in the API (HasAll check).
 
-### Get All Permissions with Hash Permission
+### Get All Permissions with All Hash Permissions
 
 ```sql
-SELECT * FROM permission WHERE permission_hash = true
+SELECT * FROM permission
+WHERE permission_hash_build = true
+  AND permission_hash_mine = true
+  AND permission_hash_refine = true
+  AND permission_hash_raid = true
 ```
 
 Example result:
 
 ```json
 [
-  { "object_id": "0-1", "player_id": "1-11", "permission_hash": true, "val": 127 },
-  { "object_id": "2-1", "player_id": "1-11", "permission_hash": true, "val": 64 }
+  { "object_id": "0-1", "player_id": "1-11", "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 16777215 }
 ]
 ```
 
-### Get Hash Permissions for a Player
+### Get Permissions with Specific Hash Bit (e.g., Mine)
 
 ```sql
-SELECT * FROM permission WHERE player_id = ? AND permission_hash = true
+SELECT * FROM permission WHERE player_id = ? AND permission_hash_mine = true
 ```
 
 Parameter: `player_id` = `1-11`
@@ -186,38 +193,47 @@ Parameter: `player_id` = `1-11`
 ### Get Hash Permissions for an Object
 
 ```sql
-SELECT * FROM permission WHERE object_id = ? AND permission_hash = true
+SELECT * FROM permission WHERE object_id = ?
+  AND (permission_hash_build = true OR permission_hash_mine = true
+       OR permission_hash_refine = true OR permission_hash_raid = true)
 ```
 
 Parameter: `object_id` = `0-1`
 
-### Count Hash Permissions
+### Count Permissions with Any Hash Bit
 
 ```sql
-SELECT COUNT(*) FROM permission WHERE permission_hash = true
+SELECT COUNT(*) FROM permission
+WHERE permission_hash_build = true
+   OR permission_hash_mine = true
+   OR permission_hash_refine = true
+   OR permission_hash_raid = true
 ```
 
 ### Database to API Mapping
 
-| Database | API |
-|----------|-----|
-| `permission_hash = true` | `permission.value & 64 !== 0` |
-| `permission_hash = false` | `permission.value & 64 === 0` |
+| Database Column | Bit | API Equivalent (HasAll check) |
+|----------------|-----|-------------------------------|
+| `permission_hash_build = true` | 20 | `(permission.value & 1048576) == 1048576` |
+| `permission_hash_mine = true` | 21 | `(permission.value & 2097152) == 2097152` |
+| `permission_hash_refine = true` | 22 | `(permission.value & 4194304) == 4194304` |
+| `permission_hash_raid = true` | 23 | `(permission.value & 8388608) == 8388608` |
+| All hash columns `true` | 20-23 | `(permission.value & 15728640) == 15728640` |
 
 Example mapping:
 
 ```json
 {
-  "database": { "permission_hash": true, "val": 127 },
-  "api": { "value": "127", "hasHashPermission": true }
+  "database": { "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 16777215 },
+  "api": { "value": "16777215", "hasAllHashPermissions": true }
 }
 ```
 
 ### Use Cases
 
-**Permission audit**: Query `permission_hash` to find all Hash permission grants across the system.
+**Permission audit**: Query hash permission columns to find all hash permission grants across the system, broken down by operation type.
 
-**Access control**: Query `permission_hash` to verify a player has Hash permission before allowing operations.
+**Access control**: Query the specific hash column (e.g., `permission_hash_mine`) to verify a player has the required hash permission before allowing the operation.
 
 ## Signer Transaction Changes
 
@@ -303,10 +319,12 @@ Provides comprehensive information about destroyed structs including their type 
 ### All Hash Permissions for a Player
 
 ```sql
-SELECT * FROM permission WHERE player_id = ? AND permission_hash = true
+SELECT * FROM permission WHERE player_id = ?
+  AND (permission_hash_build = true OR permission_hash_mine = true
+       OR permission_hash_refine = true OR permission_hash_raid = true)
 ```
 
-Audits all Hash permissions granted to a specific player across all objects.
+Audits all hash permissions granted to a specific player across all objects, broken down by operation type.
 
 ## Cross-References
 

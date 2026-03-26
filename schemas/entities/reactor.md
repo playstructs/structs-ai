@@ -21,6 +21,7 @@ Reactor entity definition -- extracted from game-state.json for context window o
 | validator | string | blockchain-address | -- | No | Validator address for validation delegation (if staked). |
 | guildId | string | entity-id | `^0-[0-9]+$` | No | Guild ID associated with this reactor (if applicable). Format: `type-index` (e.g., `0-1` for guild type 0, index 1). Type 0 = Guild. |
 | defaultCommission | string | -- | -- | No | Default commission rate for this reactor (string representation). |
+| owner | string | entity-id | `^1-[0-9]+$` | No | PlayerId of the reactor owner. |
 
 ### Staking
 
@@ -54,6 +55,6 @@ Reactor staking information, represented as a nested object.
 
 **Code Reference**: `x/structs/types/reactor.pb.go`, `x/structs/keeper/reactor_cache.go`
 
-**Database Reference**: `structs.reactor` table (columns: `id`, `validator`, `guild_id`, `default_commission`)
+**Database Reference**: `structs.reactor` table (columns: `id`, `validator`, `guild_id`, `default_commission`, `owner`)
 
 **Note**: API response schema. Reactor staking is managed at player level. Validation delegation is abstracted via Reactor Infuse/Defuse actions. For code-based field definitions, see `schemas/entities.md#reactor`.

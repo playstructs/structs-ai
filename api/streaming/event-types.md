@@ -21,6 +21,7 @@
 | guild_consensus | Guild consensus data updates | `structs.guild.*` | `event-schemas.md#GuildConsensusEvent` |
 | guild_meta | Guild metadata updates | `structs.guild.*` | `event-schemas.md#GuildMetaEvent` |
 | guild_membership | Guild membership changes | `structs.guild.*` | `event-schemas.md#GuildMembershipEvent` |
+| guild_rank_permission | Guild rank permissions set or revoked | `structs.guild.*` | `event-schemas.md#EventGuildRankPermission` |
 
 ### Planet Events
 

@@ -39,6 +39,7 @@ For agent queries, use `structs_indexer` via the GRASS container (see guild-stac
 | `id` | varchar PK | `1-{index}` (e.g., `1-142`) |
 | `index` | integer | Numeric portion of ID |
 | `guild_id` | varchar | Guild membership (e.g., `0-1`) |
+| `guild_rank` | bigint | Player's rank within their guild (1 = highest, 101 = default on join, 0 = unset) |
 | `planet_id` | varchar | Home planet (e.g., `2-105`) |
 | `fleet_id` | varchar | Fleet (e.g., `9-142`) |
 | `primary_address` | varchar | Cosmos address |
@@ -255,12 +256,31 @@ The `detail` column for `struct_attack` includes `attackerStructId`, `targetStru
 
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
-| `reactor` | `id`, `guild_id`, `validator` | Links validator address to guild |
+| `reactor` | `id`, `guild_id`, `validator`, `owner` | Links validator address to guild; `owner` is PlayerId |
 | `infusion` | `destination_id`, `address`, `fuel`, `power`, `commission` | Composite PK: `(destination_id, address)` |
-| `allocation` | `id`, `source_id`, `destination_id`, `locked` | Energy routing |
+| `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing; `controller` is PlayerId (not address) |
 | `substation` | `id`, `owner` | Power distribution nodes |
 | `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
 | `agreement` | `id`, provider/consumer refs, capacity, duration | Active purchase contracts |
+
+### `structs.guild`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `0-{index}` (e.g., `0-1`) |
+| `entry_rank` | bigint | Default guild rank assigned to new members (chain default: 101) |
+
+### `structs.permission_guild_rank`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `object_id` | varchar | The object permissions are set on |
+| `guild_id` | varchar | The guild whose members receive the permission |
+| `permission` | bigint | Single permission bit (power of 2) |
+| `rank` | bigint | Worst-allowed guild rank; 0 = revoked |
+| `updated_at` | timestamptz | Last update timestamp |
+
+Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechanics/permissions.md) for the guild rank permission system.
 
 ---
 

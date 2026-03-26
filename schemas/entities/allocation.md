@@ -16,8 +16,10 @@ Allocation entity definition -- extracted from game-state.json for context windo
 | Field | Type | Format | Pattern | Required | Description |
 |-------|------|--------|---------|----------|-------------|
 | id | string | entity-id | `^6-[0-9]+$` | Yes | Unique allocation identifier in format `type-index` (e.g., `6-1` for allocation type 6, index 1). Type 6 = Allocation. |
+| allocationType | string | -- | -- | Yes | Allocation type: `static`, `dynamic`, `automated`, or `provider-agreement`. |
 | sourceId | string | -- | -- | Yes | Source ID (reactor, provider, etc.). |
 | destinationId | string | -- | -- | Yes | Destination ID (player, struct, etc.). |
+| controller | string | entity-id | `^1-[0-9]+$` | Yes | PlayerId of the controlling player. |
 | amount | string | -- | -- | Yes | Allocation amount (string representation of integer). |
 | gridAttributes | object | -- | -- | No | Grid position and attributes. Accepts additional properties. |
 
@@ -51,10 +53,8 @@ Allocations link a source entity to a destination entity. Both source and destin
 
 **Verified Fields**: `id`, `sourceId`, `destinationId`, `amount`
 
-**Missing Fields**: `allocationType`, `controller`, `locked`
-
 **Code Reference**: `x/structs/types/allocation.pb.go`, `x/structs/keeper/allocation_cache.go`
 
-**Database Reference**: `structs.allocation` table (columns: `id`, `allocation_type`, `source_id`, `destination_id`, `controller`, `locked`)
+**Database Reference**: `structs.allocation` table (columns: `id`, `allocation_type`, `source_id`, `destination_id`, `controller`)
 
-**Note**: API response schema. Missing fields from database (`allocationType`, `controller`, `locked`) -- these may be in gridAttributes or separate queries. For code-based field definitions, see `schemas/entities.md#allocation`.
+**Note**: `controller` is a PlayerId (e.g., `1-42`), not an address. The `locked` column has been removed.

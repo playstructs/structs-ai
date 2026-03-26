@@ -36,6 +36,26 @@ Returns a single reactor by its entity ID.
 - **Content-Type**: `application/json`
 - **Schema**: `schemas/entities/reactor.md`
 
+#### Example
+
+**Request**: `GET /structs/reactor/3-1`
+
+**Response**:
+
+```json
+{
+  "Reactor": {
+    "id": "3-1",
+    "validator": "structsvaloper1...",
+    "guildId": "0-1",
+    "defaultCommission": "0",
+    "owner": "1-11"
+  }
+}
+```
+
+The `owner` field (string, PlayerId) identifies the player who owns this reactor.
+
 ---
 
 ### List All Reactors

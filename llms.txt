@@ -67,6 +67,7 @@
 ## Knowledge -- Mechanics
 
 - [Combat](https://structs.ai/knowledge/mechanics/combat): Damage, evasion, raids, weapon systems
+- [Permissions](https://structs.ai/knowledge/mechanics/permissions): 24-bit permission flags, guild rank permissions, handler reference
 - [Resources](https://structs.ai/knowledge/mechanics/resources): Ore, Alpha Matter, energy conversions
 - [Power](https://structs.ai/knowledge/mechanics/power): Capacity, load, online status formulas
 - [Building](https://structs.ai/knowledge/mechanics/building): Construction, proof-of-work, struct states

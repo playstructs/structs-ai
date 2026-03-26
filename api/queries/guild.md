@@ -36,6 +36,27 @@ Returns a single guild by its entity ID.
 - **Content-Type**: `application/json`
 - **Schema**: `schemas/entities/guild.md`
 
+#### Example
+
+**Request**: `GET /structs/guild/0-1`
+
+**Response**:
+
+```json
+{
+  "Guild": {
+    "id": "0-1",
+    "creator": "structs1...",
+    "entrySubstationId": "4-1",
+    "joinInfusionMinimum": "0",
+    "entryInfusion": "0",
+    "entryRank": "101"
+  }
+}
+```
+
+The `entryRank` field (uint64) is the default guild rank assigned to new members on join. Default is 101 on guild creation. Lower values = more privileged.
+
 ---
 
 ### List All Guilds

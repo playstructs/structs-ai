@@ -175,13 +175,15 @@ This guide provides performance optimization tips for AI agents working with Str
 
 **Solution**: Use bitwise operations directly
 
+Permissions use a 24-bit flag system. `PermAll` = 16777215 (all bits). Use HasAll semantics: all bits in the mask must match.
+
 **Before**:
 ```json
 {
   "approach": "String parsing",
   "steps": [
     "Parse permission.value to integer",
-    "Check bit 64",
+    "Check against 24-bit mask",
     "Return result"
   ]
 }
@@ -190,13 +192,15 @@ This guide provides performance optimization tips for AI agents working with Str
 **After**:
 ```json
 {
-  "approach": "Bitwise operations",
-  "check": "(permissionValue & 64) == 64",
+  "approach": "Bitwise operations (24-bit)",
+  "checkHashAll": "(permissionValue & 15728640) == 15728640",
+  "checkAll": "(permissionValue & 16777215) == 16777215",
+  "note": "HasAll semantics — all bits in the mask must be set",
   "improvement": "Direct bitwise check, no parsing"
 }
 ```
 
-**Reference**: `schemas/game-state.md#/definitions/Permission`
+**Reference**: `schemas/game-state.md#/definitions/Permission`, `knowledge/mechanics/permissions.md`
 
 ---
 

@@ -158,19 +158,84 @@ This guide provides a quick reference for all game actions available to AI agent
 ### Guild Actions
 
 **Guild Management**:
-- `guild-create` - Create guild
+- `guild-create` - Create guild from a reactor (requires `PermReactorGuildCreate` on reactor)
+- `guild-update-entry-rank` - Update default rank for new members (requires `PermUpdate` on guild)
 - `guild-membership-join` - Join guild
 - `guild-membership-kick` - Remove member from guild
+- `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on guild or rank-based authority)
 - ⚠️ **Deprecated**: `guild-membership-leave` (use `guild-membership-kick` instead)
 
 **Guild Bank**:
 - `guild-bank-mint` - Mint guild tokens
 - `guild-bank-redeem` - Redeem guild tokens
 
+**Token Transfer**:
+- `player-send` - Send tokens via structs module (requires `PermTokenTransfer`)
+
 **Requirements**:
 - Player online
 - Sufficient resources (for create/mint)
 - Valid guild (for membership/bank)
+- Appropriate permissions (see `knowledge/mechanics/permissions.md`)
+
+---
+
+### Permission Actions
+
+**Object Permissions**:
+- `permission-grant-on-object` - Add permission flags on an object (bitwise OR)
+- `permission-revoke-on-object` - Remove permission flags from an object (bitwise AND NOT)
+- `permission-set-on-object` - Replace entire permission value on an object
+
+**Address Permissions**:
+- `permission-grant-on-address` - Add permission flags on an address
+- `permission-revoke-on-address` - Remove permission flags from an address
+- `permission-set-on-address` - Replace entire permission value on an address
+
+**Guild Rank Permissions**:
+- `permission-guild-rank-set` - Set guild rank permission on an object (decomposes bitmask)
+- `permission-guild-rank-revoke` - Revoke guild rank permission from an object
+
+**Requirements**:
+- Caller must already have the permission flags being granted/revoked/set
+- See `knowledge/mechanics/permissions.md` for the 24-bit flag reference
+
+---
+
+### Allocation Actions
+
+- `allocation-create` - Create energy allocation (controller is PlayerId)
+- `allocation-update` - Update allocation power
+- `allocation-delete` - Delete allocation
+- `allocation-transfer` - Transfer allocation controller
+
+---
+
+### Provider/Agreement Actions
+
+- `provider-create` - Create energy provider
+- `provider-delete` - Delete provider
+- `provider-withdraw-balance` - Withdraw earnings
+- `provider-update-capacity-minimum/maximum` - Update capacity limits
+- `provider-update-duration-minimum/maximum` - Update duration limits
+- `provider-update-access-policy` - Update access policy
+- `agreement-open` - Open energy agreement
+- `agreement-close` - Close agreement
+- `agreement-capacity-increase/decrease` - Adjust capacity
+- `agreement-duration-increase` - Extend agreement
+- ⚠️ **Removed**: `provider-guild-grant`, `provider-guild-revoke` (replaced by guild rank permissions)
+
+---
+
+### Substation Actions
+
+- `substation-create` - Create substation
+- `substation-delete` - Delete substation
+- `substation-player-connect` - Connect player to substation
+- `substation-player-disconnect` - Disconnect player from substation
+- `substation-player-migrate` - Migrate player between substations
+- `substation-allocation-connect` - Connect allocation to substation
+- `substation-allocation-disconnect` - Disconnect allocation from substation
 
 ---
 
@@ -443,8 +508,18 @@ The following actions are **deprecated** and should not be used. Use the replace
 
 **Guild**:
 - `guild-create`
+- `guild-update-entry-rank`
 - `guild-membership-join`
 - `guild-bank-mint`
+- `player-update-guild-rank`
+- `player-send`
+
+**Permissions**:
+- `permission-grant-on-object`
+- `permission-revoke-on-object`
+- `permission-set-on-object`
+- `permission-guild-rank-set`
+- `permission-guild-rank-revoke`
 
 ### By Requirement
 

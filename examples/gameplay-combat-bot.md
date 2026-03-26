@@ -124,12 +124,34 @@ Expected response (victory):
     }
   },
   "battleDetails": {
-    "evasionChecks": 2,
-    "blockingChecks": 1,
-    "counterAttacks": 1
+    "counterAttack": {
+      "note": "One counter-attack per struct-attack invocation (not per shot). Counter fires before block resolution. Counter fires even on evaded shots."
+    },
+    "shotDetails": [
+      {
+        "event": "EventAttackShotDetail",
+        "projectileIndex": 0,
+        "targetStructId": "5-3",
+        "targetPlayerId": "1-22",
+        "evaded": false,
+        "blocked": false,
+        "damageDealt": 50
+      },
+      {
+        "event": "EventAttackShotDetail",
+        "projectileIndex": 1,
+        "targetStructId": "5-3",
+        "targetPlayerId": "1-22",
+        "evaded": true,
+        "blocked": false,
+        "damageDealt": 0
+      }
+    ]
   }
 }
 ```
+
+Combat resolution order: counter-attack → evasion check → block check → damage. Each projectile produces its own `EventAttackShotDetail` row with `targetPlayerId` at the shot level.
 
 ### Step 5: Secure Captured Planet
 

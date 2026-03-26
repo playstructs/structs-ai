@@ -287,6 +287,8 @@ Permission entity endpoints.
 | permission-by-id | GET | `/structs/permission/{permissionId}` | Consensus | Get permission by ID |
 | permission-by-object | GET | `/structs/permission/object/{objectId}` | Consensus | Get permissions by object |
 | permission-by-player | GET | `/structs/permission/player/{playerId}` | Consensus | Get permissions by player |
+| guild-rank-permission-by-object | GET | `/structs/guild_rank_permission_by_object/{objectId}` | Consensus | Get guild rank permissions by object |
+| guild-rank-permission-by-object-and-guild | GET | `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` | Consensus | Get guild rank permissions by object and guild |
 
 ### Dependencies
 

@@ -258,9 +258,32 @@ This protocol defines how AI agents interact with Structs gameplay mechanics. It
     }
   },
   "battleDetails": {
-    "evasionChecks": 2,
-    "blockingChecks": 1,
-    "counterAttacks": 1,
+    "shots": [
+      {
+        "projectile": 1,
+        "evaded": false,
+        "blocked": false,
+        "damageDealt": 50,
+        "targetDestroyed": false
+      },
+      {
+        "projectile": 2,
+        "evaded": true,
+        "blocked": false,
+        "damageDealt": 0,
+        "targetDestroyed": false
+      }
+    ],
+    "defenderCounter": {
+      "fired": true,
+      "damageDealt": 20,
+      "note": "Fires once per struct-attack, before block, even on evaded shots"
+    },
+    "targetCounter": {
+      "fired": true,
+      "damageDealt": 30,
+      "note": "Fires once per struct-attack, after all shots resolve"
+    },
     "recoilDamage": 0
   }
 }
@@ -288,11 +311,14 @@ When `attackerRetreated` status is returned:
 - Raid is considered incomplete
 
 **Combat Mechanics**:
-- **Evasion**: Based on weapon type (guided vs unguided)
-- **Blocking**: Defenders can block for other structs
-- **Counter-Attacks**: Structs counter-attack automatically
-- **Multi-Shot**: Weapons fire multiple shots
-- **Recoil**: Some weapons damage attacker
+- **Evasion**: Based on weapon type (guided vs unguided). Each projectile is evaluated independently.
+- **Defender Counter-Attack**: Fires once per struct-attack invocation, before block check, even on evaded shots.
+- **Blocking**: Defenders can block for other structs. Block does NOT fire on evaded shots.
+- **Damage**: Applied per-projectile after evasion and block checks.
+- **Target Counter-Attack**: Fires once per struct-attack invocation, after all shots resolve.
+- **Multi-Shot**: Weapons fire multiple shots. Each projectile gets its own EventAttackShotDetail.
+- **Recoil**: Some weapons damage attacker.
+- **Resolution Order**: Evasion → Defender counter (once, before block, even on evaded) → Block (only if not evaded) → Damage → Target counter (once, after all shots).
 
 ### Exploration Protocol
 

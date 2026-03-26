@@ -41,7 +41,7 @@
 
 ### Player
 
-- **Key Fields**: id, capacity, load, charge, storedOre, playerOnline
+- **Key Fields**: id, capacity, load, charge, storedOre, playerOnline, guildRank
 - **Relationships**: Owns Planet, Struct, Fleet, Reactor, Substation, Provider; Member of Guild
 - **Query Patterns**: byId `/structs/player/{id}` | all `/structs/player` | halted `/structs/player_halted`
 - **Code**: `x/structs/types/player.pb.go`, `x/structs/keeper/player_cache.go`
@@ -95,7 +95,7 @@
 ### Permission
 
 - **Key Fields**: permissionId, value
-- Hash permission bit (value 64) is part of the permission system. Permission values are bit-based flags that can be combined using bitwise OR.
+- Permissions use a 24-bit flag system (PermAll = 16777215, PermHashAll = 15728640). Use HasAll semantics: all bits in the mask must match. See [permissions.md](../knowledge/mechanics/permissions.md) for the full flag reference.
 - **Relationships**: Granted to Player; Applies to Planet, Struct, Fleet
 - **Query Patterns**: byId `/structs/permission/{permissionId}` | all `/structs/permission` | byObject `/structs/permission/object/{objectId}` | byPlayer `/structs/permission/player/{playerId}`
 - **Code**: `proto/structs/structs/permission.proto:11`, `x/structs/types/permission.pb.go`
@@ -111,7 +111,7 @@
 
 ### Guild
 
-- **Key Fields**: id, creator, entrySubstationId, joinInfusionMinimum
+- **Key Fields**: id, creator, entrySubstationId, joinInfusionMinimum, entryRank
 - **Relationships**: Has members (Player); Has entry Substation; Has primary Reactor
 - **Query Patterns**: byId `/structs/guild/{id}` | all `/structs/guild`
 - **Code**: `proto/structs/structs/guild.proto`, `x/structs/keeper/guild_cache.go`
@@ -129,7 +129,7 @@
 
 ### Reactor
 
-- **Key Fields**: id, ownerId, validator, guildId, defaultCommission, staking
+- **Key Fields**: id, owner, ownerId, validator, guildId, defaultCommission, staking
 - Reactor staking is managed at player level. Validation delegation is abstracted via Reactor Infuse/Defuse actions.
 - **Relationships**: Owned by Player; Belongs to Guild; Located on Planet
 - **Query Patterns**: byId `/structs/reactor/{id}` | all `/structs/reactor`
@@ -177,7 +177,7 @@
 
 ### Allocation
 
-- **Key Fields**: id, sourceId, destinationId, amount, allocationType, controller, locked
+- **Key Fields**: id, sourceId, destinationId, amount, allocationType, controller (PlayerId)
 - **Relationships**: From Provider or Reactor; To Player or Struct
 - **Query Patterns**: byId `/structs/allocation/{id}` | all `/structs/allocation` | bySource `/structs/allocation_by_source/{sourceId}` | byDestination `/structs/allocation_by_destination/{destinationId}`
 - **Code**: `x/structs/types/allocation.pb.go`, `x/structs/keeper/allocation_cache.go`

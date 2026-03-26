@@ -51,6 +51,7 @@ FILES=(
 
   # Knowledge - Mechanics
   knowledge/mechanics/combat.md
+  knowledge/mechanics/permissions.md
   knowledge/mechanics/resources.md
   knowledge/mechanics/power.md
   knowledge/mechanics/building.md

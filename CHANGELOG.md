@@ -5,6 +5,110 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-26
+
+### Added - v0.14.0-beta (Opheliora) / structstestnet-110
+
+Major update incorporating all changes from Structs v0.14.0-beta (codenamed Opheliora) on the structstestnet-110 network.
+
+#### Permission System Overhaul (8-bit -> 24-bit)
+
+- **NEW: `knowledge/mechanics/permissions.md`** -- Comprehensive permission reference combining the Permission System, Guild Rank Permission System, and Message Handler Permission Reference. Covers all 24 permission bits, composite masks, storage format, check flow, and every handler's permission requirements.
+- Permissions expanded from 8 flags (PermAll=255) to 24 flags (PermAll=16777215) with HasAll semantics (all required bits must be present)
+- Old struct-specific permissions removed in favor of new fine-grained flags: PermTokenTransfer, PermTokenInfuse, PermTokenMigrate, PermTokenDefuse, PermSourceAllocation, PermGuildMembership, PermSubstationConnection, PermAllocationConnection, PermGuildTokenBurn, PermGuildTokenMint, PermGuildEndpointUpdate, PermGuildJoinConstraintsUpdate, PermGuildSubstationUpdate, PermProviderWithdraw, PermProviderOpen, PermReactorGuildCreate, PermHashBuild, PermHashMine, PermHashRefine, PermHashRaid
+- Guild Rank Permission System: rank-based access control where guild members receive permissions based on their numeric rank (lower = more privileged)
+- New transactions: `permission-guild-rank-set`, `permission-guild-rank-revoke`, `player-update-guild-rank`
+- New queries: `guild-rank-permission-by-object`, `guild-rank-permission-by-object-and-guild`
+- All examples, troubleshooting, patterns, and reference files updated with 24-bit values
+
+#### Combat Engine Rewrite
+
+- Attack resolution centralized into AttackContext with typed result structs
+- Counter-attacks now fire at most once per `struct-attack` invocation (not per shot)
+- Defender counter-attack fires before block and on evaded shots
+- Target counter-attack fires after all shots resolve; destroyed targets cannot counter
+- Block does NOT fire on evaded shots
+- Each projectile gets its own EventAttackShotDetail row (per-projectile events)
+- `targetPlayerId` moved from EventAttackDetail to EventAttackShotDetail (API-breaking)
+- Planetary Defense Cannon now correctly reports when cannons fire; multiple PDCs stack
+- EvadedCause only set on successful evasion
+
+#### Allocation System Rework
+
+- `controller` field is now PlayerId (not address) -- account abstraction
+- `locked` column removed from allocation table
+- Source capacity underloads properly guarded
+- `provider-guild-grant` and `provider-guild-revoke` transactions removed; replaced by guild rank permissions (`permission-guild-rank-set` with PermProviderOpen on the provider)
+
+#### New Entity Fields
+
+- Guild: `entryRank` (uint64) -- default rank for new members (chain default: 101)
+- Player: `guildRank` (uint64) -- rank within guild (1 = creator, 101 = default on join)
+- Reactor: `owner` (string) -- PlayerId of reactor owner
+
+#### New/Changed Transactions
+
+- Added: `guild-create` (from reactor), `guild-update-entry-rank`, `player-update-guild-rank`, `player-send`, `permission-guild-rank-set`, `permission-guild-rank-revoke`
+- Removed: `provider-guild-grant`, `provider-guild-revoke`
+- Changed args: `player-update-primary-address` (removed playerId), `address-register` (removed playerId)
+
+#### Database Schema
+
+- New table: `structs.permission_guild_rank` (object_id, guild_id, permission, rank)
+- New columns: `guild.entry_rank`, `player.guild_rank`, `reactor.owner`
+- Removed column: `allocation.locked`
+- New event: `EventGuildRankPermission`
+- Cache handler updates for all affected entities
+- Permission views rewritten for 24-bit flags
+
+### Updated Files
+
+- `knowledge/mechanics/permissions.md` -- NEW
+- `knowledge/mechanics/combat.md` -- Attack resolution rewrite, counter-attack overhaul, PDC fix, per-projectile events
+- `knowledge/mechanics/index.md` -- Permissions entry
+- `knowledge/economy/energy-market.md` -- Controller=PlayerId, provider access via guild rank
+- `knowledge/infrastructure/database-schema.md` -- New tables, columns, removed locked
+- `schemas/entities/allocation.md` -- Controller=PlayerId, removed locked
+- `schemas/entities/guild.md` -- entryRank field
+- `schemas/entities/player.md` -- guildRank field
+- `schemas/entities/reactor.md` -- owner field
+- `schemas/entities.md` -- 24-bit permission flags
+- `schemas/game-state.md` -- 24-bit permission flags
+- `schemas/actions.md` -- New transactions, updated requirements
+- `reference/action-quick-reference.md` -- New actions, permission/allocation/provider sections
+- `reference/entity-index.md` -- New fields, 24-bit perms
+- `reference/gameplay-index.md` -- Counter-attack mechanics
+- `api/queries/permission.md` -- Guild rank queries
+- `api/queries/guild.md` -- entryRank
+- `api/queries/player.md` -- guildRank
+- `api/queries/reactor.md` -- owner
+- `api/streaming/event-types.md` -- EventGuildRankPermission
+- `api/streaming/event-schemas.md` -- EventGuildRankPermission, targetPlayerId move
+- `api/endpoints.md` -- Guild rank permission endpoints
+- `api/endpoints-by-entity.md` -- Guild rank permission queries
+- `.cursor/skills/structs-combat/SKILL.md` -- Counter-attack rules, PDC notes
+- `.cursor/skills/structs-economy/SKILL.md` -- Controller=PlayerId, provider access
+- `.cursor/skills/structs-energy/SKILL.md` -- Guild rank provider access
+- `.cursor/skills/structs-power/SKILL.md` -- Controller=PlayerId
+- `.cursor/skills/structs-diplomacy/SKILL.md` -- 24-bit perms, guild rank commands, arg changes
+- `.cursor/skills/structs-guild/SKILL.md` -- guild-create, rank system, provider access
+- `.cursor/skills/structs-onboarding/SKILL.md` -- Guild rank note
+- `troubleshooting/permission-issues.md` -- 24-bit perms, HasAll, guild rank
+- `troubleshooting/edge-cases.md` -- 24-bit perms
+- `examples/auth/permission-examples.md` -- 24-bit perms, guild rank examples
+- `examples/workflows/permission-checking.md` -- 24-bit perms, guild rank step
+- `examples/database/query-examples.md` -- 24-bit perms
+- `examples/gameplay-combat-bot.md` -- Per-projectile events, counter-attack
+- `protocols/gameplay-protocol.md` -- Combat mechanics, battleDetails
+- `patterns/performance-optimization.md` -- 24-bit bitwise checks
+- `patterns/decision-tree-combat.md` -- Combat resolution order
+- `AGENTS.md` -- Permissions in Knowledge section
+- `SITEMAP.md` -- permissions.md entry
+- `llms.txt` -- permissions.md entry
+- `sitemap.xml` -- permissions URL
+
+---
+
 ## [1.5.0] - 2026-02-24
 
 ### Added - Async Agent Architecture
@@ -413,6 +517,7 @@ Addressed 10 issues reported by an AI agent during first play session:
 
 ## Version History
 
+- **1.6.0** (2026-03-26): v0.14.0-beta (Opheliora) / structstestnet-110 -- Permission system overhaul (8-bit to 24-bit, guild rank permissions, HasAll semantics), combat engine rewrite (counter-attack limits, per-projectile events), allocation rework (controller=PlayerId, removed locked), new entity fields, new/changed/removed transactions, database schema updates. ~48 files updated, 1 new.
 - **1.4.0** (2026-02-24): Agent feedback fixes - Corrected struct type IDs, documented compute/complete workflow, -D flag, timing expectations, ambit encoding, new player power budget. MCP query tool parameter fix and documentation.
 - **1.3.0** (2026-02-24): v0.10.0-v0.13.0-beta updates - Combat fixes (minimum damage, counter-attack), seized ore tracking, open hashing, destroyed_block, fleet movement fix, Context Manager refactor, SDK v0.53.5/IBC v10, database schema updates, webapp struct actions UI
 - **1.2.0** (2026-01-16): v0.10.0-beta updates - Defender clear event, genesis import/export, activate charge, build cancel, initial Command Ship grant

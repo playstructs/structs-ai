@@ -75,6 +75,7 @@ Reference material about the game world.
 | File | Topic |
 |------|-------|
 | [combat.md](knowledge/mechanics/combat.md) | Damage, evasion, blocking, counter-attacks, raids |
+| [permissions.md](knowledge/mechanics/permissions.md) | 24-bit permission flags, guild rank permissions, handler reference |
 | [resources.md](knowledge/mechanics/resources.md) | Ore, Alpha Matter, energy, vulnerability windows |
 | [power.md](knowledge/mechanics/power.md) | Capacity, load, online status, power budget |
 | [building.md](knowledge/mechanics/building.md) | Construction, proof-of-work, difficulty decay |

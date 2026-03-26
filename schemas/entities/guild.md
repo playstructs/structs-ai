@@ -16,6 +16,7 @@
 | entrySubstationId | string | entity-id | `^4-[0-9]+$` | No | Entry substation ID for guild. Format: `type-index` (e.g., `4-3` for substation type 4, index 3). Type 4 = Substation. |
 | joinInfusionMinimum | string | | | No | Minimum infusion required to join (string representation of integer) |
 | entryInfusion | string | | | No | Entry infusion amount (string representation of integer) |
+| entryRank | uint64 | | | No | Default guild rank assigned to new members (chain default: 101). Lower = more privileged. |
 
 ## Members
 
