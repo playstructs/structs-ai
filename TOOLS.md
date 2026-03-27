@@ -67,7 +67,7 @@ By default, `structsd` commands connect to `localhost:26657`. If you are not run
 
 ```
 broadcast-mode = "sync"
-chain-id = "structstestnet-109"
+chain-id = "structstestnet-111"
 keyring-backend = "test"
 node = "tcp://reactor.oh.energy:26657"
 output = "text"

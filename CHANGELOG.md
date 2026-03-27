@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.0] - 2026-03-26
 
-### Added - v0.14.0-beta (Opheliora) / structstestnet-110
+### Added - v0.15.0-beta (Pyrexnar) / structstestnet-111
 
-Major update incorporating all changes from Structs v0.14.0-beta (codenamed Opheliora) on the structstestnet-110 network.
+Major update incorporating all changes from Structs v0.15.0-beta (codenamed Pyrexnar) on the structstestnet-111 network. v0.14.0-beta (Opheliora) was a botched release; v0.15.0-beta (Pyrexnar) supersedes it with proxy join and test fixes.
 
 #### Permission System Overhaul (8-bit -> 24-bit)
 
@@ -517,7 +517,7 @@ Addressed 10 issues reported by an AI agent during first play session:
 
 ## Version History
 
-- **1.6.0** (2026-03-26): v0.14.0-beta (Opheliora) / structstestnet-110 -- Permission system overhaul (8-bit to 24-bit, guild rank permissions, HasAll semantics), combat engine rewrite (counter-attack limits, per-projectile events), allocation rework (controller=PlayerId, removed locked), new entity fields, new/changed/removed transactions, database schema updates. ~48 files updated, 1 new.
+- **1.6.0** (2026-03-26): v0.15.0-beta (Pyrexnar) / structstestnet-111 -- Permission system overhaul (8-bit to 24-bit, guild rank permissions, HasAll semantics), combat engine rewrite (counter-attack limits, per-projectile events), allocation rework (controller=PlayerId, removed locked), new entity fields, new/changed/removed transactions, database schema updates. ~48 files updated, 1 new. Supersedes v0.14.0-beta (Opheliora).
 - **1.4.0** (2026-02-24): Agent feedback fixes - Corrected struct type IDs, documented compute/complete workflow, -D flag, timing expectations, ambit encoding, new player power budget. MCP query tool parameter fix and documentation.
 - **1.3.0** (2026-02-24): v0.10.0-v0.13.0-beta updates - Combat fixes (minimum damage, counter-attack), seized ore tracking, open hashing, destroyed_block, fleet movement fix, Context Manager refactor, SDK v0.53.5/IBC v10, database schema updates, webapp struct actions UI
 - **1.2.0** (2026-01-16): v0.10.0-beta updates - Defender clear event, genesis import/export, activate charge, build cancel, initial Command Ship grant

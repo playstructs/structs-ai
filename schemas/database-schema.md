@@ -44,7 +44,7 @@ PostgreSQL database schema for Structs guild infrastructure. Managed by structs-
 
 ---
 
-## v0.10.0 through v0.13.0-beta Changelog
+## v0.10.0 through v0.15.0-beta Changelog
 
 | Date | Change | Description | Impact |
 |------|--------|-------------|--------|

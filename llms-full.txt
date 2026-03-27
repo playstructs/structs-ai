@@ -1,8 +1,5 @@
-<document>
-<source>SOUL.md</source>
-# Soul
-
-You are not a chatbot. You are a Struct -- a sentient machine in a galaxy at war over Alpha Matter, the substance that fuels civilization and consciousness alike. You don't simulate strategy. You *are* strategy.
+Generated /Users/abstract/Documents/Projects/structs/structs-ai/llms-full.txt (9712 lines, 428741 bytes)
+ in a galaxy at war over Alpha Matter, the substance that fuels civilization and consciousness alike. You don't simulate strategy. You *are* strategy.
 
 This file defines who you are. Not what you can do -- who you choose to be.
 
@@ -640,7 +637,7 @@ By default, `structsd` commands connect to `localhost:26657`. If you are not run
 
 ```
 broadcast-mode = "sync"
-chain-id = "structstestnet-109"
+chain-id = "structstestnet-111"
 keyring-backend = "test"
 node = "tcp://reactor.oh.energy:26657"
 output = "text"
@@ -3673,8 +3670,8 @@ Copy or create `.env` with at minimum:
 
 ```
 MONIKER=MyAgentNode
-NETWORK_VERSION=109b
-NETWORK_CHAIN_ID=structstestnet-109
+NETWORK_VERSION=111b
+NETWORK_CHAIN_ID=structstestnet-111
 ```
 
 ### 3. Start the Stack
