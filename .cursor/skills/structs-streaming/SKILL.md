@@ -117,14 +117,36 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | Event | Description | React By |
 |-------|-------------|----------|
 | `player_consensus` | Player chain data updated | Update intel |
-| `player_meta` | Player metadata changed | Update intel |
+| `player_meta` | Player metadata changed (includes `username` and `pfp` after a `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` lands and the cache trigger updates `structs.player_meta`) | Update intel |
 
 ### Guild Events
 
 | Event | Description | React By |
 |-------|-------------|----------|
 | `guild_consensus` | Guild chain data updated | Update guild status |
+| `guild_meta` | Guild metadata changed (`name`, `pfp`) — fires after `MsgGuildUpdateName` / `MsgGuildUpdatePfp` lands and `structs.guild_meta` is updated | Update intel |
 | `guild_membership` | Member joined/left guild | Update relationship map |
+
+### UGC Moderation Events
+
+UGC name/pfp updates emit two distinct streams:
+
+1. **GRASS DB-trigger events** (the table above): `player_meta` and `guild_meta` fire when the cache layer commits the new value. Substation and planet name/pfp updates do **not** currently emit dedicated GRASS categories — they reach observers only through the chain event in the next bullet.
+2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates).
+
+Subscribe to chain events via Tendermint's `tx.events` or `block_events` subscription (separate from GRASS) when you want a complete audit trail of moderation activity. Schema:
+
+| Attribute | Description |
+|-----------|-------------|
+| `actor_player_id` | Player ID of the moderator who performed the override |
+| `actor_address` | Signing address that authored the tx |
+| `target_object_id` | Player / planet / substation / guild ID being moderated |
+| `target_owner_player_id` | Owner player ID at the time of the update |
+| `field` | `name` or `pfp` |
+| `old_value` | Field value before the update |
+| `new_value` | Field value after the update |
+
+Use this stream as a moderation audit log — see `knowledge/mechanics/ugc-moderation.md` for context.
 
 ### Inventory Events
 

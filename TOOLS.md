@@ -6,7 +6,7 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.23+).
 
 ---
 

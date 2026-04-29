@@ -2,24 +2,25 @@
 
 **Version**: 2.0.0
 **Category**: Authentication
-**Purpose**: Permission bit manipulation, checking, combination, and validation for the 24-bit permission system
+**Purpose**: Permission bit manipulation, checking, combination, and validation for the 25-bit permission system
 
 ---
 
 ## Overview
 
-Permissions are 24-bit flags (bits 0-23, PermAll = 16777215). The old single Hash permission (bit 6, value 64) has been replaced by four granular hash permissions on bits 20-23. Permission checks use **HasAll** semantics — all required bits must be present, not just any one.
+Permissions are 25-bit flags (bits 0-24, PermAll = 33554431). Bit 24 (`PermGuildUGCUpdate` = 16777216) was added in v0.16.0 to gate guild-moderated name/pfp updates on player, planet, and substation objects. Permission checks use **HasAll** semantics — all required bits must be present, not just any one.
 
 ## Permission Bit Values
 
 | Permission | Bit(s) | Value | Description |
 |------------|--------|-------|-------------|
-| PermAll | 0-23 | 16777215 | Full permission set (all 24 bits) |
+| PermAll | 0-24 | 33554431 | Full permission set (all 25 bits) |
 | PermHashBuild | 20 | 1048576 | Hash permission for building |
 | PermHashMine | 21 | 2097152 | Hash permission for mining |
 | PermHashRefine | 22 | 4194304 | Hash permission for refining |
 | PermHashRaid | 23 | 8388608 | Hash permission for raiding |
 | PermHashAll | 20-23 | 15728640 | All hash permissions combined |
+| PermGuildUGCUpdate | 24 | 16777216 | Guild moderation of UGC name/pfp on player/planet/substation |
 | Standard (bits 0-19) | 0-19 | varies | Use specific flags for the permissions you need |
 
 ## Bit Manipulation
@@ -68,12 +69,13 @@ Go:
 
 ```go
 const (
-    PermHashBuild  = 1048576
-    PermHashMine   = 2097152
-    PermHashRefine = 4194304
-    PermHashRaid   = 8388608
-    PermHashAll    = 15728640
-    PermAll        = 16777215
+    PermHashBuild      = 1048576
+    PermHashMine       = 2097152
+    PermHashRefine     = 4194304
+    PermHashRaid       = 8388608
+    PermHashAll        = 15728640
+    PermGuildUGCUpdate = 16777216
+    PermAll            = 33554431
 )
 
 func hasAllHashPermissions(permissionValue int) bool {
@@ -89,7 +91,8 @@ Examples:
 
 | Permission Value | Has All Hash? | Has Hash Mine? | Explanation |
 |-----------------|---------------|----------------|-------------|
-| `16777215` | Yes | Yes | PermAll includes all hash bits |
+| `33554431` | Yes | Yes | PermAll includes all hash bits |
+| `16777215` | Yes | Yes | Pre-v0.16.0 PermAll (no UGC bit) — still has all hash bits |
 | `15728640` | Yes | Yes | PermHashAll is exactly all hash bits |
 | `2097152` | No | Yes | Only PermHashMine set |
 | `1048575` | No | No | Bits 0-19 only, no hash bits |
@@ -131,9 +134,10 @@ Examples:
 
 | Before | Operation | After | Explanation |
 |--------|-----------|-------|-------------|
-| `1048575` | `\| 15728640` | `16777215` | Add PermHashAll to standard perms → PermAll |
+| `1048575` | `\| 15728640` | `16777215` | Add PermHashAll to standard perms → bits 0-23 set |
 | `0` | `\| 2097152` | `2097152` | Add PermHashMine to no permissions |
-| `16777215` | `\| 15728640` | `16777215` | Already has all hash, no change |
+| `33554431` | `\| 15728640` | `33554431` | Already has all bits, no change |
+| `16777215` | `\| 16777216` | `33554431` | Add PermGuildUGCUpdate to bits 0-23 → PermAll |
 
 ### Remove Hash Permissions
 
@@ -172,7 +176,8 @@ Examples:
 
 | Before | Operation | After | Explanation |
 |--------|-----------|-------|-------------|
-| `16777215` | `& ~15728640` | `1048575` | Remove all hash from PermAll |
+| `33554431` | `& ~15728640` | `17825791` | Remove all hash from PermAll, retains UGC bit |
+| `33554431` | `& ~16777216` | `16777215` | Remove only PermGuildUGCUpdate from PermAll |
 | `15728640` | `& ~15728640` | `0` | Remove all hash, leaves nothing |
 | `2097152` | `& ~2097152` | `0` | Remove PermHashMine, leaves nothing |
 | `15728640` | `& ~2097152` | `13631488` | Remove PermHashMine, keep other hash bits |
@@ -225,7 +230,7 @@ Example response for `objectId` = `0-1`:
 [
   {
     "permissionId": "0-1@1-11",
-    "value": "16777215",
+    "value": "33554431",
     "objectId": "0-1",
     "playerId": "1-11"
   }
@@ -241,9 +246,10 @@ filter: permission.playerId === "1-11"
 **Step 3**: Check hash permissions using HasAll.
 
 ```javascript
-const value = parseInt("16777215");
+const value = parseInt("33554431");
 (value & 15728640) === 15728640  // true — has all hash permissions
 (value & 2097152) === 2097152    // true — has PermHashMine specifically
+(value & 16777216) === 16777216  // true — has PermGuildUGCUpdate
 ```
 
 ### Check All Permissions for a Player
@@ -258,7 +264,7 @@ Example response for `playerId` = `1-11`:
 
 ```json
 [
-  { "permissionId": "0-1@1-11", "value": "16777215", "objectId": "0-1", "playerId": "1-11" },
+  { "permissionId": "0-1@1-11", "value": "33554431", "objectId": "0-1", "playerId": "1-11" },
   { "permissionId": "2-1@1-11", "value": "2097152", "objectId": "2-1", "playerId": "1-11" }
 ]
 ```
@@ -272,7 +278,7 @@ permissions.filter(p => {
 })
 ```
 
-Only the first permission (16777215) includes all hash bits. The second (2097152) only has PermHashMine.
+Only the first permission (33554431) includes all hash bits. The second (2097152) only has PermHashMine.
 
 ## Permission Combination
 
@@ -346,7 +352,8 @@ Examples:
 
 | Permission Value | Required Mask | Result | Explanation |
 |-----------------|---------------|--------|-------------|
-| `16777215` | `15728640` | true | PermAll has all hash bits |
+| `33554431` | `15728640` | true | PermAll has all hash bits |
+| `33554431` | `16777216` | true | PermAll has PermGuildUGCUpdate |
 | `2097152` | `15728640` | false | Only PermHashMine, missing other hash bits |
 | `3145728` | `3145728` | true | Has both PermHashBuild and PermHashMine |
 
@@ -354,14 +361,14 @@ Examples:
 
 ### Validate Permission Value Range
 
-Permission values must be integers between 0 and 16777215 inclusive.
+Permission values must be integers between 0 and 33554431 inclusive.
 
 JavaScript:
 
 ```javascript
 const isValidPermissionValue = (value) => {
   const num = parseInt(value);
-  return num >= 0 && num <= 16777215 && Number.isInteger(num);
+  return num >= 0 && num <= 33554431 && Number.isInteger(num);
 };
 ```
 
@@ -371,7 +378,7 @@ Python:
 def is_valid_permission_value(value):
     try:
         num = int(value)
-        return 0 <= num <= 16777215
+        return 0 <= num <= 33554431
     except ValueError:
         return False
 ```
@@ -384,7 +391,7 @@ func isValidPermissionValue(value string) bool {
     if err != nil {
         return false
     }
-    return num >= 0 && num <= 16777215
+    return num >= 0 && num <= 33554431
 }
 ```
 
@@ -392,10 +399,12 @@ Examples:
 
 | Value | Valid? | Reason |
 |-------|--------|--------|
-| `16777215` | Yes | PermAll, maximum valid value |
+| `33554431` | Yes | PermAll, maximum valid value |
+| `16777216` | Yes | PermGuildUGCUpdate alone (bit 24) |
+| `16777215` | Yes | All bits 0-23 (pre-v0.16.0 PermAll, no UGC bit) |
 | `15728640` | Yes | PermHashAll |
 | `2097152` | Yes | PermHashMine only |
-| `16777216` | No | Exceeds maximum (16777215) |
+| `33554432` | No | Exceeds maximum (33554431) |
 | `-1` | No | Negative values not allowed |
 | `abc` | No | Not a valid number |
 
@@ -427,7 +436,7 @@ Grant permissions at a specific guild rank level:
 
 ```bash
 structsd tx structs permission-guild-rank-set \
-  --from keyname --gas auto -y -- 0-1 1 16777215
+  --from keyname --gas auto -y -- 0-1 1 33554431
 ```
 
 Arguments: `{guildId} {rank} {permissionValue}`
@@ -455,11 +464,11 @@ const canMine = (guildRankValue & requiredForMining) === requiredForMining;
 
 ### Grant PermAll at Guild Rank
 
-To give a rank full permissions including all hash operations:
+To give a rank full permissions including all hash operations and guild UGC moderation:
 
 ```bash
 structsd tx structs permission-guild-rank-set \
-  --from keyname --gas auto -y -- 0-1 1 16777215
+  --from keyname --gas auto -y -- 0-1 1 33554431
 ```
 
 ## Example Workflows

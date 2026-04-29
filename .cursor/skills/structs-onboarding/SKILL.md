@@ -116,16 +116,20 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
   --reactor-api "http://reactor.oh.energy:1317" \
-  --username "your-chosen-name"
+  --username "your-chosen-name" \
+  --pfp "ipfs://bafy..."
 ```
 
 The script will:
-1. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
-2. Derive the address and pubkey
-3. Check if a player already exists for this address
-4. Sign the guild-join proxy message and POST to the guild API
-5. Poll the reactor API until the player ID is confirmed (default 120s timeout)
-6. Output JSON to stdout with all results
+1. Validate `--username` and `--pfp` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
+2. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
+3. Derive the address and pubkey
+4. Check if a player already exists for this address
+5. Sign the guild-join proxy message and POST to the guild API
+6. Poll the reactor API until the player ID is confirmed (default 120s timeout)
+7. Output JSON to stdout with all results
+
+**Note**: As of v0.16.0, the guild API forwards `username` and `pfp` to the chain via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`. The chain becomes the source of truth for player identity at creation, so the values you pass here are what other players see. `--pfp` is optional; omit it to leave the field empty.
 
 **Note**: When a player joins a guild, they receive a default guild rank of 101. Guild leadership can later promote members to lower (higher-privilege) ranks. See the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL) for rank management.
 
@@ -140,6 +144,7 @@ The script will:
   "player_id": "1-42",
   "guild_id": "0-1",
   "username": "your-chosen-name",
+  "pfp": "ipfs://bafy...",
   "created": true,
   "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
 }
@@ -162,6 +167,13 @@ structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
+
+**Preconditions**:
+
+- **Brand-new players** (no planet yet) can call `planet-explore` immediately. The chain skips the fleet check for first-time exploration.
+- **Existing players** moving to a new planet must satisfy two conditions: (1) the current planet's ore must be `0` (fully mined out), and (2) the fleet must be `onStation` at the current planet, not `away`. If the fleet is away, run `fleet-move` to bring it back first. The chain rejects with `fleet must be onStation to explore` if you skip this.
+
+This precondition exists so a player cannot abandon a half-mined planet just by sending the fleet away — exploration requires you to walk away from a planet you've actually emptied.
 
 ---
 
@@ -274,7 +286,7 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
 | Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
-| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."]` |
+| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."]` |
 | Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |

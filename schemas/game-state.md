@@ -328,7 +328,7 @@ Same structure as Reactor Grid Attributes (all string representations of integer
 | Field | Type | Description |
 |-------|------|-------------|
 | permissionId | string | Permission identifier in format 'objectId@playerId' (e.g., '0-1@1-1') for object permissions, or '{typeNumber}-{address}@0' for address permissions |
-| value | string | Permission value (numeric string). 24-bit flags (bits 0-23). `PermAll` = 16777215. See `knowledge/mechanics/permissions.md` for the full flag reference. |
+| value | string | Permission value (numeric string). 25-bit flags (bits 0-24). `PermAll` = 33554431 (bit 24 = `PermGuildUGCUpdate` = 16777216 for guild-moderated UGC). See `knowledge/mechanics/permissions.md` for the full flag reference. |
 | objectType | string | Type of object (e.g., 'guild', 'planet', 'struct', 'fleet', 'substation', 'reactor', etc.) |
 | objectIndex | string | Object index number |
 | objectId | string | Object entity ID (guild type 0, player type 1, planet type 2, reactor type 3, substation type 4, struct type 5, allocation type 6, fleet type 9, provider type 10, agreement type 11) |

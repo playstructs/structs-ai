@@ -270,6 +270,38 @@ The `detail` column for `struct_attack` includes `attackerStructId`, `targetStru
 | `id` | varchar PK | `0-{index}` (e.g., `0-1`) |
 | `entry_rank` | bigint | Default guild rank assigned to new members (chain default: 101) |
 
+### `structs.guild_meta` (UGC mirror)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Guild ID, mirrors `structs.guild.id` |
+| `name` | text | Guild name (UGC; populated by chain `MsgGuildUpdateName` -> cache trigger) |
+| `pfp` | text | Guild profile picture (UGC; added in v0.16.0; populated by `MsgGuildUpdatePfp`) |
+
+### `structs.player_meta` (UGC mirror, v0.16.0)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Player ID. **PK collapsed in v0.16.0 from `(id, guild_id)` to `(id)`** -- there is now exactly one meta row per player |
+| `guild_id` | varchar | Player's current guild (kept in sync via `cache.handle_event_player`) |
+| `username` | text | Player username (UGC; chain is sole source of truth as of v0.16.0; written from `MsgPlayerUpdateName` and from `MsgGuildMembershipJoinProxy.playerName` at signup) |
+| `pfp` | text | Player profile picture (UGC; written from `MsgPlayerUpdatePfp` and from `MsgGuildMembershipJoinProxy.playerPfp`) |
+
+The webapp no longer writes `player_meta` directly. The `PLAYER_PENDING_MERGE` trigger was modified in v0.16.0 to skip the meta insert -- the chain UGC update is the only path that populates `username` and `pfp`. The trigger still writes the `lastAction` grid seed so newly merged players have a complete grid.
+
+### `structs.substation` (with UGC fields)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Substation ID |
+| `owner` | varchar | Owner player ID |
+| `name` | text | Substation name (UGC; added in v0.16.0; written from `MsgSubstationUpdateName` directly on the substation row -- no separate `substation_meta` table) |
+| `pfp` | text | Substation profile picture (UGC; added in v0.16.0; written from `MsgSubstationUpdatePfp`) |
+
+### `structs.planet_meta`
+
+Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain only updates the planet name when the chain event carries a non-empty value, so an auto-generated default name is never overwritten by an empty UGC update.
+
 ### `structs.permission_guild_rank`
 
 | Column | Type | Notes |
@@ -306,13 +338,49 @@ Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechan
 
 ## Signer Schema (Transaction Signing Agent)
 
-The TSA manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
+The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.com/playstructs/structs-tsa)) manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
 
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
 | `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
-| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 90+ command types. |
+| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types as of v0.16.0. |
+
+### `signer.signer_tx_type` (v0.16.0 additions)
+
+Seven new enum values were added in v0.16.0 for the UGC transactions:
+
+| Enum Value | Wraps |
+|------------|-------|
+| `guild-update-name` | `MsgGuildUpdateName` |
+| `guild-update-pfp` | `MsgGuildUpdatePfp` |
+| `player-update-name` | `MsgPlayerUpdateName` |
+| `player-update-pfp` | `MsgPlayerUpdatePfp` |
+| `substation-update-name` | `MsgSubstationUpdateName` |
+| `substation-update-pfp` | `MsgSubstationUpdatePfp` |
+| `planet-update-name` | `MsgPlanetUpdateName` |
+
+### `signer.tx_*` wrappers (v0.16.0)
+
+The signing layer adds 12 new wrapper functions:
+
+- **7 self-service wrappers** (one per UGC tx type above) that require `PermUpdate` (4) on the target object before queueing the tx. These are used when a player updates their own UGC.
+- **5 guild-moderation wrappers** (`tx_guild_moderate_player_name`, `_player_pfp`, `_planet_name`, `_substation_name`, `_substation_pfp`) that require `PermGuildUGCUpdate` (16777216) on the target owner's guild before queueing the tx. These are used when a guild moderator overrides a member's UGC.
+
+`signer.UPDATE_PENDING_ACCOUNT` was also bumped from the old `PermAll = 16777215` to the v0.16.0 `PermAll = 33554431` so newly provisioned signer addresses receive the new bit by default.
+
+### `PLAYER_PENDING_JOIN_PROXY` (v0.16.0)
+
+The `PLAYER_PENDING_JOIN_PROXY` trigger was modified to thread `username` and `pfp` from the pending row through to `signer.CREATE_TRANSACTION` for the `guild-membership-join-proxy` command, packaged into the `ugc` JSONB argument. The webapp's signup flow becomes:
+
+```text
+webapp signup
+  -> structs.player_pending row (with username, pfp)
+  -> PLAYER_PENDING_JOIN_PROXY trigger
+  -> signer.tx (command=guild-membership-join-proxy, args.ugc={username, pfp, ...})
+  -> TSA claims, signs MsgGuildMembershipJoinProxy with playerName/playerPfp
+  -> chain validates name/pfp, creates player, populates player_meta via cache trigger
+```
 
 ---
 

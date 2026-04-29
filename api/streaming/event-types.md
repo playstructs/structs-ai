@@ -60,6 +60,18 @@
 |------------|-------------|-----------------|
 | address_register | Address registration events | `structs.address.register.*` |
 
+### UGC Moderation Events (Cosmos chain events, not GRASS)
+
+`ugc_moderated` is emitted as a regular Cosmos `sdk.Event` by the keeper (not by the GRASS DB-trigger pipeline) whenever a UGC name/pfp update is performed by an actor who is not the target object's owner. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`), not via NATS.
+
+| Event Name | Description | Source | Schema |
+|------------|-------------|--------|--------|
+| ugc_moderated | A guild moderator overwrote another player's name/pfp, or the name/pfp of a planet/substation owned by a guild-mate | Cosmos chain event (`sdk.Event`, type `ugc_moderated`) | `event-schemas.md#UGCModeratedEvent` |
+
+The chain only emits this event when `actor_player_id != target_owner_player_id`. Self-service updates (a player renaming themselves, a guild owner renaming their own guild) are silent.
+
+The corresponding `player_meta` and `guild_meta` GRASS events also fire (see Player and Guild sections above) when the cache layer commits the new value to the database. Substation and planet UGC changes do **not** currently emit dedicated GRASS categories.
+
 ---
 
 ## Subject Patterns

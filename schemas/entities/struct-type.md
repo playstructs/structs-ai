@@ -67,7 +67,11 @@
 | primaryWeaponAmbits | string | Primary weapon operating ambits -- bitmask |
 | primaryWeaponTargets | string | Number of targets primary weapon can hit |
 | primaryWeaponShots | string | Number of shots primary weapon can fire |
+| primaryWeaponShotSuccessRateNumerator | string | Numerator of the per-shot success rate |
+| primaryWeaponShotSuccessRateDenominator | string | Denominator of the per-shot success rate |
+| primaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Added in v0.16.0. Defaults to `0` (no guarantee). |
 | primaryWeaponDamage | string | Primary weapon damage |
+| primaryWeaponRecoilDamage | string | Damage applied to attacker per attack |
 | primaryWeaponBlockable | boolean | Whether primary weapon damage can be blocked |
 | primaryWeaponCounterable | boolean | Whether primary weapon can be countered |
 
@@ -76,6 +80,18 @@
 | Field | Type | Description |
 |-------|------|-------------|
 | secondaryWeapon | string | Secondary weapon type (e.g., `noActiveWeaponry`) |
+| secondaryWeaponControl | string | Secondary weapon control type |
+| secondaryWeaponCharge | string | Charge cost for secondary weapon |
+| secondaryWeaponAmbits | string | Secondary weapon operating ambits -- bitmask |
+| secondaryWeaponTargets | string | Number of targets secondary weapon can hit |
+| secondaryWeaponShots | string | Number of shots secondary weapon can fire |
+| secondaryWeaponShotSuccessRateNumerator | string | Numerator of the per-shot success rate |
+| secondaryWeaponShotSuccessRateDenominator | string | Denominator of the per-shot success rate |
+| secondaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Added in v0.16.0. Currently set to `1` for the Starfighter Attack Run; defaults to `0` everywhere else. |
+| secondaryWeaponDamage | string | Secondary weapon damage |
+| secondaryWeaponRecoilDamage | string | Damage applied to attacker per attack |
+| secondaryWeaponBlockable | boolean | Whether secondary weapon damage can be blocked |
+| secondaryWeaponCounterable | boolean | Whether secondary weapon can be countered |
 
 ### Charge Costs
 

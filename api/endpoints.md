@@ -394,11 +394,12 @@ All webapp endpoints use the Web Application API (`http://localhost:8080`).
 | GET | `/api/player/{player_id}` | Get player information | No |
 | GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height | No |
 | GET | `/api/player/raid/search` | Search player raids | No |
-| PUT | `/api/player/username` | Update player username | Required |
 | GET | `/api/player/transfer/search` | Search player transfers | No |
 | GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | No |
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
 | GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | No |
+
+> **v0.16.0**: `PUT /api/player/username` was removed. Username (and PFP) updates are now on-chain transactions (`MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`); the webapp queues them through the signing client manager. See `knowledge/mechanics/ugc-moderation.md`.
 
 **`GET /api/player/{player_id}`** (`webapp-player-by-id`)
 

@@ -67,7 +67,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 |--------|--------|-------------|--------------------|-----------| ------|
 | Command Ship | 1 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
 | Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
-| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
+| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary now floors at 1 hit per Attack Run (v0.16.0 `secondaryWeaponGuaranteedShots = 1`) |
 | Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
 | Pursuit Fighter | 1 | guided | Air | — | Cheapest air offense |
 | Stealth Bomber | 8 | guided | Land, Water | — | Stealth (1 charge to activate) |

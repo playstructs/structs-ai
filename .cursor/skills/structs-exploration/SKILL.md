@@ -9,10 +9,11 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 ## Procedure
 
-1. **Check eligibility** — `structsd query structs planet [id]`. Exploration requires `currentOre == 0` (planet complete). One planet per player at a time; old planet is released on explore.
-2. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
-3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
-4. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
+1. **Check eligibility** — `structsd query structs planet [id]`. For an existing player, exploration requires (a) `currentOre == 0` on the current planet (fully mined) AND (b) the fleet is `onStation` at that planet. Brand-new players (no current planet) skip both checks. One planet per player at a time; old planet is released on explore.
+2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
+3. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0 on a planet, status = complete; all structs on it are destroyed and fleets present are sent away.
+4. **Move fleet** — To relocate between planets without exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
+5. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
@@ -37,6 +38,7 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 ## Error Handling
 
 - **"planet not complete"** — Deplete ore (currentOre = 0) before exploring.
+- **"fleet must be onStation to explore"** — Recall the fleet to your current planet first via `fleet-move`. The chain blocks explore until the fleet has actually returned. (New players with no current planet do not see this error.)
 - **"fleet away"** — Fleet must be available; wait for return or check fleet state.
 - **"invalid destination"** — Use valid location ID; query grid for options.
 

@@ -16,7 +16,8 @@
 | economic | MsgProviderCreate, MsgAgreementCreate, MsgOreMining, MsgOreRefining, MsgGeneratorAllocate |
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
-| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipLeave, MsgGuildBankMint, MsgGuildBankRedeem |
+| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipLeave, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
+| ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
 | struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
 ## Common Requirements
@@ -811,9 +812,10 @@ Note: `alphaMatterAmount` is in micrograms (100 grams = 100,000,000 micrograms).
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| currentPlanetEmpty | Current planet must have 0 ore remaining (all ore mined). Check: query current planet attributes for ore amount, must be 0. |
+| currentPlanetEmpty | Only enforced if the player already owns a planet — current planet must have 0 ore remaining (all ore mined). New players exploring for the first time are exempt. |
+| fleetOnStation | Only enforced if the player already owns a planet — fleet must be `onStation` at the current planet (not `away`). New players have no current planet, so this check is skipped. The chain rejects with `fleet must be onStation to explore` if violated. |
 
-Transaction may broadcast but planet ownership unchanged if current planet has ore remaining. Always verify game state after broadcast.
+Transaction may broadcast but planet ownership unchanged if requirements are not met. Always verify game state after broadcast.
 
 **Result**:
 - New planet created with starting properties
@@ -943,6 +945,46 @@ Transaction may broadcast but planet ownership unchanged if current planet has o
         "@type": "/structs.structs.MsgGuildMembershipJoin",
         "creator": "structs1...",
         "guildId": "0-1"
+      }
+    ]
+  }
+}
+```
+
+### MsgGuildMembershipJoinProxy
+
+- **ID**: `guild-membership-join-proxy`
+- **Name**: Proxy Join Guild
+- **Message Type**: `/structs.structs.MsgGuildMembershipJoinProxy`
+- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+- **Description**: A guild member signs in a brand-new player on behalf of an unfunded address. Used during onboarding to bootstrap a player without requiring them to first acquire `ualpha` to pay fees. As of v0.16.0 the proxy can also seed the new player's UGC name and pfp directly so the chain becomes the single source of truth for player identity from creation.
+
+**Required Fields**: `creator`, `address`, `proofPubKey`, `proofSignature`
+**Optional Fields**: `substationId` (override the guild's default entry substation), `playerName` (set new player's name immediately), `playerPfp` (set new player's pfp immediately)
+
+| Requirement | Details |
+|-------------|---------|
+| permGuildMembership | Caller needs `PermGuildMembership` (512) on the guild |
+| permSubstationConnection | Also `PermSubstationConnection` (1024) on the substation if `substationId` is set |
+| validProof | `proofPubKey` and `proofSignature` must derive to `address` (secp256k1 sign-of-pubkey self-proof) |
+| validPlayerName | If `playerName` is set, must satisfy `ValidatePlayerName` (3-20 runes, `^[\p{L}0-9\-_]{3,20}$`, NFC, no combining/bidi/object-id-shaped) |
+| validPlayerPfp | If `playerPfp` is set, must satisfy `ValidatePfp` (see UGC actions) |
+
+**Self-proof construction**: Sign the secp256k1 compressed pubkey bytes with the corresponding private key; submit the signature as `proofSignature`. The chain rederives the address from `proofPubKey` and rejects mismatches.
+
+```json
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgGuildMembershipJoinProxy",
+        "creator": "structs1moderator...",
+        "address": "structs1newplayer...",
+        "proofPubKey": "Aqg...base64...",
+        "proofSignature": "MEU...base64...",
+        "substationId": "4-3",
+        "playerName": "Andromeda7",
+        "playerPfp": "ipfs://bafy..."
       }
     ]
   }
@@ -1104,6 +1146,111 @@ Transaction may broadcast but planet ownership unchanged if current planet has o
 | Requirement | Details |
 |-------------|---------|
 | callerHasPermission | Caller must already have the specified permission on the object |
+
+---
+
+## UGC Actions
+
+User-generated content (name and pfp) updates. Added in v0.16.0. All seven messages are part of the free-gas Structs path. The `Update*Name` and `Update*Pfp` messages on player, planet, and substation route through `UGCPermissionCheck` (self-service via `PermUpdate` on the target, OR guild moderation via `PermGuildUGCUpdate` on the target owner's guild). Guild rename/repfp uses the standard `PermissionCheck` with `PermUpdate` on the guild itself. Validation is enforced by `types.ValidatePlayerName` / `ValidateEntityName` / `ValidatePlanetName` / `ValidatePfp` (see `schemas/validation.md` and `knowledge/mechanics/ugc-moderation.md`). When the actor is not the target's owner, the chain emits a `ugc_moderated` event.
+
+### MsgPlayerUpdateName
+
+- **ID**: `player-update-name`
+- **Name**: Update Player Name
+- **Message Type**: `/structs.structs.MsgPlayerUpdateName`
+- **Description**: Set or change a player's display name.
+
+**Required Fields**: `creator`, `playerId`, `name`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+| validName | Must satisfy `ValidatePlayerName` (3-20 runes after NFC, `^[\p{L}0-9\-_]{3,20}$`, no spaces, apostrophes, combining marks, bidi/zero-width, or object-id-shaped strings) |
+
+### MsgPlayerUpdatePfp
+
+- **ID**: `player-update-pfp`
+- **Name**: Update Player Pfp
+- **Message Type**: `/structs.structs.MsgPlayerUpdatePfp`
+- **Description**: Set or change a player's profile picture (URL or opaque identifier).
+
+**Required Fields**: `creator`, `playerId`, `pfp`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+| validPfp | Must satisfy `ValidatePfp` (empty string clears; otherwise <=256 runes, no control/bidi/whitespace/`<>``"\\` chars; no `:` -> `^[A-Za-z0-9._/\-]{1,256}$`; with `:` -> scheme in {https, http, ipfs, ipns, ar} and parses cleanly) |
+
+### MsgGuildUpdateName
+
+- **ID**: `guild-update-name`
+- **Name**: Update Guild Name
+- **Message Type**: `/structs.structs.MsgGuildUpdateName`
+- **Description**: Rename a guild.
+
+**Required Fields**: `creator`, `guildId`, `name`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the guild |
+| validName | Must satisfy `ValidateEntityName` (3-20 runes after NFC, `^[\p{L}0-9\-_' ]{3,20}$`, no leading/trailing spaces, no double space, no combining marks, no bidi/zero-width, not object-id-shaped) |
+| uniqueness | Names must be unique under `NormalizeName` (NFC + lowercase + trim) — chain rejects duplicates |
+
+### MsgGuildUpdatePfp
+
+- **ID**: `guild-update-pfp`
+- **Name**: Update Guild Pfp
+- **Message Type**: `/structs.structs.MsgGuildUpdatePfp`
+- **Description**: Set or change a guild's profile picture.
+
+**Required Fields**: `creator`, `guildId`, `pfp`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the guild |
+| validPfp | Must satisfy `ValidatePfp` (see player-update-pfp) |
+
+### MsgPlanetUpdateName
+
+- **ID**: `planet-update-name`
+- **Name**: Update Planet Name
+- **Message Type**: `/structs.structs.MsgPlanetUpdateName`
+- **Description**: Rename a planet (typically used by the planet's owner or a guild moderator).
+
+**Required Fields**: `creator`, `planetId`, `name`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the planet **OR** `PermGuildUGCUpdate` (16777216) on the planet owner's guild |
+| validName | Must satisfy `ValidatePlanetName` (3-25 runes after NFC, `^[\p{L}0-9\-_' ]{3,25}$`, no leading/trailing spaces, no double space, no combining marks, no bidi/zero-width, not object-id-shaped) |
+
+### MsgSubstationUpdateName
+
+- **ID**: `substation-update-name`
+- **Name**: Update Substation Name
+- **Message Type**: `/structs.structs.MsgSubstationUpdateName`
+- **Description**: Rename a substation.
+
+**Required Fields**: `creator`, `substationId`, `name`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
+| validName | Must satisfy `ValidateEntityName` |
+
+### MsgSubstationUpdatePfp
+
+- **ID**: `substation-update-pfp`
+- **Name**: Update Substation Pfp
+- **Message Type**: `/structs.structs.MsgSubstationUpdatePfp`
+- **Description**: Set or change a substation's profile picture.
+
+**Required Fields**: `creator`, `substationId`, `pfp`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
+| validPfp | Must satisfy `ValidatePfp` |
 
 ---
 

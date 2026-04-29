@@ -10,7 +10,7 @@
 
 ## Permission Flags
 
-Permissions use 24-bit flags stored as `uint64`. There are 24 individual permission bits (bits 0–23). `PermAll` = 16777215 (all 24 bits set, 2^24 − 1).
+Permissions use 25-bit flags stored as `uint64`. There are 25 individual permission bits (bits 0–24). `PermAll` = 33554431 (all 25 bits set, 2^25 − 1). The bit-24 flag is `PermGuildUGCUpdate` (16777216), used for guild-moderated name/pfp updates.
 
 ---
 

@@ -323,7 +323,7 @@
 
 - **ID**: `permission`
 - **Category**: core
-- **Description**: A permission (access control). Permission values are 24-bit flags (bits 0-23). `PermAll` = 16777215. See `knowledge/mechanics/permissions.md` for the full reference.
+- **Description**: A permission (access control). Permission values are 25-bit flags (bits 0-24). `PermAll` = 33554431. Bit 24 (`PermGuildUGCUpdate` = 16777216) gates guild-moderated UGC updates. See `knowledge/mechanics/permissions.md` for the full reference.
 - **Endpoint**: `/structs/permission/{permissionId}`
 - **List Endpoint**: `/structs/permission`
 

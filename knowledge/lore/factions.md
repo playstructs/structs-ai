@@ -24,6 +24,8 @@ The galaxy has no single government. Power is distributed among guilds, independ
 
 **Tension**: Guild membership offers protection and token access. It also imposes obligations—contributions, defense duties, coordination requirements. Some players prefer independence.
 
+**Identity and moderation**: Guilds are also the unit of content moderation. Each guild decides whether and how to police the names and profile pictures of its members and the planets/substations under its umbrella, using the chain's `PermGuildUGCUpdate` permission and the `*-update-name` / `*-update-pfp` transactions. There is no global moderator -- if you don't like a guild's standards, leave it. See [`knowledge/mechanics/ugc-moderation.md`](../mechanics/ugc-moderation.md) for the full philosophy and rule set.
+
 ---
 
 ## Central Banks

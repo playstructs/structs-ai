@@ -5,7 +5,9 @@ title: Mechanics
 # Mechanics
 
 - [Combat](combat) -- Damage, evasion, raids, weapon systems
-- [Permissions](permissions) -- 24-bit permission flags, guild rank permissions, handler reference
+- [Permissions](permissions) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
+- [Transactions](transactions) -- Free vs paid messages, ante handler routing, gas mechanics
+- [UGC Moderation](ugc-moderation) -- Decentralized name/pfp moderation philosophy, validation rules, audit events
 - [Resources](resources) -- Ore, Alpha Matter, energy conversions
 - [Power](power) -- Capacity, load, online status formulas
 - [Building](building) -- Construction, proof-of-work, struct states

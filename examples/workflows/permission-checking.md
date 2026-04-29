@@ -7,7 +7,7 @@
 
 ## Description
 
-Workflow for checking permissions in the 24-bit permission system. Permissions use HasAll semantics — all required bits must be present. The check flow resolves in order: address → ownership → object permission → guild rank permission.
+Workflow for checking permissions in the 25-bit permission system (bits 0-24, `PermAll` = 33554431). Permissions use HasAll semantics — all required bits must be present. The check flow resolves in order: address → ownership → object permission → guild rank permission. UGC name/pfp updates on player, planet, and substation objects use a slightly different flow that falls back from `PermUpdate` (4) on the target to `PermGuildUGCUpdate` (16777216) on the target owner's guild — see `knowledge/mechanics/ugc-moderation.md`.
 
 ## Primary Workflow: Check Player Permissions
 
@@ -26,7 +26,7 @@ Get all permissions for a specific object.
 [
   {
     "permissionId": "0-1@1-11",
-    "value": "16777215",
+    "value": "33554431",
     "objectType": "guild",
     "objectIndex": "1",
     "objectId": "0-1",
@@ -54,7 +54,7 @@ Find permission for a specific player.
 ```json
 {
   "permissionId": "0-1@1-11",
-  "value": "16777215"
+  "value": "33554431"
 }
 ```
 
@@ -79,7 +79,7 @@ const value = parseInt(permission.value);
 
 | Permission Value | Check | Result | Explanation |
 |------------------|-------|--------|-------------|
-| `16777215` | `& 15728640 === 15728640` | Yes | PermAll includes all hash bits |
+| `33554431` | `& 15728640 === 15728640` | Yes | PermAll includes all hash bits |
 | `2097152` | `& 15728640 === 15728640` | No | Only PermHashMine, missing Build/Refine/Raid |
 | `2097152` | `& 2097152 === 2097152` | Yes | Has PermHashMine specifically |
 
@@ -105,7 +105,7 @@ const required = 2097152; // PermHashMine
 
 ```bash
 structsd tx structs permission-guild-rank-set \
-  --from keyname --gas auto -y -- 0-1 1 16777215
+  --from keyname --gas auto -y -- 0-1 1 33554431
 ```
 
 **Revoke guild rank permissions**:
@@ -121,7 +121,8 @@ Check for other permission bits if needed.
 
 | Permission Value | Description |
 |------------------|-------------|
-| 16777215 | PermAll — has all permissions including all hash bits |
+| 33554431 | PermAll — has all 25 permission bits including UGC moderation |
+| 16777216 | PermGuildUGCUpdate only — guild moderation flag (bit 24) |
 | 15728640 | PermHashAll — has all four hash permission bits only |
 | 1048576 | PermHashBuild only |
 | 2097152 | PermHashMine only |
@@ -156,7 +157,7 @@ Get all permissions for a player.
 [
   {
     "permissionId": "0-1@1-11",
-    "value": "16777215",
+    "value": "33554431",
     "objectId": "0-1",
     "playerId": "1-11"
   },
@@ -188,13 +189,13 @@ permissions.filter(p => {
 [
   {
     "permissionId": "0-1@1-11",
-    "value": "16777215",
+    "value": "33554431",
     "hasAllHashPermissions": true
   }
 ]
 ```
 
-Only the first permission (16777215) has all hash bits. The second (2097152) only has PermHashMine and would not pass the PermHashAll check.
+Only the first permission (33554431) has all hash bits. The second (2097152) only has PermHashMine and would not pass the PermHashAll check.
 
 ## Use Cases
 

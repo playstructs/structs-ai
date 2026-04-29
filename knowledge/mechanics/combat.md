@@ -95,13 +95,16 @@ else health = health - damage
 
 | Variable | Description |
 |----------|-------------|
-| weaponShots | Number of shots per attack |
+| weaponShots | Number of shots per attack (`primaryWeaponShots` / `secondaryWeaponShots`) |
 | weaponShotSuccessRate | Per-shot success (Numerator/Denominator) |
+| weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`, added in v0.16.0) |
 | weaponDamage | Damage per successful shot |
 | damageReduction | Defense reduction |
 | health | Target current health |
 
-**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Minimum damage after reduction is 1. Cap at target health.
+**Algorithm**: For shot index `i` in `0..weaponShots`, the shot hits if `i < weaponGuaranteedShots` OR `IsSuccessful(weaponShotSuccessRate)`. The first `weaponGuaranteedShots` shots are auto-hits; only the remaining shots roll against the success rate. Sum the damage from successful shots, apply `damageReduction`. Minimum damage after reduction is 1. Cap at target health.
+
+**Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. This was the v0.16.0 fix for the Starfighter's Attack Run feeling unreliable. The chain currently uses guaranteed shots only on Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
 
 **Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 

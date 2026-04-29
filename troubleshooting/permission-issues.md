@@ -7,7 +7,9 @@
 
 ## Overview
 
-This guide helps troubleshoot issues with permissions and permission bit manipulation. Permission values are 24-bit flags (bits 0-23) combined using bitwise OR. The maximum value (PermAll) is `16777215`.
+This guide helps troubleshoot issues with permissions and permission bit manipulation. Permission values are 25-bit flags (bits 0-24) combined using bitwise OR. The maximum value (PermAll) is `33554431`.
+
+Bit 24 (`PermGuildUGCUpdate`, value `16777216`) was added in v0.16.0 for guild-moderated UGC (name/pfp) updates on player, planet, and substation objects. See `knowledge/mechanics/ugc-moderation.md`.
 
 The permission system uses **HasAll** semantics: all required bits must be present in the permission value. A check like `(value & required) == required` must match every bit — a single matching bit is not sufficient.
 
@@ -58,6 +60,8 @@ The old single Hash permission has been replaced by four granular hash permissio
 }
 ```
 
+To grant `PermAll` (every bit including the new `PermGuildUGCUpdate` bit 24), use `33554431` instead of `16777215`.
+
 **Reference**: `schemas/game-state.md#/definitions/Permission`, `api/queries/permission.md`
 
 ---
@@ -73,7 +77,9 @@ The old single Hash permission has been replaced by four granular hash permissio
 2. Check `permission.value`
 3. Verify bit combination logic
 4. Common values:
-   - `16777215` — PermAll (all 24-bit permissions)
+   - `33554431` — PermAll (all 25-bit permissions)
+   - `16777216` — PermGuildUGCUpdate only (guild moderation flag, bit 24)
+   - `16777215` — Pre-v0.16.0 PermAll (all 24 lower bits without `PermGuildUGCUpdate`)
    - `15728640` — PermHashAll only (all four hash bits)
    - `1048576` — PermHashBuild only
    - `2097152` — PermHashMine only
@@ -197,15 +203,15 @@ The old single Hash permission has been replaced by four granular hash permissio
 **Diagnosis**:
 1. Check permission values being combined
 2. Verify bitwise OR operation: `value1 | value2`
-3. Verify permission bits are valid (0-23 for standard permissions)
-4. Maximum valid value: 16777215 (PermAll)
+3. Verify permission bits are valid (0-24)
+4. Maximum valid value: 33554431 (PermAll)
 
 **Solution**:
 1. Use correct bitwise operations:
    - Combine: `value = value1 | value2`
    - Check (HasAll): `(value & required) == required`
    - Remove: `value = value & ~bits`
-2. Verify values are within valid range (0 to 16777215)
+2. Verify values are within valid range (0 to 33554431)
 3. Test bit combinations before applying
 
 **Example**:
@@ -244,7 +250,7 @@ The old single Hash permission has been replaced by four granular hash permissio
 ```bash
 # Set guild rank permissions (grant PermAll to rank)
 structsd tx structs permission-guild-rank-set \
-  --from keyname --gas auto -y -- 0-1 1 16777215
+  --from keyname --gas auto -y -- 0-1 1 33554431
 
 # Revoke guild rank permissions
 structsd tx structs permission-guild-rank-revoke \
@@ -257,7 +263,7 @@ structsd tx structs permission-guild-rank-revoke \
 
 ## Permission Bit Reference
 
-### 24-Bit Permission Flags
+### 25-Bit Permission Flags
 
 | Bits | Name | Value | Description |
 |------|------|-------|-------------|
@@ -266,6 +272,7 @@ structsd tx structs permission-guild-rank-revoke \
 | 21 | PermHashMine | 2097152 | Hash permission for mining |
 | 22 | PermHashRefine | 4194304 | Hash permission for refining |
 | 23 | PermHashRaid | 8388608 | Hash permission for raiding |
+| 24 | PermGuildUGCUpdate | 16777216 | Guild moderation of name/pfp on player, planet, substation |
 
 ### Common Permission Values
 
@@ -275,7 +282,9 @@ structsd tx structs permission-guild-rank-revoke \
 - **4194304**: PermHashRefine only
 - **8388608**: PermHashRaid only
 - **15728640**: PermHashAll (all four hash bits, bits 20-23)
-- **16777215**: PermAll (all permissions, bits 0-23)
+- **16777215**: Pre-v0.16.0 PermAll (bits 0-23, no UGC moderation)
+- **16777216**: PermGuildUGCUpdate only (bit 24)
+- **33554431**: PermAll (all permissions, bits 0-24)
 
 ---
 

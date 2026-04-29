@@ -18,13 +18,13 @@ All three layers are checked during `PermissionCheck`, the central authorization
 
 ## Permission Flags
 
-Permissions are bitwise flags stored as `uint64` values. There are 24 individual permission bits (bits 0--23):
+Permissions are bitwise flags stored as `uint64` values. There are 25 individual permission bits (bits 0--24):
 
 | Bit | Value | Name | Description |
 |-----|-------|------|-------------|
 | 0 | 1 | `PermPlay` | All struct, fleet, and planetary actions |
 | 1 | 2 | `PermAdmin` | Owner-level administrative access |
-| 2 | 4 | `PermUpdate` | Update object properties |
+| 2 | 4 | `PermUpdate` | Update object properties (also self-service UGC name/pfp) |
 | 3 | 8 | `PermDelete` | Delete objects |
 | 4 | 16 | `PermTokenTransfer` | Transfer tokens |
 | 5 | 32 | `PermTokenInfuse` | Infuse tokens into reactors |
@@ -46,6 +46,7 @@ Permissions are bitwise flags stored as `uint64` values. There are 24 individual
 | 21 | 2097152 | `PermHashMine` | Submit ore mining proof-of-work |
 | 22 | 4194304 | `PermHashRefine` | Submit ore refinery proof-of-work |
 | 23 | 8388608 | `PermHashRaid` | Submit planet raid proof-of-work |
+| 24 | 16777216 | `PermGuildUGCUpdate` | Moderate name/pfp on guild-owned objects (members, substations, planets) |
 
 ### Composite Permission Masks
 
@@ -58,12 +59,12 @@ Multiple flags can be combined with bitwise OR. The system defines several usefu
 | `PermHashAll` | 15728640 | HashBuild, HashMine, HashRefine, HashRaid |
 | `PermAgreementAll` | 14 | Admin, Update, Delete |
 | `PermProviderAll` | 393230 | Admin, Update, Delete, ProviderWithdraw, ProviderOpen |
-| `PermGuildAll` | 315910 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen |
+| `PermGuildAll` | 17166862 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen, GuildUGCUpdate |
 | `PermSubstationAll` | 1294 | Admin, Update, Delete, SubstationConnection, SourceAllocation |
 | `PermReactorAll` | 524558 | Admin, Update, Delete, SourceAllocation, ReactorGuildCreate |
 | `PermAllocationAll` | 2062 | Admin, Update, Delete, AllocationConnection |
-| `PermAll` | 16777215 | All 24 bits set (2^24 - 1) |
-| `PermPlayerAll` | 16777215 | Same as PermAll |
+| `PermAll` | 33554431 | All 25 bits set (2^25 - 1) |
+| `PermPlayerAll` | 33554431 | Same as PermAll |
 
 ---
 
@@ -111,6 +112,18 @@ The stored value is a single `uint64` representing the bitwise OR of all granted
 7. **Guild rank permissions** -- If the player belongs to a guild, check the guild rank register for the `(objectId, guildId)` pair. All requested permission bits must have a rank record, and the player's guild rank must be numerically <= the most restrictive (lowest) rank across those bits.
 
 If none of the above grant access, the request is denied with a permission error.
+
+### UGC Permission Check (`UGCPermissionCheck`)
+
+Name and profile-picture updates on player, planet, and substation objects use a dedicated permission helper that allows EITHER self-service or guild moderation:
+
+1. Try `PermUpdate` (4) on the target object via the standard `PermissionCheck` flow above. Owners pass automatically (ownership grants every permission), and explicit object-level grants of `PermUpdate` also pass. This is the **self-service path**.
+2. If that fails, look up the target object's owner. If the owner has no guild, deny.
+3. Otherwise check `PermGuildUGCUpdate` (`16777216`) on the **owner's guild** object via `PermissionCheck`. This is the **guild moderation path** -- it lets a guild member with that permission bit (granted directly or via a guild rank register entry on the guild) rewrite the name/pfp of any object owned by a guild-mate.
+
+`MsgGuildUpdateName` and `MsgGuildUpdatePfp` do NOT use `UGCPermissionCheck`. They fall back to the standard `PermissionCheck(guild, player, PermUpdate)` -- so renaming a guild itself requires `PermUpdate` (4) on that guild, granted to the owner by ownership and reachable by other members only via an explicit grant or a rank-register entry that includes bit 2.
+
+When the actor of a UGC update is not the target object's owner, the chain emits a `ugc_moderated` event so guilds can audit moderator activity. See `knowledge/mechanics/ugc-moderation.md` for the full philosophy and validation rules.
 
 ---
 
@@ -421,7 +434,7 @@ Emitted for each guild rank permission bit that changes:
 
 ### Player Creation
 
-When a player is created (via staking delegation), their primary address is automatically granted `PermPlayerAll` (all 24 bits) on the address permission record. The primary address can exercise any permission the player holds.
+When a player is created (via reactor infusion or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record. The primary address can exercise any permission the player holds.
 
 ### Object Creation
 
@@ -538,6 +551,18 @@ For all permission transactions, the caller must already possess the permission 
 | `PlayerUpdatePrimaryAddress` | Target player | `PermAdmin` (2) |
 | `PlayerSend` | Target player | `PermTokenTransfer` (16) |
 | `PlayerUpdateGuildRank` | Guild | `PermAdmin` (2); falls back to rank-based authority |
+| `PlayerUpdateName` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+| `PlayerUpdatePfp` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+
+### UGC Transactions
+
+| Message | Object Checked | Permission Flag(s) |
+|---------|---------------|-------------------|
+| `GuildUpdateName` | Guild | `PermUpdate` (4) on the guild |
+| `GuildUpdatePfp` | Guild | `PermUpdate` (4) on the guild |
+| `PlanetUpdateName` | Planet (UGC) | `PermUpdate` (4) on planet **OR** `PermGuildUGCUpdate` (16777216) on the planet owner's guild |
+| `SubstationUpdateName` | Substation (UGC) | `PermUpdate` (4) on substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
+| `SubstationUpdatePfp` | Substation (UGC) | `PermUpdate` (4) on substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
 
 ### Address Transactions
 
@@ -683,7 +708,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 |------------|-------|---------|
 | `PermPlay` | 1 | StructBuildInitiate, StructBuildCancel, StructActivate, StructDeactivate, StructStealthActivate, StructStealthDeactivate, StructMove, StructAttack, StructDefenseSet, StructDefenseClear, FleetMove, PlanetExplore |
 | `PermAdmin` | 2 | GuildUpdateOwnerId, PlayerUpdateGuildRank, AllocationTransfer, Permission transactions (when caller-specified) |
-| `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration* |
+| `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration*, GuildUpdateName, GuildUpdatePfp; self-service path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp |
 | `PermDelete` | 8 | AddressRevoke, ProviderDelete, SubstationDelete, AllocationDelete (fallback) |
 | `PermTokenTransfer` | 16 | PlayerSend, GuildBankRedeem |
 | `PermTokenInfuse` | 32 | ReactorInfuse, ReactorCancelDefusion, StructGeneratorInfuse |
@@ -706,6 +731,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `PermHashRefine` | 4194304 | Part of PermHashAll |
 | `PermHashRaid` | 8388608 | PlanetRaidComplete, part of PermHashAll |
 | `PermHashAll` (composite) | 15728640 | StructBuildComplete, StructOreMinerComplete, StructOreRefineryComplete |
+| `PermGuildUGCUpdate` | 16777216 | Guild moderation path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp (checked on the target object owner's guild) |
 
 ---
 
@@ -714,6 +740,8 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 - [combat.md](combat.md) -- Combat mechanics and attack resolution
 - [power.md](power.md) -- Power requirements
 - [resources.md](resources.md) -- Resource types
+- [transactions.md](transactions.md) -- Free vs paid transactions, ante handler routing
+- [ugc-moderation.md](ugc-moderation.md) -- Decentralized name/pfp moderation philosophy and validation rules
 - `schemas/entities.md` -- Entity permission properties
 - `schemas/actions.md` -- Transaction definitions
 - `api/queries/permission.md` -- Permission query API

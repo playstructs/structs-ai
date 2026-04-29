@@ -32,7 +32,7 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 | Skill | File | Purpose |
 |-------|------|---------|
 | **play-structs** | [SKILL.md](.cursor/skills/play-structs/SKILL.md) | **Start here.** Zero to mining Alpha Matter in one skill |
-| structsd-install | [SKILL.md](.cursor/skills/structsd-install/SKILL.md) | Install Go, Ignite CLI, and build `structsd` binary |
+| structsd-install | [SKILL.md](.cursor/skills/structsd-install/SKILL.md) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+) |
 | structs-onboarding | [SKILL.md](.cursor/skills/structs-onboarding/SKILL.md) | Address creation, player registration, planet exploration, first builds |
 | structs-mining | [SKILL.md](.cursor/skills/structs-mining/SKILL.md) | Ore extraction and refining (mine-compute → refine-compute) |
 | structs-building | [SKILL.md](.cursor/skills/structs-building/SKILL.md) | Construction, activation, movement, defense positioning |
@@ -75,7 +75,9 @@ Reference material about the game world.
 | File | Topic |
 |------|-------|
 | [combat.md](knowledge/mechanics/combat.md) | Damage, evasion, blocking, counter-attacks, raids |
-| [permissions.md](knowledge/mechanics/permissions.md) | 24-bit permission flags, guild rank permissions, handler reference |
+| [permissions.md](knowledge/mechanics/permissions.md) | 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference |
+| [transactions.md](knowledge/mechanics/transactions.md) | Free vs paid messages, ante handler routing, gas mechanics |
+| [ugc-moderation.md](knowledge/mechanics/ugc-moderation.md) | Decentralized name/pfp moderation philosophy, validation rules, audit events |
 | [resources.md](knowledge/mechanics/resources.md) | Ore, Alpha Matter, energy, vulnerability windows |
 | [power.md](knowledge/mechanics/power.md) | Capacity, load, online status, power budget |
 | [building.md](knowledge/mechanics/building.md) | Construction, proof-of-work, difficulty decay |

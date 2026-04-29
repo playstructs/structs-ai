@@ -95,7 +95,7 @@
 ### Permission
 
 - **Key Fields**: permissionId, value
-- Permissions use a 24-bit flag system (PermAll = 16777215, PermHashAll = 15728640). Use HasAll semantics: all bits in the mask must match. See [permissions.md](../knowledge/mechanics/permissions.md) for the full flag reference.
+- Permissions use a 25-bit flag system (PermAll = 33554431, PermHashAll = 15728640, PermGuildUGCUpdate = 16777216 at bit 24). Use HasAll semantics: all bits in the mask must match. See [permissions.md](../knowledge/mechanics/permissions.md) for the full flag reference.
 - **Relationships**: Granted to Player; Applies to Planet, Struct, Fleet
 - **Query Patterns**: byId `/structs/permission/{permissionId}` | all `/structs/permission` | byObject `/structs/permission/object/{objectId}` | byPlayer `/structs/permission/player/{playerId}`
 - **Code**: `proto/structs/structs/permission.proto:11`, `x/structs/types/permission.pb.go`

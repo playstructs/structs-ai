@@ -50,15 +50,9 @@ Authenticate and log in a player.
 
 ## Player Requests
 
-### PlayerUsernameUpdateRequest
+### PlayerUsernameUpdateRequest (removed in v0.16.0)
 
-Update player username.
-
-- **Endpoint**: `PUT /api/player/username`
-
-| Field | Type | Format | Required | Constraints | Description |
-|-------|------|--------|----------|-------------|-------------|
-| username | string | | Yes | minLength: 3, maxLength: 20, pattern: `^[a-zA-Z0-9_]+$` | New username |
+`PUT /api/player/username` and the corresponding webapp request schema were removed in v0.16.0. Username (and PFP) are now updated via the on-chain transactions `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp`. The validation rules previously applied at the webapp boundary (length, character set) have been replaced by the chain validators in `ValidatePlayerName` / `ValidatePfp` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the new rules.
 
 ### PlayerRaidSearchQuery
 

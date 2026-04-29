@@ -138,7 +138,7 @@ Useful for finding struct types by searching their cheatsheet content.
 
 ## Permission Hash
 
-**Database change**: Hash permissions are stored as granular columns in the `permission` view, mapping to bits 20-23 in the 24-bit API permission value. PermHashAll = 15728640, PermAll = 16777215.
+**Database change**: Hash permissions are stored as granular columns in the `permission` view, mapping to bits 20-23 in the API permission value. PermHashAll = 15728640. The full permission bitmask is 25 bits (PermAll = 33554431); bit 24 (`PermGuildUGCUpdate` = 16777216) was added in v0.16.0 for guild-moderated UGC updates and is not yet exposed as a dedicated column in the `permission` view -- check it with `(permission.val & 16777216) > 0`.
 
 ### Get Hash Permissions for a Specific Permission
 
@@ -178,7 +178,7 @@ Example result:
 
 ```json
 [
-  { "object_id": "0-1", "player_id": "1-11", "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 16777215 }
+  { "object_id": "0-1", "player_id": "1-11", "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 33554431 }
 ]
 ```
 
@@ -224,8 +224,8 @@ Example mapping:
 
 ```json
 {
-  "database": { "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 16777215 },
-  "api": { "value": "16777215", "hasAllHashPermissions": true }
+  "database": { "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 33554431 },
+  "api": { "value": "33554431", "hasAllHashPermissions": true, "hasGuildUgcUpdate": true }
 }
 ```
 

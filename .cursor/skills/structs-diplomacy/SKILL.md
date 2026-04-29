@@ -7,15 +7,15 @@ description: Handles permissions, address management, and inter-player coordinat
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
-## Permission System (24-bit)
+## Permission System (25-bit)
 
-Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd together). See [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) for the full permission system reference.
+Permissions use a 25-bit bitmask. Individual permissions can be combined (OR'd together). See [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) for the full permission system reference.
 
 | Permission | Value | Description |
 |------------|-------|-------------|
 | PermPlay | 1 | Basic play access |
 | PermAdmin | 2 | Administrative control (manage permissions) |
-| PermUpdate | 4 | Update object settings |
+| PermUpdate | 4 | Update object settings (also self-service UGC name/pfp) |
 | PermDelete | 8 | Delete object |
 | PermTokenTransfer | 16 | Transfer tokens |
 | PermTokenInfuse | 32 | Infuse tokens into reactors/generators |
@@ -29,7 +29,8 @@ Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd t
 | PermHashMine | 2097152 | Submit mine proof-of-work |
 | PermHashRefine | 4194304 | Submit refine proof-of-work |
 | PermHashRaid | 8388608 | Submit raid proof-of-work |
-| PermAll | 16777215 | All permissions (full access) |
+| PermGuildUGCUpdate | 16777216 | Moderate name/pfp on guild-owned objects (members, planets, substations) |
+| PermAll | 33554431 | All permissions (full access) |
 
 ## Procedure
 
@@ -85,6 +86,8 @@ Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd t
 
 ## See Also
 
-- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (24-bit values, guild rank permissions)
+- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (25-bit values, guild rank permissions, UGC moderation hook)
+- [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) — Decentralized name/pfp moderation philosophy and validation rules
+- [knowledge/mechanics/transactions](https://structs.ai/knowledge/mechanics/transactions) — Free vs paid messages, ante handler routing
 - [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — Object types and IDs
 - [protocols/authentication](https://structs.ai/protocols/authentication) — Auth for address registration

@@ -63,6 +63,56 @@ A validation pattern composed of multiple rules.
 
 ---
 
+## UGC (Name and Pfp) Validation
+
+User-generated identity fields (player/guild/planet/substation names and pfps) are normalized to NFC and run through the chain validators in `x/structs/types/ugc.go`. See `knowledge/mechanics/ugc-moderation.md` for the full narrative, rationale, and reference Python/JavaScript translations of each validator.
+
+### playerName (`MsgPlayerUpdateName`, `MsgGuildMembershipJoinProxy.playerName`)
+
+| Property | Value |
+|----------|-------|
+| length (runes after NFC) | 3-20 |
+| pattern | `^[\p{L}0-9\-_]{3,20}$` |
+| forbidden | combining marks (`Mn`/`Me`), bidi/zero-width/format runes, anything matching `^[0-9]+-[0-9]+$`, invalid UTF-8 |
+| spaces | not allowed |
+| apostrophe | not allowed |
+| validator (Go) | `types.ValidatePlayerName` |
+
+### entityName (`MsgGuildUpdateName`, `MsgSubstationUpdateName`)
+
+| Property | Value |
+|----------|-------|
+| length (runes after NFC) | 3-20 |
+| pattern | `^[\p{L}0-9\-_' ]{3,20}$` |
+| forbidden | combining marks, bidi/zero-width/format, leading/trailing space, double space, object-id-shaped strings, invalid UTF-8 |
+| validator (Go) | `types.ValidateEntityName` |
+
+### planetName (`MsgPlanetUpdateName`)
+
+| Property | Value |
+|----------|-------|
+| length (runes after NFC) | 3-25 |
+| pattern | `^[\p{L}0-9\-_' ]{3,25}$` |
+| forbidden | combining marks, bidi/zero-width/format, leading/trailing space, double space, object-id-shaped strings, invalid UTF-8 |
+| validator (Go) | `types.ValidatePlanetName` |
+
+### pfp (`MsgPlayerUpdatePfp`, `MsgGuildUpdatePfp`, `MsgSubstationUpdatePfp`, `MsgGuildMembershipJoinProxy.playerPfp`)
+
+| Property | Value |
+|----------|-------|
+| empty allowed | yes (clears the pfp field) |
+| max runes | 256 (`MaxPfpLength`) |
+| forbidden chars | control chars `0x00..0x1F` and `0x7F`, bidi/zero-width/format runes, any of `<`, `>`, `` ` ``, `"`, `\`, whitespace |
+| no `:` -> opaque | must match `^[A-Za-z0-9._/\-]{1,256}$` |
+| has `:` -> URL | scheme (lowercased) must be one of `https`, `http`, `ipfs`, `ipns`, `ar`; URL must `url.Parse` cleanly; for `https`/`http` the host must be non-empty; for `ipfs`/`ipns`/`ar` at least one of host, opaque, or path must be non-empty |
+| validator (Go) | `types.ValidatePfp` |
+
+### Name uniqueness comparison
+
+Uniqueness indexes (e.g. guild names) MUST key on the `NormalizeName` form: NFC + ASCII lowercase + trim leading/trailing whitespace. Two names that produce the same `NormalizeName` value are considered identical and cannot both be registered.
+
+---
+
 ## Response Validation
 
 ### statusCode

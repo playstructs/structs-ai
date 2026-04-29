@@ -2,6 +2,7 @@
 structs-webapp/
 structs-mcp/
 docker-structs-guild/
+.references/
 
 # OS files
 .DS_Store

@@ -5,6 +5,86 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-04-28
+
+### Added - v0.16.0 (Quantillia) / structstestnet-112
+
+Major documentation update for `structsd` v0.16.0 (codename "Quantillia"). Synchronizes the docs with the chain's permission expansion (24->25 bit), the new fee/ante model, the seven new UGC (User-Generated Content) transactions and their decentralized moderation hooks, the `GuildMembershipJoinProxy` UGC fields, the planet-explore precondition tightening, the Starfighter guaranteed-shot fix, the Quantillia database schema, and the related webapp / signer / build-system changes. Includes two new knowledge documents (`transactions.md`, `ugc-moderation.md`) and a Makefile-based install path.
+
+#### Permission System (24-bit -> 25-bit)
+
+- `PermAll` and `PermPlayerAll` bumped from `16777215` to `33554431` (25 bits).
+- New permission flag `PermGuildUGCUpdate` (bit 24, value `16777216`) for guild-scoped moderation of player/planet/substation UGC.
+- `PermGuildAll` updated to `17166862`.
+- `knowledge/mechanics/permissions.md` now documents `UGCPermissionCheck` -- the two-tier flow that first attempts a self-service `PermUpdate` check, and falls back to `PermGuildUGCUpdate` against the target owner's guild.
+- All affected docs updated: `api/queries/permission.md`, `schemas/entities.md`, `schemas/game-state.md`, `knowledge/mechanics/index.md`, `reference/entity-index.md`, `reference/action-quick-reference.md`, `troubleshooting/edge-cases.md`, `troubleshooting/permission-issues.md`, `patterns/performance-optimization.md`, `examples/database/query-examples.md`, `examples/workflows/permission-checking.md`, `examples/auth/permission-examples.md`, `.cursor/skills/structs-diplomacy/SKILL.md`, `.cursor/skills/structs-guild/SKILL.md`, `SITEMAP.md`, `llms.txt`.
+
+#### Free Gameplay Transactions and Custom Ante Handler
+
+- **NEW: `knowledge/mechanics/transactions.md`** -- explains the v0.16.0 fee model: pure-Structs gameplay transactions (allocations, substations, guilds, combat, UGC, ...) are free with a 20M gas cap; six Cosmos SDK staking messages are free with a 40M gas cap (one per address per block); standard Cosmos SDK operations (`MsgSend`, non-listed `x/staking` messages, mixed transactions) still pay `ualpha`. `--gas auto` is still required for accurate gas estimation.
+- `protocols/action-protocol.md` updated with a new "Fees" subsection summarizing the free-gas changes.
+
+#### UGC Transactions and Decentralized Moderation
+
+- **NEW: `knowledge/mechanics/ugc-moderation.md`** -- philosophy and how-to for guild-scoped moderation. Covers self-service vs. moderator paths, the `PermGuildUGCUpdate` permission, the `ugc_moderated` Cosmos chain event (emitted only when `actor != owner`), per-field validation rules with Python and JavaScript snippets, and operational guidance for guild policy/auditing.
+- Seven new transactions documented across `schemas/actions.md`, `reference/action-quick-reference.md`, `.cursor/skills/structs-guild/SKILL.md`, and the structsd CLI references:
+  - Self-service: `MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`, `MsgGuildUpdateName`, `MsgGuildUpdatePfp`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName`, `MsgSubstationUpdatePfp` (all gated by `PermUpdate` on the target object)
+  - Guild moderation overrides: `MsgGuildModeratePlayerName/Pfp`, `MsgGuildModeratePlanetName`, `MsgGuildModerateSubstationName/Pfp` (all gated by `PermGuildUGCUpdate` on the target owner's guild)
+- `knowledge/lore/factions.md` got a new "Identity and moderation" subsection introducing the model in lore terms.
+
+#### UGC String Validation
+
+- Per-profile validation rules added to `schemas/validation.md` and fully spelled out in `knowledge/mechanics/ugc-moderation.md` for: player name (3-20, no spaces, no apostrophe), entity name (guild/substation, 3-20, allows space and apostrophe, no leading/trailing/double space), planet name (3-25, same as entity), and PFP (opaque `[A-Za-z0-9._/-]{1,256}` or URL with allowed schemes `https`, `http`, `ipfs`, `ipns`, `ar`).
+- All names: NFC-normalized, no control characters, no bidi/zero-width/format/combining marks, no `N-N` ID-shaped strings, must be valid UTF-8.
+- `.cursor/skills/structs-onboarding/scripts/create-player.mjs` -- new `--username` and `--pfp` flags, client-side validators that mirror the chain's `ValidatePlayerName` / `ValidatePfp`, and `pfp` plumbed into the signup payload and final output.
+
+#### `GuildMembershipJoinProxy` UGC Fields
+
+- `MsgGuildMembershipJoinProxy` now accepts optional `playerName` and `playerPfp` so the chain becomes the sole source of truth for player identity at signup. Documented in `schemas/actions.md`, `reference/action-quick-reference.md`, `.cursor/skills/structs-guild/SKILL.md`, `.cursor/skills/structs-onboarding/SKILL.md`, and threaded through `create-player.mjs`.
+
+#### Planet Exploration Precondition
+
+- `MsgPlanetExplore` now requires the fleet to be `onStation` at the player's current planet *only when the player already owns one*. First-time explorers (no current planet) are exempt. Documented in `schemas/actions.md`, `knowledge/mechanics/planet.md`, `knowledge/mechanics/fleet.md`, and `.cursor/skills/structs-exploration/SKILL.md`. New error string `"fleet must be onStation to explore"` added to the exploration skill's error handling.
+
+#### Starfighter Guaranteed Shots
+
+- New struct-type fields `primaryWeaponGuaranteedShots` and `secondaryWeaponGuaranteedShots` documented in `knowledge/entities/struct-types.md`. Starfighter's secondary weapon is set to `1` guaranteed shot.
+- `knowledge/mechanics/combat.md` Multi-Shot Damage section explains how `weaponGuaranteedShots` provides a floor of successful hits per volley before probabilistic rolls.
+
+#### Streaming and Events
+
+- `api/streaming/event-types.md` and `api/streaming/event-schemas.md` updated:
+  - `PlayerMetaEvent` now carries `username` and `pfp` (chain is sole source of truth as of v0.16.0).
+  - `GuildMetaEvent` now carries `pfp` in addition to `name`.
+  - New section/schema for the **Cosmos chain** `ugc_moderated` event with attribute schema and emission rules. (Not delivered through GRASS -- subscribe via Tendermint event subscriptions.)
+- `.cursor/skills/structs-streaming/SKILL.md` got a "UGC Moderation Events" section explaining the two streams (GRASS DB-trigger meta events vs. the chain `ugc_moderated` event) and the "actor != owner" emission condition.
+
+#### Database Schema (Quantillia / structs-pg)
+
+- `knowledge/infrastructure/database-schema.md` updated:
+  - New rows for `structs.guild_meta` (now with `pfp`), `structs.player_meta` (PK collapsed from `(id, guild_id)` to `(id)` -- one row per player; webapp no longer writes meta directly), `structs.substation` (with `name` and `pfp`), and `structs.planet_meta` (chain-only updates, never overwritten by empty values).
+  - New `signer.signer_tx_type` enum values for the seven UGC transactions.
+  - 12 new `signer.tx_*` wrappers documented (7 self-service + 5 guild moderation).
+  - `signer.UPDATE_PENDING_ACCOUNT` bumped to `PermAll = 33554431`.
+  - `PLAYER_PENDING_JOIN_PROXY` trigger now threads `playerName`/`playerPfp` into the `ugc` JSONB; `PLAYER_PENDING_MERGE` no longer writes `player_meta`.
+
+#### Webapp API
+
+- `PUT /api/player/username` removed in v0.16.0. Username and PFP are now updated via the chain `MsgPlayerUpdate*` transactions; the webapp's signing client manager queues them through `queueMsgPlayerUpdateName` / `queueMsgPlayerUpdatePfp`. Updated: `api/endpoints.md`, `api/endpoints-by-entity.md`, `api/webapp/player.md`, `api/rate-limits.md`, `schemas/requests.md`.
+- New `queueMsg*` wrappers (10 new entries) added to the webapp registry alongside `MsgGuildMembershipJoinProxy`'s expanded args; `queueMsgBankSend` removed (no callers).
+
+#### Build System
+
+- **structsd-install skill rewritten**: switched from Ignite-based builds to two supported paths -- (A) prebuilt release binaries from <https://github.com/playstructs/structsd/releases>, or (B) build from source via the Makefile (`make install` / `make build`). Go 1.23+ now required (was 1.24.1). Ignite is only needed for local devnet (`make serve`).
+- Cross-compilation targets documented (`build-linux-amd64`, `build-darwin-arm64`, ..., `build-all`).
+
+#### Top-Level / Indices
+
+- `AGENTS.md`, `SITEMAP.md`, `llms.txt`, and `TOOLS.md` updated to reflect the new structsd-install description.
+- `scripts/generate-llms-full.sh` includes `knowledge/mechanics/transactions.md` and `knowledge/mechanics/ugc-moderation.md`. `llms-full.txt` regenerated.
+
+---
+
 ## [1.6.0] - 2026-03-26
 
 ### Added - v0.15.0-beta (Pyrexnar) / structstestnet-111

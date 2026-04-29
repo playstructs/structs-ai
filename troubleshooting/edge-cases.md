@@ -75,14 +75,15 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Combining permissions may produce unexpected values
 
 **Details**:
-- Permission values are 24-bit flags (0-16777215 range, PermAll = 16777215)
+- Permission values are 25-bit flags (0-33554431 range, PermAll = 33554431)
 - Combining permissions uses bitwise OR: `value1 | value2`
 - Values outside valid range may cause issues
-- Hash permissions (bits 20-23) are now four separate bits: PermHashBuild (1048576), PermHashMine (2097152), PermHashRefine (4194304), PermHashRaid (8388608), composite PermHashAll = 15728640
+- Hash permissions (bits 20-23) are four separate bits: PermHashBuild (1048576), PermHashMine (2097152), PermHashRefine (4194304), PermHashRaid (8388608), composite PermHashAll = 15728640
+- Bit 24 is `PermGuildUGCUpdate` (16777216), the moderation flag for name/pfp updates on guild-owned objects
 - Permission checks use HasAll semantics: `(value & required) == required` — all required bits must be present
 
 **Implications**:
-- Always verify permission values are within valid range (0-16777215)
+- Always verify permission values are within valid range (0-33554431)
 - Test permission combinations before applying
 - Use HasAll checks: `(value & required) == required`, not `(value & required) != 0`
 - Grant only the specific hash bits needed for the operation

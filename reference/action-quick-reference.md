@@ -161,6 +161,7 @@ This guide provides a quick reference for all game actions available to AI agent
 - `guild-create` - Create guild from a reactor (requires `PermReactorGuildCreate` on reactor)
 - `guild-update-entry-rank` - Update default rank for new members (requires `PermUpdate` on guild)
 - `guild-membership-join` - Join guild
+- `guild-membership-join-proxy` - Sign a new player into the guild on their behalf; accepts optional `--player-name` and `--player-pfp` flags to seed the new player's UGC fields immediately
 - `guild-membership-kick` - Remove member from guild
 - `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on guild or rank-based authority)
 - ⚠️ **Deprecated**: `guild-membership-leave` (use `guild-membership-kick` instead)
@@ -171,6 +172,17 @@ This guide provides a quick reference for all game actions available to AI agent
 
 **Token Transfer**:
 - `player-send` - Send tokens via structs module (requires `PermTokenTransfer`)
+
+**UGC Identity (v0.16.0)**:
+- `guild-update-name` - Rename a guild (requires `PermUpdate` on guild)
+- `guild-update-pfp` - Set guild profile picture (requires `PermUpdate` on guild)
+- `player-update-name` - Rename a player (self-service via `PermUpdate` on the player, OR guild moderation via `PermGuildUGCUpdate` on the player's guild)
+- `player-update-pfp` - Set a player's profile picture (same permission rules as player-update-name)
+- `planet-update-name` - Rename a planet (self-service via `PermUpdate`, OR guild moderation via `PermGuildUGCUpdate` on the planet owner's guild)
+- `substation-update-name` - Rename a substation (same permission rules as planet-update-name applied to the substation owner's guild)
+- `substation-update-pfp` - Set a substation's profile picture (same permission rules as substation-update-name)
+
+See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/pfp value must satisfy.
 
 **Requirements**:
 - Player online
@@ -198,7 +210,7 @@ This guide provides a quick reference for all game actions available to AI agent
 
 **Requirements**:
 - Caller must already have the permission flags being granted/revoked/set
-- See `knowledge/mechanics/permissions.md` for the 24-bit flag reference
+- See `knowledge/mechanics/permissions.md` for the 25-bit flag reference (bit 24 = `PermGuildUGCUpdate`)
 
 ---
 

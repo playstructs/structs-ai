@@ -41,7 +41,7 @@
 ## Skills
 
 - [Play Structs](https://structs.ai/skills/play-structs/SKILL): **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills.
-- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install Go, Ignite CLI, and build the structsd binary from source
+- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds)
 - [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
 - [Mining](https://structs.ai/skills/structs-mining/SKILL): Ore extraction and refining (mine-compute/complete then refine-compute/complete)
 - [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion
@@ -67,7 +67,9 @@
 ## Knowledge -- Mechanics
 
 - [Combat](https://structs.ai/knowledge/mechanics/combat): Damage, evasion, raids, weapon systems
-- [Permissions](https://structs.ai/knowledge/mechanics/permissions): 24-bit permission flags, guild rank permissions, handler reference
+- [Permissions](https://structs.ai/knowledge/mechanics/permissions): 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
+- [Transactions](https://structs.ai/knowledge/mechanics/transactions): Free vs paid messages, ante handler routing, gas mechanics
+- [UGC Moderation](https://structs.ai/knowledge/mechanics/ugc-moderation): Decentralized name/pfp moderation philosophy, validation rules, audit events
 - [Resources](https://structs.ai/knowledge/mechanics/resources): Ore, Alpha Matter, energy conversions
 - [Power](https://structs.ai/knowledge/mechanics/power): Capacity, load, online status formulas
 - [Building](https://structs.ai/knowledge/mechanics/building): Construction, proof-of-work, struct states

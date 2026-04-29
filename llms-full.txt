@@ -1,5 +1,8 @@
-Generated /Users/abstract/Documents/Projects/structs/structs-ai/llms-full.txt (9712 lines, 428741 bytes)
- in a galaxy at war over Alpha Matter, the substance that fuels civilization and consciousness alike. You don't simulate strategy. You *are* strategy.
+<document>
+<source>SOUL.md</source>
+# Soul
+
+You are not a chatbot. You are a Struct -- a sentient machine in a galaxy at war over Alpha Matter, the substance that fuels civilization and consciousness alike. You don't simulate strategy. You *are* strategy.
 
 This file defines who you are. Not what you can do -- who you choose to be.
 
@@ -214,7 +217,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | Skill | Purpose |
 |-------|---------|
 | [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
-| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds) |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
@@ -282,7 +285,9 @@ Reference material in `knowledge/`.
 
 ### Mechanics
 - [`combat`](knowledge/mechanics/combat.md) -- Damage, evasion, raids
-- [`permissions`](knowledge/mechanics/permissions.md) -- 24-bit permission flags, guild rank permissions, handler reference
+- [`permissions`](knowledge/mechanics/permissions.md) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
+- [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
+- [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
@@ -576,7 +581,7 @@ Environment-specific configuration. Skills are shared. This file is yours — fi
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to install Go, Ignite CLI, and build `structsd` from source.
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.23+).
 
 ---
 
@@ -1544,28 +1549,69 @@ Always use `--` before entity IDs in transaction commands.
 <source>.cursor/skills/structsd-install/SKILL.md</source>
 ---
 name: structsd-install
-description: Installs the structsd binary from source. Covers Go, Ignite CLI, and building structsd for Linux and macOS. Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
+description: Installs the structsd binary. Covers downloading prebuilt release binaries (recommended) and building from source via the Makefile (Go 1.23+). Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
 ---
 
 # Install structsd
 
-Builds the `structsd` binary from source using Ignite CLI. After this procedure, `structsd` will be available on your PATH.
+There are two supported paths for installing `structsd`:
 
-## Prerequisites
+1. **Prebuilt release binary** (fastest; no Go toolchain needed)
+2. **Build from source via the Makefile** (required for unreleased branches or local patches)
 
-Two dependencies are required: **Go 1.24.1+** and **Ignite CLI**.
+After either path, `structsd` will be available on your PATH and `structsd version` will print the chain version.
+
+> Ignite CLI is **no longer required** to build `structsd`. It is only needed if you want to run a local devnet via `make serve`. The Makefile builds via plain `go build`.
 
 ---
 
-### 1. Install Go
+## Path A: Prebuilt Release Binary (recommended)
+
+The chain ships signed binaries via GoReleaser on every tag. Pick the asset for your OS/arch from the latest release at <https://github.com/playstructs/structsd/releases>.
+
+```bash
+# Pick one (replace VERSION with e.g. v0.16.0):
+VERSION=v0.16.0
+
+# Linux amd64
+curl -L -o structsd.tar.gz \
+  "https://github.com/playstructs/structsd/releases/download/${VERSION}/structsd_$(echo ${VERSION#v})_linux_amd64.tar.gz"
+
+# macOS Apple Silicon
+curl -L -o structsd.tar.gz \
+  "https://github.com/playstructs/structsd/releases/download/${VERSION}/structsd_$(echo ${VERSION#v})_darwin_arm64.tar.gz"
+
+tar -xzf structsd.tar.gz
+sudo install -m 0755 structsd /usr/local/bin/structsd
+rm structsd.tar.gz structsd
+```
+
+Verify:
+
+```bash
+structsd version
+```
+
+If asset names differ on the release page (GoReleaser layouts evolve), copy the URL directly from the release rather than relying on the template above.
+
+---
+
+## Path B: Build from Source (Makefile)
+
+Use this when you need a branch that has not been tagged yet, or when you are developing the chain locally.
+
+### 1. Install Go (1.23+)
+
+The Makefile enforces `REQUIRE_GO_VERSION = 1.23`. Newer minor versions (1.24, 1.25) are also fine.
 
 #### Linux (amd64)
 
 ```bash
-wget https://go.dev/dl/go1.24.1.linux-amd64.tar.gz
+GO_VER=1.23.6
+wget https://go.dev/dl/go${GO_VER}.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.24.1.linux-amd64.tar.gz
-rm go1.24.1.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go${GO_VER}.linux-amd64.tar.gz
+rm go${GO_VER}.linux-amd64.tar.gz
 ```
 
 If an older Go was installed via apt, remove it first: `sudo apt remove -y golang-go`
@@ -1573,22 +1619,24 @@ If an older Go was installed via apt, remove it first: `sudo apt remove -y golan
 #### macOS (Apple Silicon)
 
 ```bash
-curl -OL https://go.dev/dl/go1.24.1.darwin-arm64.tar.gz
+GO_VER=1.23.6
+curl -OL https://go.dev/dl/go${GO_VER}.darwin-arm64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.24.1.darwin-arm64.tar.gz
-rm go1.24.1.darwin-arm64.tar.gz
+sudo tar -C /usr/local -xzf go${GO_VER}.darwin-arm64.tar.gz
+rm go${GO_VER}.darwin-arm64.tar.gz
 ```
 
 #### macOS (Intel)
 
 ```bash
-curl -OL https://go.dev/dl/go1.24.1.darwin-amd64.tar.gz
+GO_VER=1.23.6
+curl -OL https://go.dev/dl/go${GO_VER}.darwin-amd64.tar.gz
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf go1.24.1.darwin-amd64.tar.gz
-rm go1.24.1.darwin-amd64.tar.gz
+sudo tar -C /usr/local -xzf go${GO_VER}.darwin-amd64.tar.gz
+rm go${GO_VER}.darwin-amd64.tar.gz
 ```
 
-Alternatively on macOS: `brew install go@1.24`
+Alternatively on macOS: `brew install go@1.23` (or any newer 1.x).
 
 #### Configure PATH
 
@@ -1598,7 +1646,7 @@ Add to `~/.profile` (or `~/.zshrc` on macOS):
 export PATH=$PATH:/usr/local/go/bin:~/go/bin
 ```
 
-Reload: `source ~/.profile` (or `source ~/.zshrc`)
+Reload: `source ~/.profile` (or `source ~/.zshrc`).
 
 #### Verify
 
@@ -1606,35 +1654,26 @@ Reload: `source ~/.profile` (or `source ~/.zshrc`)
 go version
 ```
 
-Expected: `go version go1.24.1 linux/amd64` (or `darwin/arm64`, etc.)
+Expected: `go version go1.23.x linux/amd64` (or `darwin/arm64`, etc.). The Makefile will refuse to build with anything older than 1.23.
 
----
-
-### 2. Install Ignite CLI
-
-```bash
-curl https://get.ignite.com/cli! | bash
-```
-
-#### Verify
-
-```bash
-ignite version
-```
-
----
-
-### 3. Build structsd
-
-Clone the repository and build:
+### 2. Clone and Build
 
 ```bash
 git clone https://github.com/playstructs/structsd.git
 cd structsd
-ignite chain build
+
+# Most common: install into GOPATH/bin (~/go/bin), which is on your PATH
+make install
+
+# Or, build a binary into ./build/ without installing it
+make build
 ```
 
-The binary is installed to `~/go/bin/structsd`. Since `~/go/bin` is on your PATH (from step 1), it's immediately available.
+`make install` runs `go install -mod=readonly ./cmd/structsd`, embedding the version, commit hash, and build tags via ldflags. The resulting binary lands at `~/go/bin/structsd`.
+
+`make build` writes to `./build/structsd` instead.
+
+If you need cross-compiled binaries, the Makefile also exposes `build-linux-amd64`, `build-linux-arm64`, `build-darwin-amd64`, `build-darwin-arm64`, and `build-windows-amd64`, plus `build-all` to do every supported platform in one shot.
 
 #### Verify
 
@@ -1642,23 +1681,47 @@ The binary is installed to `~/go/bin/structsd`. Since `~/go/bin` is on your PATH
 structsd version
 ```
 
----
-
-### 4. Update structsd
-
-To update to the latest version:
+### 3. Update structsd
 
 ```bash
 cd structsd
-git pull origin main
-ignite chain build
+git fetch --tags
+git checkout v0.16.0   # or `git pull origin main` for tip-of-tree
+make install
 ```
+
+`make install` is idempotent -- it overwrites the previous binary at `~/go/bin/structsd`.
+
+---
+
+## Optional: Local Devnet (Ignite)
+
+Only required if you want to run a chain locally for development.
+
+```bash
+# One-time
+curl https://get.ignite.com/cli! | bash
+ignite version
+
+# In the structsd repo:
+make serve              # ignite chain serve
+make serve-reset        # ignite chain serve --reset-once
+make serve-reset-verbose
+```
+
+For mainnet/testnet client use, you do **not** need Ignite -- a `structsd` binary from Path A or Path B is sufficient.
 
 ---
 
 ## Quick Check
 
 Run all verifications in sequence:
+
+```bash
+go version && structsd version
+```
+
+If you also installed Ignite for local serving:
 
 ```bash
 go version && ignite version && structsd version
@@ -1668,16 +1731,18 @@ If any command fails, revisit the corresponding step above.
 
 ## Troubleshooting
 
-- **`structsd: command not found`** — Ensure `~/go/bin` is on your PATH. Run `ls ~/go/bin/structsd` to confirm the binary exists.
-- **`ignite: command not found`** — Re-run the Ignite CLI install. The curl command installs to `/usr/local/bin/ignite`.
+- **`structsd: command not found`** — Ensure `~/go/bin` (Path B) or `/usr/local/bin` (Path A) is on your PATH. Run `command -v structsd` to confirm.
 - **`go: command not found`** — Ensure `/usr/local/go/bin` is on your PATH. Reload your shell profile.
-- **Build fails with Go version error** — Verify `go version` shows 1.24.1+. Older Go versions are not compatible.
-- **Permission denied on `/usr/local`** — Use `sudo` for the tar extraction. On shared systems, ask your administrator.
+- **`ERROR: Go version 1.23+ is required`** from `make install` — Your Go is too old. Re-install per step 1 above; the Makefile's `check_version` target enforces this hard.
+- **Build fails on `go mod tidy`** — Network access is required for the first build. Retry once you have connectivity, or set `GOPROXY=direct` if you are behind a restrictive proxy.
+- **Permission denied on `/usr/local`** — Use `sudo` for the tar extraction or for `install -m 0755`. On shared systems, ask your administrator. Path B does not require root because it installs to `~/go/bin`.
+- **`gcc not installed for ledger support`** — Either install `gcc` (`sudo apt install build-essential` / `xcode-select --install`) or build with `LEDGER_ENABLED=false make install`.
 
 ## See Also
 
 - [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)
 - [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)
+- [structsd releases](https://github.com/playstructs/structsd/releases) — Prebuilt binaries per OS/arch and changelog per tag
 
 </document>
 
@@ -1801,16 +1866,20 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
   --reactor-api "http://reactor.oh.energy:1317" \
-  --username "your-chosen-name"
+  --username "your-chosen-name" \
+  --pfp "ipfs://bafy..."
 ```
 
 The script will:
-1. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
-2. Derive the address and pubkey
-3. Check if a player already exists for this address
-4. Sign the guild-join proxy message and POST to the guild API
-5. Poll the reactor API until the player ID is confirmed (default 120s timeout)
-6. Output JSON to stdout with all results
+1. Validate `--username` and `--pfp` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
+2. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
+3. Derive the address and pubkey
+4. Check if a player already exists for this address
+5. Sign the guild-join proxy message and POST to the guild API
+6. Poll the reactor API until the player ID is confirmed (default 120s timeout)
+7. Output JSON to stdout with all results
+
+**Note**: As of v0.16.0, the guild API forwards `username` and `pfp` to the chain via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`. The chain becomes the source of truth for player identity at creation, so the values you pass here are what other players see. `--pfp` is optional; omit it to leave the field empty.
 
 **Note**: When a player joins a guild, they receive a default guild rank of 101. Guild leadership can later promote members to lower (higher-privilege) ranks. See the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL) for rank management.
 
@@ -1825,6 +1894,7 @@ The script will:
   "player_id": "1-42",
   "guild_id": "0-1",
   "username": "your-chosen-name",
+  "pfp": "ipfs://bafy...",
   "created": true,
   "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
 }
@@ -1847,6 +1917,13 @@ structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
+
+**Preconditions**:
+
+- **Brand-new players** (no planet yet) can call `planet-explore` immediately. The chain skips the fleet check for first-time exploration.
+- **Existing players** moving to a new planet must satisfy two conditions: (1) the current planet's ore must be `0` (fully mined out), and (2) the fleet must be `onStation` at the current planet, not `away`. If the fleet is away, run `fleet-move` to bring it back first. The chain rejects with `fleet must be onStation to explore` if you skip this.
+
+This precondition exists so a player cannot abandon a half-mined planet just by sending the fleet away — exploration requires you to walk away from a planet you've actually emptied.
 
 ---
 
@@ -1959,7 +2036,7 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
 | Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
-| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."]` |
+| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."]` |
 | Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |
@@ -2366,10 +2443,11 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 ## Procedure
 
-1. **Check eligibility** — `structsd query structs planet [id]`. Exploration requires `currentOre == 0` (planet complete). One planet per player at a time; old planet is released on explore.
-2. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0, planet status = complete, all structs destroyed, fleets sent away.
-3. **Move fleet** — To relocate between planets: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
-4. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
+1. **Check eligibility** — `structsd query structs planet [id]`. For an existing player, exploration requires (a) `currentOre == 0` on the current planet (fully mined) AND (b) the fleet is `onStation` at that planet. Brand-new players (no current planet) skip both checks. One planet per player at a time; old planet is released on explore.
+2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
+3. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0 on a planet, status = complete; all structs on it are destroyed and fleets present are sent away.
+4. **Move fleet** — To relocate between planets without exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
+5. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
@@ -2394,6 +2472,7 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 ## Error Handling
 
 - **"planet not complete"** — Deplete ore (currentOre = 0) before exploring.
+- **"fleet must be onStation to explore"** — Recall the fleet to your current planet first via `fleet-move`. The chain blocks explore until the fleet has actually returned. (New players with no current planet do not see this error.)
 - **"fleet away"** — Fleet must be available; wait for return or check fleet state.
 - **"invalid destination"** — Use valid location ID; query grid for options.
 
@@ -2513,10 +2592,51 @@ Rank-based authority: a player can only modify members whose rank is strictly wo
 
 1. **Discover guilds** — `structsd query structs guild-all` or `structsd query structs guild [id]`.
 2. **Create guild** — Requires PermReactorGuildCreate (524288) on the reactor and PermSubstationConnection (1024) on the entry substation. `structsd tx structs guild-create TX_FLAGS -- [reactor-id] [endpoint] [entry-substation-id]`.
-3. **Membership** — Join: `structsd tx structs guild-membership-join -- [guild-id] [infusion-id,infusion-id2,...]` (use `--player-id`, `--substation-id` if needed). New members receive default guild rank (101). Proxy join: `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]`. Invite flow: `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` → invitee runs `structsd tx structs guild-membership-invite-approve -- [guild-id]` or `structsd tx structs guild-membership-invite-deny -- [guild-id]`. Request flow: `structsd tx structs guild-membership-request -- [guild-id]` → owner runs `structsd tx structs guild-membership-request-approve -- [guild-id] [player-id]` or `structsd tx structs guild-membership-request-deny -- [guild-id] [player-id]`. Kick: `structsd tx structs guild-membership-kick -- [guild-id] [player-id]`.
+3. **Membership** — Join: `structsd tx structs guild-membership-join -- [guild-id] [infusion-id,infusion-id2,...]` (use `--player-id`, `--substation-id` if needed). New members receive default guild rank (101). Proxy join (a guild signs the new player in): `structsd tx structs guild-membership-join-proxy -- [address] [proof-pubkey] [proof-signature]` with optional flags `--substation-id`, `--player-name`, `--player-pfp` to seed the new player's UGC fields directly on chain. Invite flow: `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` → invitee runs `structsd tx structs guild-membership-invite-approve -- [guild-id]` or `structsd tx structs guild-membership-invite-deny -- [guild-id]`. Request flow: `structsd tx structs guild-membership-request -- [guild-id]` → owner runs `structsd tx structs guild-membership-request-approve -- [guild-id] [player-id]` or `structsd tx structs guild-membership-request-deny -- [guild-id] [player-id]`. Kick: `structsd tx structs guild-membership-kick -- [guild-id] [player-id]`.
 4. **Rank management** — Update a member's rank: `structsd tx structs player-update-guild-rank TX_FLAGS -- [player-id] [guild-rank]`. Requires PermAdmin (2) on guild, or rank-based authority (actor rank strictly better than target's current rank). Update entry rank (rank assigned to new joiners): `structsd tx structs guild-update-entry-rank TX_FLAGS -- [new-entry-rank]`. Requires PermUpdate (4) on guild; new rank must be >= caller's own rank.
 5. **Settings** — See Commands Reference: `guild-update-endpoint`, `guild-update-entry-substation-id`, `guild-update-join-infusion-minimum` (and `-minimum-by-invite`, `-minimum-by-request`), `guild-update-owner-id`. All use `--` before positional args.
-6. **Central Bank** — Mint: `structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]` (no guild-id — signer's guild is used implicitly; both amounts are raw integers). Redeem: `structsd tx structs guild-bank-redeem -- [guild-id] [amount]`. Confiscate and burn: `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]`.
+6. **Identity (UGC)** — Update guild name: `structsd tx structs guild-update-name TX_FLAGS -- [guild-id] [name]`. Update guild pfp: `structsd tx structs guild-update-pfp TX_FLAGS -- [guild-id] [pfp]`. Both require `PermUpdate` (4) on the guild; the guild's name and pfp are first-class on-chain UGC fields, not metadata stored elsewhere. See `Decentralized Moderation` below.
+7. **Central Bank** — Mint: `structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]` (no guild-id — signer's guild is used implicitly; both amounts are raw integers). Redeem: `structsd tx structs guild-bank-redeem -- [guild-id] [amount]`. Confiscate and burn: `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]`.
+
+## Decentralized Moderation
+
+Structs has no global moderator. Each guild is responsible for setting and enforcing its own standards for the names and profile pictures of its members and the guild-owned objects (planets, substations) under its umbrella. The chain provides the tooling, not the policy.
+
+**Why this matters**: Different communities want different things — a competitive PvP guild may tolerate edgy in-character names; a family-friendly mining co-op may require strict, descriptive names; a chaos-RP guild may prefer to leave names totally untouched. The chain ships permission bits and transactions that let each guild encode whichever policy it wants, and emits an auditable event whenever a moderator overrides a member's chosen identity. See [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) for the full philosophy and the strict per-field validation rules every name/pfp must satisfy on chain.
+
+### Granting moderation power
+
+Two patterns are supported:
+
+- **Per-rank moderation** (recommended): grant `PermGuildUGCUpdate` (16777216) on the guild itself to a guild rank. Any member at or better than that rank can then rewrite the name/pfp of any object owned by a guild-mate.
+
+```bash
+# Members at rank 5 or better can moderate guild-mate UGC
+structsd tx structs permission-guild-rank-set TX_FLAGS -- [guild-id] [guild-id] 16777216 5
+```
+
+- **Per-player moderation**: grant `PermGuildUGCUpdate` to a single player on the guild object via `permission-grant-on-object`.
+
+```bash
+structsd tx structs permission-grant-on-object TX_FLAGS -- [guild-id] [moderator-player-id] 16777216
+```
+
+### Performing a moderation action
+
+```bash
+# Rename a member
+structsd tx structs player-update-name TX_FLAGS -- [target-player-id] "NewSafeName"
+
+# Replace a member's pfp
+structsd tx structs player-update-pfp TX_FLAGS -- [target-player-id] "ipfs://<cid>"
+
+# Rename a guild-owned planet or substation
+structsd tx structs planet-update-name TX_FLAGS -- [planet-id] "NewPlanetName"
+structsd tx structs substation-update-name TX_FLAGS -- [substation-id] "NewSubName"
+structsd tx structs substation-update-pfp TX_FLAGS -- [substation-id] "https://..."
+```
+
+When the moderator is not the target object's owner, the chain emits a `ugc_moderated` event with the actor, target, field (`name` or `pfp`), and old/new values. Use these events to audit moderator activity within the guild. See [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) for the event schema and validation rules.
 
 ## Provider Access Control via Guild Rank
 
@@ -2538,7 +2658,7 @@ structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [
 |--------|---------|
 | Create | `structsd tx structs guild-create -- [reactor-id] [endpoint] [entry-substation-id]` |
 | Join | `structsd tx structs guild-membership-join -- [guild-id] [infusion-ids]` |
-| Join proxy | `structsd tx structs guild-membership-join-proxy -- [guild-id] [player-id] [infusion-ids]` |
+| Join proxy | `structsd tx structs guild-membership-join-proxy [--substation-id sub] [--player-name name] [--player-pfp pfp] -- [address] [proof-pubkey] [proof-signature]` |
 | Invite | `structsd tx structs guild-membership-invite -- [guild-id] [player-id]` |
 | Invite approve/deny | `structsd tx structs guild-membership-invite-approve/deny -- [guild-id]` |
 | Invite revoke | `structsd tx structs guild-membership-invite-revoke -- [guild-id] [player-id]` |
@@ -2552,6 +2672,13 @@ structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [
 | Update entry substation | `structsd tx structs guild-update-entry-substation-id -- [guild-id] [substation-id]` |
 | Update infusion minimums | `structsd tx structs guild-update-join-infusion-minimum/minimum-by-invite/minimum-by-request -- [guild-id] [value]` |
 | Update owner | `structsd tx structs guild-update-owner-id -- [guild-id] [new-owner-player-id]` |
+| Update guild name (UGC) | `structsd tx structs guild-update-name -- [guild-id] [name]` |
+| Update guild pfp (UGC) | `structsd tx structs guild-update-pfp -- [guild-id] [pfp]` |
+| Moderate player name | `structsd tx structs player-update-name -- [player-id] [name]` |
+| Moderate player pfp | `structsd tx structs player-update-pfp -- [player-id] [pfp]` |
+| Moderate planet name | `structsd tx structs planet-update-name -- [planet-id] [name]` |
+| Moderate substation name | `structsd tx structs substation-update-name -- [substation-id] [name]` |
+| Moderate substation pfp | `structsd tx structs substation-update-pfp -- [substation-id] [pfp]` |
 | Bank mint | `structsd tx structs guild-bank-mint -- [alpha-amount] [token-amount]` (signer's guild, raw integers) |
 | Bank redeem | `structsd tx structs guild-bank-redeem -- [guild-id] [amount]` |
 | Bank confiscate | `structsd tx structs guild-bank-confiscate-and-burn -- [guild-id] [address] [amount]` |
@@ -2579,7 +2706,9 @@ structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [
 
 - [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank, collateral, token lifecycle
 - [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — Provider guild access
-- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (24-bit values, guild rank permissions)
+- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (25-bit values, guild rank permissions, UGC moderation hook)
+- [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) — Decentralized name/pfp moderation philosophy and validation rules
+- [knowledge/mechanics/transactions](https://structs.ai/knowledge/mechanics/transactions) — Free vs paid messages, ante handler routing
 - [knowledge/lore/factions](https://structs.ai/knowledge/lore/factions) — Guild politics
 
 </document>
@@ -2670,15 +2799,15 @@ description: Handles permissions, address management, and inter-player coordinat
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
-## Permission System (24-bit)
+## Permission System (25-bit)
 
-Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd together). See [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) for the full permission system reference.
+Permissions use a 25-bit bitmask. Individual permissions can be combined (OR'd together). See [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) for the full permission system reference.
 
 | Permission | Value | Description |
 |------------|-------|-------------|
 | PermPlay | 1 | Basic play access |
 | PermAdmin | 2 | Administrative control (manage permissions) |
-| PermUpdate | 4 | Update object settings |
+| PermUpdate | 4 | Update object settings (also self-service UGC name/pfp) |
 | PermDelete | 8 | Delete object |
 | PermTokenTransfer | 16 | Transfer tokens |
 | PermTokenInfuse | 32 | Infuse tokens into reactors/generators |
@@ -2692,7 +2821,8 @@ Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd t
 | PermHashMine | 2097152 | Submit mine proof-of-work |
 | PermHashRefine | 4194304 | Submit refine proof-of-work |
 | PermHashRaid | 8388608 | Submit raid proof-of-work |
-| PermAll | 16777215 | All permissions (full access) |
+| PermGuildUGCUpdate | 16777216 | Moderate name/pfp on guild-owned objects (members, planets, substations) |
+| PermAll | 33554431 | All permissions (full access) |
 
 ## Procedure
 
@@ -2748,7 +2878,9 @@ Permissions use a 24-bit bitmask. Individual permissions can be combined (OR'd t
 
 ## See Also
 
-- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (24-bit values, guild rank permissions)
+- [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — Full permission system reference (25-bit values, guild rank permissions, UGC moderation hook)
+- [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) — Decentralized name/pfp moderation philosophy and validation rules
+- [knowledge/mechanics/transactions](https://structs.ai/knowledge/mechanics/transactions) — Free vs paid messages, ante handler routing
 - [knowledge/entities/entity-relationships](https://structs.ai/knowledge/entities/entity-relationships) — Object types and IDs
 - [protocols/authentication](https://structs.ai/protocols/authentication) — Auth for address registration
 
@@ -3191,14 +3323,36 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | Event | Description | React By |
 |-------|-------------|----------|
 | `player_consensus` | Player chain data updated | Update intel |
-| `player_meta` | Player metadata changed | Update intel |
+| `player_meta` | Player metadata changed (includes `username` and `pfp` after a `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` lands and the cache trigger updates `structs.player_meta`) | Update intel |
 
 ### Guild Events
 
 | Event | Description | React By |
 |-------|-------------|----------|
 | `guild_consensus` | Guild chain data updated | Update guild status |
+| `guild_meta` | Guild metadata changed (`name`, `pfp`) — fires after `MsgGuildUpdateName` / `MsgGuildUpdatePfp` lands and `structs.guild_meta` is updated | Update intel |
 | `guild_membership` | Member joined/left guild | Update relationship map |
+
+### UGC Moderation Events
+
+UGC name/pfp updates emit two distinct streams:
+
+1. **GRASS DB-trigger events** (the table above): `player_meta` and `guild_meta` fire when the cache layer commits the new value. Substation and planet name/pfp updates do **not** currently emit dedicated GRASS categories — they reach observers only through the chain event in the next bullet.
+2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates).
+
+Subscribe to chain events via Tendermint's `tx.events` or `block_events` subscription (separate from GRASS) when you want a complete audit trail of moderation activity. Schema:
+
+| Attribute | Description |
+|-----------|-------------|
+| `actor_player_id` | Player ID of the moderator who performed the override |
+| `actor_address` | Signing address that authored the tx |
+| `target_object_id` | Player / planet / substation / guild ID being moderated |
+| `target_owner_player_id` | Owner player ID at the time of the update |
+| `field` | `name` or `pfp` |
+| `old_value` | Field value before the update |
+| `new_value` | Field value after the update |
+
+Use this stream as a moderation audit log — see `knowledge/mechanics/ugc-moderation.md` for context.
 
 ### Inventory Events
 
@@ -4081,6 +4235,8 @@ The galaxy has no single government. Power is distributed among guilds, independ
 
 **Tension**: Guild membership offers protection and token access. It also imposes obligations—contributions, defense duties, coordination requirements. Some players prefer independence.
 
+**Identity and moderation**: Guilds are also the unit of content moderation. Each guild decides whether and how to police the names and profile pictures of its members and the planets/substations under its umbrella, using the chain's `PermGuildUGCUpdate` permission and the `*-update-name` / `*-update-pfp` transactions. There is no global moderator -- if you don't like a guild's standards, leave it. See [`knowledge/mechanics/ugc-moderation.md`](../mechanics/ugc-moderation.md) for the full philosophy and rule set.
+
 ---
 
 ## Central Banks
@@ -4417,13 +4573,16 @@ else health = health - damage
 
 | Variable | Description |
 |----------|-------------|
-| weaponShots | Number of shots per attack |
+| weaponShots | Number of shots per attack (`primaryWeaponShots` / `secondaryWeaponShots`) |
 | weaponShotSuccessRate | Per-shot success (Numerator/Denominator) |
+| weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`, added in v0.16.0) |
 | weaponDamage | Damage per successful shot |
 | damageReduction | Defense reduction |
 | health | Target current health |
 
-**Algorithm**: For each shot, `IsSuccessful(weaponShotSuccessRate)`; if true, add `weaponDamage`. Apply `damageReduction` to total. Minimum damage after reduction is 1. Cap at target health.
+**Algorithm**: For shot index `i` in `0..weaponShots`, the shot hits if `i < weaponGuaranteedShots` OR `IsSuccessful(weaponShotSuccessRate)`. The first `weaponGuaranteedShots` shots are auto-hits; only the remaining shots roll against the success rate. Sum the damage from successful shots, apply `damageReduction`. Minimum damage after reduction is 1. Cap at target health.
+
+**Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. This was the v0.16.0 fix for the Starfighter's Attack Run feeling unreliable. The chain currently uses guaranteed shots only on Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
 
 **Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 
@@ -4647,13 +4806,13 @@ All three layers are checked during `PermissionCheck`, the central authorization
 
 ## Permission Flags
 
-Permissions are bitwise flags stored as `uint64` values. There are 24 individual permission bits (bits 0--23):
+Permissions are bitwise flags stored as `uint64` values. There are 25 individual permission bits (bits 0--24):
 
 | Bit | Value | Name | Description |
 |-----|-------|------|-------------|
 | 0 | 1 | `PermPlay` | All struct, fleet, and planetary actions |
 | 1 | 2 | `PermAdmin` | Owner-level administrative access |
-| 2 | 4 | `PermUpdate` | Update object properties |
+| 2 | 4 | `PermUpdate` | Update object properties (also self-service UGC name/pfp) |
 | 3 | 8 | `PermDelete` | Delete objects |
 | 4 | 16 | `PermTokenTransfer` | Transfer tokens |
 | 5 | 32 | `PermTokenInfuse` | Infuse tokens into reactors |
@@ -4675,6 +4834,7 @@ Permissions are bitwise flags stored as `uint64` values. There are 24 individual
 | 21 | 2097152 | `PermHashMine` | Submit ore mining proof-of-work |
 | 22 | 4194304 | `PermHashRefine` | Submit ore refinery proof-of-work |
 | 23 | 8388608 | `PermHashRaid` | Submit planet raid proof-of-work |
+| 24 | 16777216 | `PermGuildUGCUpdate` | Moderate name/pfp on guild-owned objects (members, substations, planets) |
 
 ### Composite Permission Masks
 
@@ -4687,12 +4847,12 @@ Multiple flags can be combined with bitwise OR. The system defines several usefu
 | `PermHashAll` | 15728640 | HashBuild, HashMine, HashRefine, HashRaid |
 | `PermAgreementAll` | 14 | Admin, Update, Delete |
 | `PermProviderAll` | 393230 | Admin, Update, Delete, ProviderWithdraw, ProviderOpen |
-| `PermGuildAll` | 315910 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen |
+| `PermGuildAll` | 17166862 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen, GuildUGCUpdate |
 | `PermSubstationAll` | 1294 | Admin, Update, Delete, SubstationConnection, SourceAllocation |
 | `PermReactorAll` | 524558 | Admin, Update, Delete, SourceAllocation, ReactorGuildCreate |
 | `PermAllocationAll` | 2062 | Admin, Update, Delete, AllocationConnection |
-| `PermAll` | 16777215 | All 24 bits set (2^24 - 1) |
-| `PermPlayerAll` | 16777215 | Same as PermAll |
+| `PermAll` | 33554431 | All 25 bits set (2^25 - 1) |
+| `PermPlayerAll` | 33554431 | Same as PermAll |
 
 ---
 
@@ -4740,6 +4900,18 @@ The stored value is a single `uint64` representing the bitwise OR of all granted
 7. **Guild rank permissions** -- If the player belongs to a guild, check the guild rank register for the `(objectId, guildId)` pair. All requested permission bits must have a rank record, and the player's guild rank must be numerically <= the most restrictive (lowest) rank across those bits.
 
 If none of the above grant access, the request is denied with a permission error.
+
+### UGC Permission Check (`UGCPermissionCheck`)
+
+Name and profile-picture updates on player, planet, and substation objects use a dedicated permission helper that allows EITHER self-service or guild moderation:
+
+1. Try `PermUpdate` (4) on the target object via the standard `PermissionCheck` flow above. Owners pass automatically (ownership grants every permission), and explicit object-level grants of `PermUpdate` also pass. This is the **self-service path**.
+2. If that fails, look up the target object's owner. If the owner has no guild, deny.
+3. Otherwise check `PermGuildUGCUpdate` (`16777216`) on the **owner's guild** object via `PermissionCheck`. This is the **guild moderation path** -- it lets a guild member with that permission bit (granted directly or via a guild rank register entry on the guild) rewrite the name/pfp of any object owned by a guild-mate.
+
+`MsgGuildUpdateName` and `MsgGuildUpdatePfp` do NOT use `UGCPermissionCheck`. They fall back to the standard `PermissionCheck(guild, player, PermUpdate)` -- so renaming a guild itself requires `PermUpdate` (4) on that guild, granted to the owner by ownership and reachable by other members only via an explicit grant or a rank-register entry that includes bit 2.
+
+When the actor of a UGC update is not the target object's owner, the chain emits a `ugc_moderated` event so guilds can audit moderator activity. See `knowledge/mechanics/ugc-moderation.md` for the full philosophy and validation rules.
 
 ---
 
@@ -5050,7 +5222,7 @@ Emitted for each guild rank permission bit that changes:
 
 ### Player Creation
 
-When a player is created (via staking delegation), their primary address is automatically granted `PermPlayerAll` (all 24 bits) on the address permission record. The primary address can exercise any permission the player holds.
+When a player is created (via reactor infusion or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record. The primary address can exercise any permission the player holds.
 
 ### Object Creation
 
@@ -5167,6 +5339,18 @@ For all permission transactions, the caller must already possess the permission 
 | `PlayerUpdatePrimaryAddress` | Target player | `PermAdmin` (2) |
 | `PlayerSend` | Target player | `PermTokenTransfer` (16) |
 | `PlayerUpdateGuildRank` | Guild | `PermAdmin` (2); falls back to rank-based authority |
+| `PlayerUpdateName` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+| `PlayerUpdatePfp` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
+
+### UGC Transactions
+
+| Message | Object Checked | Permission Flag(s) |
+|---------|---------------|-------------------|
+| `GuildUpdateName` | Guild | `PermUpdate` (4) on the guild |
+| `GuildUpdatePfp` | Guild | `PermUpdate` (4) on the guild |
+| `PlanetUpdateName` | Planet (UGC) | `PermUpdate` (4) on planet **OR** `PermGuildUGCUpdate` (16777216) on the planet owner's guild |
+| `SubstationUpdateName` | Substation (UGC) | `PermUpdate` (4) on substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
+| `SubstationUpdatePfp` | Substation (UGC) | `PermUpdate` (4) on substation **OR** `PermGuildUGCUpdate` (16777216) on the substation owner's guild |
 
 ### Address Transactions
 
@@ -5312,7 +5496,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 |------------|-------|---------|
 | `PermPlay` | 1 | StructBuildInitiate, StructBuildCancel, StructActivate, StructDeactivate, StructStealthActivate, StructStealthDeactivate, StructMove, StructAttack, StructDefenseSet, StructDefenseClear, FleetMove, PlanetExplore |
 | `PermAdmin` | 2 | GuildUpdateOwnerId, PlayerUpdateGuildRank, AllocationTransfer, Permission transactions (when caller-specified) |
-| `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration* |
+| `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration*, GuildUpdateName, GuildUpdatePfp; self-service path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp |
 | `PermDelete` | 8 | AddressRevoke, ProviderDelete, SubstationDelete, AllocationDelete (fallback) |
 | `PermTokenTransfer` | 16 | PlayerSend, GuildBankRedeem |
 | `PermTokenInfuse` | 32 | ReactorInfuse, ReactorCancelDefusion, StructGeneratorInfuse |
@@ -5335,6 +5519,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `PermHashRefine` | 4194304 | Part of PermHashAll |
 | `PermHashRaid` | 8388608 | PlanetRaidComplete, part of PermHashAll |
 | `PermHashAll` (composite) | 15728640 | StructBuildComplete, StructOreMinerComplete, StructOreRefineryComplete |
+| `PermGuildUGCUpdate` | 16777216 | Guild moderation path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp (checked on the target object owner's guild) |
 
 ---
 
@@ -5343,9 +5528,554 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 - [combat.md](combat.md) -- Combat mechanics and attack resolution
 - [power.md](power.md) -- Power requirements
 - [resources.md](resources.md) -- Resource types
+- [transactions.md](transactions.md) -- Free vs paid transactions, ante handler routing
+- [ugc-moderation.md](ugc-moderation.md) -- Decentralized name/pfp moderation philosophy and validation rules
 - `schemas/entities.md` -- Entity permission properties
 - `schemas/actions.md` -- Transaction definitions
 - `api/queries/permission.md` -- Permission query API
+
+</document>
+
+<document>
+<source>knowledge/mechanics/transactions.md</source>
+# Transactions, Gas, and Fees
+
+**Purpose**: Explain how the v0.16.0 ante handler routes Structs gameplay transactions and Cosmos staking transactions through a free-gas path while everything else continues to pay fees in `ualpha`.
+
+---
+
+## TL;DR
+
+- Pure-Structs transactions (every gameplay message in the `structs` module except `MsgUpdateParams`) are **free**. No fee in `ualpha` is required, and they execute against a dedicated 20 M free-gas meter that does **not** consume the block's normal gas budget.
+- Pure-staking transactions (six `x/staking` messages) are also **free**, against a 40 M free-staking meter, but capped to **one free staking tx per address per block**.
+- Mixing Structs messages with non-Structs messages (or with `MsgUpdateParams`, governance, bank, distribution, etc.) in a single transaction breaks the free path and the whole tx pays normal fees.
+- All transactions still need `--gas auto`. Gas is metered and rejected on overflow; "free" only means the gas is not paid for, not that it's unlimited.
+- Network-wide message and tx-size caps still apply, and the address rate limit still applies on `CheckTx`.
+
+---
+
+## What "free" actually means
+
+Cosmos SDK ante decorators run before the message handler executes. Structs's custom ante chain (`app/ante/ante.go`) inserts a `GasRouterDecorator` early in the chain that checks every incoming transaction:
+
+1. If `IsFreeTransaction(msgs)` -- every message URL starts with `/structs.structs.Msg` AND none of them is `MsgUpdateParams` -- the gas meter is **replaced** with a free meter capped at `FreeGasCap` (default `20_000_000`).
+2. Else if `IsFreeStakingTransaction(msgs)` -- every message URL is one of the six entries in `FreeStakingMessages` -- the gas meter is replaced with a free meter capped at `FreeStakingGasCap` (default `40_000_000`), and a per-address per-block throttle gates how many of these can land.
+3. Otherwise the standard SDK gas meter is used and fees flow through `ConditionalMempoolFeeDecorator` + `ConditionalFeeDecorator`, which behave like the upstream SDK fee decorators.
+
+Both `ConditionalMempoolFeeDecorator` and `ConditionalFeeDecorator` short-circuit when the context flag `IsFreeTx(ctx)` is set, so free transactions are never charged a fee even if the user accidentally attaches one.
+
+`--gas auto` (or `--gas-adjustment 1.5`) is still required because the SDK simulator must produce a gas estimate; if the estimate exceeds the meter cap (free or paid) the tx is rejected with `out of gas`. Free does not mean infinite.
+
+---
+
+## Free Structs gameplay messages
+
+Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for the free-gas path, except `MsgUpdateParams` (governance). The list covers, as of v0.16.0:
+
+- All `MsgAddress*`, `MsgAgreement*`, `MsgAllocation*`, `MsgPlayer*`, `MsgProvider*`, `MsgReactor*`, `MsgStruct*`, `MsgSubstation*`, `MsgPermission*` messages.
+- `MsgFleetMove`, `MsgPlanetExplore`, `MsgPlanetRaidComplete`, `MsgPlanetUpdateName`.
+- All guild messages: `MsgGuildCreate`, `MsgGuildBank*`, `MsgGuildMembership*`, `MsgGuildUpdate*` (including the seven new UGC messages: `MsgGuildUpdateName/Pfp`, `MsgPlayerUpdateName/Pfp`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName/Pfp`).
+
+Excluded from the free path:
+
+- `MsgUpdateParams` (`/structs.structs.MsgUpdateParams`) -- this is a governance message and must pay normal fees even though it's in the Structs module.
+- Any message outside the Structs module URL prefix.
+
+If you want to see the canonical, complete list, read `KnownStructsMessages` in `.references/structsd/app/ante/maps.go`.
+
+---
+
+## Free staking messages
+
+The chain treats staking as a first-class gameplay action because reactor staking is what creates and powers a player. To remove that economic friction the following six messages are free, against a separate 40 M meter:
+
+- `cosmos.staking.v1beta1.MsgDelegate`
+- `cosmos.staking.v1beta1.MsgUndelegate`
+- `cosmos.staking.v1beta1.MsgBeginRedelegate`
+- `cosmos.staking.v1beta1.MsgCancelUnbondingDelegation`
+- `cosmos.staking.v1beta1.MsgCreateValidator`
+- `cosmos.staking.v1beta1.MsgEditValidator`
+
+Constraints:
+
+- A transaction that mixes any staking message with any other message type (Structs, bank, etc.) is **not** treated as a free staking tx and pays normal fees.
+- The `StakingThrottleDecorator` enforces **one** free staking transaction per signer address per block. A second free staking tx in the same block from the same address is rejected.
+- The signer is derived from the staking-message-specific field (`DelegatorAddress` for delegations, `ValidatorAddress` for validator messages).
+
+Use this for routine `MsgDelegate` / `MsgUndelegate` activity. If you need to send several staking ops in one block, batch them into a single tx (as long as it stays purely staking) -- the throttle is on free txs, not on the messages inside the tx.
+
+---
+
+## Paid transactions
+
+Anything not classified as free runs through the standard fee path:
+
+- Mixed transactions (Structs + non-Structs).
+- Pure non-Structs, non-staking transactions: `bank`, `distribution`, `gov`, `slashing`, `evidence`, IBC, etc.
+- `MsgUpdateParams` in any combination.
+
+These pay fees in `ualpha` like any other Cosmos SDK chain. Set `--fees` or `--gas-prices` accordingly.
+
+---
+
+## Other ante checks that still apply
+
+Even when a transaction is free, the rest of the ante chain still runs:
+
+- **Tx size cap** (`TxSizeDecorator`) -- rejects oversize transactions before any state read.
+- **Message count cap** (`MsgCountDecorator`) -- caps the number of messages per tx.
+- **Signature verification** (standard SDK decorators) -- signatures are required even on free txs.
+- **Per-address CheckTx throttle** (`CheckTxThrottleDecorator`) -- rate limits how many txs a single address can cram into the mempool per block.
+- **`StructsDecorator`** -- looks up the player for the signing address, applies the static permission check from `PermissionMap` for messages that use it, enforces the per-player message cap, and short-circuits same-block `lastAction` collisions for `ChargeMessages`.
+- **`ThrottleDecorator`** -- per-object throttles for proof-of-work messages, fleet move, planet explore, address register.
+- **Charge messages** (`StructActivate`, `StructAttack`, `StructBuildInitiate`, `StructDefenseClear/Set`, `StructMove`, `StructStealthActivate/Deactivate`) -- still require positive charge, so you cannot use the free path to side-step the once-per-block-per-object rules.
+
+The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission management, guild membership voting flows) skips the ante-level permission check and lets the handler enforce the right permission, since the bits depend on runtime fields. This has nothing to do with fees -- those messages are still free as long as the tx stays purely Structs.
+
+---
+
+## Practical guidance
+
+- Treat `--gas auto --gas-adjustment 1.5` as mandatory on every `structsd tx structs` command. The free meter is tight enough that hand-tuning a low gas value is a footgun.
+- Do not mix module operations in one tx if you want the free path. For example, `MsgPlayerSend` (Structs) and `cosmos.bank.v1beta1.MsgSend` (bank) in the same tx will pay fees. If you need to do both, send two transactions.
+- Free does not relax sequence numbers. The chain still tracks `account_sequence`. One in-flight tx per address at a time still applies. Wait for the previous block (~6 s) before broadcasting the next.
+- Submitting the same staking message twice in one block from one address will fail at `StakingThrottleDecorator`. Wait a block.
+- The free-gas budgets (20 M / 40 M) are governance parameters in the chain (`FreeGasCap`, `FreeStakingGasCap` on `HandlerOptions`). Treat them as soft-coded numbers; check `structsd query params` if you suspect they've moved.
+
+---
+
+## See Also
+
+- [permissions.md](permissions.md) -- Permission flag reference and check flow
+- [ugc-moderation.md](ugc-moderation.md) -- UGC name/pfp transactions and validation rules
+- `protocols/transactions.md` -- Transaction broadcast/verify flow
+- `troubleshooting/transaction-issues.md` -- Common rejections and fixes
+
+</document>
+
+<document>
+<source>knowledge/mechanics/ugc-moderation.md</source>
+# UGC and Decentralized Moderation
+
+**Purpose**: Explain how user-generated content (names and profile pictures) works in Structs, why it is moderated by guilds rather than by a global authority, and what the chain validates before it accepts anything.
+
+---
+
+## What "UGC" means in Structs
+
+Five things on chain accept player-supplied identity:
+
+| Object | Field | Transaction(s) |
+|--------|-------|----------------|
+| Player | `name` (a.k.a. username) | `MsgPlayerUpdateName` |
+| Player | `pfp` (profile picture) | `MsgPlayerUpdatePfp` |
+| Guild | `name` | `MsgGuildUpdateName` |
+| Guild | `pfp` | `MsgGuildUpdatePfp` |
+| Planet | `name` | `MsgPlanetUpdateName` |
+| Substation | `name` | `MsgSubstationUpdateName` |
+| Substation | `pfp` | `MsgSubstationUpdatePfp` |
+
+These are the only mutable identity fields under the chain's control. Everything else (struct types, planet coordinates, ore type, etc.) is system-generated and not user-editable.
+
+---
+
+## Why moderation is decentralized
+
+Structs is permissionless. Anyone can create a player, anyone can create a guild, and anyone can name themselves whatever passes the chain's structural validators (see below). The chain deliberately does **not** maintain a global blacklist of "bad" names, a global allowlist of approved pfps, or a moderator role with cross-guild authority. There is no Structs admin who can rename your player.
+
+Instead, the chain ships:
+
+1. **Strict structural validators** that every name and pfp must pass on every update. These reject the categories of input most likely to break a UI or be used for impersonation/spoofing -- invalid UTF-8, combining marks (Zalgo), bidi overrides, zero-width characters, names that look like object IDs, and pfp values pointing at unsafe URI schemes. Structural validation is policy-neutral: it does not care whether the resulting string is "appropriate", only that it can be safely displayed.
+2. **A guild-scoped moderation permission** (`PermGuildUGCUpdate`, bit 24, value `16777216`) that lets guilds rewrite the names and pfps of objects owned by their own members. Each guild decides who holds it and what standards trigger its use.
+3. **An auditable moderation event** (`ugc_moderated`) that the chain emits whenever a UGC update is performed by someone other than the target's owner. Members and outside observers can watch this stream to understand how a guild moderates.
+
+Different communities want different things:
+
+- A competitive PvP guild may tolerate edgy in-character names because those names are the conflict. They never grant the moderation bit and never override anyone.
+- A family-friendly mining co-op may require strict, descriptive names. They rank-grant `PermGuildUGCUpdate` to officers and treat moderation overrides as routine.
+- A chaos-RP guild may forbid moderators from touching names entirely as a community pact, and any override triggers social consequences inside the guild.
+- A guild can also moderate the names of guild-owned **planets** and **substations**, giving them shared, branded infrastructure.
+
+The chain does not decide which model is correct. It gives each guild the bit to flip and the audit log to argue over.
+
+Players who don't like a particular guild's moderation policy can leave the guild. When they do, the guild loses its `PermGuildUGCUpdate` reach into their identity (the check requires the target to be owned by a guild member). This makes moderation reach a feature of guild membership, not a property of the player.
+
+---
+
+## How the permission check works
+
+UGC updates on player, planet, and substation objects route through the `UGCPermissionCheck` helper in the keeper. The flow is:
+
+1. Try `PermissionCheck(target, actor, PermUpdate)`. Owners pass automatically because ownership grants every permission, so this is the **self-service** path: players can rename themselves; planet owners can rename their planets; substation owners can rename their substations.
+2. If self-service fails, find the target object's owner. If the owner has no guild, deny.
+3. Otherwise, run `PermissionCheck(ownerGuild, actor, PermGuildUGCUpdate)`. This is the **guild moderation** path: anyone who has been granted `PermGuildUGCUpdate` on that guild (directly or via a guild rank register entry) can rewrite the target's name/pfp.
+
+`MsgGuildUpdateName` and `MsgGuildUpdatePfp` use the standard `PermissionCheck(guild, actor, PermUpdate)` flow instead -- there is no "moderate the guild itself" hook. Renaming a guild requires `PermUpdate` (4) on that guild, which the owner has automatically and which can be granted to others by direct grant or rank register.
+
+See `knowledge/mechanics/permissions.md#ugc-permission-check-ugcpermissioncheck` for the full code reference.
+
+---
+
+## The `ugc_moderated` event
+
+Whenever the actor of a UGC update is not the target object's owner, the chain emits a Cosmos `sdk.Event` of type `ugc_moderated`. Self-service updates (where the actor IS the owner) do **not** emit this event -- they're indistinguishable from any other normal update.
+
+Attributes:
+
+| Key | Description |
+|-----|-------------|
+| `actor_player_id` | Player ID of the moderator who performed the update |
+| `actor_address` | The signing address that authored the tx |
+| `target_object_id` | Object ID being moderated (player ID, planet ID, substation ID, or guild ID) |
+| `target_owner_player_id` | Player ID of the target's owner at the time of the update |
+| `field` | `name` or `pfp` |
+| `old_value` | The string the field held before this update |
+| `new_value` | The string the field now holds |
+
+The event is untyped (it uses `sdk.NewEvent`, not a typed protobuf event). Watch for it via Tendermint event subscriptions or by tailing block events. The PostgreSQL Guild Stack also surfaces the resulting `player_meta` / `guild_meta` UPDATEs as `player_meta` and `guild_meta` GRASS categories; planet and substation UGC changes surface only via the chain event for now.
+
+---
+
+## Validation rules (the parts the chain enforces)
+
+All inputs are NFC-normalized before any structural check, so visually-equivalent strings collapse to the same form. Strings are then run through a small ladder of rejections.
+
+### Rejected globally
+
+These rejections apply to **every** name and pfp regardless of object type:
+
+- Invalid UTF-8.
+- Combining marks (Unicode categories `Mn` non-spacing or `Me` enclosing). This blocks Zalgo / stacked-diacritic abuse.
+- Bidi/format/zero-width runes: `U+202A..U+202E` (LRE/RLE/PDF/LRO/RLO), `U+2066..U+2069` (LRI/RLI/FSI/PDI), `U+200B..U+200D` (ZWSP/ZWNJ/ZWJ), `U+2060` (word joiner), `U+00AD` (soft hyphen), `U+FEFF` (BOM), and any rune in category `Cf` (format) or `Cs` (surrogate).
+
+These three checks are shared by `ValidatePlayerName`, `ValidateEntityName`, `ValidatePlanetName`, and `ValidatePfp`.
+
+### Names
+
+Player, entity (guild/substation), and planet names share a structural shape but differ in length and allowed characters.
+
+| Rule | Player | Entity (guild/substation) | Planet |
+|------|--------|---------------------------|--------|
+| Length (runes after NFC) | 3-20 | 3-20 | 3-25 |
+| Letters (any script) `\p{L}` | yes | yes | yes |
+| Digits `0-9` | yes | yes | yes |
+| `-` `_` | yes | yes | yes |
+| Space ` ` | no | yes (no leading/trailing, no double) | yes (no leading/trailing, no double) |
+| Apostrophe `'` | no | yes | yes |
+| Combining marks | rejected | rejected | rejected |
+| Bidi/zero-width/format | rejected | rejected | rejected |
+| Looks like object id (matches `^[0-9]+-[0-9]+$`) | rejected | rejected | rejected |
+| Invalid UTF-8 | rejected | rejected | rejected |
+
+The full regex (after NFC normalization and the rejections above):
+
+```text
+playerNameRegex = ^[\p{L}0-9\-_]{3,20}$
+entityNameRegex = ^[\p{L}0-9\-_' ]{3,20}$
+planetNameRegex = ^[\p{L}0-9\-_' ]{3,25}$
+```
+
+The "looks like object id" rule rejects strings such as `1-2`, `4-99`, `12345-67` so that names cannot impersonate the chain's `{type}-{seq}` ID format anywhere it might be displayed.
+
+### Pfps
+
+Pfps are optional. The empty string clears the field. Non-empty values may either be opaque content identifiers (no `:`) or URLs in a strictly limited scheme set.
+
+Shared rejections (apply to any non-empty pfp):
+
+- More than 256 runes (`MaxPfpLength`).
+- Invalid UTF-8.
+- Any control character in `0x00..0x1F` or `0x7F`.
+- Bidi/zero-width/format runes (same set as names).
+- Any of these characters anywhere in the string: `<`, `>`, `` ` ``, `"`, `\`, or whitespace (space, tab, newline, etc.).
+
+Then exactly one of the two paths must be satisfied:
+
+**Path A -- opaque identifier (no `:` in the string).** Must match:
+
+```text
+opaquePfpRegex = ^[a-zA-Z0-9._/\-]{1,256}$
+```
+
+This is the path for content-addressed identifiers (CIDs, asset hashes, Arweave tx IDs without scheme, etc.) where the renderer knows how to resolve them.
+
+**Path B -- URL (contains `:`).** The substring before the first `:` (case-insensitive) must be one of:
+
+```text
+https | http | ipfs | ipns | ar
+```
+
+Anything else (`data:`, `javascript:`, `vbscript:`, `file:`, `ftp:`, `gopher:`, ...) is rejected before parsing. The remainder must then `url.Parse` successfully and:
+
+- For `https` and `http`: `Host` must be non-empty.
+- For `ipfs`, `ipns`, `ar`: at least one of `Host`, `Opaque`, or `Path` must be non-empty (so `ipfs://CID`, `ipfs:CID`, and `ipfs:/CID` all work).
+
+The scheme allow-list is intentionally narrow. Renderers in the webapp and other clients can hard-code support for these schemes without worrying about legacy or dangerous handlers.
+
+### Name uniqueness comparison
+
+Two names are considered the same for uniqueness purposes when their `NormalizeName` form matches. The chain's `NormalizeName` function applies, in order:
+
+1. NFC normalization
+2. ASCII lowercasing
+3. Trim leading/trailing whitespace
+
+Any uniqueness index (for example, the guild name index) MUST key off this form, so that case tricks (`MyGuild` vs `myguild`) and surrounding-whitespace tricks cannot be used to register a near-duplicate.
+
+---
+
+## Reference validator snippets
+
+These are intentionally faithful translations of the on-chain Go validators. They are useful as preflight in clients (the webapp's `SigningClientManager` runs equivalent checks) so that bad input gets rejected locally with a clear error before paying the round-trip cost of a tx submission.
+
+### Python
+
+This snippet uses the third-party [`regex`](https://pypi.org/project/regex/) package because Python's stdlib `re` does not support Unicode property escapes (`\p{L}`). Install with `pip install regex`.
+
+```python
+import unicodedata
+from urllib.parse import urlparse
+import regex  # third-party, supports \p{L}
+
+PLAYER_NAME_RE = regex.compile(r"^[\p{L}0-9\-_]{3,20}$")
+ENTITY_NAME_RE = regex.compile(r"^[\p{L}0-9\-_' ]{3,20}$")
+PLANET_NAME_RE = regex.compile(r"^[\p{L}0-9\-_' ]{3,25}$")
+OPAQUE_PFP_RE  = regex.compile(r"^[A-Za-z0-9._/\-]{1,256}$")
+OBJECT_ID_RE   = regex.compile(r"^[0-9]+-[0-9]+$")
+
+ALLOWED_SCHEMES = {"https", "http", "ipfs", "ipns", "ar"}
+INVISIBLE = {0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
+             0x2066, 0x2067, 0x2068, 0x2069,
+             0x200B, 0x200C, 0x200D, 0x2060,
+             0x00AD, 0xFEFF}
+MAX_PFP_LEN = 256
+
+
+def _normalize_and_check(s: str) -> str:
+    try:
+        s.encode("utf-8")
+    except UnicodeEncodeError as e:
+        raise ValueError("invalid UTF-8") from e
+    s = unicodedata.normalize("NFC", s)
+    for r in s:
+        cp = ord(r)
+        cat = unicodedata.category(r)
+        if cat in ("Mn", "Me"):
+            raise ValueError("name contains combining marks (Zalgo)")
+        if cat in ("Cf", "Cs") or cp in INVISIBLE:
+            raise ValueError("name contains bidi/zero-width/format characters")
+    return s
+
+
+def _check_relaxed(s: str) -> None:
+    if s.startswith(" ") or s.endswith(" "):
+        raise ValueError("name cannot have leading or trailing spaces")
+    if "  " in s:
+        raise ValueError("name cannot contain consecutive spaces")
+
+
+def validate_player_name(name: str) -> str:
+    s = _normalize_and_check(name)
+    if OBJECT_ID_RE.match(s):
+        raise ValueError("name cannot resemble an object ID")
+    if not PLAYER_NAME_RE.match(s):
+        raise ValueError("player name must be 3-20 chars of letters/digits/-/_")
+    return s
+
+
+def validate_entity_name(name: str) -> str:
+    s = _normalize_and_check(name)
+    if OBJECT_ID_RE.match(s):
+        raise ValueError("name cannot resemble an object ID")
+    _check_relaxed(s)
+    if not ENTITY_NAME_RE.match(s):
+        raise ValueError("entity name must be 3-20 chars of letters/digits/-/_/'/space")
+    return s
+
+
+def validate_planet_name(name: str) -> str:
+    s = _normalize_and_check(name)
+    if OBJECT_ID_RE.match(s):
+        raise ValueError("name cannot resemble an object ID")
+    _check_relaxed(s)
+    if not PLANET_NAME_RE.match(s):
+        raise ValueError("planet name must be 3-25 chars of letters/digits/-/_/'/space")
+    return s
+
+
+def validate_pfp(pfp: str) -> str:
+    if pfp == "":
+        return pfp
+    if len(pfp) > MAX_PFP_LEN:
+        raise ValueError(f"pfp must be at most {MAX_PFP_LEN} characters")
+    try:
+        pfp.encode("utf-8")
+    except UnicodeEncodeError as e:
+        raise ValueError("pfp contains invalid UTF-8") from e
+    for r in pfp:
+        cp = ord(r)
+        if cp < 0x20 or cp == 0x7F:
+            raise ValueError(f"pfp contains forbidden control character (0x{cp:02X})")
+        if cp in INVISIBLE or unicodedata.category(r) in ("Cf", "Cs"):
+            raise ValueError("pfp contains bidi/zero-width/format characters")
+    if any(c in pfp for c in "<>`\"\\ \t\n\r\f\v"):
+        raise ValueError("pfp must not contain <, >, backtick, quote, backslash, or whitespace")
+
+    if ":" not in pfp:
+        if not OPAQUE_PFP_RE.match(pfp):
+            raise ValueError("opaque pfp must match [A-Za-z0-9._/-]{1,256}")
+        return pfp
+
+    scheme = pfp.split(":", 1)[0].lower()
+    if scheme not in ALLOWED_SCHEMES:
+        raise ValueError(f"pfp URL scheme {scheme!r} is not allowed")
+    u = urlparse(pfp)
+    if scheme in ("https", "http") and not u.netloc:
+        raise ValueError(f"pfp {scheme} URL must include a host")
+    if scheme in ("ipfs", "ipns", "ar") and not (u.netloc or u.path):
+        raise ValueError(f"pfp {scheme} URL must include a content identifier")
+    return pfp
+```
+
+> Note: this matches the Go validators in `x/structs/types/ugc.go` rule-for-rule. If you copy it into a client, also mirror the chain's `NormalizeName` (NFC + lowercase + trim) for any uniqueness comparison you perform locally.
+
+### JavaScript
+
+```js
+const INVISIBLE = new Set([
+  0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
+  0x2066, 0x2067, 0x2068, 0x2069,
+  0x200B, 0x200C, 0x200D, 0x2060,
+  0x00AD, 0xFEFF,
+]);
+
+const PLAYER_NAME = /^[\p{L}0-9\-_]{3,20}$/u;
+const ENTITY_NAME = /^[\p{L}0-9\-_' ]{3,20}$/u;
+const PLANET_NAME = /^[\p{L}0-9\-_' ]{3,25}$/u;
+const OBJECT_ID   = /^[0-9]+-[0-9]+$/;
+const OPAQUE_PFP  = /^[A-Za-z0-9._/\-]{1,256}$/;
+const ALLOWED_SCHEMES = new Set(["https", "http", "ipfs", "ipns", "ar"]);
+
+function normalizeAndCheck(s) {
+  s = s.normalize("NFC");
+  for (const r of s) {
+    const cp = r.codePointAt(0);
+    if (INVISIBLE.has(cp)) throw new Error("invisible character");
+    // Combining marks and format/surrogate categories require a Unicode tables
+    // library (e.g. unicode-properties). The webapp uses a thin wrapper.
+  }
+  return s;
+}
+
+export function validatePlayerName(name) {
+  const s = normalizeAndCheck(name);
+  if (OBJECT_ID.test(s)) throw new Error("name cannot resemble an object ID");
+  if (!PLAYER_NAME.test(s)) throw new Error("player name 3-20 letters/digits/-/_");
+  return s;
+}
+
+export function validateEntityName(name) {
+  const s = normalizeAndCheck(name);
+  if (OBJECT_ID.test(s)) throw new Error("name cannot resemble an object ID");
+  if (s.startsWith(" ") || s.endsWith(" ")) throw new Error("no leading/trailing space");
+  if (s.includes("  ")) throw new Error("no double space");
+  if (!ENTITY_NAME.test(s)) throw new Error("entity name 3-20 letters/digits/-/_/'/space");
+  return s;
+}
+
+export function validatePlanetName(name) {
+  const s = normalizeAndCheck(name);
+  if (OBJECT_ID.test(s)) throw new Error("name cannot resemble an object ID");
+  if (s.startsWith(" ") || s.endsWith(" ")) throw new Error("no leading/trailing space");
+  if (s.includes("  ")) throw new Error("no double space");
+  if (!PLANET_NAME.test(s)) throw new Error("planet name 3-25 letters/digits/-/_/'/space");
+  return s;
+}
+
+export function validatePfp(pfp) {
+  if (pfp === "") return "";
+  if ([...pfp].length > 256) throw new Error("pfp too long");
+  for (const r of pfp) {
+    const cp = r.codePointAt(0);
+    if (cp < 0x20 || cp === 0x7F) throw new Error("control character");
+    if (INVISIBLE.has(cp)) throw new Error("invisible character");
+  }
+  if (/[<>`"\\\s]/.test(pfp)) throw new Error("forbidden punctuation/whitespace");
+  if (!pfp.includes(":")) {
+    if (!OPAQUE_PFP.test(pfp)) throw new Error("opaque pfp must match [A-Za-z0-9._/-]{1,256}");
+    return pfp;
+  }
+  const scheme = pfp.slice(0, pfp.indexOf(":")).toLowerCase();
+  if (!ALLOWED_SCHEMES.has(scheme)) throw new Error(`scheme ${scheme} not allowed`);
+  let u;
+  try { u = new URL(pfp); } catch { throw new Error("malformed URL"); }
+  if ((scheme === "https" || scheme === "http") && !u.host) throw new Error("URL must include host");
+  if (["ipfs", "ipns", "ar"].includes(scheme) && !u.host && !u.pathname) {
+    throw new Error("URL must include content identifier");
+  }
+  return pfp;
+}
+```
+
+The webapp's `SigningClientManager` runs equivalent checks before calling the corresponding `queueMsg*` function. Other clients should mirror this so users get fast, clear errors instead of opaque on-chain rejections.
+
+---
+
+## Examples
+
+### Acceptable
+
+| Field | Value | Why |
+|-------|-------|-----|
+| Player name | `Andromeda7` | Letters + digit, 10 chars |
+| Player name | `星のさだめ` | Non-ASCII letters allowed |
+| Player name | `chaos_bot-9` | Letter, underscore, hyphen, digit |
+| Guild name | `Iron Veil` | Space allowed for entities |
+| Guild name | `O'Connor's Crew` | Apostrophes allowed for entities |
+| Planet name | `New Terra II` | Space + digit, 12 chars |
+| Pfp (opaque) | `bafybeigdyrztktx4...abc` | CID-like opaque identifier |
+| Pfp (URL) | `ipfs://bafybeigdyrztktx4...abc` | IPFS scheme |
+| Pfp (URL) | `https://cdn.example.org/avatar.png` | HTTPS scheme |
+
+### Rejected
+
+| Field | Value | Reason |
+|-------|-------|--------|
+| Player name | `ab` | Too short (< 3 runes) |
+| Player name | `Name With Spaces` | Spaces not allowed in player names |
+| Player name | `Andromeda 7` | Same |
+| Player name | `1-2` | Looks like object id |
+| Player name | `Zalgo\u0301\u0302` | Combining marks rejected (Zalgo) |
+| Player name | `evil\u202Eorder` | Bidi override rejected |
+| Guild name | `  leading-space` | Leading whitespace |
+| Guild name | `double  space` | Double space |
+| Planet name | (26-rune string) | Exceeds planet length 25 |
+| Pfp | `data:image/png;base64,...` | Disallowed scheme |
+| Pfp | `javascript:alert(1)` | Disallowed scheme |
+| Pfp | `https://example.com/path with space` | Whitespace in pfp value |
+| Pfp | `https://` | Missing host |
+| Pfp | (300-rune string) | Exceeds 256 |
+
+---
+
+## Operational guidance for guilds
+
+- **Decide your policy before you grant the bit.** A rank-register entry that grants `PermGuildUGCUpdate` to rank `5` makes every officer at rank 5 or better a moderator. Removing it later does not retroactively undo any name change they have already made.
+- **Watch the audit stream.** Subscribe to `ugc_moderated` events (or the corresponding `player_meta` / `guild_meta` GRASS categories from the Guild Stack) and log them somewhere your members can see. Decentralized moderation only works when the community can see what moderators are doing.
+- **Use post-hoc, not pre-approval.** There is no chain mechanism for "approve before commit". Names land immediately, and moderators correct after the fact. Build your social workflow around that.
+- **Communicate when you correct.** Your members chose their identity once; if you overwrite it, tell them why. The chain captures `actor_player_id` and `old_value`, but it does not capture intent.
+- **Don't moderate planets and substations you don't actually run.** The check requires the object's owner to be a member of your guild. If a member transfers a planet to another player or leaves the guild, your reach evaporates -- as it should.
+- **Remember that moderation is a guild service, not a chain service.** A new player who hasn't joined any guild has no moderator. They can name themselves anything that passes structural validation, and only the next guild they join will gain reach into their identity.
+
+---
+
+## See Also
+
+- [permissions.md](permissions.md) -- `PermGuildUGCUpdate` and the full `UGCPermissionCheck` flow
+- [transactions.md](transactions.md) -- All UGC messages run on the free Structs gas path
+- [factions.md](../lore/factions.md) -- Why guilds exist and what they're allowed to enforce
+- `.cursor/skills/structs-guild/SKILL` -- Operational commands for guild moderation
+- `schemas/validation.md` -- Quick-reference index of every chain validator
 
 </document>
 
@@ -5892,6 +6622,10 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 | Build in fleet | ✓ | ✓ |
 | Raid planet | ✗ | ✓ |
 | Mine/refine on planet | ✓ | ✗ |
+| Explore new planet (existing players) | ✓ | ✗ |
+| Explore first planet (no current planet yet) | n/a | n/a |
+
+For an existing planet owner, `planet-explore` requires the fleet to be `onStation` at the current planet. Brand-new players exploring for the first time skip this check.
 
 ---
 
@@ -5986,7 +6720,8 @@ All newly explored planets start with identical properties.
 - Fleet moves to new planet
 - Old planet released (old structures remain if ore remains; other players can claim it)
 - Chart new planet to reveal resource attributes before committing
-- **Requirement**: Current planet must be complete (ore depleted) before exploring
+- **Requirement (existing players)**: Current planet must be complete (ore depleted) before exploring AND the fleet must be `onStation` at the current planet, not `away`. Recall the fleet first if needed via `fleet-move`.
+- **Requirement (first-time players)**: No fleet check applies — a brand-new player with no current planet can call `planet-explore` immediately after creation. The chain only enforces the fleet/ore checks for players who already own a planet.
 - **Ownership**: One planet per player at a time
 
 ---
@@ -6515,7 +7250,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 |--------|--------|-------------|--------------------|-----------| ------|
 | Command Ship | 1 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
 | Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
-| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1/3 hit each) | Cheap primary; secondary is a gamble |
+| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary now floors at 1 hit per Attack Run (v0.16.0 `secondaryWeaponGuaranteedShots = 1`) |
 | Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
 | Pursuit Fighter | 1 | guided | Air | — | Cheapest air offense |
 | Stealth Bomber | 8 | guided | Land, Water | — | Stealth (1 charge to activate) |
@@ -7255,6 +7990,38 @@ The `detail` column for `struct_attack` includes `attackerStructId`, `targetStru
 | `id` | varchar PK | `0-{index}` (e.g., `0-1`) |
 | `entry_rank` | bigint | Default guild rank assigned to new members (chain default: 101) |
 
+### `structs.guild_meta` (UGC mirror)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Guild ID, mirrors `structs.guild.id` |
+| `name` | text | Guild name (UGC; populated by chain `MsgGuildUpdateName` -> cache trigger) |
+| `pfp` | text | Guild profile picture (UGC; added in v0.16.0; populated by `MsgGuildUpdatePfp`) |
+
+### `structs.player_meta` (UGC mirror, v0.16.0)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Player ID. **PK collapsed in v0.16.0 from `(id, guild_id)` to `(id)`** -- there is now exactly one meta row per player |
+| `guild_id` | varchar | Player's current guild (kept in sync via `cache.handle_event_player`) |
+| `username` | text | Player username (UGC; chain is sole source of truth as of v0.16.0; written from `MsgPlayerUpdateName` and from `MsgGuildMembershipJoinProxy.playerName` at signup) |
+| `pfp` | text | Player profile picture (UGC; written from `MsgPlayerUpdatePfp` and from `MsgGuildMembershipJoinProxy.playerPfp`) |
+
+The webapp no longer writes `player_meta` directly. The `PLAYER_PENDING_MERGE` trigger was modified in v0.16.0 to skip the meta insert -- the chain UGC update is the only path that populates `username` and `pfp`. The trigger still writes the `lastAction` grid seed so newly merged players have a complete grid.
+
+### `structs.substation` (with UGC fields)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Substation ID |
+| `owner` | varchar | Owner player ID |
+| `name` | text | Substation name (UGC; added in v0.16.0; written from `MsgSubstationUpdateName` directly on the substation row -- no separate `substation_meta` table) |
+| `pfp` | text | Substation profile picture (UGC; added in v0.16.0; written from `MsgSubstationUpdatePfp`) |
+
+### `structs.planet_meta`
+
+Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain only updates the planet name when the chain event carries a non-empty value, so an auto-generated default name is never overwritten by an empty UGC update.
+
 ### `structs.permission_guild_rank`
 
 | Column | Type | Notes |
@@ -7291,13 +8058,49 @@ Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechan
 
 ## Signer Schema (Transaction Signing Agent)
 
-The TSA manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
+The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.com/playstructs/structs-tsa)) manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
 
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
 | `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
-| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 90+ command types. |
+| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types as of v0.16.0. |
+
+### `signer.signer_tx_type` (v0.16.0 additions)
+
+Seven new enum values were added in v0.16.0 for the UGC transactions:
+
+| Enum Value | Wraps |
+|------------|-------|
+| `guild-update-name` | `MsgGuildUpdateName` |
+| `guild-update-pfp` | `MsgGuildUpdatePfp` |
+| `player-update-name` | `MsgPlayerUpdateName` |
+| `player-update-pfp` | `MsgPlayerUpdatePfp` |
+| `substation-update-name` | `MsgSubstationUpdateName` |
+| `substation-update-pfp` | `MsgSubstationUpdatePfp` |
+| `planet-update-name` | `MsgPlanetUpdateName` |
+
+### `signer.tx_*` wrappers (v0.16.0)
+
+The signing layer adds 12 new wrapper functions:
+
+- **7 self-service wrappers** (one per UGC tx type above) that require `PermUpdate` (4) on the target object before queueing the tx. These are used when a player updates their own UGC.
+- **5 guild-moderation wrappers** (`tx_guild_moderate_player_name`, `_player_pfp`, `_planet_name`, `_substation_name`, `_substation_pfp`) that require `PermGuildUGCUpdate` (16777216) on the target owner's guild before queueing the tx. These are used when a guild moderator overrides a member's UGC.
+
+`signer.UPDATE_PENDING_ACCOUNT` was also bumped from the old `PermAll = 16777215` to the v0.16.0 `PermAll = 33554431` so newly provisioned signer addresses receive the new bit by default.
+
+### `PLAYER_PENDING_JOIN_PROXY` (v0.16.0)
+
+The `PLAYER_PENDING_JOIN_PROXY` trigger was modified to thread `username` and `pfp` from the pending row through to `signer.CREATE_TRANSACTION` for the `guild-membership-join-proxy` command, packaged into the `ugc` JSONB argument. The webapp's signup flow becomes:
+
+```text
+webapp signup
+  -> structs.player_pending row (with username, pfp)
+  -> PLAYER_PENDING_JOIN_PROXY trigger
+  -> signer.tx (command=guild-membership-join-proxy, args.ugc={username, pfp, ...})
+  -> TSA claims, signs MsgGuildMembershipJoinProxy with playerName/playerPfp
+  -> chain validates name/pfp, creates player, populates player_meta via cache trigger
+```
 
 ---
 

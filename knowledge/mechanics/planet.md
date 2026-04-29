@@ -46,7 +46,8 @@ All newly explored planets start with identical properties.
 - Fleet moves to new planet
 - Old planet released (old structures remain if ore remains; other players can claim it)
 - Chart new planet to reveal resource attributes before committing
-- **Requirement**: Current planet must be complete (ore depleted) before exploring
+- **Requirement (existing players)**: Current planet must be complete (ore depleted) before exploring AND the fleet must be `onStation` at the current planet, not `away`. Recall the fleet first if needed via `fleet-move`.
+- **Requirement (first-time players)**: No fleet check applies — a brand-new player with no current planet can call `planet-explore` immediately after creation. The chain only enforces the fleet/ore checks for players who already own a planet.
 - **Ownership**: One planet per player at a time
 
 ---

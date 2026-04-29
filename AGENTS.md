@@ -55,7 +55,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | Skill | Purpose |
 |-------|---------|
 | [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
-| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install Go, Ignite CLI, and build the `structsd` binary from source |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds) |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
@@ -123,7 +123,9 @@ Reference material in `knowledge/`.
 
 ### Mechanics
 - [`combat`](knowledge/mechanics/combat.md) -- Damage, evasion, raids
-- [`permissions`](knowledge/mechanics/permissions.md) -- 24-bit permission flags, guild rank permissions, handler reference
+- [`permissions`](knowledge/mechanics/permissions.md) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
+- [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
+- [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work

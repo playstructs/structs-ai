@@ -43,7 +43,10 @@ Extends [BaseEvent](#base-event). Category: `player_meta`
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | Player ID |
-| username | string | Player username |
+| username | string | Player username (UGC; updated by `MsgPlayerUpdateName`, validated against `ValidatePlayerName`) |
+| pfp | string | Player profile picture (UGC; updated by `MsgPlayerUpdatePfp`, validated against `ValidatePfp`). Empty string if not set. |
+
+This event fires when the cache layer commits an update to `structs.player_meta`. As of v0.16.0 the chain is the sole source of truth for `username` and `pfp` -- the database `player_meta` table is no longer written by the webapp; both fields are populated from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` (or from `MsgGuildMembershipJoinProxy.playerName` / `playerPfp` at signup).
 
 ### GuildConsensusEvent
 
@@ -60,7 +63,28 @@ Extends [BaseEvent](#base-event). Category: `guild_meta`
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | Guild ID |
-| name | string | Guild name |
+| name | string | Guild name (UGC; updated by `MsgGuildUpdateName`, validated against `ValidateEntityName`) |
+| pfp | string | Guild profile picture (UGC; updated by `MsgGuildUpdatePfp`, validated against `ValidatePfp`). Empty string if not set. |
+
+### UGCModeratedEvent (Cosmos chain event)
+
+**Not** delivered through GRASS. This is a typed Cosmos `sdk.Event` of type `ugc_moderated` emitted by the chain keeper. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`).
+
+Fires only when the actor of a UGC update is **not** the target object's owner (i.e. moderation overrides only — self-service updates are silent).
+
+**Attributes**:
+
+| Attribute | Description |
+|-----------|-------------|
+| `actor_player_id` | Player ID of the moderator |
+| `actor_address` | Signing address that authored the tx |
+| `target_object_id` | Player / planet / substation / guild ID being moderated |
+| `target_owner_player_id` | Owner player ID at the time of the update |
+| `field` | `name` or `pfp` |
+| `old_value` | Field value before the update |
+| `new_value` | Field value after the update |
+
+See `knowledge/mechanics/ugc-moderation.md` for the full philosophy and validation rules.
 
 ### GuildMembershipEvent
 

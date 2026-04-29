@@ -47,6 +47,10 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 | Build in fleet | ✓ | ✓ |
 | Raid planet | ✗ | ✓ |
 | Mine/refine on planet | ✓ | ✗ |
+| Explore new planet (existing players) | ✓ | ✗ |
+| Explore first planet (no current planet yet) | n/a | n/a |
+
+For an existing planet owner, `planet-explore` requires the fleet to be `onStation` at the current planet. Brand-new players exploring for the first time skip this check.
 
 ---
 

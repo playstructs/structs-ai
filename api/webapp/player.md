@@ -15,7 +15,6 @@
 | GET | `/api/player/{player_id}` | Get player information from web application | No |
 | GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height for player | No |
 | GET | `/api/player/raid/search` | Search player raids | No |
-| PUT | `/api/player/username` | Update player username | Yes |
 | GET | `/api/player/transfer/search` | Search player transfers | No |
 | GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | No |
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
@@ -101,12 +100,11 @@ Search player raids.
 
 ---
 
-### PUT `/api/player/username`
+### Username updates (removed in v0.16.0)
 
-Update player username.
+The `PUT /api/player/username` endpoint was removed in v0.16.0. Username (and the new profile-picture field) are now updated directly on chain via `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`. The webapp's signing client manager exposes `queueMsgPlayerUpdateName(playerId, name)` and `queueMsgPlayerUpdatePfp(playerId, pfp)` to queue these transactions; the database `player_meta` row is updated by the cache trigger after the chain commits.
 
-- **ID**: `webapp-player-username`
-- **Authentication**: Required
+See `knowledge/mechanics/ugc-moderation.md` for the full UGC update flow and validation rules.
 
 ---
 
