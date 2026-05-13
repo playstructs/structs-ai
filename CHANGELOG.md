@@ -5,6 +5,46 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-05-13
+
+### Added
+
+- **["The `-y` Rule"](SAFETY.md) in [`SAFETY.md`](SAFETY.md)** — codifies that `-y` is OFF by default in every transaction example, ON only after commander approval. Two named flag bundles (`TX_FLAGS`, `TX_FLAGS_APPROVED`) make the distinction explicit. Compute commands (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`) are the documented exception — they must auto-submit unattended, so they ship with `-y` paired with an **Approval Block** that surfaces consent up-front.
+- **The Approval Block pattern** — a template the agent prints before signing high-impact transactions, making the consent surface explicit (action, tier, signer, target, amount, reversibility, blast radius, pre-flight checks). Documented in [`SAFETY.md`](SAFETY.md) and applied at every Tier 1+ command site in the skills.
+- **"Requires" callout** on all 10 transaction-using skills — declares `structsd` as a required tool inline, closing the ASI04 dependency Notes ClawScan raised on `structs-energy`, `structs-economy`, `structs-diplomacy`, and similar.
+- **Read-only profile** as the **default** in [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL.md) setup — Step 4 starts only `structsd structs-pg structs-grass` instead of the full stack. The MCP server, webapp, NATS, and signing agent must be enabled explicitly. A new "Enabling Additional Services" section documents how.
+- **Pinned release tag** as Step 1 of the guild-stack setup — `git checkout <latest-tag>` makes the Compose file a reviewable artifact instead of a moving target.
+
+### Changed
+
+- **Removed `-y` from every Tier 1+ transaction example** in 11 skills (~50 instances across `structs-onboarding`, `structs-mining`, `structs-building`, `structs-combat`, `structs-economy`, `structs-energy`, `structs-power`, `structs-guild`, `structs-diplomacy`, `structs-exploration`, `play-structs`) plus the `create-player.mjs` script's `next_step` example. The CLI's confirmation prompt becomes the last gate before signing.
+- **Compute commands keep `-y`** because they auto-submit completion when no shell is attached. Each compute example is now preceded by an Approval Block that surfaces the deferred-consent risk.
+- **TX_FLAGS rewritten** in every skill from a single line ending in `-y` to two named bundles: `TX_FLAGS` (interactive, the default) and `TX_FLAGS_APPROVED` (interactive plus `-y`, only after commander approval). Each skill's bundle docs explain which commands actually warrant the approved form.
+- **[`AGENTS.md`](AGENTS.md) Critical Rule 6** rewritten to teach the new flag policy. The "Common transaction flags" line now shows the interactive default and references the auto-approved form separately.
+- **`planet-explore` split** in [`structs-exploration`](.cursor/skills/structs-exploration/SKILL.md) into two distinct procedural steps: Tier 0 first-explore (routine) and Tier 2 subsequent-explore (preceded by an Approval Block surfacing `currentOre == 0`, fleet status, and the destruction warning).
+- **[`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL.md) "Lifecycle & Trust"** condensed — pin-a-tag and disable-services moved into the main Setup Procedure where they belong; the section now hosts the longer-form rationale, MCP localhost binding, signing-agent caveat, and teardown commands.
+
+### Context
+
+Responds to the **re-audit pass** of ClawScan on the 11 affected skills after the 1.9.0 changes. The 1.9.0 work moved six skills to zero ClawScan Concerns and downgraded most remaining findings to Notes; the remaining Concerns in `structs-onboarding`, `structs-combat`, `structs-energy`, `structs-power`, `structs-exploration`, and `structs-guild-stack` all traced to one issue — `-y` was still present in command examples even when the Safety callout sat directly above. 1.10.0 retires `-y` from default examples entirely and reframes its use as a documented, narrow exception with an explicit approval surface at each call site. `structsd-install` remains unchanged and continues to Pass.
+
+### Verdict shift (1.8 → 1.9 → 1.10 target)
+
+| Skill | 1.8 | 1.9 | 1.10 target |
+|---|---|---|---|
+| structs-onboarding | Review · 5 findings | 2 Concerns + 2 Notes | 0 Concerns |
+| structs-mining | Review · 2 Concerns | 0 Concerns | 0 Concerns |
+| structs-building | Review · 3 Concerns | 0 Concerns | 0 Concerns |
+| structs-combat | Suspicious · 3 Concerns | 1 Concern | 0 Concerns |
+| structs-economy | Suspicious · 2 Concerns | 0 Concerns | 0 Concerns |
+| structs-energy | Suspicious · 2 Concerns | 2 Concerns | 0 Concerns |
+| structs-power | Suspicious · 2 Concerns | 1 Concern | 0 Concerns |
+| structs-guild | Suspicious · 1 Concern | 0 Concerns | 0 Concerns |
+| structs-diplomacy | Suspicious · 1 Concern | 0 Concerns | 0 Concerns |
+| structs-exploration | Review · 2 Concerns | 1 Concern | 0 Concerns |
+| structs-guild-stack | Review · 2 Concerns | 3 Concerns | 0 Concerns |
+| structsd-install | Pass | Pass | Pass |
+
 ## [1.9.0] - 2026-05-13
 
 ### Added

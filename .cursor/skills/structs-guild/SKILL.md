@@ -86,13 +86,13 @@ When the moderator is not the target object's owner, the chain emits a `ugc_mode
 To restrict a provider to members of a specific guild at a minimum rank, use guild rank permissions instead of direct player grants:
 
 ```
-structsd tx structs permission-guild-rank-set --from [key] --gas auto -y -- [provider-id] [guild-id] 262144 [rank]
+structsd tx structs permission-guild-rank-set --from [key] --gas auto -- [provider-id] [guild-id] 262144 [rank]
 ```
 
 This grants PermProviderAgreementCreate (262144) on the provider to any member of the specified guild at or above the given rank. To revoke:
 
 ```
-structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [provider-id] [guild-id] 262144
+structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -- [provider-id] [guild-id] 262144
 ```
 
 ## Commands Reference
@@ -128,7 +128,11 @@ structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [
 | Set guild rank permission | `structsd tx structs permission-guild-rank-set -- [object-id] [guild-id] [permission] [rank]` |
 | Revoke guild rank permission | `structsd tx structs permission-guild-rank-revoke -- [object-id] [guild-id] [permission]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule."
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 

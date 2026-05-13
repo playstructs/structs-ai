@@ -19,10 +19,37 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 ## Procedure
 
 1. **Check eligibility** — `structsd query structs planet [id]`. For an existing player, exploration requires (a) `currentOre == 0` on the current planet (fully mined) AND (b) the fleet is `onStation` at that planet. Brand-new players (no current planet) skip both checks. One planet per player at a time; old planet is released on explore.
-2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
-3. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0 on a planet, status = complete; all structs on it are destroyed and fleets present are sent away.
-4. **Move fleet** — To relocate between planets without exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
-5. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
+2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
+3. **Explore (first time)** — Brand-new player, no prior planet. **Tier 0 (routine)**. CLI prompts; accept:
+
+   ```
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   ```
+
+   New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet.
+
+4. **Explore (subsequent)** — You already have a planet. **Tier 2 (destroys the old planet)**. The old planet is released, all structs on it are destroyed, and fleets present are scattered.
+
+   **Approval Block** — confirm before signing:
+
+   - Current planet's `currentOre == 0` (verified via `query structs planet`)
+   - Fleet is `onStation` at the current planet
+   - Every struct you care about has been moved (`struct-move` to fleet) or you accept the loss
+   - You understand this command is **NOT** reversible
+
+   Then run:
+
+   ```
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   ```
+
+5. **Move fleet** — To relocate between planets without exploring (CLI will prompt — verify the destination location ID, especially if it's unscouted):
+
+   ```
+   structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] [destination-location-id]
+   ```
+
+6. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
@@ -36,7 +63,13 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Query grid | `structsd query structs grid [id]` |
 | Planet attribute | `structsd query structs planet-attribute [planet-id] [attribute-type]` |
 
-**Rules**: Starting ore = 5. New planet when ore = 0. One planet per player at a time. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+**Rules**: Starting ore = 5. New planet when ore = 0. One planet per player at a time.
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Subsequent `planet-explore` is Tier 2 — always default to interactive so the CLI's confirmation is your last gate before destruction.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 

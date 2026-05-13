@@ -71,9 +71,22 @@ Two paths depending on whether the agent has $alpha (the native token).
 
 If the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.
 
-1. Choose a validator/reactor to delegate to
-2. Run: `structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]`
-3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`
+1. Choose a validator/reactor to delegate to.
+2. **Approval Block** — confirm before signing:
+
+   - Validator address (`structsvaloper1...`) is the reactor you intend
+   - Reactor commission rate (from `structsd query structs reactor [id]`) matches your expectation
+   - `amount` of ualpha and the denomination suffix are correct
+   - `--from` key holds the ualpha being locked
+   - You understand defusion has a cooldown — this alpha is not instantly recoverable
+
+3. Run (CLI will prompt; review on the prompt as well):
+
+   ```
+   structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -- [your-address] [reactor-address] [amount]
+   ```
+
+4. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`.
 
 #### Path B: Agent has no $alpha (guild signup)
 
@@ -157,7 +170,7 @@ The script will:
   "username": "your-chosen-name",
   "pfp": "ipfs://bafy...",
   "created": true,
-  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
+  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- 1-42"
 }
 ```
 
@@ -171,10 +184,10 @@ The script will:
 
 ### Step 3: Explore Planet
 
-Always the first action after player creation:
+Always the first action after player creation. For a brand-new player this is **Tier 0 (routine)** — the CLI will prompt; accept:
 
 ```
-structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]
+structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
@@ -202,11 +215,13 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 
 ### Step 5: Build Command Ship (only if not gifted)
 
+Initiate (CLI will prompt — review struct type 1, ambit `space`, and slot 0):
+
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 1 space 0
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 1 space 0
 ```
 
-Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
+Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background (this is an **expedition** with deferred auto-activation, hence `-y`):
 
 ```
 structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -221,10 +236,10 @@ Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute au
 Fleet must be on station, Command Ship online.
 
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 14 land 0
 ```
 
-Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
+Type 14 = Ore Extractor; ambits: land or water. Then compute in background (auto-activates ~57 min from now):
 
 ```
 structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -237,10 +252,10 @@ Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 ### Step 7: Build Ore Refinery
 
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 15 land 1
 ```
 
-Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
+Type 15 = Ore Refinery; ambits: land or water. Compute same as above (`struct-build-compute -D 3 ... -y`). Build difficulty 700. Auto-activates after build-complete.
 
 ---
 
@@ -296,17 +311,23 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
-| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -- [player-addr] [reactor-addr] [amount]` |
 | Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."]` |
-| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
-| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |
-| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -y -- [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception — auto-submits later)* |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 
-Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet). Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet).
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Only `struct-build-compute` uses the approved form here, because it auto-submits completion when no shell is attached.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 

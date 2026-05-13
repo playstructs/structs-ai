@@ -405,7 +405,7 @@ async function main() {
     username,
     pfp,
     created: true,
-    next_step: `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- ${playerId}`
+    next_step: `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- ${playerId}`
   }));
 
   process.exit(0);

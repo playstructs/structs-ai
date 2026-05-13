@@ -58,7 +58,11 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Allocation delete | `structsd tx structs allocation-delete [allocation-id]` |
 | Player send | `structsd tx structs player-send [from] [to] [amount]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Every command in this skill is Tier 1 or Tier 2; default to interactive.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command TX_FLAGS -- [entity-id] [other-args]`
 

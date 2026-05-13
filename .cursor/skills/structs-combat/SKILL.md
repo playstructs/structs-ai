@@ -20,10 +20,44 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 ## Procedure
 
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
-2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` before attack.
-3. **Attack structs** — `structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`. Then `structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
-5. **Defense setup** — `structsd tx structs struct-defense-set --from [key] --gas auto -y -- [defender-struct-id] [protected-struct-id]` to assign; `structsd tx structs struct-defense-clear --from [key] --gas auto -y -- [defender-struct-id]` to remove.
+2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` before attack.
+3. **Attack structs** — The CLI will prompt you to confirm. Verify the target IDs, weapon, and (for multi-target) that you are not crossing guild boundaries you did not intend to cross.
+
+   ```
+   structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]
+   ```
+
+   Can target multiple structs. Multi-target across guild boundaries is **Tier 2 (act of war)**.
+
+4. **Raid flow** — Raiding is an **expedition** that auto-submits its completion (this is why the compute step keeps `-y`).
+
+   a. Move fleet to target (CLI prompts):
+
+      ```
+      structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] [destination-location-id]
+      ```
+
+   b. **Approval Block** before launching raid compute:
+
+      - `fleet-id` is your raiding fleet and it is now at the target planet
+      - You accept that the planet you raid from is undefended by fleet for the duration
+      - Stored ore at your home planet is refined or below your tolerance for theft
+      - You will tolerate the auto-submitted completion landing minutes-to-hours from now even if the situation shifts
+
+   c. Launch compute (auto-submits completion):
+
+      ```
+      structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]
+      ```
+
+   d. Move fleet home. Refine stolen ore immediately.
+
+5. **Defense setup** — CLI will prompt for each assignment:
+
+   ```
+   structsd tx structs struct-defense-set --from [key] --gas auto -- [defender-struct-id] [protected-struct-id]
+   structsd tx structs struct-defense-clear --from [key] --gas auto -- [defender-struct-id]
+   ```
 
 ## Commands Reference
 
@@ -39,7 +73,13 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Stealth off | `structsd tx structs struct-stealth-deactivate -- [struct-id]` |
 | Move Command Ship (ambit) | `structsd tx structs struct-move -- [struct-id] [new-ambit] [new-slot] [new-location]` |
 
-Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore.
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." `planet-raid-compute` is the documented `-y` exception — it auto-submits completion when no shell is attached, so use the Approval Block above as your gate.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Raid Timing
 
@@ -143,13 +183,13 @@ Assign defenders to protect high-value structs. Defenders absorb incoming attack
 
 **Minimum viable defense**: Assign at least one combat struct per ambit to defend your Command Ship. Command Ship has 6 HP; most fleet structs have 3 HP. Without defenders, a Command Ship can be destroyed in just a few attacks.
 
-**Example formation** (4 Starfighters defending Command Ship):
+**Example formation** (4 Starfighters defending Command Ship — CLI will prompt for each):
 
 ```
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-1-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-2-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-3-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-4-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-1-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-2-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-3-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-4-id] [command-ship-id]
 ```
 
 **Rules**:

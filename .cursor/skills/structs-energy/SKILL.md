@@ -72,10 +72,10 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 
 1. Check current capacity: `structsd query structs player [id]`
 2. Choose a reactor (usually your guild's): `structsd query structs reactor [id]` — note the `commission` field
-3. Infuse:
+3. Infuse (the CLI will prompt for confirmation — review reactor commission, ualpha amount, and validator address before accepting):
 
 ```
-structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 **Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
@@ -113,10 +113,17 @@ Generators convert Alpha Matter to energy at higher ratios than reactors, but th
 ### Procedure
 
 1. Identify your generator struct: `structsd query structs struct [id]` — must be type 20, 21, or 22
-2. Infuse:
+2. **Approval Block** — generator infusion is **Tier 2 (irreversible)**. Before signing, confirm:
+
+   - `struct-id` is the generator you intend
+   - `amount` of ualpha (this Alpha is annihilated on success — no defusion exists)
+   - Generator's current defense posture: shield > 0, PDC online, no inbound fleet
+   - `--from` key is the player who owns the generator
+
+3. Infuse (CLI prompts for confirmation — review one more time on the prompt):
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 **Important**: Amount must include denomination, e.g. `5000000ualpha`.
@@ -147,10 +154,10 @@ structsd query structs provider-all
 
 Or check your guild's providers. Look for one with acceptable `rateAmount`, `capacityMaximum`, and `durationMaximum`.
 
-2. **Open an agreement**:
+2. **Open an agreement** (CLI prompts — review rate × duration × capacity for the total upfront cost before accepting):
 
 ```
-structsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 The agreement automatically creates an allocation.
@@ -158,7 +165,7 @@ The agreement automatically creates an allocation.
 3. **Connect the allocation to a substation**:
 
 ```
-structsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 Connect to your guild's substation to benefit the guild, or create your own substation for independent energy management.
@@ -185,7 +192,7 @@ If you have surplus capacity, you can sell energy to other players through the r
 2. **Infuse into reactor** -- Increases your player capacity. Use your guild's reactor for simplicity:
 
 ```
-structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto
 ```
 
 The `validator-address` is `structsvaloper1...` (find it in `structsd query structs reactor [id]` under the `validator` field). Commission is locked at infusion time and permanent for that infusion.
@@ -193,19 +200,19 @@ The `validator-address` is `structsvaloper1...` (find it in `structsd query stru
 3. **Create automated allocation** -- Routes your capacity to a substation. Use `automated` type so it auto-grows when you infuse more alpha:
 
 ```
-structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -y -- [your-player-id] [power-amount]
+structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -- [your-player-id] [power-amount]
 ```
 
 4. **Create substation** -- The distribution node for your energy:
 
 ```
-structsd tx structs substation-create --from [key-name] --gas auto -y -- [your-player-id] [allocation-id]
+structsd tx structs substation-create --from [key-name] --gas auto -- [your-player-id] [allocation-id]
 ```
 
 5. **Create provider** -- Your marketplace storefront:
 
 ```
-structsd tx structs provider-create --from [key-name] --gas auto -y -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
+structsd tx structs provider-create --from [key-name] --gas auto -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
 ```
 
 | Parameter | Purpose | Recommendation |
@@ -226,7 +233,7 @@ structsd query structs provider [provider-id]
 7. **Withdraw earnings periodically**:
 
 ```
-structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -y -- [provider-id]
+structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -- [provider-id]
 ```
 
 ### How Agreements Work (Payment Flow)
@@ -300,9 +307,13 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 | Query reactor | `structsd query structs reactor [id]` |
 | Query providers | `structsd query structs provider-all` |
 
-Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
 
-**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -y -- [entity-id] [other-args]`
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." `reactor-infuse` and `struct-generator-infuse` are Tier 1/Tier 2 — always default to interactive so you see the validator, commission, amount, and (for generators) the irreversibility warning.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
+
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -- [entity-id] [other-args]`
 
 ## Error Handling
 

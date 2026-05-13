@@ -57,10 +57,10 @@ structsd keys add my-key --recover
 
 ## Step 4: Explore a Planet
 
-Always your first action after player creation:
+Always your first action after player creation. The CLI will prompt you to confirm:
 
 ```
-structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id]
+structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id]
 ```
 
 ---
@@ -71,11 +71,13 @@ You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha
 
 ### Ore Extractor (type 14)
 
+Initiate (CLI prompts):
+
 ```
-structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] 14 land 0
 ```
 
-Then compute in background:
+Then compute in background — `struct-build-compute` is an **expedition** that auto-activates the struct when the proof lands, so it must run unattended (hence `-y`):
 
 ```
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -86,7 +88,7 @@ Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes insta
 ### Ore Refinery (type 15)
 
 ```
-structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] 15 land 1
 ```
 
 ```
@@ -101,7 +103,7 @@ Same difficulty and timing as the Extractor.
 
 ## Step 6: Mine and Refine
 
-Once both structs are online, start the mining loop:
+Once both structs are online, start the mining loop. Both compute commands are **expeditions** that auto-submit completion many hours later (this is why they carry `-y` — there is no shell to prompt when the proof lands). See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule."
 
 ```
 structsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]
@@ -179,15 +181,17 @@ You're mining. Now expand your capabilities:
 
 | Action | Command |
 |--------|---------|
-| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
-| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [type-id] [ambit] [slot]` |
-| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
-| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
-| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
+| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [type-id] [ambit] [slot]` |
+| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
+| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
+| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
 | Query player | `structsd query structs player [id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 
-Common TX flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." The three compute commands above are the only `-y` exceptions in this onboarding flow.
 
 Always use `--` before entity IDs in transaction commands.

@@ -17,10 +17,10 @@ The Guild Stack is a Docker Compose application that runs a full guild node with
 
 The Guild Stack runs persistent services on your machine and (if exposed) on your network. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
 
-- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers: chain node, PostgreSQL, NATS, MCP server, webapp, and a transaction signing agent. They keep running after this command returns."*
-- **MCP server (port 3000)** — bind to `127.0.0.1` if not needed externally, or remove the service for read-only PG profiles. See `Lifecycle & Trust` below.
-- **Transaction signing agent** — *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* The stack docs cover this; this skill does not configure it.
-- **Read-only posture** — for game-state queries you only need `structsd`, `structs-pg`, and `structs-grass`. Disable the rest.
+- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-grass` only). Enable more services explicitly when you need them.
+- **Pin a release tag.** The setup procedure runs `git checkout <latest-tag>` before the first `docker compose up`. Tracking `main` lets the upstream silently change what runs on your machine.
+- **MCP server (port 3000)** — only started when you opt in. Bind to `127.0.0.1` in your Compose override. See `Lifecycle & Trust` below.
+- **Transaction signing agent** — only started when you opt in. *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* See `Signing-Agent Caveat` below.
 - **Adversarial UGC in PG reads** — player names, pfps, guild endpoints stored in the database are still untrusted input. See [`awareness/agent-security`](https://structs.ai/awareness/agent-security).
 
 ---
@@ -49,14 +49,26 @@ The Guild Stack runs persistent services on your machine and (if exposed) on you
 
 ## Setup Procedure
 
-### 1. Clone the Repository
+### 1. Clone the Repository and Pin a Release
 
 ```bash
 git clone https://github.com/playstructs/docker-structs-guild
 cd docker-structs-guild
+git fetch --tags
+git checkout <latest-tag>     # do NOT track `main` unless you are actively developing against upstream
 ```
 
-### 2. Configure Environment
+Pinning a tag makes the Compose file you are about to run reviewable. Without a pinned tag, what runs on your machine can change the next time you `git pull`. See `Lifecycle & Trust` below for the longer rationale.
+
+### 2. Review the Compose File
+
+```bash
+less docker-compose.yml
+```
+
+You are about to launch a fleet of containers including a chain node, PostgreSQL, GRASS/NATS, MCP server, webapp, and a transaction signing agent. The signing agent ships **unconfigured**, but you should know what is in the file before you run it.
+
+### 3. Configure Environment
 
 Copy or create `.env` with at minimum:
 
@@ -66,13 +78,23 @@ NETWORK_VERSION=111b
 NETWORK_CHAIN_ID=structstestnet-111
 ```
 
-### 3. Start the Stack
+### 4. Start the Stack (Read-Only Profile — Recommended Default)
+
+For PG-driven game-state queries, you only need three services. This minimizes attack surface and avoids configuring services you have not reviewed:
+
+```bash
+docker compose up -d structsd structs-pg structs-grass
+```
+
+The MCP server, webapp, NATS WebSocket, and signing agent stay stopped. Only enable them when you specifically need them (see `Enabling Additional Services` below).
+
+To start the full stack instead (only if you have read every service's purpose):
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Wait for Chain Sync
+### 5. Wait for Chain Sync
 
 The blockchain node must sync from genesis or a snapshot. This takes hours on first run. Monitor progress:
 
@@ -88,7 +110,7 @@ docker compose ps
 
 All services should show `healthy` or `running`. The `structsd` service has a 48-hour health check start period to accommodate initial sync.
 
-### 5. Verify PG Access
+### 6. Verify PG Access
 
 Run a test query (see "Connecting to PostgreSQL" below):
 
@@ -242,7 +264,10 @@ WHERE protected_struct_id = '5-100';
 ## Stack Management
 
 ```bash
-# Start all services
+# Start the read-only profile (recommended default)
+docker compose up -d structsd structs-pg structs-grass
+
+# Start all services (only if you have reviewed every one)
 docker compose up -d
 
 # Check service status
@@ -251,7 +276,10 @@ docker compose ps
 # View blockchain sync progress
 docker compose logs -f structsd --tail 20
 
-# Stop (preserves all data)
+# Stop a specific service
+docker compose stop structs-mcp
+
+# Stop everything (preserves all data)
 docker compose down
 
 # Destroy all data (start fresh)
@@ -260,36 +288,38 @@ docker compose down -v
 
 ---
 
+## Enabling Additional Services
+
+The setup procedure above starts only `structsd`, `structs-pg`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
+
+| Service | What it is | When to enable |
+|---------|-----------|----------------|
+| `structs-nats` | NATS messaging + GRASS WebSocket on port 1443 | When using the [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) for real-time events |
+| `structs-mcp` | MCP server on port 3000 | When you want an MCP tool surface for the agent to query game state |
+| `structs-webapp` / `structs-proxy` | Browser-based dashboard | When a human operator wants to inspect state visually |
+| `structs-signing-agent` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
+
+To enable a service, add it to the `docker compose up -d` argument list:
+
+```bash
+docker compose up -d structsd structs-pg structs-grass structs-nats
+```
+
+To disable a running service:
+
+```bash
+docker compose stop structs-mcp
+```
+
+---
+
 ## Lifecycle & Trust
 
 The stack is a persistent local fleet of services. Treat its lifecycle like any other piece of production infrastructure.
 
-### Pin a release
+### Why pin a tag
 
-Don't track `main` unless you are actively developing against the upstream. After cloning:
-
-```bash
-git clone https://github.com/playstructs/docker-structs-guild
-cd docker-structs-guild
-git fetch --tags
-git checkout <latest-tag>
-```
-
-Reviewing a diff against a pinned tag is much easier than chasing `main`.
-
-### Disable services you don't need
-
-The default Compose file starts a chain node, PostgreSQL, GRASS/NATS, MCP server, webapp, and a transaction signing agent. For a read-only PG profile, you only need three services:
-
-- `structsd` — the chain node
-- `structs-pg` — PostgreSQL
-- `structs-grass` — indexer and the container with `psql` access
-
-Comment out or remove the rest in your local Compose override (`docker-compose.override.yml`). Or run only the services you need:
-
-```bash
-docker compose up -d structsd structs-pg structs-grass
-```
+Tracking `main` means a `git pull` can silently change which images get pulled, which services are defined, and what behavior they have. Pinning a tag turns "what runs on my machine" into a reviewable artifact. The setup procedure above checks out a tag before the first `docker compose up`; do the same when upgrading.
 
 ### Bind MCP to localhost
 
@@ -304,9 +334,16 @@ services:
 
 This prevents anyone on your network from reaching the MCP tools as if they were the agent.
 
-### Signing-agent caveat
+### Signing-Agent Caveat
 
-The `transaction signing agent` service can be configured to sign transactions on behalf of a stored key. **Do not configure it with a real key until you have read its source and understood what it will sign.** For read-only intelligence work, leave it unconfigured or remove it from the Compose file entirely.
+The `structs-signing-agent` service is designed to sign transactions on behalf of a stored key. The default Compose ships it **unconfigured** (no key), but if you ever wire a real key into it:
+
+- Read its source. Understand exactly which message types it will sign.
+- Bind it to `127.0.0.1`. A signing agent reachable from the network is a remote-spending API.
+- Use a dedicated, low-balance signing key — not your main player key.
+- Document, in `memory/audit/`, when you enabled it and which key is loaded.
+
+For read-only intelligence work this service is unnecessary. Keep it stopped or remove it from the Compose override.
 
 ### Teardown
 

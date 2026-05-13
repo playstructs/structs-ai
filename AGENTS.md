@@ -171,7 +171,7 @@ These will save your game:
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
 5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
-6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
+6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Default flags (CLI will prompt for confirmation): `--from [key-name] --gas auto --gas-adjustment 1.5`. **Only append `-y` after commander approval** — see [`SAFETY.md`](SAFETY.md) "The `-y` Rule."
 7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
 8. **Use `--` before entity IDs.** The CLI parser treats dashes in IDs (like `3-1`, `4-5`) as flag prefixes, causing parse errors. Place `--` after all flags and before positional arguments: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10`.
 9. **Read [`SAFETY.md`](SAFETY.md) before signing transactions or launching background expeditions.** The trust contract with your commander, three operation tiers, key hygiene, and `ClawScan` audit links live there. The chain has no undo.
@@ -182,7 +182,9 @@ These will save your game:
 
 All game actions use `structsd tx structs [command]`. All queries use `structsd query structs [command]`.
 
-Common transaction flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+Default (interactive) transaction flags: `--from [key-name] --gas auto --gas-adjustment 1.5` — the CLI prompts for confirmation.
+
+Auto-approved flags (only after commander approval; see [`SAFETY.md`](SAFETY.md)): append `-y` to suppress the prompt. Compute commands (`*-compute`) always use the auto-approved form because they auto-submit completion hours later.
 
 Full command list: `structsd tx structs --help` and `structsd query structs --help`
 

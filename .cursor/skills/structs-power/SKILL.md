@@ -42,7 +42,11 @@ Power operations cascade. Deleting an allocation can take an entire substation's
 | Allocation update | `structsd tx structs allocation-update -- [allocation-id] [power]` |
 | Allocation delete | `structsd tx structs allocation-delete -- [allocation-id]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Power operations cascade — default to interactive even on routine ops.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 

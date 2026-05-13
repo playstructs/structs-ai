@@ -17,6 +17,25 @@ For the threat playbook (UGC prompt injection, RPC node trust, incident response
 
 ---
 
+## The `-y` Rule
+
+The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills and examples in this repository follow a single rule:
+
+- **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
+- **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to ~34 hours and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+
+Two named variants of `TX_FLAGS` make this explicit:
+
+```
+TX_FLAGS              = --from [key-name] --gas auto --gas-adjustment 1.5
+TX_FLAGS_APPROVED     = TX_FLAGS plus -y    (only after commander approval)
+```
+
+Skill examples use `TX_FLAGS`. Background expeditions use `TX_FLAGS_APPROVED`. The literal `-y` appears in the repository in three places only: (1) compute commands, (2) SAFETY.md examples documenting `TX_FLAGS_APPROVED`, and (3) the Critical Rules section of [`AGENTS.md`](AGENTS.md).
+
+---
+
 ## Operation Tiers
 
 Every game action falls into one of three tiers. The tier determines whether you escalate to the commander before signing, given the commander's chosen `Autonomy level` in [`COMMANDER.md`](COMMANDER.md).
@@ -67,6 +86,27 @@ Escalate if `Autonomy level = "ask before acting"`. Surface as a **battle order*
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
 
 > Commander: I plan to `struct-generator-infuse` 5,000,000 ualpha into Field Generator `5-12` on planet `2-105`. This is irreversible — the matter is consumed. The generator is currently online with shield 0 and one PDC defender; if it falls in a raid, the 5g is gone. Proceed?
+
+---
+
+## The Approval Block Pattern
+
+For any Tier 1+ transaction — and especially for compute commands that auto-submit later — the agent should produce an **Approval Block** *before* signing. The block makes the consent surface explicit.
+
+```
+=== Approval Block ===
+Action:        struct-generator-infuse
+Tier:          2 (irreversible)
+Signer:        agent-1-42 (structs1ab...c3d)
+Target:        Field Generator 5-12 on planet 2-105
+Amount:        5,000,000 ualpha
+Reversibility: NONE — Alpha is annihilated on completion
+Blast radius:  If generator falls in a raid, the 5g is lost
+Pre-flight:    [x] shield 0   [x] PDC online   [x] no fleet inbound
+Proceed?
+```
+
+Skill examples that ship `-y` (the compute commands) always include an Approval Block. When you write your own commands, follow the same pattern.
 
 ---
 

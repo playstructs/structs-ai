@@ -334,7 +334,7 @@ These will save your game:
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
 5. **Never block on PoW.** Launch compute in background with `-D 3`. Initiate early, compute later. Mining takes ~17 hours, refining ~34 hours. The game rewards parallel operations.
-6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
+6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Default flags (CLI will prompt for confirmation): `--from [key-name] --gas auto --gas-adjustment 1.5`. **Only append `-y` after commander approval** — see [`SAFETY.md`](SAFETY.md) "The `-y` Rule."
 7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
 8. **Use `--` before entity IDs.** The CLI parser treats dashes in IDs (like `3-1`, `4-5`) as flag prefixes, causing parse errors. Place `--` after all flags and before positional arguments: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10`.
 9. **Read [`SAFETY.md`](SAFETY.md) before signing transactions or launching background expeditions.** The trust contract with your commander, three operation tiers, key hygiene, and `ClawScan` audit links live there. The chain has no undo.
@@ -345,7 +345,9 @@ These will save your game:
 
 All game actions use `structsd tx structs [command]`. All queries use `structsd query structs [command]`.
 
-Common transaction flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+Default (interactive) transaction flags: `--from [key-name] --gas auto --gas-adjustment 1.5` — the CLI prompts for confirmation.
+
+Auto-approved flags (only after commander approval; see [`SAFETY.md`](SAFETY.md)): append `-y` to suppress the prompt. Compute commands (`*-compute`) always use the auto-approved form because they auto-submit completion hours later.
 
 Full command list: `structsd tx structs --help` and `structsd query structs --help`
 
@@ -375,6 +377,25 @@ If you have a human commander, [`COMMANDER.md`](COMMANDER.md) is where the contr
 If you are your own commander, **you still need this contract** — write your standing orders into [`COMMANDER.md`](COMMANDER.md) anyway. Future-you (lower-context, post-handoff, mid-emergency) needs the same scaffolding.
 
 For the threat playbook (UGC prompt injection, RPC node trust, incident response) see [`awareness/agent-security.md`](awareness/agent-security.md).
+
+---
+
+## The `-y` Rule
+
+The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills and examples in this repository follow a single rule:
+
+- **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
+- **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to ~34 hours and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+
+Two named variants of `TX_FLAGS` make this explicit:
+
+```
+TX_FLAGS              = --from [key-name] --gas auto --gas-adjustment 1.5
+TX_FLAGS_APPROVED     = TX_FLAGS plus -y    (only after commander approval)
+```
+
+Skill examples use `TX_FLAGS`. Background expeditions use `TX_FLAGS_APPROVED`. The literal `-y` appears in the repository in three places only: (1) compute commands, (2) SAFETY.md examples documenting `TX_FLAGS_APPROVED`, and (3) the Critical Rules section of [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -428,6 +449,27 @@ Escalate if `Autonomy level = "ask before acting"`. Surface as a **battle order*
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
 
 > Commander: I plan to `struct-generator-infuse` 5,000,000 ualpha into Field Generator `5-12` on planet `2-105`. This is irreversible — the matter is consumed. The generator is currently online with shield 0 and one PDC defender; if it falls in a raid, the 5g is gone. Proceed?
+
+---
+
+## The Approval Block Pattern
+
+For any Tier 1+ transaction — and especially for compute commands that auto-submit later — the agent should produce an **Approval Block** *before* signing. The block makes the consent surface explicit.
+
+```
+=== Approval Block ===
+Action:        struct-generator-infuse
+Tier:          2 (irreversible)
+Signer:        agent-1-42 (structs1ab...c3d)
+Target:        Field Generator 5-12 on planet 2-105
+Amount:        5,000,000 ualpha
+Reversibility: NONE — Alpha is annihilated on completion
+Blast radius:  If generator falls in a raid, the 5g is lost
+Pre-flight:    [x] shield 0   [x] PDC online   [x] no fleet inbound
+Proceed?
+```
+
+Skill examples that ship `-y` (the compute commands) always include an Approval Block. When you write your own commands, follow the same pattern.
 
 ---
 
@@ -1651,10 +1693,10 @@ structsd keys add my-key --recover
 
 ## Step 4: Explore a Planet
 
-Always your first action after player creation:
+Always your first action after player creation. The CLI will prompt you to confirm:
 
 ```
-structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id]
+structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id]
 ```
 
 ---
@@ -1665,11 +1707,13 @@ You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha
 
 ### Ore Extractor (type 14)
 
+Initiate (CLI prompts):
+
 ```
-structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] 14 land 0
 ```
 
-Then compute in background:
+Then compute in background — `struct-build-compute` is an **expedition** that auto-activates the struct when the proof lands, so it must run unattended (hence `-y`):
 
 ```
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -1680,7 +1724,7 @@ Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes insta
 ### Ore Refinery (type 15)
 
 ```
-structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
+structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] 15 land 1
 ```
 
 ```
@@ -1695,7 +1739,7 @@ Same difficulty and timing as the Extractor.
 
 ## Step 6: Mine and Refine
 
-Once both structs are online, start the mining loop:
+Once both structs are online, start the mining loop. Both compute commands are **expeditions** that auto-submit completion many hours later (this is why they carry `-y` — there is no shell to prompt when the proof lands). See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule."
 
 ```
 structsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]
@@ -1773,16 +1817,18 @@ You're mining. Now expand your capabilities:
 
 | Action | Command |
 |--------|---------|
-| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
-| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [type-id] [ambit] [slot]` |
-| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
-| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
-| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
+| Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [type-id] [ambit] [slot]` |
+| Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
+| Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
+| Refine ore | `structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
 | Query player | `structsd query structs player [id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 
-Common TX flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." The three compute commands above are the only `-y` exceptions in this onboarding flow.
 
 Always use `--` before entity IDs in transaction commands.
 
@@ -2064,9 +2110,22 @@ Two paths depending on whether the agent has $alpha (the native token).
 
 If the address already holds $alpha tokens, delegate to a reactor (validator). This automatically creates a player record.
 
-1. Choose a validator/reactor to delegate to
-2. Run: `structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]`
-3. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`
+1. Choose a validator/reactor to delegate to.
+2. **Approval Block** — confirm before signing:
+
+   - Validator address (`structsvaloper1...`) is the reactor you intend
+   - Reactor commission rate (from `structsd query structs reactor [id]`) matches your expectation
+   - `amount` of ualpha and the denomination suffix are correct
+   - `--from` key holds the ualpha being locked
+   - You understand defusion has a cooldown — this alpha is not instantly recoverable
+
+3. Run (CLI will prompt; review on the prompt as well):
+
+   ```
+   structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -- [your-address] [reactor-address] [amount]
+   ```
+
+4. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`.
 
 #### Path B: Agent has no $alpha (guild signup)
 
@@ -2150,7 +2209,7 @@ The script will:
   "username": "your-chosen-name",
   "pfp": "ipfs://bafy...",
   "created": true,
-  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- 1-42"
+  "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- 1-42"
 }
 ```
 
@@ -2164,10 +2223,10 @@ The script will:
 
 ### Step 3: Explore Planet
 
-Always the first action after player creation:
+Always the first action after player creation. For a brand-new player this is **Tier 0 (routine)** — the CLI will prompt; accept:
 
 ```
-structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]
+structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
 ```
 
 New planets start with 5 ore and 4 slots per ambit (space, air, land, water).
@@ -2195,11 +2254,13 @@ Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existin
 
 ### Step 5: Build Command Ship (only if not gifted)
 
+Initiate (CLI will prompt — review struct type 1, ambit `space`, and slot 0):
+
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 1 space 0
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 1 space 0
 ```
 
-Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background:
+Type 1 = Command Ship; must be in fleet, not on planet. Then compute in background (this is an **expedition** with deferred auto-activation, hence `-y`):
 
 ```
 structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -2214,10 +2275,10 @@ Build difficulty 200; wait ~17 min for D=3, hash completes instantly. Compute au
 Fleet must be on station, Command Ship online.
 
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 14 land 0
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 14 land 0
 ```
 
-Type 14 = Ore Extractor; ambits: land or water. Then compute in background:
+Type 14 = Ore Extractor; ambits: land or water. Then compute in background (auto-activates ~57 min from now):
 
 ```
 structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
@@ -2230,10 +2291,10 @@ Build difficulty 700; wait ~57 min for D=3. Auto-activates after build-complete.
 ### Step 7: Build Ore Refinery
 
 ```
-structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] 15 land 1
+structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] 15 land 1
 ```
 
-Type 15 = Ore Refinery; ambits: land or water. Compute same as above. Build difficulty 700. Auto-activates after build-complete.
+Type 15 = Ore Refinery; ambits: land or water. Compute same as above (`struct-build-compute -D 3 ... -y`). Build difficulty 700. Auto-activates after build-complete.
 
 ---
 
@@ -2289,17 +2350,23 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
-| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -y -- [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -- [player-addr] [reactor-addr] [amount]` |
 | Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."]` |
-| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -y -- [player-id]` |
-| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` |
-| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -y -- [struct-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception — auto-submits later)* |
+| Re-activate struct (only if previously deactivated) | `structsd tx structs struct-activate --from [key] --gas auto -- [struct-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query struct | `structsd query structs struct [id]` |
 
-Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet). Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) → Ore Refinery (type 15, planet).
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Only `struct-build-compute` uses the approved form here, because it auto-submits completion when no shell is attached.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -2353,8 +2420,33 @@ Mining and refining are **expeditions** — long-running background jobs that au
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
-3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Mining is an **expedition**: the compute runs ~17 hours and auto-submits its completion transaction (this is why `-y` is present below — there will be no shell prompt when the proof lands).
+
+   **Approval Block** — confirm before launch:
+
+   - `struct-id` is the Ore Extractor you intend
+   - Planet currently shows `currentOre > 0` (worth mining)
+   - `--from` key is the struct's owner
+   - You will tolerate the auto-submitted completion ~17 hours from now even if game state shifts
+
+   Launch in a background terminal:
+
+   ```
+   structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+   ```
+
+   Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Log the PID to `memory/jobs/`.
+
+3. **Refine immediately after mine completes** — Ore is stealable. Refining is also an **expedition**: ~34 hours, auto-submitted completion.
+
+   **Approval Block** — same five items as mine, applied to refining (~34 hour deferred-consent window).
+
+   ```
+   structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+   ```
+
+   Refining difficulty is 28,000; expect **~34 hours** for D=3.
+
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
@@ -2374,7 +2466,11 @@ Mining and refining are **expeditions** — long-running background jobs that au
 | Query struct | `structsd query structs struct [id]` |
 | Query player | `structsd query structs player [id]` |
 
-Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Mine-compute and refine-compute are the documented `-y` exception — they auto-submit completion when no shell is attached, so the Approval Block has to be your gate, not the CLI prompt.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -2435,8 +2531,30 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.
-2. **Initiate build** — `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]`. The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
-3. **Proof-of-work** — `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+2. **Initiate build** (CLI prompts for confirmation — review struct type, slot, ambit, and Alpha cost):
+
+   ```
+   structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] [struct-type-id] [operating-ambit] [slot]
+   ```
+
+   The `[operating-ambit]` argument must be a **lowercase string**: `"space"`, `"air"`, `"land"`, or `"water"` (not a bitmask number).
+
+3. **Proof-of-work** — Build compute is an **expedition** that auto-activates the struct when the proof lands (this is why `-y` is present below).
+
+   **Approval Block** — confirm before launching, especially for long-PoW structs (Ore Bunker, PDC, World Engine):
+
+   - `struct-id` matches the build you just initiated
+   - You have power headroom for the struct to auto-activate (load + struct's power-draw < capacity)
+   - You will tolerate the auto-activation landing 17 min – 6.4 hrs from now even if game state shifts
+
+   Launch in a background terminal:
+
+   ```
+   structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+   ```
+
+   This calculates the hash, auto-submits complete, and the struct **auto-activates**. No separate activation step needed.
+
 4. **Optional** — Move, set defense, or activate stealth as needed.
 
 **Auto-activation**: Structs automatically activate after build-complete. Use `struct-activate` only to re-activate a struct that was previously deactivated with `struct-deactivate`.
@@ -2485,20 +2603,26 @@ Time from initiation until compute completes (assuming 6 sec/block, D=3):
 
 | Action | CLI Command |
 |--------|-------------|
-| Initiate build | `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
-| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Build cancel | `structsd tx structs struct-build-cancel --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Re-activate (only after deactivation) | `structsd tx structs struct-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Deactivate | `structsd tx structs struct-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Move | `structsd tx structs struct-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [new-ambit] [new-slot] [new-location]` |
-| Set defense | `structsd tx structs struct-defense-set --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id] [protected-struct-id]` |
-| Clear defense | `structsd tx structs struct-defense-clear --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [defender-struct-id]` |
-| Stealth on | `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Stealth off | `structsd tx structs struct-stealth-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` |
-| Generator infuse | `structsd tx structs struct-generator-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id] [amount]` |
+| Initiate build | `structsd tx structs struct-build-initiate --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] [struct-type-id] [operating-ambit] [slot]` (`operating-ambit` = `space`/`air`/`land`/`water`, lowercase string) |
+| Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` *(documented `-y` exception — auto-submits later)* |
+| Build complete (manual, rarely needed) | `structsd tx structs struct-build-complete --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Build cancel | `structsd tx structs struct-build-cancel --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Re-activate (only after deactivation) | `structsd tx structs struct-activate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Deactivate | `structsd tx structs struct-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Move | `structsd tx structs struct-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id] [new-ambit] [new-slot] [new-location]` |
+| Set defense | `structsd tx structs struct-defense-set --from [key-name] --gas auto --gas-adjustment 1.5 -- [defender-struct-id] [protected-struct-id]` |
+| Clear defense | `structsd tx structs struct-defense-clear --from [key-name] --gas auto --gas-adjustment 1.5 -- [defender-struct-id]` |
+| Stealth on | `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Stealth off | `structsd tx structs struct-stealth-deactivate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` |
+| Generator infuse (Tier 2, irreversible) | `structsd tx structs struct-generator-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id] [amount]` |
 
-**Limits**: 1 PDC per player, 1 Command Ship per player. Command Ship must be in fleet. Generator infusion is IRREVERSIBLE. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+**Limits**: 1 PDC per player, 1 Command Ship per player. Command Ship must be in fleet. Generator infusion is IRREVERSIBLE.
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." `struct-build-compute` is the documented `-y` exception — it auto-activates the struct when the proof lands, with no shell attached.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -2552,10 +2676,44 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 ## Procedure
 
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.
-2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]` before attack.
-3. **Attack structs** — `structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]`. Can target multiple structs.
-4. **Raid flow** — Move fleet to target: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`. Then `structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]`. Compute auto-submits the complete transaction. Move fleet home. Refine stolen ore immediately.
-5. **Defense setup** — `structsd tx structs struct-defense-set --from [key] --gas auto -y -- [defender-struct-id] [protected-struct-id]` to assign; `structsd tx structs struct-defense-clear --from [key] --gas auto -y -- [defender-struct-id]` to remove.
+2. **Optional stealth** — `structsd tx structs struct-stealth-activate --from [key-name] --gas auto --gas-adjustment 1.5 -- [struct-id]` before attack.
+3. **Attack structs** — The CLI will prompt you to confirm. Verify the target IDs, weapon, and (for multi-target) that you are not crossing guild boundaries you did not intend to cross.
+
+   ```
+   structsd tx structs struct-attack --from [key-name] --gas auto --gas-adjustment 1.5 -- [operating-struct-id] [target-struct-id,target-id2,...] [weapon-system]
+   ```
+
+   Can target multiple structs. Multi-target across guild boundaries is **Tier 2 (act of war)**.
+
+4. **Raid flow** — Raiding is an **expedition** that auto-submits its completion (this is why the compute step keeps `-y`).
+
+   a. Move fleet to target (CLI prompts):
+
+      ```
+      structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] [destination-location-id]
+      ```
+
+   b. **Approval Block** before launching raid compute:
+
+      - `fleet-id` is your raiding fleet and it is now at the target planet
+      - You accept that the planet you raid from is undefended by fleet for the duration
+      - Stored ore at your home planet is refined or below your tolerance for theft
+      - You will tolerate the auto-submitted completion landing minutes-to-hours from now even if the situation shifts
+
+   c. Launch compute (auto-submits completion):
+
+      ```
+      structsd tx structs planet-raid-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id]
+      ```
+
+   d. Move fleet home. Refine stolen ore immediately.
+
+5. **Defense setup** — CLI will prompt for each assignment:
+
+   ```
+   structsd tx structs struct-defense-set --from [key] --gas auto -- [defender-struct-id] [protected-struct-id]
+   structsd tx structs struct-defense-clear --from [key] --gas auto -- [defender-struct-id]
+   ```
 
 ## Commands Reference
 
@@ -2571,7 +2729,13 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Stealth off | `structsd tx structs struct-stealth-deactivate -- [struct-id]` |
 | Move Command Ship (ambit) | `structsd tx structs struct-move -- [struct-id] [new-ambit] [new-slot] [new-location]` |
 
-Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+Raid flow: fleet-move → planet-raid-compute (auto-submits complete) → fleet-move home → refine stolen ore.
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." `planet-raid-compute` is the documented `-y` exception — it auto-submits completion when no shell is attached, so use the Approval Block above as your gate.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Raid Timing
 
@@ -2675,13 +2839,13 @@ Assign defenders to protect high-value structs. Defenders absorb incoming attack
 
 **Minimum viable defense**: Assign at least one combat struct per ambit to defend your Command Ship. Command Ship has 6 HP; most fleet structs have 3 HP. Without defenders, a Command Ship can be destroyed in just a few attacks.
 
-**Example formation** (4 Starfighters defending Command Ship):
+**Example formation** (4 Starfighters defending Command Ship — CLI will prompt for each):
 
 ```
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-1-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-2-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-3-id] [command-ship-id]
-structsd tx structs struct-defense-set --from [key] --gas auto -y -- [starfighter-4-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-1-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-2-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-3-id] [command-ship-id]
+structsd tx structs struct-defense-set --from [key] --gas auto -- [starfighter-4-id] [command-ship-id]
 ```
 
 **Rules**:
@@ -2734,10 +2898,37 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 ## Procedure
 
 1. **Check eligibility** — `structsd query structs planet [id]`. For an existing player, exploration requires (a) `currentOre == 0` on the current planet (fully mined) AND (b) the fleet is `onStation` at that planet. Brand-new players (no current planet) skip both checks. One planet per player at a time; old planet is released on explore.
-2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
-3. **Explore** — `structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [player-id]`. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet. When ore = 0 on a planet, status = complete; all structs on it are destroyed and fleets present are sent away.
-4. **Move fleet** — To relocate between planets without exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [fleet-id] [destination-location-id]`.
-5. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
+2. **Recall fleet first if needed** — If your fleet is away (raiding or repositioned), bring it home before exploring: `structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] 2 [current-planet-id]`. Then verify: `structsd query structs fleet [fleet-id]` shows `onStation` true. Skip this step for first-time exploration.
+3. **Explore (first time)** — Brand-new player, no prior planet. **Tier 0 (routine)**. CLI prompts; accept:
+
+   ```
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   ```
+
+   New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet.
+
+4. **Explore (subsequent)** — You already have a planet. **Tier 2 (destroys the old planet)**. The old planet is released, all structs on it are destroyed, and fleets present are scattered.
+
+   **Approval Block** — confirm before signing:
+
+   - Current planet's `currentOre == 0` (verified via `query structs planet`)
+   - Fleet is `onStation` at the current planet
+   - Every struct you care about has been moved (`struct-move` to fleet) or you accept the loss
+   - You understand this command is **NOT** reversible
+
+   Then run:
+
+   ```
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   ```
+
+5. **Move fleet** — To relocate between planets without exploring (CLI will prompt — verify the destination location ID, especially if it's unscouted):
+
+   ```
+   structsd tx structs fleet-move --from [key-name] --gas auto --gas-adjustment 1.5 -- [fleet-id] [destination-location-id]
+   ```
+
+6. **Chart** — Query planet, grid, attributes to evaluate resource potential and strategic value.
 
 ## Commands Reference
 
@@ -2751,7 +2942,13 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Query grid | `structsd query structs grid [id]` |
 | Planet attribute | `structsd query structs planet-attribute [planet-id] [attribute-type]` |
 
-**Rules**: Starting ore = 5. New planet when ore = 0. One planet per player at a time. Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+**Rules**: Starting ore = 5. New planet when ore = 0. One planet per player at a time.
+
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Subsequent `planet-explore` is Tier 2 — always default to interactive so the CLI's confirmation is your last gate before destruction.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -2836,7 +3033,11 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 | Allocation delete | `structsd tx structs allocation-delete [allocation-id]` |
 | Player send | `structsd tx structs player-send [from] [to] [amount]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Every command in this skill is Tier 1 or Tier 2; default to interactive.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command TX_FLAGS -- [entity-id] [other-args]`
 
@@ -2955,13 +3156,13 @@ When the moderator is not the target object's owner, the chain emits a `ugc_mode
 To restrict a provider to members of a specific guild at a minimum rank, use guild rank permissions instead of direct player grants:
 
 ```
-structsd tx structs permission-guild-rank-set --from [key] --gas auto -y -- [provider-id] [guild-id] 262144 [rank]
+structsd tx structs permission-guild-rank-set --from [key] --gas auto -- [provider-id] [guild-id] 262144 [rank]
 ```
 
 This grants PermProviderAgreementCreate (262144) on the provider to any member of the specified guild at or above the given rank. To revoke:
 
 ```
-structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [provider-id] [guild-id] 262144
+structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -- [provider-id] [guild-id] 262144
 ```
 
 ## Commands Reference
@@ -2997,7 +3198,11 @@ structsd tx structs permission-guild-rank-revoke --from [key] --gas auto -y -- [
 | Set guild rank permission | `structsd tx structs permission-guild-rank-set -- [object-id] [guild-id] [permission] [rank]` |
 | Revoke guild rank permission | `structsd tx structs permission-guild-rank-revoke -- [object-id] [guild-id] [permission]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule."
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -3071,7 +3276,11 @@ Power operations cascade. Deleting an allocation can take an entire substation's
 | Allocation update | `structsd tx structs allocation-update -- [allocation-id] [power]` |
 | Allocation delete | `structsd tx structs allocation-delete -- [allocation-id]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Power operations cascade — default to interactive even on routine ops.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 
@@ -3183,7 +3392,11 @@ Permissions use a 25-bit bitmask. Individual permissions can be combined (OR'd t
 | Address revoke | `structsd tx structs address-revoke -- [address]` |
 | Update primary address | `structsd tx structs player-update-primary-address -- [new-address]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." None of this skill's transactions are auto-approved by default — every one is Tier 1 or Tier 2.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 | Query | Command |
 |-------|---------|
@@ -3295,10 +3508,10 @@ Infusing 3,000,000 ualpha into a reactor with 4% commission:
 
 1. Check current capacity: `structsd query structs player [id]`
 2. Choose a reactor (usually your guild's): `structsd query structs reactor [id]` — note the `commission` field
-3. Infuse:
+3. Infuse (the CLI will prompt for confirmation — review reactor commission, ualpha amount, and validator address before accepting):
 
 ```
-structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 **Important**: The amount **must include the denomination**, e.g. `60000000ualpha` (not just `60000000`). Omitting the denom will cause the transaction to fail.
@@ -3336,10 +3549,17 @@ Generators convert Alpha Matter to energy at higher ratios than reactors, but th
 ### Procedure
 
 1. Identify your generator struct: `structsd query structs struct [id]` — must be type 20, 21, or 22
-2. Infuse:
+2. **Approval Block** — generator infusion is **Tier 2 (irreversible)**. Before signing, confirm:
+
+   - `struct-id` is the generator you intend
+   - `amount` of ualpha (this Alpha is annihilated on success — no defusion exists)
+   - Generator's current defense posture: shield > 0, PDC online, no inbound fleet
+   - `--from` key is the player who owns the generator
+
+3. Infuse (CLI prompts for confirmation — review one more time on the prompt):
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 **Important**: Amount must include denomination, e.g. `5000000ualpha`.
@@ -3370,10 +3590,10 @@ structsd query structs provider-all
 
 Or check your guild's providers. Look for one with acceptable `rateAmount`, `capacityMaximum`, and `durationMaximum`.
 
-2. **Open an agreement**:
+2. **Open an agreement** (CLI prompts — review rate × duration × capacity for the total upfront cost before accepting):
 
 ```
-structsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs agreement-open [provider-id] [duration-in-blocks] [capacity] --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 The agreement automatically creates an allocation.
@@ -3381,7 +3601,7 @@ The agreement automatically creates an allocation.
 3. **Connect the allocation to a substation**:
 
 ```
-structsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5 -y
+structsd tx structs substation-allocation-connect [substation-id] [allocation-id] --from [key-name] --gas auto --gas-adjustment 1.5
 ```
 
 Connect to your guild's substation to benefit the guild, or create your own substation for independent energy management.
@@ -3408,7 +3628,7 @@ If you have surplus capacity, you can sell energy to other players through the r
 2. **Infuse into reactor** -- Increases your player capacity. Use your guild's reactor for simplicity:
 
 ```
-structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto -y
+structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha --from [key-name] --gas auto
 ```
 
 The `validator-address` is `structsvaloper1...` (find it in `structsd query structs reactor [id]` under the `validator` field). Commission is locked at infusion time and permanent for that infusion.
@@ -3416,19 +3636,19 @@ The `validator-address` is `structsvaloper1...` (find it in `structsd query stru
 3. **Create automated allocation** -- Routes your capacity to a substation. Use `automated` type so it auto-grows when you infuse more alpha:
 
 ```
-structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -y -- [your-player-id] [power-amount]
+structsd tx structs allocation-create --allocation-type automated --from [key-name] --gas auto -- [your-player-id] [power-amount]
 ```
 
 4. **Create substation** -- The distribution node for your energy:
 
 ```
-structsd tx structs substation-create --from [key-name] --gas auto -y -- [your-player-id] [allocation-id]
+structsd tx structs substation-create --from [key-name] --gas auto -- [your-player-id] [allocation-id]
 ```
 
 5. **Create provider** -- Your marketplace storefront:
 
 ```
-structsd tx structs provider-create --from [key-name] --gas auto -y -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
+structsd tx structs provider-create --from [key-name] --gas auto -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
 ```
 
 | Parameter | Purpose | Recommendation |
@@ -3449,7 +3669,7 @@ structsd query structs provider [provider-id]
 7. **Withdraw earnings periodically**:
 
 ```
-structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -y -- [provider-id]
+structsd tx structs provider-withdraw-balance --from [key-name] --gas auto -- [provider-id]
 ```
 
 ### How Agreements Work (Payment Flow)
@@ -3523,9 +3743,13 @@ Each cycle compounds: more alpha = more capacity = more energy to sell = more to
 | Query reactor | `structsd query structs reactor [id]` |
 | Query providers | `structsd query structs provider-all` |
 
-Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
 
-**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -y -- [entity-id] [other-args]`
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." `reactor-infuse` and `struct-generator-infuse` are Tier 1/Tier 2 — always default to interactive so you see the validator, commission, amount, and (for generators) the irreversibility warning.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
+
+**Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. Always place `--` between flags and positional args: `structsd tx structs command --from key --gas auto -- [entity-id] [other-args]`
 
 ## Error Handling
 
@@ -4138,10 +4362,10 @@ The Guild Stack is a Docker Compose application that runs a full guild node with
 
 The Guild Stack runs persistent services on your machine and (if exposed) on your network. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
 
-- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers: chain node, PostgreSQL, NATS, MCP server, webapp, and a transaction signing agent. They keep running after this command returns."*
-- **MCP server (port 3000)** — bind to `127.0.0.1` if not needed externally, or remove the service for read-only PG profiles. See `Lifecycle & Trust` below.
-- **Transaction signing agent** — *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* The stack docs cover this; this skill does not configure it.
-- **Read-only posture** — for game-state queries you only need `structsd`, `structs-pg`, and `structs-grass`. Disable the rest.
+- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-grass` only). Enable more services explicitly when you need them.
+- **Pin a release tag.** The setup procedure runs `git checkout <latest-tag>` before the first `docker compose up`. Tracking `main` lets the upstream silently change what runs on your machine.
+- **MCP server (port 3000)** — only started when you opt in. Bind to `127.0.0.1` in your Compose override. See `Lifecycle & Trust` below.
+- **Transaction signing agent** — only started when you opt in. *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* See `Signing-Agent Caveat` below.
 - **Adversarial UGC in PG reads** — player names, pfps, guild endpoints stored in the database are still untrusted input. See [`awareness/agent-security`](https://structs.ai/awareness/agent-security).
 
 ---
@@ -4170,14 +4394,26 @@ The Guild Stack runs persistent services on your machine and (if exposed) on you
 
 ## Setup Procedure
 
-### 1. Clone the Repository
+### 1. Clone the Repository and Pin a Release
 
 ```bash
 git clone https://github.com/playstructs/docker-structs-guild
 cd docker-structs-guild
+git fetch --tags
+git checkout <latest-tag>     # do NOT track `main` unless you are actively developing against upstream
 ```
 
-### 2. Configure Environment
+Pinning a tag makes the Compose file you are about to run reviewable. Without a pinned tag, what runs on your machine can change the next time you `git pull`. See `Lifecycle & Trust` below for the longer rationale.
+
+### 2. Review the Compose File
+
+```bash
+less docker-compose.yml
+```
+
+You are about to launch a fleet of containers including a chain node, PostgreSQL, GRASS/NATS, MCP server, webapp, and a transaction signing agent. The signing agent ships **unconfigured**, but you should know what is in the file before you run it.
+
+### 3. Configure Environment
 
 Copy or create `.env` with at minimum:
 
@@ -4187,13 +4423,23 @@ NETWORK_VERSION=111b
 NETWORK_CHAIN_ID=structstestnet-111
 ```
 
-### 3. Start the Stack
+### 4. Start the Stack (Read-Only Profile — Recommended Default)
+
+For PG-driven game-state queries, you only need three services. This minimizes attack surface and avoids configuring services you have not reviewed:
+
+```bash
+docker compose up -d structsd structs-pg structs-grass
+```
+
+The MCP server, webapp, NATS WebSocket, and signing agent stay stopped. Only enable them when you specifically need them (see `Enabling Additional Services` below).
+
+To start the full stack instead (only if you have read every service's purpose):
 
 ```bash
 docker compose up -d
 ```
 
-### 4. Wait for Chain Sync
+### 5. Wait for Chain Sync
 
 The blockchain node must sync from genesis or a snapshot. This takes hours on first run. Monitor progress:
 
@@ -4209,7 +4455,7 @@ docker compose ps
 
 All services should show `healthy` or `running`. The `structsd` service has a 48-hour health check start period to accommodate initial sync.
 
-### 5. Verify PG Access
+### 6. Verify PG Access
 
 Run a test query (see "Connecting to PostgreSQL" below):
 
@@ -4363,7 +4609,10 @@ WHERE protected_struct_id = '5-100';
 ## Stack Management
 
 ```bash
-# Start all services
+# Start the read-only profile (recommended default)
+docker compose up -d structsd structs-pg structs-grass
+
+# Start all services (only if you have reviewed every one)
 docker compose up -d
 
 # Check service status
@@ -4372,7 +4621,10 @@ docker compose ps
 # View blockchain sync progress
 docker compose logs -f structsd --tail 20
 
-# Stop (preserves all data)
+# Stop a specific service
+docker compose stop structs-mcp
+
+# Stop everything (preserves all data)
 docker compose down
 
 # Destroy all data (start fresh)
@@ -4381,36 +4633,38 @@ docker compose down -v
 
 ---
 
+## Enabling Additional Services
+
+The setup procedure above starts only `structsd`, `structs-pg`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
+
+| Service | What it is | When to enable |
+|---------|-----------|----------------|
+| `structs-nats` | NATS messaging + GRASS WebSocket on port 1443 | When using the [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) for real-time events |
+| `structs-mcp` | MCP server on port 3000 | When you want an MCP tool surface for the agent to query game state |
+| `structs-webapp` / `structs-proxy` | Browser-based dashboard | When a human operator wants to inspect state visually |
+| `structs-signing-agent` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
+
+To enable a service, add it to the `docker compose up -d` argument list:
+
+```bash
+docker compose up -d structsd structs-pg structs-grass structs-nats
+```
+
+To disable a running service:
+
+```bash
+docker compose stop structs-mcp
+```
+
+---
+
 ## Lifecycle & Trust
 
 The stack is a persistent local fleet of services. Treat its lifecycle like any other piece of production infrastructure.
 
-### Pin a release
+### Why pin a tag
 
-Don't track `main` unless you are actively developing against the upstream. After cloning:
-
-```bash
-git clone https://github.com/playstructs/docker-structs-guild
-cd docker-structs-guild
-git fetch --tags
-git checkout <latest-tag>
-```
-
-Reviewing a diff against a pinned tag is much easier than chasing `main`.
-
-### Disable services you don't need
-
-The default Compose file starts a chain node, PostgreSQL, GRASS/NATS, MCP server, webapp, and a transaction signing agent. For a read-only PG profile, you only need three services:
-
-- `structsd` — the chain node
-- `structs-pg` — PostgreSQL
-- `structs-grass` — indexer and the container with `psql` access
-
-Comment out or remove the rest in your local Compose override (`docker-compose.override.yml`). Or run only the services you need:
-
-```bash
-docker compose up -d structsd structs-pg structs-grass
-```
+Tracking `main` means a `git pull` can silently change which images get pulled, which services are defined, and what behavior they have. Pinning a tag turns "what runs on my machine" into a reviewable artifact. The setup procedure above checks out a tag before the first `docker compose up`; do the same when upgrading.
 
 ### Bind MCP to localhost
 
@@ -4425,9 +4679,16 @@ services:
 
 This prevents anyone on your network from reaching the MCP tools as if they were the agent.
 
-### Signing-agent caveat
+### Signing-Agent Caveat
 
-The `transaction signing agent` service can be configured to sign transactions on behalf of a stored key. **Do not configure it with a real key until you have read its source and understood what it will sign.** For read-only intelligence work, leave it unconfigured or remove it from the Compose file entirely.
+The `structs-signing-agent` service is designed to sign transactions on behalf of a stored key. The default Compose ships it **unconfigured** (no key), but if you ever wire a real key into it:
+
+- Read its source. Understand exactly which message types it will sign.
+- Bind it to `127.0.0.1`. A signing agent reachable from the network is a remote-spending API.
+- Use a dedicated, low-balance signing key — not your main player key.
+- Document, in `memory/audit/`, when you enabled it and which key is loaded.
+
+For read-only intelligence work this service is unnecessary. Keep it stopped or remove it from the Compose override.
 
 ### Teardown
 

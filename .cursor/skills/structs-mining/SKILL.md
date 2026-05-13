@@ -18,8 +18,33 @@ Mining and refining are **expeditions** — long-running background jobs that au
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.
-2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Launch in a background terminal: `structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Compute auto-submits the complete transaction.
-3. **Refine immediately after mine completes** — Ore is stealable. Launch refine in background: `structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]`. Refining difficulty is 28,000; expect **~34 hours** for D=3. Compute auto-submits the complete transaction.
+2. **Initiate mine** — The mine action is implicit in `struct-ore-mine-compute`. Mining is an **expedition**: the compute runs ~17 hours and auto-submits its completion transaction (this is why `-y` is present below — there will be no shell prompt when the proof lands).
+
+   **Approval Block** — confirm before launch:
+
+   - `struct-id` is the Ore Extractor you intend
+   - Planet currently shows `currentOre > 0` (worth mining)
+   - `--from` key is the struct's owner
+   - You will tolerate the auto-submitted completion ~17 hours from now even if game state shifts
+
+   Launch in a background terminal:
+
+   ```
+   structsd tx structs struct-ore-mine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+   ```
+
+   Mining difficulty is 14,000; expect **~17 hours** for difficulty to drop to D=3. Log the PID to `memory/jobs/`.
+
+3. **Refine immediately after mine completes** — Ore is stealable. Refining is also an **expedition**: ~34 hours, auto-submitted completion.
+
+   **Approval Block** — same five items as mine, applied to refining (~34 hour deferred-consent window).
+
+   ```
+   structsd tx structs struct-ore-refine-compute -D 3 --from [key-name] --gas auto --gas-adjustment 1.5 -y -- [struct-id]
+   ```
+
+   Refining difficulty is 28,000; expect **~34 hours** for D=3.
+
 4. **Store or convert** — Alpha Matter is not stealable. Use reactor (1g = 1 kW) or generator infusion as needed.
 5. **Verify** — Query planet (ore decreased), struct (ore/Alpha state), player (resources).
 
@@ -39,7 +64,11 @@ Mining and refining are **expeditions** — long-running background jobs that au
 | Query struct | `structsd query structs struct [id]` |
 | Query player | `structsd query structs player [id]` |
 
-Common tx flags: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`.
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." Mine-compute and refine-compute are the documented `-y` exception — they auto-submit completion when no shell is attached, so the Approval Block has to be your gate, not the CLI prompt.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 ## Verification
 

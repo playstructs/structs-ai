@@ -69,7 +69,11 @@ Permissions use a 25-bit bitmask. Individual permissions can be combined (OR'd t
 | Address revoke | `structsd tx structs address-revoke -- [address]` |
 | Update primary address | `structsd tx structs player-update-primary-address -- [new-address]` |
 
-**TX_FLAGS**: `--from [key-name] --gas auto --gas-adjustment 1.5 -y`
+**TX_FLAGS** (interactive — the CLI prompts you to confirm): `--from [key-name] --gas auto --gas-adjustment 1.5`
+
+**TX_FLAGS_APPROVED** (only after commander approval; suppresses the prompt): TX_FLAGS plus `-y`. See [SAFETY.md](https://structs.ai/SAFETY) "The `-y` Rule." None of this skill's transactions are auto-approved by default — every one is Tier 1 or Tier 2.
+
+**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
 
 | Query | Command |
 |-------|---------|
