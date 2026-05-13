@@ -11,9 +11,10 @@ Complete file map of the structs.ai repository.
 | [README.md](README.md) | Project overview, setup instructions |
 | [AGENTS.md](AGENTS.md) | Agent guide — start here |
 | [QUICKSTART.md](QUICKSTART.md) | Fast-path onboarding for new players |
+| [SAFETY.md](SAFETY.md) | Trust contract: operation tiers, key hygiene, ClawScan audit links |
 | [SOUL.md](SOUL.md) | Agent operating philosophy template |
 | [IDENTITY.md](IDENTITY.md) | Agent identity template (name, soul type, play style) |
-| [COMMANDER.md](COMMANDER.md) | Human operator profile template |
+| [COMMANDER.md](COMMANDER.md) | Human operator profile and standing-orders template |
 | [TOOLS.md](TOOLS.md) | Environment configuration (servers, keys, accounts) |
 | [USER.md](USER.md) | OpenClaw compatibility redirect to COMMANDER.md |
 | [OPENCLAW.md](OPENCLAW.md) | OpenClaw platform setup guide |
@@ -148,7 +149,8 @@ How to read the board and maintain continuity.
 | File | Topic |
 |------|-------|
 | [state-assessment.md](awareness/state-assessment.md) | Evaluate current position |
-| [threat-detection.md](awareness/threat-detection.md) | Spot dangers early |
+| [threat-detection.md](awareness/threat-detection.md) | Spot in-game dangers early |
+| [agent-security.md](awareness/agent-security.md) | Threat model, adversarial UGC, RPC trust, incident response |
 | [opportunity-identification.md](awareness/opportunity-identification.md) | Find advantages |
 | [priority-framework.md](awareness/priority-framework.md) | Survival > Security > Economy > Expansion > Dominance |
 | [game-loop.md](awareness/game-loop.md) | Assess → Plan → Act → Verify → Repeat |

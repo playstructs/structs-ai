@@ -5,6 +5,16 @@ description: Manages energy capacity in Structs. Covers increasing capacity (rea
 
 # Structs Energy Management
 
+## Safety
+
+See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
+
+- **`reactor-infuse`** (Tier 1) — *"Your alpha locks into the reactor; commission rate is captured permanently. Defusion has a cooldown."* Surface the validator address, commission, and ualpha amount.
+- **`struct-generator-infuse`** (Tier 2 — irreversible) — *"Alpha Matter is annihilated in the conversion. And the generator is raidable — if it falls, the infused matter falls with it."* Confirm the generator's defense posture (shield, PDC, defenders) before infusing.
+- **`agreement-open`** (Tier 1) — *"You pay upfront for the full duration. Closing early may trigger a cancellation penalty."* Surface rate, duration in blocks, and total cost.
+- **`reactor-defuse`** (Tier 2 — cooldown lock-in) — *"Your alpha is suspended between reactor and wallet during the cooldown."*
+- **Denomination footgun** — `reactor-infuse` and `struct-generator-infuse` require the `ualpha` denomination suffix on the amount (e.g. `60000000ualpha`, not `60000000`). Missing denom = failed tx.
+
 ## Decision Tree
 
 ```

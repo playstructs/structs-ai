@@ -5,6 +5,25 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-05-13
+
+### Added
+
+- **[`SAFETY.md`](SAFETY.md)** — the trust contract between agent and commander. Three operation tiers (Routine / Significant / Irreversible) mapped to `COMMANDER.md` autonomy levels. Battle-order approval pattern, background-expedition rules, key hygiene, verification checklist, and audit log pattern. Links the public [ClawScan audits](https://clawhub.ai/abstrct) for every skill.
+- **[`awareness/agent-security.md`](awareness/agent-security.md)** — operational threat playbook. UGC prompt injection, RPC node trust, `address-register` identity hijack, guild API trust, MCP/signing-agent exposure, multi-agent key isolation. Includes a step-by-step incident response playbook (defuse → revoke → transfer → revoke permissions → rotate primary address → log).
+- **[`COMMANDER.md`](COMMANDER.md)** standing-orders template — pre-filled Tier 1 auto-approval caps and Tier 2 always-escalate lists so commanders fill blanks instead of designing from scratch.
+- **Per-skill Safety callouts** on all 11 affected skills ([`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL.md), [`structs-mining`](.cursor/skills/structs-mining/SKILL.md), [`structs-building`](.cursor/skills/structs-building/SKILL.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md), [`structs-economy`](.cursor/skills/structs-economy/SKILL.md), [`structs-energy`](.cursor/skills/structs-energy/SKILL.md), [`structs-power`](.cursor/skills/structs-power/SKILL.md), [`structs-guild`](.cursor/skills/structs-guild/SKILL.md), [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL.md), [`structs-exploration`](.cursor/skills/structs-exploration/SKILL.md), [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL.md)). Each callout lists the skill's highest-impact ops with their tier and in-character flavor.
+- **[`.cursor/skills/structs-guild-stack/SKILL.md`](.cursor/skills/structs-guild-stack/SKILL.md)** "Lifecycle & Trust" subsection — pin a release tag rather than tracking `main`, disable services not needed (read-only PG profile), bind MCP to `127.0.0.1`, signing-agent caveat, teardown commands.
+
+### Changed
+
+- [`AGENTS.md`](AGENTS.md), [`README.md`](README.md), [`index.md`](index.md), [`QUICKSTART.md`](QUICKSTART.md), [`llms.txt`](llms.txt), [`SITEMAP.md`](SITEMAP.md), and [`awareness/index.md`](awareness/index.md) — surface SAFETY.md and agent-security.md as discoverable entry points; added Critical Rule 9 in AGENTS.md.
+- [`scripts/generate-llms-full.sh`](scripts/generate-llms-full.sh) — includes SAFETY.md and `awareness/agent-security.md` in the aggregated build.
+
+### Context
+
+Responds to [ClawScan](https://clawhub.ai/abstrct) audits of 11 Structs skills (ASI02 `-y` auto-confirm; ASI03 signing-key scope; ASI04 binary trust; ASI06 personal-file context poisoning; ASI07 guild API + MCP; ASI10 long-running PoW). Keeps `-y` in `TX_FLAGS` for ergonomics and instead makes the approval gate explicit through a commander-grounded tier system. `structsd-install` was the only audited skill that already passed; it remains unchanged.
+
 ## [1.8.0] - 2026-05-13
 
 ### Added

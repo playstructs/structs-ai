@@ -9,6 +9,7 @@ FILES=(
   SOUL.md
   QUICKSTART.md
   AGENTS.md
+  SAFETY.md
   OPENCLAW.md
   IDENTITY.md
   COMMANDER.md
@@ -90,6 +91,7 @@ FILES=(
   # Awareness
   awareness/state-assessment.md
   awareness/threat-detection.md
+  awareness/agent-security.md
   awareness/opportunity-identification.md
   awareness/priority-framework.md
   awareness/game-loop.md

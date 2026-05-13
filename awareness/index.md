@@ -7,7 +7,8 @@ title: Awareness
 How to read the board and think about the game.
 
 - [State Assessment](state-assessment) -- Evaluate your current position
-- [Threat Detection](threat-detection) -- Spot dangers early
+- [Threat Detection](threat-detection) -- Spot in-game dangers early
+- [Agent Security](agent-security) -- Threat model, adversarial UGC, incident response
 - [Opportunity Identification](opportunity-identification) -- Find advantages
 - [Priority Framework](priority-framework) -- Survival > Security > Economy > Expansion > Dominance
 - [Game Loop](game-loop) -- Check Jobs, Assess, Plan, Initiate, Dispatch, Verify, Repeat

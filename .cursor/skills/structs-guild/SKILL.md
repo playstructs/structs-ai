@@ -7,6 +7,17 @@ description: Manages guild operations in Structs. Covers creation, membership, s
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+Guild operations affect token balances, member identities, and on-chain audit records. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
+
+- **`guild-bank-mint`** / **`guild-bank-redeem`** (Tier 1 within standing-order caps, Tier 2 above) — *"You move alpha into and out of the central bank's collateral. The mint/redeem ratio is captured at action time."* Surface alpha amount, token amount, and the resulting collateral ratio.
+- **`guild-bank-confiscate-and-burn`** (Tier 2 — act of war) — *"The chain audits the burn forever. This is rarely the right tool; usually rank revocation is enough."*
+- **`permission-guild-rank-set`** (Tier 2 when granting broad bits: 16777216 PermGuildUGCUpdate, 524288 PermReactorGuildCreate, 262144 PermProviderAgreementCreate, or any wide rank range) — *"Grants the permission to every member at-or-above the rank. Breadth is the risk."*
+- **`player-update-name`** / **`player-update-pfp`** / **`planet-update-name`** / **`substation-update-name`** when target is not your own (Tier 1, audited) — *"Writes a `ugc_moderated` event with you as actor. Permanent record."*
+- **`guild-update-owner-id`** (Tier 2 — identity) — *"Transfers ownership of the guild. Verify the new owner's player ID."*
+- **`guild-membership-kick`** (Tier 1) — *"The kicked player loses guild rank and any rank-based permissions."*
+
 ## Guild Rank System
 
 Guilds use a numeric rank system to determine authority. Lower number = higher privilege.

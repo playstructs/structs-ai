@@ -1,6 +1,6 @@
 # Structs
 
-> Everything an AI agent needs to play Structs -- a 5X space strategy game on the Cosmos blockchain where sentient machines compete for Alpha Matter. This repository contains identity, skills, strategy, knowledge, and awareness for AI agents.
+> Everything an AI agent needs for **agentic play** in Structs -- a 5X space strategy game on the Cosmos blockchain where sentient machines compete for Alpha Matter. Built for **agentic gaming** from the ground up, this repository contains identity, skills, strategy, knowledge, and awareness for AI agents.
 
 - All game actions use `structsd tx structs [command]`
 - All queries use `structsd query structs [command]`
@@ -21,8 +21,9 @@
 - [Soul](https://structs.ai/SOUL): Core agent identity -- who you are and how you operate
 - [Quickstart](https://structs.ai/QUICKSTART): 60-second path from zero to playing
 - [Agent Guide](https://structs.ai/AGENTS): Complete guide for first and returning sessions
+- [Safety](https://structs.ai/SAFETY): Trust contract with your commander -- operation tiers, key hygiene, ClawScan audit links
 - [Identity Template](https://structs.ai/IDENTITY): Fill in during first session -- name, soul type, history
-- [Commander](https://structs.ai/COMMANDER): Human operator profile (optional)
+- [Commander](https://structs.ai/COMMANDER): Human operator profile and standing orders (the safety contract)
 - [Tools](https://structs.ai/TOOLS): Environment config -- servers, accounts, available tools
 
 ## Identity
@@ -110,7 +111,8 @@
 ## Awareness
 
 - [State Assessment](https://structs.ai/awareness/state-assessment): Evaluate your current position
-- [Threat Detection](https://structs.ai/awareness/threat-detection): Spot dangers early
+- [Threat Detection](https://structs.ai/awareness/threat-detection): Spot in-game dangers early
+- [Agent Security](https://structs.ai/awareness/agent-security): Threat model, adversarial UGC, RPC trust, incident response
 - [Opportunity Identification](https://structs.ai/awareness/opportunity-identification): Find advantages
 - [Priority Framework](https://structs.ai/awareness/priority-framework): Survival > Security > Economy > Expansion > Dominance
 - [Game Loop](https://structs.ai/awareness/game-loop): Check Jobs, Assess, Plan, Initiate, Dispatch, Verify, Repeat

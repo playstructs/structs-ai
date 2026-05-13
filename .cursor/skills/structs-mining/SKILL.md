@@ -7,6 +7,14 @@ description: Executes resource extraction in Structs. Mines ore and refines it i
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+Mining and refining are **expeditions** — long-running background jobs that auto-submit completion transactions when their proof lands. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
+
+- **`struct-ore-mine-compute`** (Tier 1 + expedition) — *"An expedition. The extractor hashes the planet for ~17 hours, then transmits completion back to the chain on its own."* Log the PID to `memory/jobs/`; recall with `kill <pid>` if the situation changes.
+- **`struct-ore-refine-compute`** (Tier 1 + expedition) — *"~34 hours of grinding. The completion transaction is deferred consent — re-verify game state when it lands."* If your planet was raided mid-refine, your original approval may be stale.
+- **Auto-submission risk** — the compute helper signs and broadcasts the complete transaction automatically. If you cannot guarantee the original consent will still be valid in 17-34 hours, treat the launch as Tier 2 and escalate.
+
 ## Procedure
 
 1. **Check planet ore** — `structsd query structs planet [id]`. If `currentOre == 0`, explore new planet first.

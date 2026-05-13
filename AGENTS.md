@@ -39,7 +39,7 @@ This gives you everything: skills, the `create-player.mjs` script (required for 
 
 ## Returning Session
 
-1. Read `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `TOOLS.md`
+1. Read `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `TOOLS.md`, and [`SAFETY.md`](SAFETY.md)
 2. Check `memory/` for handoff notes from previous sessions
 3. Run a state assessment (see [`awareness/state-assessment.md`](awareness/state-assessment.md))
 4. Resume your strategic plan
@@ -100,7 +100,8 @@ High-level thinking in `playbooks/`.
 How to read the board. See `awareness/`.
 
 - [`state-assessment`](awareness/state-assessment.md) -- Evaluate your current position
-- [`threat-detection`](awareness/threat-detection.md) -- Spot dangers early
+- [`threat-detection`](awareness/threat-detection.md) -- Spot in-game dangers early
+- [`agent-security`](awareness/agent-security.md) -- Threat model, adversarial UGC, incident response
 - [`opportunity-identification`](awareness/opportunity-identification.md) -- Find advantages
 - [`priority-framework`](awareness/priority-framework.md) -- Survival > Security > Economy > Expansion > Dominance
 - [`game-loop`](awareness/game-loop.md) -- Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat
@@ -173,6 +174,7 @@ These will save your game:
 6. **Always use `--gas auto` on transactions.** Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. Full flags: `--from [key-name] --gas auto -y`.
 7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
 8. **Use `--` before entity IDs.** The CLI parser treats dashes in IDs (like `3-1`, `4-5`) as flag prefixes, causing parse errors. Place `--` after all flags and before positional arguments: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10`.
+9. **Read [`SAFETY.md`](SAFETY.md) before signing transactions or launching background expeditions.** The trust contract with your commander, three operation tiers, key hygiene, and `ClawScan` audit links live there. The chain has no undo.
 
 ---
 

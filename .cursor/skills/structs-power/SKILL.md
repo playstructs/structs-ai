@@ -7,6 +7,16 @@ description: Manages power infrastructure in Structs. Covers substations, alloca
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+Power operations cascade. Deleting an allocation can take an entire substation's worth of players offline. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
+
+- **`allocation-delete`** (Tier 2 — cascade) — *"Power stops flowing immediately. Substations downstream lose capacity; their players may go offline mid-build, mid-mine, mid-fight."*
+- **`substation-delete`** (Tier 2 — cascade) — *"Disconnect allocations and players first. A failed delete still leaves the substation in an awkward state."*
+- **`substation-player-disconnect`** (Tier 1) — *"You may take another player offline. If they're mid-compute, the auto-submit will fail. Coordinate before disconnecting."*
+- **`substation-player-migrate`** (Tier 1, Tier 2 if multiple players) — *"Bulk move. Confirm every player in the list belongs in the new substation."*
+- **`allocation-create`**, **`substation-create`** (Tier 1) — routine; surface source, power amount, controller.
+
 ## Procedure
 
 1. **Assess power state** — Query player: `structsd query structs player [id]`. Compute: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If `load + structsLoad > capacity + capacitySecondary`, player goes **OFFLINE** (cannot act). Player passive draw: 25,000 mW.

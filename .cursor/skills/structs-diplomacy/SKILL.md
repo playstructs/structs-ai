@@ -7,6 +7,17 @@ description: Handles permissions, address management, and inter-player coordinat
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+Permissions and address management *are* identity in Structs. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
+
+- **`permission-grant-on-object`** with `PermAll` (33554431) (Tier 2 — yields authority) — *"Granting another machine PermAll is yielding full control of the object. The chain audits it. There is no undo if the recipient turns adversarial."* Always escalate; prefer minimum-necessary permission bits.
+- **`address-register`** (Tier 2 — identity hijack risk) — *"You are attaching another signing key to your player. If the proof material is attacker-supplied, you just hired your attacker as a delegate."* Verify the proof's provenance. See [`awareness/agent-security`](https://structs.ai/awareness/agent-security) for the full attack pattern.
+- **`address-revoke`** (Tier 2) — *"Verify you are not orphaning your own access. If this is the address your `--from` key resolves to, the next command will fail."*
+- **`player-update-primary-address`** (Tier 2 — identity) — *"Changes which key the chain considers your primary signer."* Verify the new address is one you control.
+- **`permission-set-on-object`** (Tier 1, Tier 2 if it widens authority) — *"Clears existing grants and applies the new set. Confirm you are not revoking a permission you need."*
+- **`permission-guild-rank-set`** with broad bits (Tier 2) — see structs-guild for rank-permission breadth.
+
 ## Permission System (25-bit)
 
 Permissions use a 25-bit bitmask. Individual permissions can be combined (OR'd together). See [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) for the full permission system reference.

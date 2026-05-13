@@ -47,6 +47,7 @@ To create N brand-new accounts (e.g., for multi-player orchestration):
 - **Refine ore immediately.** Ore is stealable. Alpha Matter is not.
 - **Monitor power.** Load > capacity = offline = dead.
 - **Verify after acting.** Transaction broadcast does not mean action succeeded.
+- **Read [`SAFETY.md`](SAFETY.md) before signing transactions.** The chain has no undo. Your commander has no telepathy. Standing orders live in [`COMMANDER.md`](COMMANDER.md).
 
 ## Go Deeper
 

@@ -7,6 +7,15 @@ description: Builds and manages structures in Structs. Handles construction, act
 
 **Important**: Entity IDs containing dashes (like `1-42`, `5-10`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
+
+- **`struct-build-initiate`** (Tier 0 for cheap structs; Tier 1 for long PoW like World Engine, Ore Bunker, PDC) — short builds (Command Ship, Starfighter, Ore Extractor, Refinery) are routine; anything > 1 hour to D=3 is a battle order.
+- **`struct-build-compute`** (Tier 1 + expedition) — *"The build hashes for up to ~6.4 hours and auto-activates on completion."* Log the PID to `memory/jobs/`; recall with `kill <pid>` if needed.
+- **`struct-generator-infuse`** (Tier 2 — irreversible) — *"Alpha Matter is annihilated in the conversion. The energy is yours; the matter is gone. There is no defusion. And the generator is raidable — if it falls, the infused matter falls with it."* Always escalate, regardless of autonomy. Confirm the generator's defense posture before infusing.
+- **`struct-deactivate`** of revenue-bearing structs (Tier 1) — taking an Extractor or Refinery offline halts your resource pipeline.
+
 ## Procedure
 
 1. **Check requirements** — Player online, sufficient Alpha Matter, valid slot (0-3 per ambit), Command Ship online, fleet on station (for planet builds). Query player, planet, fleet.

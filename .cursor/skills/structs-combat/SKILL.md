@@ -7,6 +7,16 @@ description: Executes combat operations in Structs. Covers attacks, raids, defen
 
 **Important**: Entity IDs containing dashes (like `5-10`, `9-3`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
+
+- **`struct-attack`** single-target (Tier 1) — *"Confirm the target ID before firing. The chain will not stop you from attacking a guild-mate."* Surface target ID(s), the weapon system, and the expected counter-attack ambit.
+- **`struct-attack`** multi-target across guild boundaries (Tier 2 — act of war) — *"An act of war. The targets' guilds may retaliate as a bloc. Always escalate."*
+- **`planet-raid-compute`** (Tier 1 + expedition) — *"A committed expedition. Your fleet locks 'away' while the proof grinds, and the completion transaction submits itself on landing. You cannot build on your planet during this window."* Secure your planet before launching; the auto-submit may invite retaliation.
+- **`fleet-move`** to scouted destination (Tier 1) / to unscouted hostile space (Tier 2) — *"Instant transit. Verify the destination."*
+- **`struct-stealth-activate`** before raids (Tier 0) — routine misdirection; attacking deactivates stealth automatically.
+
 ## Procedure
 
 1. **Scout** — `structsd query structs planet [id]`, `structsd query structs struct [id]` for targets, shield, defenses.

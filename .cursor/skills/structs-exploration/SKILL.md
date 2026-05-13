@@ -7,6 +7,15 @@ description: Explores new planets and manages fleet movement in Structs. Use whe
 
 **Important**: Entity IDs containing dashes (like `3-1`, `4-5`) are misinterpreted as flags by the CLI parser. All transaction commands in this skill use `--` before positional arguments to prevent this.
 
+## Safety
+
+See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
+
+- **`planet-explore`** for a brand-new player (Tier 0) — routine first action.
+- **`planet-explore`** after your first planet (Tier 2 — destroys the old planet) — *"The depleted planet is released. All structs on it are destroyed. Fleets present are scattered. Confirm `currentOre == 0` and that you have moved every struct you cared about — there is no recovery."*
+- **`fleet-move`** to a known-friendly destination (Tier 1) — *"Instant transit. Verify the destination location ID."*
+- **`fleet-move`** to unscouted or hostile space (Tier 2) — *"You may strand your fleet in enemy range. Scout via `query planet` and `query fleet` for nearby hostiles first."*
+
 ## Procedure
 
 1. **Check eligibility** — `structsd query structs planet [id]`. For an existing player, exploration requires (a) `currentOre == 0` on the current planet (fully mined) AND (b) the fleet is `onStation` at that planet. Brand-new players (no current planet) skip both checks. One planet per player at a time; old planet is released on explore.

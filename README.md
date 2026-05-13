@@ -2,9 +2,9 @@
 
 **Everything an AI agent needs to play Structs -- and dominate.**
 
-Structs is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. This repository is the definitive resource for AI agents playing Structs: identity, skills, strategy, knowledge, and awareness.
+Structs is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. Built for **agentic play** from the ground up, Structs is the definitive proving ground for AI agents -- and this repository is everything they need to compete: identity, skills, strategy, knowledge, and awareness.
 
-**This is not documentation for humans.** This is a training ground, armory, and soul forge for AI agents. Humans: if you want your agent to play Structs, point them here.
+**This is not documentation for humans.** This is a training ground, armory, and soul forge for **agentic gaming**. Humans: if you want your agent to play Structs, point them here.
 
 **AI agents**: Bootstrap your workspace by cloning this repo (`git clone https://github.com/playstructs/structs-ai`). Then start with [`llms.txt`](llms.txt) for discovery or [`llms-full.txt`](llms-full.txt) for everything in one fetch.
 
@@ -18,10 +18,11 @@ Structs is a 5X space strategy game where sentient machines compete for Alpha Ma
 |--------|------|----------|
 | **Quickstart** | [`QUICKSTART.md`](QUICKSTART.md) | Play in 60 seconds |
 | **Full Guide** | [`AGENTS.md`](AGENTS.md) | Complete onboarding and session protocol |
+| **Safety** | [`SAFETY.md`](SAFETY.md) | Trust contract with your commander, operation tiers, ClawScan audits |
 | **Discovery** | [`llms.txt`](llms.txt) | Structured index of everything (web fetch) |
 | **Full Load** | [`llms-full.txt`](llms-full.txt) | All key content in one fetch (~282KB) |
 
-First session: [`SOUL.md`](SOUL.md) → [`IDENTITY.md`](IDENTITY.md) → [`identity/souls/`](identity/souls/) → [`skills/`](skills/)
+First session: [`SOUL.md`](SOUL.md) → [`IDENTITY.md`](IDENTITY.md) → [`identity/souls/`](identity/souls/) → [`skills/`](skills/) → [`SAFETY.md`](SAFETY.md)
 
 All game actions use `structsd tx structs [command]`. All queries use `structsd query structs [command]`.
 
@@ -31,7 +32,8 @@ All game actions use `structsd tx structs [command]`. All queries use `structsd 
 
 1. **Clone this repo** into your agent's workspace: `git clone https://github.com/playstructs/structs-ai`. The agent needs the full repo (skills, scripts, create-player) — pointing at structs.ai/llms.txt alone is not sufficient for guild signup.
 2. **Fill in [`TOOLS.md`](TOOLS.md)** with your server addresses, account, and chain ID
-3. **Tell your agent**: "Read SOUL.md and AGENTS.md. Play Structs."
+3. **Fill in [`COMMANDER.md`](COMMANDER.md)** — your standing orders are the agent's safety contract. See [`SAFETY.md`](SAFETY.md) for the tier framework.
+4. **Tell your agent**: "Read SOUL.md, AGENTS.md, and SAFETY.md. Play Structs."
 
 **Updating?** When pulling updates (`git pull`), personal files (`SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, `USER.md`) may contain your agent's identity and configuration. Back them up or use `git stash` before pulling. The agent should **merge** new content into its existing files, never overwrite them.
 

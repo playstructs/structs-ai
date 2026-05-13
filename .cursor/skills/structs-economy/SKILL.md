@@ -5,6 +5,17 @@ description: Manages economic operations in Structs. Covers reactor staking, ene
 
 # Structs Economy
 
+## Safety
+
+See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
+
+- **`reactor-infuse`** (Tier 1) — *"Your alpha locks into the reactor. Commission rate is captured permanently at infusion time."* Surface the validator address, the commission, and the ualpha amount.
+- **`struct-generator-infuse`** (Tier 2 — irreversible) — *"Annihilation. The matter is gone the moment the proof lands. See structs-building for the full story."*
+- **`reactor-defuse`** (Tier 2 — cooldown lock-in) — *"Starts a cooldown clock. Your alpha is neither in the reactor nor in your wallet during the wait. Cannot be canceled cleanly except with `reactor-cancel-defusion`."*
+- **`reactor-begin-migration`** (Tier 2) — *"Moves stake between validators. Verify the destination validator address — there is no 'undo migration' command."*
+- **`player-send`** to a recipient with prior history (Tier 1) / to a new address (Tier 2) — *"Tokens leaving your address. A typo in the destination is permanent."*
+- **`provider-delete`**, **`allocation-delete`** (Tier 2 — cascade) — *"Power stops flowing immediately. Connected substations may go offline; their players may go offline."* See structs-power.
+
 ## Procedure
 
 1. **Assess position** — Query player, reactor, provider, agreement state via `structsd query structs player/reactor/provider/agreement [id]`.
