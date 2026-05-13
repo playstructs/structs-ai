@@ -1,7 +1,7 @@
 # API Endpoint Quick Lookup
 
-**Version**: 1.0.0
 **Category**: reference
+**Last Updated**: May 13, 2026
 **Description**: Quick lookup table for common API endpoints by use case
 
 ---
@@ -59,15 +59,41 @@
 | getGuildPower | webapp-guild-power-stats | GET | `/api/guild/{guild_id}/power/stats` | `http://localhost:8080/api/guild/{guild_id}/power/stats` |
 | getPlayerOreStats | webapp-player-ore-stats | GET | `/api/player/{player_id}/ore/stats` | `http://localhost:8080/api/player/{player_id}/ore/stats` |
 | getTimestamp | webapp-timestamp | GET | `/api/timestamp` | `http://localhost:8080/api/timestamp` |
+| getSettings | webapp-setting-all | GET | `/api/setting` | `http://localhost:8080/api/setting` |
+| getBannedWords | webapp-banned-word-all | GET | `/api/banned-word/all/page/{page}` | `http://localhost:8080/api/banned-word/all/page/1` |
+| getStatRange | webapp-stat-range-by-object | GET | `/api/stat/{metric}/object/{object_key}/range/page/{page}?start_time=&end_time=` | `http://localhost:8080/api/stat/power/object/1-11/range/page/1?start_time=...&end_time=...` |
+
+### Catalog read shortcuts
+
+| Use Case | Endpoint ID | Path |
+|----------|-------------|------|
+| listPlayersInGuild | webapp-player-list-by-guild | `/api/player/list/guild/{guild_id}/page/{page}` |
+| listStructsAtPlanet | webapp-struct-list-by-location | `/api/struct/list/location/{location_id}/page/{page}` |
+| listAllocationsForSubstation | webapp-allocation-by-source | `/api/allocation/source/{source_id}/page/{page}` |
+| listInfusionsForReactor | webapp-infusion-list-by-destination | `/api/infusion/list/destination/{destination_id}/page/{page}` |
+| listProvidersBySubstation | webapp-provider-by-substation | `/api/provider/substation/{substation_id}/page/{page}` |
+| listReactorsByValidator | webapp-reactor-by-validator | `/api/reactor/validator/{validator_address}/page/{page}` |
+| listPermissionsOnObject | webapp-permission-by-object | `/api/permission/object/{object_id}/page/{page}` |
+| listGuildRankPermsOnObject | webapp-permission-guild-rank-by-object | `/api/permission-guild-rank/object/{object_id}/page/{page}` |
+| listPlanetActivityByPlanet | webapp-planet-activity-by-planet | `/api/planet-activity/planet/{planet_id}/page/{page}` |
+| listGridByObject | webapp-grid-by-object | `/api/grid/object/{object_id}/page/{page}` |
+| listAddressTagsForAddress | webapp-address-tag-by-address | `/api/address-tag/address/{address}/page/{page}` |
+| listDefenderForStruct | webapp-struct-defender-by-defending | `/api/struct-defender/defending/{defending_struct_id}` |
+| listDefendersOfStruct | webapp-struct-defender-by-protected | `/api/struct-defender/protected/{protected_struct_id}/page/{page}` |
+| listGuildMembershipApplicationsByGuild | webapp-guild-membership-application-by-guild | `/api/guild-membership-application/guild/{guild_id}/page/{page}` |
+| listDefusionsForValidator | webapp-defusion-by-validator | `/api/defusion/validator/{validator_address}/page/{page}` |
 
 ---
 
 ## Streaming (GRASS/NATS)
 
-| Use Case | Protocol | Address | Documentation |
-|----------|----------|---------|---------------|
-| connectNATS | NATS | `nats://localhost:4222` | [streaming.md](../protocols/streaming.md) |
-| connectWebSocket | WebSocket | `ws://localhost:1443` | [streaming.md](../protocols/streaming.md) |
+| Use Case | Protocol | Local | Public guild reference |
+|----------|----------|-------|------------------------|
+| connectNATS | NATS | `nats://localhost:4222` | -- |
+| connectGrassWebSocket | NATS-over-WS (GRASS) | `ws://localhost:1443` | `ws://crew.oh.energy:1443` |
+| connectTendermintWebSocket | Tendermint RPC WS | `ws://localhost:26657/websocket` | `wss://public.testnet.structs.network:26657/websocket` |
+
+GRASS carries game-level events. Tendermint WS carries chain events (txs, blocks, validator updates) and is the source for untyped chain events such as `ugc_moderated`. See [streaming.md](../protocols/streaming.md).
 
 ### Subscription Subjects
 

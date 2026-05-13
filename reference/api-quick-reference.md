@@ -1,7 +1,6 @@
 # API Quick Reference
 
-**Version**: 1.1.0  
-**Last Updated**: January 1, 2026  
+**Last Updated**: May 13, 2026
 **Purpose**: Quick reference guide for AI agents
 
 ---
@@ -9,17 +8,22 @@
 ## Base URLs
 
 ### Consensus Network API
-- **Base URL**: `http://localhost:1317`
+- **Local**: `http://localhost:1317`
+- **Public testnet (SSL)**: `https://public.testnet.structs.network`
 - **Base Path**: `/structs`
-- **RPC URL**: `http://localhost:26657`
+- **Local Tendermint RPC**: `http://localhost:26657`
+- **Public Tendermint RPC (SSL)**: `https://public.testnet.structs.network:26657`
+- **Public Tendermint WebSocket**: `wss://public.testnet.structs.network:26657/websocket`
 
 ### Web Application API
-- **Base URL**: `http://localhost:8080`
+- **Local**: `http://localhost:8080`
+- **Public guild webapp (Orbital Hydro)**: `http://crew.oh.energy`
 - **Base Path**: `/api`
 
 ### Streaming (GRASS/NATS)
-- **NATS Protocol**: `nats://localhost:4222`
-- **NATS WebSocket**: `ws://localhost:1443`
+- **Local NATS**: `nats://localhost:4222`
+- **Local GRASS WebSocket**: `ws://localhost:1443`
+- **Public GRASS WebSocket (Orbital Hydro)**: `ws://crew.oh.energy:1443`
 
 ---
 
@@ -169,6 +173,31 @@ POST /cosmos/tx/v1beta1/txs
 GET /cosmos/tx/v1beta1/txs/{hash}
 ```
 
+### Catalog Read (Webapp)
+
+Uniform paginated lists under `/api/{entity}[/{filter}]/page/{page}`:
+
+```
+GET /api/allocation/source/{source_id}/page/{page}
+GET /api/agreement/owner/{owner}
+GET /api/permission/object/{object_id}/page/{page}
+GET /api/permission-guild-rank/guild/{guild_id}/page/{page}
+GET /api/planet-activity/planet/{planet_id}/page/{page}
+GET /api/grid/object/{object_id}/page/{page}
+GET /api/struct-defender/protected/{protected_struct_id}/page/{page}
+GET /api/banned-word/all/page/{page}
+GET /api/defusion/validator/{validator_address}/page/{page}
+```
+
+See [`webapp/`](../api/webapp/) for the full per-entity catalog.
+
+### Time-Series Stats and Live Tunables
+
+```
+GET /api/setting
+GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix}&end_time={unix}
+```
+
 ---
 
 ## Response Formats
@@ -255,16 +284,24 @@ GET /cosmos/tx/v1beta1/txs/{hash}
 
 ---
 
-## Streaming (GRASS/NATS)
+## Streaming
 
-### Subject Patterns
+### GRASS (NATS-over-WebSocket) — game-level events
 
-**Player Events**: `structs.player.*`  
-**Guild Events**: `structs.guild.*`  
-**Planet Events**: `structs.planet.*`  
-**Struct Events**: `structs.struct.*`  
-**Fleet Events**: `structs.fleet.*`  
-**Global Events**: `structs.global`
+**Subject Patterns**
+
+- **Player Events**: `structs.player.*`
+- **Guild Events**: `structs.guild.*`
+- **Planet Events**: `structs.planet.*`
+- **Struct Events**: `structs.struct.*`
+- **Fleet Events**: `structs.fleet.*`
+- **Grid Attributes**: `structs.grid.*`
+- **Inventory**: `structs.inventory.>`
+- **Global Events**: `structs.global`
+
+### Tendermint WebSocket — chain events
+
+For untyped chain events (e.g. `ugc_moderated`) subscribe to `wss://public.testnet.structs.network:26657/websocket`.
 
 ### Event Categories
 
@@ -442,8 +479,3 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 8. **Monitor streaming events** for real-time updates
 9. **Use patterns** for common scenarios (see Patterns Reference above)
 10. **Follow workflow examples** for multi-step operations
-
----
-
-*API Documentation Specialist - December 7, 2025*
-

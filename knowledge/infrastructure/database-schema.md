@@ -128,6 +128,7 @@ Defense assignments.
 | `max_ore` | integer | Maximum ore capacity |
 | `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts |
 | `status` | varchar | Planet status |
+| `seized_ore` | numeric | Cumulative ore taken from this planet across raids (planet-level total; per-raid totals live in `planet_raid.seized_ore`) |
 
 ### `structs.planet_attribute`
 
@@ -314,6 +315,66 @@ Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain o
 
 Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechanics/permissions.md) for the guild rank permission system.
 
+The `permission` view is a 24-bit-mask projection over `structs.permission` rows joined with `permission_guild_rank` and exposes a `permission_hash` column so callers can compare aggregated permission state cheaply. The `PermAll` mask is `33554431` (bits 0..24 set).
+
+### `structs.banned_word`
+
+Seed data for UGC name validation. The chain rejects any `Msg*UpdateName` (player, guild, planet, substation) whose name contains a substring matching any row in this table; webapps surface the same list via [`api/webapp/banned-word.md`](../../api/webapp/banned-word.md) so client-side forms can preflight.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `word` | text PK | Banned token (lowercase) |
+
+### `structs.address_tag`
+
+Labelled address records. Each `(address, label)` pair tags a Cosmos address with a human-readable label, plus an `entry` integer for ordering.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `address` | varchar | Cosmos address |
+| `label` | text | Tag name |
+| `entry` | bigint | Sort/insert order within `label` |
+
+Primary key: `(address, label)`; reverse-lookup index `(label, entry)` (`table-address-tag-idx-label-entry`).
+
+### `structs.setting`
+
+Live tunables — chain economy and gameplay constants exposed unauthenticated through [`api/webapp/setting.md`](../../api/webapp/setting.md).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `name` | text PK | Setting key |
+| `value` | text | Setting value (string-encoded; numeric where applicable) |
+
+Seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`. Treat the table as an open name/value map — keys are added over time.
+
+### `structs.defusion`
+
+In-flight reactor defusion records — Alpha Matter being unbonded from a reactor.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `validator_address` | varchar | Validator operator address |
+| `delegator_address` | varchar | Delegator account address |
+| `defusion_type` | varchar | Defusion category |
+| `amount` | numeric | Amount being unbonded |
+| `denom` | varchar | Token denom |
+| `created_at` / `completes_at` | timestamptz | Lifecycle timestamps |
+
+Old rows are reaped by the `structs.CLEAN_DEFUSION()` cron. Read endpoints live in [`api/webapp/defusion.md`](../../api/webapp/defusion.md).
+
+---
+
+## Aggregated Views
+
+| View | Purpose |
+|------|---------|
+| `view.guild_bank` | Per-guild Central Bank position — minted/redeemed token balances, collateral, and outstanding supply, joined from `structs.guild`, the on-chain bank module, and ledger movements |
+| `view.leaderboard_guild` | Ranked guild scoreboard (members, ore mined, planets completed, raids launched, raids successful) for UI surfaces |
+| `view.leaderboard_player` | Same shape as `view.leaderboard_guild` but per player |
+
+Use views, not raw tables, when building leaderboard or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
+
 ---
 
 ## Other Time-Series Tables (TimescaleDB)
@@ -346,9 +407,9 @@ The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.c
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
 | `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types as of v0.16.0. |
 
-### `signer.signer_tx_type` (v0.16.0 additions)
+### `signer.signer_tx_type` (UGC enum values)
 
-Seven new enum values were added in v0.16.0 for the UGC transactions:
+Seven enum values cover the UGC chain message types:
 
 | Enum Value | Wraps |
 |------------|-------|
@@ -360,14 +421,16 @@ Seven new enum values were added in v0.16.0 for the UGC transactions:
 | `substation-update-pfp` | `MsgSubstationUpdatePfp` |
 | `planet-update-name` | `MsgPlanetUpdateName` |
 
-### `signer.tx_*` wrappers (v0.16.0)
+### `signer.tx_*` wrappers
 
-The signing layer adds 12 new wrapper functions:
+The signing layer ships 12 PL/pgSQL wrapper functions that queue UGC updates into `signer.tx`. They split into two groups by **permission preflight only** — both groups ultimately broadcast the same chain messages (`MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName`, `MsgSubstationUpdatePfp`):
 
 - **7 self-service wrappers** (one per UGC tx type above) that require `PermUpdate` (4) on the target object before queueing the tx. These are used when a player updates their own UGC.
 - **5 guild-moderation wrappers** (`tx_guild_moderate_player_name`, `_player_pfp`, `_planet_name`, `_substation_name`, `_substation_pfp`) that require `PermGuildUGCUpdate` (16777216) on the target owner's guild before queueing the tx. These are used when a guild moderator overrides a member's UGC.
 
-`signer.UPDATE_PENDING_ACCOUNT` was also bumped from the old `PermAll = 16777215` to the v0.16.0 `PermAll = 33554431` so newly provisioned signer addresses receive the new bit by default.
+There is no `MsgGuildModerate*` chain message — moderation is the same `Msg*Update*` message, gated by the actor's `PermGuildUGCUpdate` on the owner's guild. The chain emits a `ugc_moderated` event whenever the actor differs from the target object's owner.
+
+`signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll = 33554431` (bits 0..24) so newly provisioned signer addresses receive every permission, including `PermGuildUGCUpdate`, by default.
 
 ### `PLAYER_PENDING_JOIN_PROXY` (v0.16.0)
 

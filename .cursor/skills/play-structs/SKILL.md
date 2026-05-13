@@ -24,10 +24,10 @@ If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-i
 Your guild provides power, community, and infrastructure. The user may have specified a guild in [TOOLS.md](https://structs.ai/TOOLS). If not, discover available guilds:
 
 ```
-curl http://reactor.oh.energy:1317/structs/guild
+curl https://public.testnet.structs.network/structs/guild
 ```
 
-Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](http://reactor.oh.energy:1317/structs/guild) (`0-1`) is a reliable default.
+Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](https://public.testnet.structs.network/structs/guild) (`0-1`) is a reliable default.
 
 ---
 
@@ -43,7 +43,7 @@ cd .cursor/skills/structs-onboarding/scripts && npm install && cd -
 node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
-  --reactor-api "http://reactor.oh.energy:1317" \
+  --reactor-api "https://public.testnet.structs.network" \
   --username "your-name"
 ```
 

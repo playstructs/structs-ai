@@ -1,7 +1,6 @@
 # Endpoint Index
 
-**Version**: 1.1.0
-**Last Updated**: 2026-01-01
+**Last Updated**: May 13, 2026
 **Description**: Complete index of all API endpoints for AI agents
 
 ---
@@ -28,7 +27,7 @@
 
 ## Consensus Network API Endpoints
 
-Base URL: `http://localhost:1317`
+Base URL: `http://localhost:1317` (local) or `https://public.testnet.structs.network` (public testnet, SSL).
 
 ### Player
 
@@ -138,18 +137,50 @@ Base URL: `http://localhost:1317`
 
 ## Web Application API Endpoints
 
-Base URL: `http://localhost:8080`
+Base URL: `http://localhost:8080` (local) or `http://crew.oh.energy` (public Orbital Hydro guild webapp).
 
-| ID | Method | Path | Entity | Schema | Protocol |
-|----|--------|------|--------|--------|----------|
-| webapp-player-by-id | GET | `/api/player/{player_id}` | Player | [responses.md](../schemas/responses.md#webappplayerresponse) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-player-ore-stats | GET | `/api/player/{player_id}/ore/stats` | Player | [responses.md](../schemas/responses.md#orestatsresponse) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-planet-by-id | GET | `/api/planet/{planet_id}` | Planet | [entities.md](../schemas/entities.md#planet) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-planet-shield-health | GET | `/api/planet/{planet_id}/shield/health` | Planet | [responses.md](../schemas/responses.md#shieldhealthresponse) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-guild-by-id | GET | `/api/guild/{guild_id}` | Guild | [entities.md](../schemas/entities.md#guild) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-guild-count | GET | `/api/guild/count` | Guild | [responses.md](../schemas/responses.md#countresponse) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-struct-by-id | GET | `/api/struct/{struct_id}` | Struct | [entities.md](../schemas/entities.md#struct) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| webapp-timestamp | GET | `/api/timestamp` | Timestamp | [responses.md](../schemas/responses.md#timestampresponse) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
+### Bespoke entity endpoints (selected)
+
+| ID | Method | Path | Entity | Per-entity doc |
+|----|--------|------|--------|----------------|
+| webapp-player-by-id | GET | `/api/player/{player_id}` | Player | [webapp/player.md](../api/webapp/player.md) |
+| webapp-player-ore-stats | GET | `/api/player/{player_id}/ore/stats` | Player | [webapp/player.md](../api/webapp/player.md) |
+| webapp-planet-by-id | GET | `/api/planet/{planet_id}` | Planet | [webapp/planet.md](../api/webapp/planet.md) |
+| webapp-planet-shield-health | GET | `/api/planet/{planet_id}/shield/health` | Planet | [webapp/planet.md](../api/webapp/planet.md) |
+| webapp-guild-by-id | GET | `/api/guild/{guild_id}` | Guild | [webapp/guild.md](../api/webapp/guild.md) |
+| webapp-guild-count | GET | `/api/guild/count` | Guild | [webapp/guild.md](../api/webapp/guild.md) |
+| webapp-struct-by-id | GET | `/api/struct/{struct_id}` | Struct | [webapp/struct.md](../api/webapp/struct.md) |
+| webapp-timestamp | GET | `/api/timestamp` | Timestamp | [webapp/system.md](../api/webapp/system.md) |
+| webapp-setting-all | GET | `/api/setting` | Setting | [webapp/setting.md](../api/webapp/setting.md) |
+| webapp-stat-range-by-object | GET | `/api/stat/{metric}/object/{object_key}/range/page/{page}` | Stat | [webapp/stat.md](../api/webapp/stat.md) |
+
+### Catalog read endpoints (paginated `/api/{entity}[/{filter}]/page/{page}`)
+
+| Entity | Doc | Filters |
+|--------|-----|---------|
+| address-tag | [webapp/address-tag.md](../api/webapp/address-tag.md) | `all`, `address` |
+| agreement | [webapp/agreement.md](../api/webapp/agreement.md) | `all`, `provider`, `allocation`, `creator`, `owner` |
+| allocation | [webapp/allocation.md](../api/webapp/allocation.md) | `all`, `source`, `destination`, `creator`, `controller` |
+| banned-word | [webapp/banned-word.md](../api/webapp/banned-word.md) | `all` |
+| defusion | [webapp/defusion.md](../api/webapp/defusion.md) | `all`, `validator`, `delegator` |
+| fleet | [webapp/fleet.md](../api/webapp/fleet.md) | `list/all`, `list/location` |
+| grid | [webapp/grid.md](../api/webapp/grid.md) | `all`, `object`, `attribute-type` |
+| guild list | [webapp/guild.md](../api/webapp/guild.md) | `list/all`, `list/primary-reactor`, `list/entry-substation`, `list/owner` |
+| guild-membership-application | [webapp/guild-membership-application.md](../api/webapp/guild-membership-application.md) | `all`, `guild`, `player` |
+| infusion list | [webapp/infusion.md](../api/webapp/infusion.md) | `list/all`, `list/destination`, `list/address`, `list/player` |
+| ledger list | [webapp/ledger.md](../api/webapp/ledger.md) | `list/all`, `list/player`, `list/address` |
+| permission | [webapp/permission.md](../api/webapp/permission.md) | `all`, `object`, `player` |
+| permission-guild-rank | [webapp/permission-guild-rank.md](../api/webapp/permission-guild-rank.md) | `all`, `object`, `guild` |
+| planet list | [webapp/planet.md](../api/webapp/planet.md) | `list/all`, `list/owner` |
+| planet-activity | [webapp/planet-activity.md](../api/webapp/planet-activity.md) | `all`, `planet`, `category` |
+| planet-attribute | [webapp/planet-attribute.md](../api/webapp/planet-attribute.md) | `all`, `object`, `type` |
+| player list | [webapp/player.md](../api/webapp/player.md) | `list/all`, `list/guild`, `list/substation` |
+| provider | [webapp/provider.md](../api/webapp/provider.md) | `all`, `owner`, `denom`, `substation` |
+| reactor | [webapp/reactor.md](../api/webapp/reactor.md) | `all`, `validator`, `guild`, `owner` |
+| struct list | [webapp/struct.md](../api/webapp/struct.md) | `list/all`, `list/owner`, `list/location` |
+| struct-attribute | [webapp/struct-attribute.md](../api/webapp/struct-attribute.md) | `all`, `object`, `type` |
+| struct-defender | [webapp/struct-defender.md](../api/webapp/struct-defender.md) | `all`, `defending`, `protected` |
+| substation | [webapp/substation.md](../api/webapp/substation.md) | `all`, `owner` |
 
 ---
 

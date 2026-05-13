@@ -626,11 +626,14 @@ The guild stack is optional -- CLI commands via a remote node work for basic gam
 
 ## Reference Node
 
-`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild). Use it for queries when no local node is available:
+`public.testnet.structs.network` is a public Structs testnet node served over SSL. Use it for queries when no local node is available — the SSL endpoint avoids mixed-content and CORS issues that plagued the older HTTP testnet hosts.
 
-- **Consensus API**: `http://reactor.oh.energy:1317`
-- **WebSocket**: `ws://reactor.oh.energy:26657`
-- **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
+- **Consensus API**: `https://public.testnet.structs.network`
+- **Tendermint RPC**: `https://public.testnet.structs.network:26657`
+- **Tendermint WebSocket**: `wss://public.testnet.structs.network:26657/websocket`
+- **Guild list**: `https://public.testnet.structs.network/structs/guild`
+
+This node runs only `structsd` (chain). Guild API and GRASS NATS WebSocket services are hosted by individual guilds — see the guild config you fetch from `/structs/guild`.
 
 ---
 
@@ -642,16 +645,16 @@ By default, `structsd` commands connect to `localhost:26657`. If you are not run
 
 ```
 broadcast-mode = "sync"
-chain-id = "structstestnet-111"
+chain-id = "structstestnet-112"
 keyring-backend = "test"
-node = "tcp://reactor.oh.energy:26657"
+node = "https://public.testnet.structs.network:26657"
 output = "text"
 ```
 
 **Option 2: Per-command flag** for one-off queries:
 
 ```
-structsd query structs player 1-11 --node tcp://reactor.oh.energy:26657
+structsd query structs player 1-11 --node https://public.testnet.structs.network:26657
 ```
 
 If you see connection errors like "connection refused" on port 26657, you need to configure this.
@@ -689,7 +692,7 @@ To find your player ID from your address: `structsd query structs address [your-
 **Role:**
 **Central Bank Status:**
 
-To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl http://reactor.oh.energy:1317/structs/guild`
+To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl https://public.testnet.structs.network/structs/guild`
 
 ---
 
@@ -1375,10 +1378,10 @@ If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-i
 Your guild provides power, community, and infrastructure. The user may have specified a guild in [TOOLS.md](https://structs.ai/TOOLS). If not, discover available guilds:
 
 ```
-curl http://reactor.oh.energy:1317/structs/guild
+curl https://public.testnet.structs.network/structs/guild
 ```
 
-Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](http://reactor.oh.energy:1317/structs/guild) (`0-1`) is a reliable default.
+Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](https://public.testnet.structs.network/structs/guild) (`0-1`) is a reliable default.
 
 ---
 
@@ -1394,7 +1397,7 @@ cd .cursor/skills/structs-onboarding/scripts && npm install && cd -
 node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
-  --reactor-api "http://reactor.oh.energy:1317" \
+  --reactor-api "https://public.testnet.structs.network" \
   --username "your-name"
 ```
 
@@ -1823,10 +1826,10 @@ Join a guild that supports programmatic signup. The bundled `create-player.mjs` 
 The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
 
 ```
-curl http://reactor.oh.energy:1317/structs/guild
+curl https://public.testnet.structs.network/structs/guild
 ```
 
-`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild).
+`public.testnet.structs.network` is a public testnet node served over SSL. Any other reachable `structsd` REST endpoint works the same.
 
 **2. Get the guild's API endpoint**
 
@@ -1844,8 +1847,8 @@ Example guild config:
     "tag": "OH",
     "services": {
       "guild_api": "http://crew.oh.energy/api/",
-      "reactor_api": "http://reactor.oh.energy:1317/",
-      "client_websocket": "ws://reactor.oh.energy:26657"
+      "reactor_api": "https://public.testnet.structs.network/",
+      "client_websocket": "wss://public.testnet.structs.network:26657/websocket"
     }
   }
 }
@@ -1865,7 +1868,7 @@ Then run (from workspace root):
 node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
-  --reactor-api "http://reactor.oh.energy:1317" \
+  --reactor-api "https://public.testnet.structs.network" \
   --username "your-chosen-name" \
   --pfp "ipfs://bafy..."
 ```
@@ -3232,7 +3235,7 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 
 The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.
 
-1. Query the guild list: `curl http://reactor.oh.energy:1317/structs/guild`
+1. Query the guild list: `curl https://public.testnet.structs.network/structs/guild`
 2. Follow the guild's `endpoint` URL to get its config
 3. Look for `services.grass_nats_websocket`
 
@@ -3243,14 +3246,18 @@ Example (Orbital Hydro guild):
   "services": {
     "grass_nats_websocket": "ws://crew.oh.energy:1443",
     "guild_api": "http://crew.oh.energy/api/",
-    "reactor_api": "http://reactor.oh.energy:1317/"
+    "reactor_api": "https://public.testnet.structs.network/"
   }
 }
 ```
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja). GRASS is hosted by individual guilds and is currently HTTP only — do not rewrite to `wss://`.
+
+### Tendermint WebSocket vs GRASS
+
+These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries game-level events. Tendermint's own WebSocket at `wss://public.testnet.structs.network:26657/websocket` carries chain events (txs, blocks, validator updates). Use Tendermint subscriptions when you need to audit `ugc_moderated` or other untyped chain events that GRASS does not republish.
 
 ---
 
@@ -3572,7 +3579,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### Quick Setup
 
-1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)
+1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`). For chain queries you can use the SSL endpoint `https://public.testnet.structs.network/structs/guild`.
 2. Record the endpoint in [TOOLS.md](https://structs.ai/TOOLS) under Servers
 3. Choose your language (Node.js or Python)
 4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)
@@ -7617,6 +7624,8 @@ One blockchain block is ~6 seconds. Fast-fire units (Command Ship, Pursuit Fight
 
 Init services (`structsd-network-config`, `structsd-indexer-config`, `structs-pg-init`) run once at startup and exit.
 
+The PostgreSQL schema (the `structs.*`, `cache.*`, `signer.*`, and `view.*` namespaces in [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. `structs-pg-init` deploys the bundled `sqitch.plan` into a fresh database; `structs-pg-auto-migrate` re-runs `sqitch deploy` on a loop so a long-lived stack picks up newly published changes (new tables, view definitions, cron functions) without downtime.
+
 ---
 
 ## Data Flow
@@ -7848,6 +7857,7 @@ Defense assignments.
 | `max_ore` | integer | Maximum ore capacity |
 | `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts |
 | `status` | varchar | Planet status |
+| `seized_ore` | numeric | Cumulative ore taken from this planet across raids (planet-level total; per-raid totals live in `planet_raid.seized_ore`) |
 
 ### `structs.planet_attribute`
 
@@ -8034,6 +8044,66 @@ Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain o
 
 Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechanics/permissions.md) for the guild rank permission system.
 
+The `permission` view is a 24-bit-mask projection over `structs.permission` rows joined with `permission_guild_rank` and exposes a `permission_hash` column so callers can compare aggregated permission state cheaply. The `PermAll` mask is `33554431` (bits 0..24 set).
+
+### `structs.banned_word`
+
+Seed data for UGC name validation. The chain rejects any `Msg*UpdateName` (player, guild, planet, substation) whose name contains a substring matching any row in this table; webapps surface the same list via [`api/webapp/banned-word.md`](../../api/webapp/banned-word.md) so client-side forms can preflight.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `word` | text PK | Banned token (lowercase) |
+
+### `structs.address_tag`
+
+Labelled address records. Each `(address, label)` pair tags a Cosmos address with a human-readable label, plus an `entry` integer for ordering.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `address` | varchar | Cosmos address |
+| `label` | text | Tag name |
+| `entry` | bigint | Sort/insert order within `label` |
+
+Primary key: `(address, label)`; reverse-lookup index `(label, entry)` (`table-address-tag-idx-label-entry`).
+
+### `structs.setting`
+
+Live tunables — chain economy and gameplay constants exposed unauthenticated through [`api/webapp/setting.md`](../../api/webapp/setting.md).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `name` | text PK | Setting key |
+| `value` | text | Setting value (string-encoded; numeric where applicable) |
+
+Seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`. Treat the table as an open name/value map — keys are added over time.
+
+### `structs.defusion`
+
+In-flight reactor defusion records — Alpha Matter being unbonded from a reactor.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `validator_address` | varchar | Validator operator address |
+| `delegator_address` | varchar | Delegator account address |
+| `defusion_type` | varchar | Defusion category |
+| `amount` | numeric | Amount being unbonded |
+| `denom` | varchar | Token denom |
+| `created_at` / `completes_at` | timestamptz | Lifecycle timestamps |
+
+Old rows are reaped by the `structs.CLEAN_DEFUSION()` cron. Read endpoints live in [`api/webapp/defusion.md`](../../api/webapp/defusion.md).
+
+---
+
+## Aggregated Views
+
+| View | Purpose |
+|------|---------|
+| `view.guild_bank` | Per-guild Central Bank position — minted/redeemed token balances, collateral, and outstanding supply, joined from `structs.guild`, the on-chain bank module, and ledger movements |
+| `view.leaderboard_guild` | Ranked guild scoreboard (members, ore mined, planets completed, raids launched, raids successful) for UI surfaces |
+| `view.leaderboard_player` | Same shape as `view.leaderboard_guild` but per player |
+
+Use views, not raw tables, when building leaderboard or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
+
 ---
 
 ## Other Time-Series Tables (TimescaleDB)
@@ -8066,9 +8136,9 @@ The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.c
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
 | `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types as of v0.16.0. |
 
-### `signer.signer_tx_type` (v0.16.0 additions)
+### `signer.signer_tx_type` (UGC enum values)
 
-Seven new enum values were added in v0.16.0 for the UGC transactions:
+Seven enum values cover the UGC chain message types:
 
 | Enum Value | Wraps |
 |------------|-------|
@@ -8080,14 +8150,16 @@ Seven new enum values were added in v0.16.0 for the UGC transactions:
 | `substation-update-pfp` | `MsgSubstationUpdatePfp` |
 | `planet-update-name` | `MsgPlanetUpdateName` |
 
-### `signer.tx_*` wrappers (v0.16.0)
+### `signer.tx_*` wrappers
 
-The signing layer adds 12 new wrapper functions:
+The signing layer ships 12 PL/pgSQL wrapper functions that queue UGC updates into `signer.tx`. They split into two groups by **permission preflight only** — both groups ultimately broadcast the same chain messages (`MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName`, `MsgSubstationUpdatePfp`):
 
 - **7 self-service wrappers** (one per UGC tx type above) that require `PermUpdate` (4) on the target object before queueing the tx. These are used when a player updates their own UGC.
 - **5 guild-moderation wrappers** (`tx_guild_moderate_player_name`, `_player_pfp`, `_planet_name`, `_substation_name`, `_substation_pfp`) that require `PermGuildUGCUpdate` (16777216) on the target owner's guild before queueing the tx. These are used when a guild moderator overrides a member's UGC.
 
-`signer.UPDATE_PENDING_ACCOUNT` was also bumped from the old `PermAll = 16777215` to the v0.16.0 `PermAll = 33554431` so newly provisioned signer addresses receive the new bit by default.
+There is no `MsgGuildModerate*` chain message — moderation is the same `Msg*Update*` message, gated by the actor's `PermGuildUGCUpdate` on the owner's guild. The chain emits a `ugc_moderated` event whenever the actor differs from the target object's owner.
+
+`signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll = 33554431` (bits 0..24) so newly provisioned signer addresses receive every permission, including `PermGuildUGCUpdate`, by default.
 
 ### `PLAYER_PENDING_JOIN_PROXY` (v0.16.0)
 

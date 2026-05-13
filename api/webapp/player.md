@@ -1,10 +1,9 @@
 # Webapp Player API Endpoints
 
-**Version**: 1.1.0
 **Category**: webapp
 **Entity**: Player
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: January 1, 2026
+**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
+**Last Updated**: May 13, 2026
 
 ---
 
@@ -19,6 +18,9 @@
 | GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | No |
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
 | GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | No |
+| GET | `/api/player/list/all/page/{page}` | Catalog list of all players, paginated | No |
+| GET | `/api/player/list/guild/{guild_id}/page/{page}` | Catalog list of players in a guild | No |
+| GET | `/api/player/list/substation/{substation_id}/page/{page}` | Catalog list of players connected to a substation | No |
 
 ---
 
@@ -178,6 +180,50 @@ Get launched raids for player.
 
 ---
 
+### GET `/api/player/list/all/page/{page}`
+
+Catalog list of every player on the chain, paginated.
+
+- **ID**: `webapp-player-list-all`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
+
+---
+
+### GET `/api/player/list/guild/{guild_id}/page/{page}`
+
+Catalog list of players in a guild.
+
+- **ID**: `webapp-player-list-by-guild`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `guild_id` | string | Yes | guild-id | Guild identifier (e.g. `0-1`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+### GET `/api/player/list/substation/{substation_id}/page/{page}`
+
+Catalog list of players connected to a substation.
+
+- **ID**: `webapp-player-list-by-substation`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `substation_id` | string | Yes | substation-id | Substation identifier (e.g. `4-1`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
 ## Response Schema
 
 Player responses include reactor staking summary:
@@ -198,6 +244,4 @@ Player responses include reactor staking summary:
 }
 ```
 
----
-
-*Last Updated: January 1, 2026*
+The `/api/player/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).

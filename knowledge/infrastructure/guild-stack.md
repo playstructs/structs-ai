@@ -68,6 +68,8 @@ One blockchain block is ~6 seconds. Fast-fire units (Command Ship, Pursuit Fight
 
 Init services (`structsd-network-config`, `structsd-indexer-config`, `structs-pg-init`) run once at startup and exit.
 
+The PostgreSQL schema (the `structs.*`, `cache.*`, `signer.*`, and `view.*` namespaces in [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. `structs-pg-init` deploys the bundled `sqitch.plan` into a fresh database; `structs-pg-auto-migrate` re-runs `sqitch deploy` on a loop so a long-lived stack picks up newly published changes (new tables, view definitions, cron functions) without downtime.
+
 ---
 
 ## Data Flow

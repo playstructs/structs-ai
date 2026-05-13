@@ -1,88 +1,77 @@
 # Webapp API Endpoints
 
-**Version**: 1.1.0  
-**Purpose**: Webapp endpoints split from `endpoints.md` for context window efficiency  
-**Last Updated**: January 1, 2026
+**Purpose**: Webapp endpoints split per entity for context-window efficiency
+**Last Updated**: May 13, 2026
 
 ---
 
 ## Overview
 
-This directory contains webapp API endpoints organized by entity type. This allows AI agents to load only the webapp endpoints they need, reducing context window usage.
+This directory contains the structs-webapp HTTP API split per entity. Agents should load only the entity files they need rather than reading the full endpoint catalog.
 
-**Implementation**: The webapp API is implemented in a PHP Symfony application (`structs-webapp`). This is the main user-facing API for the game. API authentication is implemented in the PHP Symfony application.
+**Implementation**: PHP Symfony app at [`playstructs/structs-webapp`](https://github.com/playstructs/structs-webapp). Authentication is handled by the webapp itself (see `auth.md`); the catalog read endpoints below are unauthenticated.
 
-**Use Case**: Load specific entity webapp endpoints when working with that entity, instead of loading the entire `endpoints.md` (1153 lines).
+**Base URLs**:
 
----
-
-## Available Files
-
-### Entity-Specific Webapp Endpoints
-
-- **`player.md`** - Player webapp endpoints (8 endpoints, ~130 lines)
-- **`planet.md`** - Planet webapp endpoints (5 endpoints, ~80 lines)
-- **`guild.md`** - Guild webapp endpoints (11 endpoints, ~150 lines)
-- **`auth.md`** - Authentication endpoints (3 endpoints, ~30 lines)
-- **`struct.md`** - Struct webapp endpoints (3 endpoints, ~40 lines)
-- **`ledger.md`** - Ledger endpoints (3 endpoints, ~50 lines)
-- **`infusion.md`** - Infusion endpoints (1 endpoint, ~20 lines)
-- **`system.md`** - System endpoints (timestamp, 1 endpoint, ~30 lines)
-
-**Total**: 34 webapp endpoints across 8 entity files
+- Local Docker Compose: `http://localhost:8080`
+- Public guild webapp (Orbital Hydro): `http://crew.oh.energy`
 
 ---
 
-## Context Window Savings
+## Files
 
-### Before (Loading endpoints.md)
+### Entity-specific endpoints (legacy bespoke endpoints)
 
-**To get Player webapp endpoints**:
-- Load: `api/endpoints.md` (1153 lines)
-- Contains: All query, transaction, and webapp endpoints
-- **Waste**: ~1050 lines of unused endpoints
+These existed before the catalog read layer was added. They tend to return enriched objects (joined data, stats summaries) rather than the raw catalog row.
 
-### After (Loading entity webapp file)
+- [`auth.md`](auth.md) — `/api/auth/*`
+- [`player.md`](player.md) — `/api/player/{player_id}/*` plus `/api/player/list/*`
+- [`planet.md`](planet.md) — `/api/planet/{planet_id}/*` (shield, raid) plus `/api/planet/list/*`
+- [`guild.md`](guild.md) — `/api/guild/*` (directory, roster, power-stats, etc.) plus `/api/guild/list/*`
+- [`struct.md`](struct.md) — `/api/struct/*` (player, planet, type, single struct) plus `/api/struct/list/*`
+- [`ledger.md`](ledger.md) — `/api/ledger/{tx_id}` and `/api/ledger/player/*` plus `/api/ledger/list/*`
+- [`infusion.md`](infusion.md) — `/api/infusion/player/*` plus `/api/infusion/list/*`
+- [`system.md`](system.md) — `/api/timestamp` and other system endpoints
 
-**To get Player webapp endpoints**:
-- Load: `api/webapp/player.md` (~100 lines)
-- Contains: Only Player webapp endpoints
-- **Savings**: 91% reduction (1050 lines saved)
+### Catalog read endpoints (one entity per file)
+
+Uniform paginated reads under `/api/{entity}[/{filter}]/page/{page}`. See `protocols/webapp-api-protocol.md` for the catalog conventions.
+
+- [`address-tag.md`](address-tag.md) — `/api/address-tag/*`
+- [`agreement.md`](agreement.md) — `/api/agreement/*`
+- [`allocation.md`](allocation.md) — `/api/allocation/*`
+- [`banned-word.md`](banned-word.md) — `/api/banned-word/all/page/{page}`
+- [`defusion.md`](defusion.md) — `/api/defusion/*`
+- [`fleet.md`](fleet.md) — `/api/fleet/list/*`
+- [`grid.md`](grid.md) — `/api/grid/*`
+- [`guild-membership-application.md`](guild-membership-application.md) — `/api/guild-membership-application/*`
+- [`permission.md`](permission.md) — `/api/permission/*`
+- [`permission-guild-rank.md`](permission-guild-rank.md) — `/api/permission-guild-rank/*`
+- [`planet-activity.md`](planet-activity.md) — `/api/planet-activity/*`
+- [`planet-attribute.md`](planet-attribute.md) — `/api/planet-attribute/*`
+- [`provider.md`](provider.md) — `/api/provider/*`
+- [`reactor.md`](reactor.md) — `/api/reactor/*`
+- [`substation.md`](substation.md) — `/api/substation/*`
+- [`struct-attribute.md`](struct-attribute.md) — `/api/struct-attribute/*`
+- [`struct-defender.md`](struct-defender.md) — `/api/struct-defender/*`
+
+### Other
+
+- [`setting.md`](setting.md) — `/api/setting` (one-shot snapshot of live tunables)
+- [`stat.md`](stat.md) — `/api/stat/{metric}/object/{object_key}/range/page/{page}` with `?start_time=&end_time=`
 
 ---
 
-## Usage
+## Loading Strategy
 
-### Loading Entity Webapp Endpoints
-
-```json
-{
-  "load": "api/webapp/player.md"
-}
-```
-
-### Loading Multiple Entities
-
-```json
-{
-  "load": [
-    "api/webapp/player.md",
-    "api/webapp/planet.md"
-  ]
-}
-```
+Load just the file matching the entity you are working with. Example: when monitoring raids, load [`planet.md`](planet.md) and [`planet-activity.md`](planet-activity.md), not the entire catalog.
 
 ---
 
 ## Related Documentation
 
-- **Main Endpoints**: `../endpoints.md` - Complete endpoint catalog (index)
-- **Queries**: `../queries/` - Query endpoints
-- **Transactions**: `../transactions/` - Transaction endpoints
-- **Protocol**: `../../protocols/webapp-api-protocol.md` - Webapp API usage guide
-- **Loading Strategy**: `../../LOADING_STRATEGY.md` - How to load efficiently
-
----
-
-*Last Updated: January 1, 2026*
-
+- `../endpoints.md` — Master endpoint catalog (chain queries, transactions, webapp)
+- `../queries/` — Chain query endpoints
+- `../transactions/` — Chain transaction endpoints
+- `../../protocols/webapp-api-protocol.md` — Catalog conventions, error envelope, pagination
+- `../../knowledge/infrastructure/database-schema.md` — Backing PostgreSQL tables

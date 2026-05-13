@@ -73,10 +73,10 @@ Join a guild that supports programmatic signup. The bundled `create-player.mjs` 
 The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
 
 ```
-curl http://reactor.oh.energy:1317/structs/guild
+curl https://public.testnet.structs.network/structs/guild
 ```
 
-`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild).
+`public.testnet.structs.network` is a public testnet node served over SSL. Any other reachable `structsd` REST endpoint works the same.
 
 **2. Get the guild's API endpoint**
 
@@ -94,8 +94,8 @@ Example guild config:
     "tag": "OH",
     "services": {
       "guild_api": "http://crew.oh.energy/api/",
-      "reactor_api": "http://reactor.oh.energy:1317/",
-      "client_websocket": "ws://reactor.oh.energy:26657"
+      "reactor_api": "https://public.testnet.structs.network/",
+      "client_websocket": "wss://public.testnet.structs.network:26657/websocket"
     }
   }
 }
@@ -115,7 +115,7 @@ Then run (from workspace root):
 node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-id "0-1" \
   --guild-api "http://crew.oh.energy/api/" \
-  --reactor-api "http://reactor.oh.energy:1317" \
+  --reactor-api "https://public.testnet.structs.network" \
   --username "your-chosen-name" \
   --pfp "ipfs://bafy..."
 ```

@@ -1,15 +1,19 @@
 # Web Application API Protocol
 
-**Version**: 1.1.0  
-**Category**: Query  
-**Status**: Stable  
-**Last Updated**: January 1, 2026
+**Category**: Query
+**Status**: Stable
+**Last Updated**: May 13, 2026
 
 ## Overview
 
-The Web Application API Protocol defines how AI agents should interact with the `structs-webapp` service. This API provides enhanced game state information, player statistics, guild data, and authentication services.
+The Web Application API Protocol defines how AI agents should interact with the `structs-webapp` service. This API provides enhanced game state information, player statistics, guild data, paginated catalog reads, live tunables, time-series stats, and authentication services.
 
-**Implementation**: The webapp API is implemented in a PHP Symfony application (`structs-webapp`). This is the main user-facing API for the game.
+**Implementation**: The webapp API is implemented in a PHP Symfony application ([`structs-webapp`](https://github.com/playstructs/structs-webapp)). This is the main user-facing API for the game.
+
+The surface has two layers:
+
+1. **Bespoke entity endpoints** — return joined / aggregated objects for common UI flows (e.g. `/api/player/{player_id}` returns the player + reactor staking summary; `/api/planet/{planet_id}/shield/health` returns the planet shield).
+2. **Catalog read endpoints** — uniform paginated lists under `/api/{entity}[/{filter}]/page/{page}`. Use these when iterating, syncing, or analysing rather than rendering a single screen.
 
 ## Base Configuration
 
@@ -25,6 +29,8 @@ The Web Application API Protocol defines how AI agents should interact with the 
   }
 }
 ```
+
+For the public Orbital Hydro guild webapp use `http://crew.oh.energy` as the base URL.
 
 ## Authentication
 
@@ -253,6 +259,74 @@ The webapp uses session-based authentication via cookies.
 }
 ```
 
+### Pattern 7: Catalog Read
+
+**Use Case**: Iterate or scan rows for any catalog entity (player, planet, struct, allocation, agreement, agreement, defusion, fleet, grid, infusion, ledger, permission, permission-guild-rank, planet-activity, planet-attribute, provider, reactor, struct-attribute, struct-defender, substation, address-tag, banned-word, guild-membership-application).
+
+**Format**: `GET /api/{entity}[/{filter_name}/{filter_value}]/page/{page}`
+
+Conventions:
+
+- `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
+- Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all/page/1`, `/api/permission-guild-rank/object/{object_id}/page/1`).
+- For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
+
+**Example**:
+
+```json
+{
+  "request": {
+    "method": "GET",
+    "url": "/api/allocation/source/4-1/page/1"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "rows": [...],
+      "page": 1,
+      "page_size": 100
+    }
+  }
+}
+```
+
+### Pattern 8: Time-Series Stats
+
+**Use Case**: Pull a metric for one object across a time window.
+
+**Format**: `GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix_seconds}&end_time={unix_seconds}`
+
+**Example**:
+
+```json
+{
+  "request": {
+    "method": "GET",
+    "url": "/api/stat/power/object/1-11/range/page/1?start_time=1715000000&end_time=1715600000"
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "rows": [
+        { "ts": 1715000300, "value": 1024 },
+        { "ts": 1715000600, "value": 1018 }
+      ],
+      "page": 1
+    }
+  }
+}
+```
+
+If `start_time` or `end_time` is missing, the endpoint returns `400 Bad Request` with `errors.start_time_end_time_required` set to `start_time and end_time query params are required (unix seconds)`.
+
+### Pattern 9: Live Tunables
+
+**Use Case**: Read the chain's economy/gameplay constants once at startup.
+
+**Format**: `GET /api/setting`
+
+Returns every entry from the `setting` table as a name/value map. Treat the response as an open-ended map — new keys are added over time. Known keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`.
+
 ## Error Handling
 
 ### Standard Error Response
@@ -325,6 +399,10 @@ The webapp uses session-based authentication via cookies.
 - Ledger/transaction history
 - Search functionality (raids, transfers)
 - Authentication and user management
+- **Catalog reads** (paginated lists per entity, joined with metadata) when you would otherwise reach into the chain's `pagination.key` API
+- **Time-series stats** for one object across a time window
+- **Live tunables** (`/api/setting`) — chain constants without parameter queries
+- **Banned word list** to preflight UGC name validation client-side
 
 ### When to Use Consensus API
 
@@ -390,12 +468,15 @@ The webapp uses session-based authentication via cookies.
     "guildCount": {
       "ttl": 60,
       "endpoint": "/api/guild/count"
+    },
+    "settings": {
+      "ttl": 300,
+      "endpoint": "/api/setting"
+    },
+    "bannedWords": {
+      "ttl": 300,
+      "endpoint": "/api/banned-word/all/page/1"
     }
   }
 }
 ```
-
----
-
-*Last Updated: January 1, 2026*
-

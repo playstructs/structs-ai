@@ -13,8 +13,8 @@
 // Outputs a single JSON object to stdout with mnemonic, address, pubkey, player_id.
 //
 // Usage:
-//   node create-player.mjs --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "http://reactor.oh.energy:1317"
-//   node create-player.mjs --mnemonic "word1 word2 ..." --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "http://reactor.oh.energy:1317" --username "my-agent" --pfp "ipfs://bafy..."
+//   node create-player.mjs --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "https://public.testnet.structs.network"
+//   node create-player.mjs --mnemonic "word1 word2 ..." --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "https://public.testnet.structs.network" --username "my-agent" --pfp "ipfs://bafy..."
 //
 // As of structsd v0.16.0, the guild API forwards `username` and `pfp` to the
 // chain via MsgGuildMembershipJoinProxy.playerName / playerPfp, so the chain
@@ -225,7 +225,7 @@ async function main() {
   if (!args.guildId || !args.guildApi || !args.reactorApi) {
     fail({
       error: "Missing required arguments: --guild-id, --guild-api, --reactor-api",
-      usage: 'node create-player.mjs --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "http://reactor.oh.energy:1317" [--mnemonic "..."] [--username "name"] [--pfp "ipfs://..."] [--timeout 120]'
+      usage: 'node create-player.mjs --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "https://public.testnet.structs.network" [--mnemonic "..."] [--username "name"] [--pfp "ipfs://..."] [--timeout 120]'
     });
   }
 

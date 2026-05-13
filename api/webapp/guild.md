@@ -1,10 +1,9 @@
 # Webapp Guild API Endpoints
 
-**Version**: 1.1.0
 **Category**: webapp
 **Entity**: Guild
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: January 1, 2026
+**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
+**Last Updated**: May 13, 2026
 
 ---
 
@@ -22,6 +21,12 @@
 | GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | No |
 | GET | `/api/guild/{guild_id}/roster` | Get guild roster | No |
 | GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | No |
+| GET | `/api/guild/list/all/page/{page}` | Catalog list of every guild | No |
+| GET | `/api/guild/list/primary-reactor/{primary_reactor_id}/page/{page}` | List guilds by primary reactor | No |
+| GET | `/api/guild/list/entry-substation/{entry_substation_id}/page/{page}` | List guilds by entry substation | No |
+| GET | `/api/guild/list/owner/{owner}/page/{page}` | List guilds by owning player | No |
+
+Guild membership applications live in [`guild-membership-application.md`](guild-membership-application.md).
 
 ---
 
@@ -174,4 +179,63 @@ Get completed planet count for guild.
 
 ---
 
-*Last Updated: January 1, 2026*
+### GET `/api/guild/list/all/page/{page}`
+
+Catalog list of every guild on the chain, paginated.
+
+- **ID**: `webapp-guild-list-all`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
+
+---
+
+### GET `/api/guild/list/primary-reactor/{primary_reactor_id}/page/{page}`
+
+List guilds whose primary reactor matches the given reactor.
+
+- **ID**: `webapp-guild-list-by-primary-reactor`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `primary_reactor_id` | string | Yes | reactor-id | Reactor identifier (e.g. `3-1`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+### GET `/api/guild/list/entry-substation/{entry_substation_id}/page/{page}`
+
+List guilds that route new members through the given entry substation.
+
+- **ID**: `webapp-guild-list-by-entry-substation`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `entry_substation_id` | string | Yes | substation-id | Substation identifier (e.g. `4-1`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+### GET `/api/guild/list/owner/{owner}/page/{page}`
+
+List guilds by owning player.
+
+- **ID**: `webapp-guild-list-by-owner`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `owner` | string | Yes | player-id | Owning player identifier (e.g. `1-11`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+The `/api/guild/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).

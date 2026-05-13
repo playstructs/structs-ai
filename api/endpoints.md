@@ -1,23 +1,28 @@
 # API Endpoints
 
-**Version**: 1.0.0
-**Last Updated**: 2025-01-XX
+**Last Updated**: May 13, 2026
 
 ---
 
 ## Base URLs
 
-| API | Base URL | Base Path |
-|-----|----------|-----------|
-| Consensus Network | `http://localhost:1317` | `/structs` |
-| Web Application | `http://localhost:8080` | `/api` |
-| RPC | `http://localhost:26657` | `/` |
+| API | Local | Public testnet (SSL) |
+|-----|-------|----------------------|
+| Consensus Network REST (`/structs/...`) | `http://localhost:1317` | `https://public.testnet.structs.network` |
+| Tendermint RPC (`/`) | `http://localhost:26657` | `https://public.testnet.structs.network:26657` |
+| Tendermint WebSocket | `ws://localhost:26657/websocket` | `wss://public.testnet.structs.network:26657/websocket` |
+| Web Application (`/api`) | `http://localhost:8080` | `http://crew.oh.energy` (Orbital Hydro) |
+| GRASS NATS WebSocket | `ws://localhost:1443` | `ws://crew.oh.energy:1443` (Orbital Hydro) |
+
+`public.testnet.structs.network` runs only `structsd` (chain). The Web Application and GRASS NATS services are hosted by individual guilds.
+
+For the full per-entity catalog read surface (paginated lists for every entity, time-series stats, live tunables, banned-word list, guild membership applications, etc.) see [`webapp/`](webapp/).
 
 ---
 
 ## Query Endpoints (Consensus Network)
 
-All query endpoints use the Consensus Network API (`http://localhost:1317`).
+All query endpoints use the Consensus Network REST API (`http://localhost:1317` locally or `https://public.testnet.structs.network` on the public testnet).
 
 ### Player Queries
 
@@ -385,7 +390,11 @@ Response schema: `schemas/responses.md#TransactionResponse`
 
 ## Web Application API Endpoints
 
-All webapp endpoints use the Web Application API (`http://localhost:8080`).
+All webapp endpoints use the Web Application API (`http://localhost:8080` locally or `http://crew.oh.energy` for the public Orbital Hydro guild webapp). Authoritative reference: per-entity files in [`webapp/`](webapp/).
+
+### Catalog Read Surface
+
+In addition to the bespoke endpoints below, the webapp exposes a uniform catalog read surface — paginated `GET /api/{entity}[/{filter}]/page/{page}` for: `address-tag`, `agreement`, `allocation`, `banned-word`, `defusion`, `fleet/list`, `grid`, `guild/list`, `guild-membership-application`, `infusion/list`, `ledger/list`, `permission`, `permission-guild-rank`, `planet/list`, `planet-activity`, `planet-attribute`, `player/list`, `provider`, `reactor`, `struct/list`, `struct-attribute`, `struct-defender`, `substation`. Plus `GET /api/setting` (live tunables) and `GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time=&end_time=` (time-series stats). See [`webapp/`](webapp/) for per-entity detail and [`../protocols/webapp-api-protocol.md`](../protocols/webapp-api-protocol.md) for the catalog conventions.
 
 ### Player Endpoints
 

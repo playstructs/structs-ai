@@ -214,7 +214,14 @@ Per-entity query endpoints: [address](api/queries/address.md), [agreement](api/q
 
 ### Webapp API (`api/webapp/`)
 
-Webapp-specific endpoints: [auth](api/webapp/auth.md), [guild](api/webapp/guild.md), [infusion](api/webapp/infusion.md), [ledger](api/webapp/ledger.md), [planet](api/webapp/planet.md), [player](api/webapp/player.md), [struct](api/webapp/struct.md), [system](api/webapp/system.md)
+Webapp endpoints split per entity (load only what you need):
+
+- **Bespoke entity endpoints** (joined / aggregated objects): [auth](api/webapp/auth.md), [guild](api/webapp/guild.md), [infusion](api/webapp/infusion.md), [ledger](api/webapp/ledger.md), [planet](api/webapp/planet.md), [player](api/webapp/player.md), [struct](api/webapp/struct.md), [system](api/webapp/system.md)
+- **Catalog read endpoints** (paginated lists per entity): [address-tag](api/webapp/address-tag.md), [agreement](api/webapp/agreement.md), [allocation](api/webapp/allocation.md), [banned-word](api/webapp/banned-word.md), [defusion](api/webapp/defusion.md), [fleet](api/webapp/fleet.md), [grid](api/webapp/grid.md), [guild-membership-application](api/webapp/guild-membership-application.md), [permission](api/webapp/permission.md), [permission-guild-rank](api/webapp/permission-guild-rank.md), [planet-activity](api/webapp/planet-activity.md), [planet-attribute](api/webapp/planet-attribute.md), [provider](api/webapp/provider.md), [reactor](api/webapp/reactor.md), [substation](api/webapp/substation.md), [struct-attribute](api/webapp/struct-attribute.md), [struct-defender](api/webapp/struct-defender.md)
+- **Live tunables and stats**: [setting](api/webapp/setting.md), [stat](api/webapp/stat.md)
+- **Index**: [README.md](api/webapp/README.md)
+
+Reference node for chain queries (REST + Tendermint RPC) is `https://public.testnet.structs.network` (SSL); Guild API and GRASS NATS WebSocket are hosted by individual guilds (e.g. `http://crew.oh.energy` / `ws://crew.oh.energy:1443` for Orbital Hydro).
 
 ---
 

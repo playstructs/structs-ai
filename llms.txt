@@ -122,6 +122,7 @@
 
 - [API Endpoints](https://structs.ai/api/endpoints): REST API specification
 - [API Queries by Entity](https://structs.ai/api/endpoints-by-entity): Entity-specific query endpoints
+- [Webapp API Index](https://structs.ai/api/webapp/README): Per-entity webapp endpoints (catalog reads, settings, stats)
 - [Streaming Events](https://structs.ai/api/streaming/event-types): Real-time event types
 - [Schema Entities](https://structs.ai/schemas/entities): JSON schema definitions
 - [Schema Formats](https://structs.ai/schemas/formats): ID format specifications
@@ -130,5 +131,8 @@
 - [Error Codes](https://structs.ai/api/error-codes): Error code catalog
 - [Action Reference](https://structs.ai/reference/action-quick-reference): Quick action lookup
 - [Endpoint Index](https://structs.ai/reference/endpoint-index): Full endpoint index
+- [API Quick Reference](https://structs.ai/reference/api-quick-reference): SSL chain endpoints + catalog read shortcuts
+- [Webapp Protocol](https://structs.ai/protocols/webapp-api-protocol): Catalog conventions, time-series stats, live tunables
 - [Patterns](https://structs.ai/patterns/QUICK_REFERENCE): Implementation patterns (caching, retry, rate limiting)
 - [Decision Trees](https://structs.ai/patterns/decision-tree-5x-framework): Strategic decision frameworks
+- [Changelog](https://structs.ai/CHANGELOG): Documentation history

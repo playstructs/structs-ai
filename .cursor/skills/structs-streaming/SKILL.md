@@ -26,7 +26,7 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 
 The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.
 
-1. Query the guild list: `curl http://reactor.oh.energy:1317/structs/guild`
+1. Query the guild list: `curl https://public.testnet.structs.network/structs/guild`
 2. Follow the guild's `endpoint` URL to get its config
 3. Look for `services.grass_nats_websocket`
 
@@ -37,14 +37,18 @@ Example (Orbital Hydro guild):
   "services": {
     "grass_nats_websocket": "ws://crew.oh.energy:1443",
     "guild_api": "http://crew.oh.energy/api/",
-    "reactor_api": "http://reactor.oh.energy:1317/"
+    "reactor_api": "https://public.testnet.structs.network/"
   }
 }
 ```
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja).
+A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja). GRASS is hosted by individual guilds and is currently HTTP only — do not rewrite to `wss://`.
+
+### Tendermint WebSocket vs GRASS
+
+These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries game-level events. Tendermint's own WebSocket at `wss://public.testnet.structs.network:26657/websocket` carries chain events (txs, blocks, validator updates). Use Tendermint subscriptions when you need to audit `ugc_moderated` or other untyped chain events that GRASS does not republish.
 
 ---
 
@@ -366,7 +370,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### Quick Setup
 
-1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`)
+1. Get the GRASS endpoint from your guild config (or use `ws://crew.oh.energy:1443`). For chain queries you can use the SSL endpoint `https://public.testnet.structs.network/structs/guild`.
 2. Record the endpoint in [TOOLS.md](https://structs.ai/TOOLS) under Servers
 3. Choose your language (Node.js or Python)
 4. Install the NATS client library (`nats.ws` for Node, `nats-py` for Python)

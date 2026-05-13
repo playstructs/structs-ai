@@ -51,11 +51,14 @@ The guild stack is optional -- CLI commands via a remote node work for basic gam
 
 ## Reference Node
 
-`reactor.oh.energy` is a reliable Structs network node run by the Slow Ninja team (Orbital Hydro guild). Use it for queries when no local node is available:
+`public.testnet.structs.network` is a public Structs testnet node served over SSL. Use it for queries when no local node is available — the SSL endpoint avoids mixed-content and CORS issues that plagued the older HTTP testnet hosts.
 
-- **Consensus API**: `http://reactor.oh.energy:1317`
-- **WebSocket**: `ws://reactor.oh.energy:26657`
-- **Guild list**: `http://reactor.oh.energy:1317/structs/guild`
+- **Consensus API**: `https://public.testnet.structs.network`
+- **Tendermint RPC**: `https://public.testnet.structs.network:26657`
+- **Tendermint WebSocket**: `wss://public.testnet.structs.network:26657/websocket`
+- **Guild list**: `https://public.testnet.structs.network/structs/guild`
+
+This node runs only `structsd` (chain). Guild API and GRASS NATS WebSocket services are hosted by individual guilds — see the guild config you fetch from `/structs/guild`.
 
 ---
 
@@ -67,16 +70,16 @@ By default, `structsd` commands connect to `localhost:26657`. If you are not run
 
 ```
 broadcast-mode = "sync"
-chain-id = "structstestnet-111"
+chain-id = "structstestnet-112"
 keyring-backend = "test"
-node = "tcp://reactor.oh.energy:26657"
+node = "https://public.testnet.structs.network:26657"
 output = "text"
 ```
 
 **Option 2: Per-command flag** for one-off queries:
 
 ```
-structsd query structs player 1-11 --node tcp://reactor.oh.energy:26657
+structsd query structs player 1-11 --node https://public.testnet.structs.network:26657
 ```
 
 If you see connection errors like "connection refused" on port 26657, you need to configure this.
@@ -114,7 +117,7 @@ To find your player ID from your address: `structsd query structs address [your-
 **Role:**
 **Central Bank Status:**
 
-To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl http://reactor.oh.energy:1317/structs/guild`
+To discover available guilds and their configs, see the onboarding skill's guild signup section or query: `curl https://public.testnet.structs.network/structs/guild`
 
 ---
 

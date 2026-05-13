@@ -1,10 +1,9 @@
 # Webapp Planet API Endpoints
 
-**Version**: 1.1.0
 **Category**: webapp
 **Entity**: Planet
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: January 1, 2026
+**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
+**Last Updated**: May 13, 2026
 
 ---
 
@@ -17,6 +16,10 @@
 | GET | `/api/planet/{planet_id}/shield` | Get planet shield information | No |
 | GET | `/api/planet/{planet_id}/raid/active` | Get active raid for planet | No |
 | GET | `/api/planet/raid/active/fleet/{fleet_id}` | Get active raid for fleet | No |
+| GET | `/api/planet/list/all/page/{page}` | Catalog list of all planets, paginated | No |
+| GET | `/api/planet/list/owner/{owner}/page/{page}` | Catalog list of planets owned by a player | No |
+
+Planet activity (`planet_activity`, including `struct_health` rows) and per-planet attribute reads live in [`planet-activity.md`](planet-activity.md) and [`planet-attribute.md`](planet-attribute.md).
 
 ---
 
@@ -125,6 +128,35 @@ Get active raid for fleet.
 
 ---
 
+### GET `/api/planet/list/all/page/{page}`
+
+Catalog list of every planet on the chain, paginated.
+
+- **ID**: `webapp-planet-list-all`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
+
+---
+
+### GET `/api/planet/list/owner/{owner}/page/{page}`
+
+Catalog list of planets owned by a player.
+
+- **ID**: `webapp-planet-list-by-owner`
+
+#### Parameters
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `owner` | string | Yes | player-id | Owning player identifier (e.g. `1-11`) |
+| `page` | integer | Yes | `\d+` | Page number |
+
+---
+
 ## Response Schema
 
 Raid responses include the `attackerRetreated` status:
@@ -140,6 +172,4 @@ Raid responses include the `attackerRetreated` status:
 }
 ```
 
----
-
-*Last Updated: January 1, 2026*
+The `/api/planet/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).

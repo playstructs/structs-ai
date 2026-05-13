@@ -5,6 +5,25 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-05-13
+
+### Added
+
+- **Public SSL chain endpoint** documented as the canonical example for chain queries: `https://public.testnet.structs.network` (REST) and `https://public.testnet.structs.network:26657` (Tendermint RPC; `wss://...:26657/websocket` for the Tendermint WebSocket). The new endpoint avoids mixed-content and CORS issues that occurred when calling `http://reactor.oh.energy:1317` from HTTPS contexts. The Guild API (`http://crew.oh.energy/api/`) and GRASS NATS WebSocket (`ws://crew.oh.energy:1443`) remain hosted by individual guilds and are unchanged.
+- **Webapp catalog read API**: 19 new per-entity files in [`api/webapp/`](api/webapp/) covering the `CatalogReadController` family (`address-tag`, `agreement`, `allocation`, `banned-word`, `defusion`, `fleet/list`, `grid`, `guild-membership-application`, `permission`, `permission-guild-rank`, `planet-activity`, `planet-attribute`, `provider`, `reactor`, `substation`, `struct-attribute`, `struct-defender`) plus `setting` (live tunables) and `stat` (time-series range queries). Existing per-entity files (`player.md`, `planet.md`, `guild.md`, `struct.md`, `ledger.md`, `infusion.md`) extended with their corresponding `/list/...` catalog endpoints.
+- **Webapp protocol additions** in [`protocols/webapp-api-protocol.md`](protocols/webapp-api-protocol.md): catalog-read pattern, time-series stats pattern, live-tunables pattern, kebab-case naming, the `/list/` namespacing rule that prevents the catalog list from shadowing single-id routes, and the `?start_time=&end_time=` (unix seconds) query convention.
+- **structs-pg schema additions** in [`knowledge/infrastructure/database-schema.md`](knowledge/infrastructure/database-schema.md): new tables `structs.banned_word`, `structs.address_tag` (with the `(label, entry)` reverse-lookup index), `structs.setting` (seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`), `structs.defusion` (with the `CLEAN_DEFUSION()` cron), aggregated views `view.guild_bank`, `view.leaderboard_guild`, `view.leaderboard_player`, and the `planet.seized_ore` column. [`knowledge/infrastructure/guild-stack.md`](knowledge/infrastructure/guild-stack.md) gained a one-paragraph note that the PG schema is owned by `structs-pg` and applied with Sqitch (initial deploy by `structs-pg-init`, ongoing by `structs-pg-auto-migrate`).
+
+### Changed
+
+- **Reference node** in [`TOOLS.md`](TOOLS.md) switched to `https://public.testnet.structs.network` and the SSL Tendermint URL (`wss://...:26657/websocket`). Skills (`play-structs`, `structs-onboarding`, `structs-streaming`) and the `create-player.mjs` script header / usage strings updated to match.
+- **Endpoint indexes** ([`api/endpoints.md`](api/endpoints.md), [`reference/endpoint-index.md`](reference/endpoint-index.md), [`reference/endpoint-quick-lookup.md`](reference/endpoint-quick-lookup.md), [`reference/api-quick-reference.md`](reference/api-quick-reference.md), [`api/webapp/README.md`](api/webapp/README.md)) refreshed to register the new webapp endpoints and the SSL chain hosts. Stale per-doc "Version" pins removed in favour of `Last Updated` dates only — these documents represent current truth, not versioned history.
+- **structsd v0.16 wording reconciled**: documented the fact that there is no `MsgGuildModerate*` message in `tx.proto`. Moderation is the same `Msg*UpdateName` / `Msg*UpdatePfp` chain message, gated by `PermGuildUGCUpdate` (bit 24) on the target owner's guild when actor != owner, and the chain emits a `ugc_moderated` Cosmos event for audit. The 1.7.0 entry below references "Guild moderation overrides: `MsgGuildModeratePlayerName/Pfp` ..." — those names refer to `tx_guild_moderate_*` PL/pgSQL wrappers in the **signer** layer (which queue the same `Msg*Update*` chain message after a `PermGuildUGCUpdate` preflight), not to chain message types. [`knowledge/infrastructure/database-schema.md`](knowledge/infrastructure/database-schema.md) reworded the `signer.tx_*` wrapper section to make this explicit.
+
+### Removed
+
+- Per-file "Version: 1.x.0" pins on touched documentation files. The repo now expresses freshness only via `Last Updated` dates on the file and via this `CHANGELOG.md`.
+
 ## [1.7.0] - 2026-04-28
 
 ### Added - v0.16.0 (Quantillia) / structstestnet-112
