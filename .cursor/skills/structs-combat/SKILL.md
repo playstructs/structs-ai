@@ -13,7 +13,7 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 
 - **`struct-attack`** single-target (Tier 1) — *"Confirm the target ID before firing. The chain will not stop you from attacking a guild-mate."* Surface target ID(s), the weapon system, and the expected counter-attack ambit.
 - **`struct-attack`** multi-target across guild boundaries (Tier 2 — act of war) — *"An act of war. The targets' guilds may retaliate as a bloc. Always escalate."*
-- **`planet-raid-compute`** (Tier 1 + expedition) — *"A committed expedition. Your fleet locks 'away' while the proof grinds, and the completion transaction submits itself on landing. You cannot build on your planet during this window."* Secure your planet before launching; the auto-submit may invite retaliation.
+- **`planet-raid-compute`** (Tier 1 + expedition) — *"A committed expedition. Your fleet locks 'away' while the proof grinds, and the completion transaction submits itself on landing. You cannot build on your planet during this window."* Secure your planet before launching; the auto-submit may invite retaliation. On reconnect, walk the four-state flow in [`awareness/async-operations`](https://structs.ai/awareness/async-operations#reconnecting-to-a-long-job) before launching anything new — a raid you forgot about may have completed (or failed) since.
 - **`fleet-move`** to scouted destination (Tier 1) / to unscouted hostile space (Tier 2) — *"Instant transit. Verify the destination."*
 - **`struct-stealth-activate`** before raids (Tier 0) — routine misdirection; attacking deactivates stealth automatically.
 

@@ -76,10 +76,11 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 When resuming:
 
 1. Read `memory/YYYY-MM-DD-HHMM-context-handoff.md`
-2. Read [Continuity](continuity.md) startup files: `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `TOOLS.md`
-3. Run [State Assessment](state-assessment.md) to refresh game state (handoff may be stale)
-4. Execute resume command or adapt if state changed
-5. Continue [Game Loop](game-loop.md)
+2. Read [Continuity](continuity.md) startup files: `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `TOOLS.md`, `SAFETY.md`
+3. **Verify long-running compute jobs first.** Before assessing strategy, run the four-state flow in [Async Operations § Reconnecting to a Long Job](async-operations.md#reconnecting-to-a-long-job) on every entry in `memory/jobs/`. A job marked "running" in the handoff may have died, completed, or silently failed in the gap between sessions.
+4. Run [State Assessment](state-assessment.md) to refresh game state (handoff may be stale)
+5. Execute resume command or adapt if state changed
+6. Continue [Game Loop](game-loop.md)
 
 ---
 

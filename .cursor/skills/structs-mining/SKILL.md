@@ -14,6 +14,7 @@ Mining and refining are **expeditions** — long-running background jobs that au
 - **`struct-ore-mine-compute`** (Tier 1 + expedition) — *"An expedition. The extractor hashes the planet for ~17 hours, then transmits completion back to the chain on its own."* Log the PID to `memory/jobs/`; recall with `kill <pid>` if the situation changes.
 - **`struct-ore-refine-compute`** (Tier 1 + expedition) — *"~34 hours of grinding. The completion transaction is deferred consent — re-verify game state when it lands."* If your planet was raided mid-refine, your original approval may be stale.
 - **Auto-submission risk** — the compute helper signs and broadcasts the complete transaction automatically. If you cannot guarantee the original consent will still be valid in 17-34 hours, treat the launch as Tier 2 and escalate.
+- **Reconnect protocol** — if you resume a session with a mine or refine still listed as "running" in `memory/jobs/`, walk the four-state flow in [`awareness/async-operations`](https://structs.ai/awareness/async-operations#reconnecting-to-a-long-job) **before** doing anything else. A "running" PID may have died, succeeded, or failed silently.
 
 ## Procedure
 

@@ -5,6 +5,22 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2026-05-13
+
+### Added
+
+- **["Reconnecting to a Long Job" four-state flow](awareness/async-operations.md#reconnecting-to-a-long-job)** in [`awareness/async-operations.md`](awareness/async-operations.md) — when a new session inherits a "running" job in `memory/jobs/`, the agent now has a procedure (alive PID? landed on chain? state matches expectation? silent-failure diagnosis?) instead of a one-line aspiration. Includes a `nohup ... > memory/jobs/<job>.log 2>&1 & echo $! > memory/jobs/<job>.pid` template so each expedition leaves a paper trail, and a re-verify-consent checklist for refines specifically (the 34h window is the worst-case staleness gap).
+- **Top-of-skill safety surface** in [`play-structs`](.cursor/skills/play-structs/SKILL.md) — a new "Before You Sign Anything" callout above Step 1 introduces the tier framework and links [SAFETY.md](SAFETY.md) and [COMMANDER.md](COMMANDER.md) **before** the first transaction example. Also adds reconnect and SAFETY reminders to the skill's "What You Need to Know" section.
+
+### Changed
+
+- [`awareness/context-handoff.md`](awareness/context-handoff.md) — resume protocol now includes `SAFETY.md` in the startup-read list and inserts a dedicated "verify long-running compute jobs first" step (pointing at the new four-state flow) before strategic state assessment.
+- [`structs-mining`](.cursor/skills/structs-mining/SKILL.md), [`structs-building`](.cursor/skills/structs-building/SKILL.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) — Safety callouts now point at the reconnect flow at the point of need, so an agent reading the skill in the middle of a problem finds the verification procedure without bouncing back to async-operations.
+
+### Context
+
+Skilled-player feedback on the 1.10.0 ship: two real gaps. (1) The 34-hour refinery window leaves agents stranded when they reconnect — `memory/jobs/` was the persistence pattern, but no procedure told them how to *verify* what happened in the gap. (2) [`play-structs`](.cursor/skills/play-structs/SKILL.md) was supposed to be the entry-point skill but only mentioned safety in "See Also" at the bottom — new agents could run 180 lines of commands before encountering the tier framework. Both addressed.
+
 ## [1.10.0] - 2026-05-13
 
 ### Added

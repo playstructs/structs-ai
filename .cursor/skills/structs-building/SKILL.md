@@ -12,7 +12,7 @@ description: Builds and manages structures in Structs. Handles construction, act
 See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill:
 
 - **`struct-build-initiate`** (Tier 0 for cheap structs; Tier 1 for long PoW like World Engine, Ore Bunker, PDC) — short builds (Command Ship, Starfighter, Ore Extractor, Refinery) are routine; anything > 1 hour to D=3 is a battle order.
-- **`struct-build-compute`** (Tier 1 + expedition) — *"The build hashes for up to ~6.4 hours and auto-activates on completion."* Log the PID to `memory/jobs/`; recall with `kill <pid>` if needed.
+- **`struct-build-compute`** (Tier 1 + expedition) — *"The build hashes for up to ~6.4 hours and auto-activates on completion."* Log the PID to `memory/jobs/`; recall with `kill <pid>` if needed. On reconnect, walk the four-state flow in [`awareness/async-operations`](https://structs.ai/awareness/async-operations#reconnecting-to-a-long-job) before launching anything new.
 - **`struct-generator-infuse`** (Tier 2 — irreversible) — *"Alpha Matter is annihilated in the conversion. The energy is yours; the matter is gone. There is no defusion. And the generator is raidable — if it falls, the infused matter falls with it."* Always escalate, regardless of autonomy. Confirm the generator's defense posture before infusing.
 - **`struct-deactivate`** of revenue-bearing structs (Tier 1) — taking an Extractor or Refinery offline halts your resource pipeline.
 

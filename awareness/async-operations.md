@@ -143,7 +143,76 @@ Maintain `memory/jobs.md` to track all background PoW across sessions:
 | J0 | 5-714 | build | 23000 | success |
 ```
 
-Update this file every game loop tick. On session resume, check all "running" jobs immediately — they may have completed while you were away.
+Update this file every game loop tick. On session resume, check all "running" jobs immediately using the procedure below — they may have completed, failed silently, or still be in flight.
+
+---
+
+## Reconnecting to a Long Job
+
+Compute jobs run for minutes to ~34 hours. When you start a new session — or your terminal disconnected and you reattached — every running job in `memory/jobs/` is in one of four states: **still computing**, **completed and submitted**, **completed but submit failed**, or **the process died**. Find out which before you do anything else.
+
+The four-state flowchart:
+
+```
+For each job in memory/jobs/ marked "running":
+
+  1. Is the PID still alive?        → ps -p <pid>
+       │
+       ├── ALIVE     → still computing. Cross-check ETA against current block.
+       │              If past ETA by > 30 min, attach the terminal (or read
+       │              memory/jobs/<job>.log) and look for stuck output.
+       │
+       └── DEAD      → step 2.
+
+  2. Did the auto-submit land on chain? Query the txhash if you logged one;
+     otherwise query the affected entity (struct/planet/fleet/player) for
+     the expected state delta:
+       │
+       ├── EXPECTED STATE   → Success. Mark complete in memory/jobs/.
+       │                     If a follow-up action was queued (e.g. refine
+       │                     after mine), start it now.
+       │
+       └── UNCHANGED STATE  → Submit failed silently. Step 3.
+
+  3. Diagnose the silent failure:
+       - Read memory/jobs/<job>.log for the last 50 lines
+       - Check chain status for the signing key: `structsd q tx --events 'message.sender=<addr>'`
+         (or query recent player activity in the guild stack)
+       - Most common causes:
+           • Sequence-number collision (another tx from the same key
+             went out concurrently) → just re-launch the compute
+           • Gas estimate too low for current chain load → re-launch
+             with a higher `--gas-adjustment`
+           • Game state changed (struct destroyed, planet released,
+             agreement closed) → original consent is stale; re-verify
+             before re-launching
+```
+
+### Suggested per-job log file
+
+Whenever you launch a compute in the background, capture its stdout/stderr so this verification flow has a paper trail:
+
+```
+nohup structsd tx structs struct-ore-refine-compute -D 3 \
+  --from agent-1-42 --gas auto --gas-adjustment 1.5 -y \
+  -- 5-103 \
+  > memory/jobs/refine-5-103.log 2>&1 &
+
+echo $! > memory/jobs/refine-5-103.pid
+```
+
+The `.log` file plus the `.pid` file plus a `memory/jobs/<job>.md` metadata entry is the minimum viable kit for verifying a long expedition across sessions.
+
+### Re-verifying the consent (especially for refines)
+
+A 34-hour refine is deferred consent. By the time the proof lands, your planet may have been raided, your fleet may have moved, your power may have shifted. Before letting the auto-submit land — or immediately after it does — re-check:
+
+- The refinery and extractor still belong to you
+- Your power posture still accepts the auto-activated state changes
+- No raid in flight is about to invalidate the result
+- The `--from` key is still primary on your player (no `address-revoke` happened)
+
+If the world has changed materially since you launched, the right action may be `kill <pid>` rather than letting the deferred submit go through. See [`SAFETY.md`](../SAFETY.md) "Background Expeditions" for the consent rule.
 
 ---
 
