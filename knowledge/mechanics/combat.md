@@ -167,7 +167,9 @@ A struct cannot block for a friendly in a different ambit. Blocking is strictly 
 
 Each struct can counter-attack **at most once per `struct-attack` invocation**. Counter-spent state is tracked per struct per attack command (not per target, not per shot). For a 3-shot Attack Run: the defender counters on the first shot only, but can attempt to block all 3 shots. The target counters once after all shots resolve.
 
-Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct.
+Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct. **Defenders do not take counter-attack damage** — only the original attacker and target can be damaged by counters.
+
+**Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only on-station fleet structs and planet-based structs can defend their home planet.
 
 | Scenario | Damage |
 |----------|--------|

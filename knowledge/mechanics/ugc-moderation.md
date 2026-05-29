@@ -75,7 +75,7 @@ Attributes:
 | `old_value` | The string the field held before this update |
 | `new_value` | The string the field now holds |
 
-The event is untyped (it uses `sdk.NewEvent`, not a typed protobuf event). Watch for it via Tendermint event subscriptions or by tailing block events. The PostgreSQL Guild Stack also surfaces the resulting `player_meta` / `guild_meta` UPDATEs as `player_meta` and `guild_meta` GRASS categories; planet and substation UGC changes surface only via the chain event for now.
+The PostgreSQL Guild Stack surfaces player UGC updates as `player_consensus` GRASS events when sync-state writes `username`/`pfp` to `structs.player`. Off-chain guild config changes surface as `guild_meta` events.
 
 ---
 
@@ -404,7 +404,7 @@ The webapp's `SigningClientManager` runs equivalent checks before calling the co
 ## Operational guidance for guilds
 
 - **Decide your policy before you grant the bit.** A rank-register entry that grants `PermGuildUGCUpdate` to rank `5` makes every officer at rank 5 or better a moderator. Removing it later does not retroactively undo any name change they have already made.
-- **Watch the audit stream.** Subscribe to `ugc_moderated` events (or the corresponding `player_meta` / `guild_meta` GRASS categories from the Guild Stack) and log them somewhere your members can see. Decentralized moderation only works when the community can see what moderators are doing.
+- **Watch the audit stream.** Subscribe to `ugc_moderated` chain events and `player_consensus` GRASS events from the Guild Stack. Log them somewhere your members can see. Decentralized moderation only works when the community can see what moderators are doing.
 - **Use post-hoc, not pre-approval.** There is no chain mechanism for "approve before commit". Names land immediately, and moderators correct after the fact. Build your social workflow around that.
 - **Communicate when you correct.** Your members chose their identity once; if you overwrite it, tell them why. The chain captures `actor_player_id` and `old_value`, but it does not capture intent.
 - **Don't moderate planets and substations you don't actually run.** The check requires the object's owner to be a member of your guild. If a member transfers a planet to another player or leaves the guild, your reach evaporates -- as it should.

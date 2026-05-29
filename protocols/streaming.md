@@ -11,11 +11,13 @@
 The Streaming Protocol defines how AI agents should connect to and consume real-time game state updates from GRASS (Game Real-time Analysis and Streaming Service) via NATS messaging.
 
 **Key Principles**:
-1. **GRASS uses NATS** - Not direct WebSocket connections
-2. **PostgreSQL triggers events** - Database changes trigger NATS messages
-3. **Subject-based subscriptions** - Subscribe to specific entity subjects
-4. **Handle reconnections** - Implement robust reconnection logic
-5. **Process messages efficiently** - Handle high message volumes
+1. **GRASS uses NATS** — Not direct WebSocket connections
+2. **Sync-state writes game state** — The `structs-sync-state` indexer commits chain events to PostgreSQL; PG triggers fire `NOTIFY 'grass'`
+3. **Subject-based subscriptions** — Subscribe to specific entity subjects
+4. **Handle reconnections** — Implement robust reconnection logic
+5. **Process messages efficiently** — Handle high message volumes
+
+**Last Updated**: 2026-05-29
 
 ---
 
@@ -24,8 +26,10 @@ The Streaming Protocol defines how AI agents should connect to and consume real-
 ### How GRASS Works
 
 ```
-PostgreSQL Database
-    ↓ (NOTIFY events)
+structsd (chain RPC)
+    ↓
+structs-sync-state → PostgreSQL (structs.* tables)
+    ↓ (NOTIFY 'grass' via PG triggers)
 structs-grass Service
     ↓ (publishes to NATS)
 NATS Server
@@ -34,11 +38,13 @@ AI Agent / Client
 ```
 
 **Flow**:
-1. PostgreSQL database changes trigger NOTIFY events on channel `'grass'`
-2. `structs-grass` service listens to PostgreSQL NOTIFY channel
-3. GRASS processes events and publishes to NATS subjects
+1. `structs-sync-state` ingests chain events and writes game state to PostgreSQL
+2. PG triggers on `structs.*` tables fire `NOTIFY` on channel `'grass'`
+3. `structs-grass` listens to PostgreSQL NOTIFY and publishes to NATS subjects
 4. Clients connect to NATS and subscribe to subjects
 5. Clients receive real-time updates via NATS messages
+
+Block height is tracked in `sync_state.sync_cursor` and `structs.current_block` — it is not pushed as a `block` GRASS category.
 
 ---
 

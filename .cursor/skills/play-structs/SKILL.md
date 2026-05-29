@@ -64,7 +64,7 @@ structsd keys add my-key --recover
 Always your first action after player creation. The CLI will prompt you to confirm:
 
 ```
-structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id]
+structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] [name]
 ```
 
 ---
@@ -189,7 +189,7 @@ You're mining. Now expand your capabilities:
 
 | Action | Command |
 |--------|---------|
-| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
+| Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id] [name]` |
 | Build struct | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [type-id] [ambit] [slot]` |
 | Compute build | `structsd tx structs struct-build-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |
 | Mine ore | `structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception)* |

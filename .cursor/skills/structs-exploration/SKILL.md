@@ -23,10 +23,10 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 3. **Explore (first time)** — Brand-new player, no prior planet. **Tier 0 (routine)**. CLI prompts; accept:
 
    ```
-   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] [name]
    ```
 
-   New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet.
+   The optional `[name]` sets the planet display name at creation (same validation as `MsgPlanetUpdateName`). Omit it to use the auto-generated default. New planet: 5 ore, 4 slots per ambit. Fleet moves to new planet.
 
 4. **Explore (subsequent)** — You already have a planet. **Tier 2 (destroys the old planet)**. The old planet is released, all structs on it are destroyed, and fleets present are scattered.
 
@@ -40,7 +40,7 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
    Then run:
 
    ```
-   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id]
+   structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- [player-id] [name]
    ```
 
 5. **Move fleet** — To relocate between planets without exploring (CLI will prompt — verify the destination location ID, especially if it's unscouted):
@@ -55,7 +55,7 @@ See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract. In this skill
 
 | Action | CLI Command |
 |--------|-------------|
-| Explore planet | `structsd tx structs planet-explore -- [player-id]` |
+| Explore planet | `structsd tx structs planet-explore -- [player-id] [name]` |
 | Move fleet | `structsd tx structs fleet-move -- [fleet-id] [destination-location-id]` |
 | Query planet | `structsd query structs planet [id]` |
 | List planets | `structsd query structs planet-all-by-player [player-id]` |

@@ -97,7 +97,7 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Permission hash exists in database but not in API response
 
 **Details**:
-- Hash permission levels exist in database as granular columns (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
+- Hash permission levels exist in database as granular columns (`perm_hash_build`, `perm_hash_mine`, `perm_hash_refine`, `perm_hash_raid`) on `view.permission_player` / `view.permission_address`
 - Maps to hash permission bits 20-23 in API layer (PermHashBuild=1048576, PermHashMine=2097152, PermHashRefine=4194304, PermHashRaid=8388608)
 - Database view may show hash columns as true but API value may not include all hash bits
 
@@ -218,7 +218,7 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Database hash permission columns may not match API permission value
 
 **Details**:
-- Database has granular hash permission columns (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
+- Database has granular hash permission columns (`perm_hash_build`, `perm_hash_mine`, `perm_hash_refine`, `perm_hash_raid`) on `view.permission_player` / `view.permission_address`
 - API uses permission value with bits 20-23 for hash permissions (PermHashAll = 15728640)
 - Database view may show individual hash columns as true but API value may differ
 - Must check both database and API for complete picture

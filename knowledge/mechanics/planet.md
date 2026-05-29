@@ -44,6 +44,8 @@ All newly explored planets start with identical properties.
 
 - Creates new planet with fresh ore and slots
 - Fleet moves to new planet
+- Optional planet name at explore time: `planet-explore [player-id] [name]` — validated before explore burns state (same rules as `MsgPlanetUpdateName`)
+- Explore does not consume the player's charge bar
 - Old planet released (old structures remain if ore remains; other players can claim it)
 - Chart new planet to reveal resource attributes before committing
 - **Requirement (existing players)**: Current planet must be complete (ore depleted) before exploring AND the fleet must be `onStation` at the current planet, not `away`. Recall the fleet first if needed via `fleet-move`.

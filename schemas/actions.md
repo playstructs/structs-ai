@@ -805,9 +805,11 @@ Note: `alphaMatterAmount` is in micrograms (100 grams = 100,000,000 micrograms).
 - **Name**: Explore Planet
 - **Message Type**: `/structs.structs.MsgPlanetExplore`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Explore a new planet (creates new planet, player can only own one planet at a time)
+- **Description**: Explore a new planet (creates new planet, player can only own one planet at a time). Optional `name` sets the planet display name at creation.
 
-**Required Fields**: `creator`
+**Required Fields**: `creator`, `playerId`
+
+**Optional Fields**: `name` — planet display name (validated before explore; same rules as `MsgPlanetUpdateName`)
 
 | Requirement | Details |
 |-------------|---------|
@@ -838,7 +840,9 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
     "messages": [
       {
         "@type": "/structs.structs.MsgPlanetExplore",
-        "creator": "structs1..."
+        "creator": "structs1...",
+        "playerId": "1-42",
+        "name": "MyPlanet"
       }
     ]
   }
@@ -1209,6 +1213,20 @@ User-generated content (name and pfp) updates. Added in v0.16.0. All seven messa
 |-------------|---------|
 | permission | `PermUpdate` (4) on the guild |
 | validPfp | Must satisfy `ValidatePfp` (see player-update-pfp) |
+
+### MsgGuildUpdatePrimaryReactor
+
+- **ID**: `guild-update-primary-reactor`
+- **Name**: Update Guild Primary Reactor
+- **Message Type**: `/structs.structs.MsgGuildUpdatePrimaryReactor`
+- **Description**: Reassign the guild's primary reactor to a different (non-jailed) validator's reactor. Recovery path when the validator backing the current primary reactor is permanently retired/tombstoned.
+
+**Required Fields**: `creator`, `guildId`, `reactorId`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermAdmin` (2) on the guild |
+| validator | Target reactor's validator must exist and not be jailed |
 
 ### MsgPlanetUpdateName
 

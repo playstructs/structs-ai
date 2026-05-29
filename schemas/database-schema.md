@@ -1,11 +1,11 @@
 # Structs Database Schema
 
-**Version**: 1.3.0
 **Category**: database
 **Source**: https://github.com/playstructs/structs-pg
-**Last Updated**: 2026-02-24
+**Last Updated**: 2026-05-29
+**Description**: Authoritative structural catalog of the Structs Guild Stack PostgreSQL schema. Mirrors [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) as deployed by Sqitch.
 
-PostgreSQL database schema for Structs guild infrastructure. Managed by structs-pg repository using Sqitch.
+For query patterns, grid gotchas, and agent-ready SQL examples, see [`knowledge/infrastructure/database-schema.md`](../knowledge/infrastructure/database-schema.md).
 
 ---
 
@@ -13,316 +13,408 @@ PostgreSQL database schema for Structs guild infrastructure. Managed by structs-
 
 | Property | Value |
 |----------|-------|
-| Name | structs |
-| Type | PostgreSQL |
-| Management | Sqitch |
+| Name | `structs` |
+| Engine | PostgreSQL 17 + TimescaleDB |
+| Management | Sqitch (`sqitch` schema) |
 | Repository | https://github.com/playstructs/structs-pg |
+| Ingestion | `structs-sync-state` (polls chain RPC; writes `structs.*` and `sync_state.*`) |
+
+Chain events are **not** ingested by `structsd`. The `structs-sync-state` service owns block-by-block indexing.
 
 ---
 
-## v0.8.0-beta Changelog
-
-| Date | Change | Description | Impact |
-|------|--------|-------------|--------|
-| 2025-11-22 | function-signer-tx-player | Latest messages for testnet 103 | -- |
-| 2025-11-29 | table-struct-type-cheatsheet-details | Added cheatsheet details to `struct_type` table | New columns for cheatsheet information in `struct_type` |
-| 2025-12-02 | table-struct-type-extended-cheatsheet | Added extended cheatsheet details to `struct_type` | Additional cheatsheet columns added |
-| 2025-12-03 | table-struct-type-update-cheatsheet | Updated extended cheatsheet details to `struct_type` | Cheatsheet columns refined |
-| 2025-12-08 | remove-deprecated-charge-columns | Removed deprecated Charge Bar columns for mine and refine | Deprecated charge columns removed from `struct_type`, views, and cache triggers. Tables: `struct_type`, `view.struct`, `view.work`. Trigger: `cache-trigger-add-queue` |
-| 2025-12-13 | view-work-fixed-raid-logic | Fixed raid logic in `view.work` | Improved raid task filtering in work view |
-| 2025-12-15 | table-signer-tx-complete-input-changes | Hash Complete nonces were INTEGER instead of CHARACTER VARYING | Fixed nonce data type for hash complete transactions |
-| 2025-12-18 | view-permission-add-permission-hash | Added new `permission_hash` level | New permission level added to permission view. Related: Hash permission bit (value 64) in API layer |
-| 2025-12-18 | table-signer-tx-permission-update | Updated tx signing permission levels | Transaction signing now supports Hash permission level |
-| 2025-12-18 | table-signer-tx-add-tx-types | Updated tx types | Additional transaction types added |
-| 2025-12-18 | cache-trigger-struct-type-fix | Fix to Struct Type cache commit | Cache trigger improvements for `struct_type` |
-| 2025-12-19 | trigger-grass-grid-p-values | Fixed grass grid p values | GRASS grid trigger improvements |
-| 2025-12-27 | view-work-exclusion-logic | Improved `view.work` logic to exclude impossible tasks | Better filtering of impossible tasks in work view |
-| 2025-12-29 | table-struct-add-destroyed | New `destroyed` column on struct table | Struct table now tracks destroyed status. Related: StructSweepDelay (5 blocks) -- destroyed structs persist for 5 blocks |
-| 2025-12-29 | function-signer-account-bug-fix | Resolved bug in the signer | Signer function bug fix |
-| 2025-12-29 | table-player-address-pending-permissions | `permissions` column was missing for device adding | Added `permissions` column to `player_address_pending` table |
-| 2026-01-01 | table-planet-activity-struct-health | Added `struct_health` as a detail field in `planet_activity` table | `planet_activity` table now includes `struct_health` in details JSONB field. This field is also emitted by GRASS in planet activity events. |
-
----
-
-## v0.10.0 through v0.15.0-beta Changelog
-
-| Date | Change | Description | Impact |
-|------|--------|-------------|--------|
-| 2025-12-29 | table-struct-add-destroyed | New `is_destroyed` column on struct table | Struct table tracks destroyed status (boolean, default false) |
-| 2025-12-29 | function-signer-account-fix | Resolved bug in the signer | Signer function bug fix |
-| 2025-12-29 | table-player-address-pending-permissions | `permissions` column was missing for device adding | Added `permissions` (integer) to `player_address_pending` |
-| 2026-01-11 | cache-trigger-fix-defenders | Fixing an issue with defenders | Defender cache event processing fix |
-| 2026-01-11 | cache-trigger-fix-defender-clear | Adding Defensive Clear event processing | New `handle_event_struct_defender_clear` cache function |
-| 2026-01-15 | planet-activity-struct-attribute-add-health | Adding health changes to planetary activity | `struct_health` added to `grass_category` enum; health changes tracked in planet activity |
-| 2026-01-15 | type-grass-category-add-struct-health | Adding `struct_health` to grass_category enum | Enum now includes `struct_health` for planet activity events |
-| 2026-01-18 | planet-activity-struct-attribute-fix-bad-location | Fixing import issue on stale struct attributes | Stale struct attribute location fix |
-| 2026-01-18 | cache-trigger-fix-defender-clear | Fix Defender Clear caching | Iteration on defender clear cache handling |
-| 2026-01-18 | planet-activity-struct-attribute-fix-defender-clear | Fix Defender Clear in planet activity | Defender clear planet activity fix |
-| 2026-01-19 | view-work-fixed-migration-issue-with-zero | Work view issue post-migration because of zero blocks | `view.work` fix for zero block_start values |
-| 2026-01-21 | cache-trigger-bigly-refactor | Refactoring the cache system | Major cache system refactor; 41 handler functions in `cache` schema |
-| 2026-01-21 | table-player-address-activity-fix-index | Fixing an index | Index fix on `player_address_activity` |
-| 2026-01-23 | table-player-fix-internal-player-trigger | Fixing a player insert trigger on guild | Player insert trigger fix for guild association |
-| 2026-02-03 | cache-trigger-add-new-events | Updating Struct and Planet attribute handlers to delete on zero | Zero-value attribute cleanup in cache handlers |
-| 2026-02-07 | table-struct-add-destroyed-block | Adding `destroyed_block` column to struct table | `destroyed_block` (bigint) tracks block height of destruction |
-| 2026-02-07 | cache-trigger-add-destroyed-block | Updating cache for destroyed_block | Cache handler updated for `destroyed_block` |
-| 2026-02-21 | table-planet-raid-add-seized-ore | Adding `seized_ore` to planet_raid table | `seized_ore` (numeric) on `planet_raid` for raid victory handling |
-| 2026-02-21 | cache-trigger-add-seized-ore | Updating cache for seized_ore | Cache handler updated for `seized_ore` |
-| 2026-02-23 | trigger-player-address-cascade | Fixing onboarding | `player_address_cascade` trigger on player table |
-| 2026-02-23 | trigger-player-address-cascade-v2 | Fixing onboarding (iteration) | Refined `player_address_cascade` trigger |
-| 2026-02-23 | cache-trigger-add-player-address | Fixing onboarding | Cache trigger for player address during onboarding |
-
----
-
-## Database Schemas
+## Schema Overview
 
 | Schema | Purpose |
 |--------|---------|
-| structs | Core game tables (52 tables) |
-| view | Materialized/computed views (21 views) |
-| cache | Event handler functions (41 functions) and queue management |
-| signer | Transaction signing infrastructure |
-| sqitch | Migration management |
+| `structs` | Core game state (~50 tables) |
+| `sync_state` | Chain indexer state: sync cursor, block log, raw chain data, handler errors |
+| `cache` | Four **read-only compatibility views** over `sync_state.raw_*` (legacy webapp shim) |
+| `view` | Computed views — entity projections, permissions, work queue, leaderboards |
+| `signer` | Transaction Signing Agent (TSA) queue — roles, accounts, pending txs |
+| `sqitch` | Migration tracking |
 
 ---
 
-## Tables
+## Database Roles
 
-### struct_type
+| Role | Access | Used By |
+|------|--------|---------|
+| `structs` | Owner / superuser | Administration, Sqitch migrations |
+| `structs_indexer` | Read/write on `structs.*`, `sync_state.*`; SELECT on `cache.*` views | `structs-sync-state`, `structs-grass` |
+| `structs_webapp` | Read/write on most `structs.*`; full on `signer.*`; SELECT on `cache.*` views | Webapp, TSA |
+| `structs_crawler` | Read-only on select `structs.*` tables | Crawler |
 
-Struct type definitions with all properties.
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `cheatsheet_details`, `cheatsheet_extended_details` |
-| Removed | Deprecated charge columns for mine and refine |
-
-Cheatsheet details added for better struct type documentation. Deprecated charge columns removed.
-
-### struct
-
-Struct instances. Verified columns: `id` (varchar, PK), `index` (int), `type` (int), `creator` (varchar), `owner` (varchar), `location_type` (varchar), `location_id` (varchar), `operating_ambit` (varchar), `slot` (int), `created_at` (timestamptz), `updated_at` (timestamptz), `is_destroyed` (boolean, default false), `destroyed_block` (bigint).
-
-Trigger: `planet_activity_struct_movement` fires on update.
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `is_destroyed` (boolean, default false) |
-
-**v0.10.0-v0.13.0 changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `destroyed_block` (bigint) -- block height at which struct was destroyed (2026-02-07) |
-
-### signer_tx
-
-Transaction signing information.
-
-**v0.8.0-beta changes**:
-
-- Hash Complete nonces changed from INTEGER to CHARACTER VARYING
-- Updated permission levels to support Hash permission
-- Added new transaction types
-
-### player_address_pending
-
-Pending player address additions.
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `permissions` |
-
-`permissions` column added for device adding functionality.
-
-### planet_activity
-
-Planet activity log (TimescaleDB hypertable). Columns: `time` (timestamptz, not null), `seq` (int, not null), `planet_id` (varchar, not null), `category` (grass_category enum), `detail` (jsonb). Index on `time DESC`.
-
-Trigger: `planet_activity_notify` fires on insert.
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `struct_health` in details JSONB field |
-
-**v0.10.0-v0.13.0 changes**:
-
-| Action | Details |
-|--------|---------|
-| Updated | `struct_health` added to `grass_category` enum (2026-01-15) |
-| Fixed | Stale struct attribute location handling (2026-01-18) |
-| Fixed | Defender clear event in planet activity (2026-01-18) |
-
-### planet_raid
-
-Raid status tracking per planet. Columns: `planet_id` (varchar, PK), `fleet_id` (varchar), `status` (varchar), `updated_at` (timestamptz), `seized_ore` (numeric).
-
-Trigger: `planet_activity_raid_status` fires on insert/update.
-
-**v0.10.0-v0.13.0 changes** (new table section):
-
-| Action | Details |
-|--------|---------|
-| Added | `seized_ore` (numeric) -- ore seized during raids for victory handling (2026-02-21) |
-
-### grass_category Enum
-
-Activity category enum used by `planet_activity.category`. Values: `block`, `guild_consensus`, `guild_meta`, `guild_membership`, `raid_status`, `fleet_arrive`, `fleet_advance`, `fleet_depart`, `struct_attack`, `struct_defense_remove`, `struct_defense_add`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start`, `struct_health`, `player_consensus`, `player_meta`.
-
-**v0.10.0-v0.13.0 changes**:
-
-| Action | Details |
-|--------|---------|
-| Added | `struct_health` (2026-01-15) |
+For agent queries, connect as `structs_indexer` via the GRASS container (see `.cursor/skills/structs-guild-stack/SKILL.md`).
 
 ---
 
-## Views
+## Enums
 
-### permission
+### `structs.grass_category`
 
-Permission view.
+Activity category enum on `structs.planet_activity.category`.
 
-**v0.8.0-beta changes**:
+| Value | Notes |
+|-------|-------|
+| `block` | New block committed |
+| `guild_consensus` | Guild state changes |
+| `guild_meta` | Off-chain guild metadata updates |
+| `guild_membership` | Membership changes |
+| `raid_status` | Raid initiated / completed / failed |
+| `fleet_arrive` | Fleet arrived at planet |
+| `fleet_advance` | Fleet movement in progress |
+| `fleet_depart` | Fleet departed |
+| `struct_attack` | Combat attack |
+| `struct_defense_add` | Defense assignment added |
+| `struct_defense_remove` | Defense assignment removed |
+| `struct_status` | Struct status change (online / offline / destroyed) |
+| `struct_move` | Struct moved between slots / ambits |
+| `struct_block_build_start` | Build PoW started |
+| `struct_block_ore_mine_start` | Mining PoW started |
+| `struct_block_ore_refine_start` | Refining PoW started |
+| `struct_health` | Struct health changed |
+| `player_consensus` | Player state changes (**including UGC `username` / `pfp` updates**) |
+| `player_meta` | **Legacy enum value** — retained in the type; GRASS now emits `player_consensus` for player UGC |
 
-| Action | Details |
-|--------|---------|
-| Added | `permission_hash` level |
+### Other notable enums
 
-New `permission_hash` level added. Maps to Hash permission bit (value 64) in API layer.
+| Enum | Schema | Values (summary) |
+|------|--------|------------------|
+| `object_type` | `structs` | `guild`, `player`, `planet`, `reactor`, `substation`, `struct`, `allocation`, `infusion`, `address`, `fleet`, `provider`, `agreement` |
+| `signer_tx_status` | `structs` | `pending`, `claimed`, `broadcast`, `error` |
+| `signer_tx_module` | `structs` | `structs`, `bank`, `staking`, `auth`, `authz` |
+| `signer_tx_type` | `structs` | 100+ command types (see `signer.tx.command`) |
 
-### work
-
-Work/task view. Columns: `object_id`, `player_id`, `target_id`, `category` (text), `block_start` (int), `difficulty_target` (int).
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Improved | Fixed raid logic; improved exclusion logic to exclude impossible tasks |
-| Removed | Deprecated charge columns |
-
-**v0.10.0-v0.13.0 changes**:
-
-| Action | Details |
-|--------|---------|
-| Fixed | Zero block_start values post-migration (2026-01-19) |
-
-### struct
-
-Struct view (joins struct with struct_type). Includes all struct_type weapon/defense properties, charge costs, generator stats, and cosmetic metadata.
-
-**v0.8.0-beta changes**:
-
-| Action | Details |
-|--------|---------|
-| Removed | Deprecated charge columns |
-
-### planet
-
-Planet view. Columns include: `planet_id`, `max_ore`, `buried_ore`, `available_ore`, `planetary_shield`, defense struct quantities (repair_network, defensive_cannon, CGSN, LOBI, advanced LOBI, orbital jamming, advanced orbital jamming), `lobi_network_success_rate_numerator/denominator`, `block_start_raid`, `creator`, `owner`, `status`, `created_at`, `updated_at`.
+UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, `guild-update-name`, `guild-update-pfp`, `planet-update-name`, `substation-update-name`, `substation-update-pfp`.
 
 ---
 
-## Functions
+## `structs` Schema
 
-### signer_tx_player
+### Table Index
 
-Transaction signing for player.
+| Group | Tables |
+|-------|--------|
+| **Core entities** | `player`, `planet`, `fleet`, `struct`, `struct_type`, `guild`, `guild_meta`, `reactor`, `substation`, `allocation`, `infusion`, `provider`, `agreement` |
+| **Attributes & grid** | `grid`, `struct_attribute`, `planet_attribute`, `struct_defender` |
+| **Permissions** | `permission`, `permission_guild_rank` |
+| **Planet activity** | `planet_activity`, `planet_activity_sequence`, `planet_raid` |
+| **Player addresses** | `player_address`, `player_address_activity`, `player_address_meta`, `player_address_pending`, `player_address_activation_code`, `player_object` |
+| **Onboarding / pending** | `player_pending`, `player_internal_pending`, `player_external_pending`, `guild_membership_application` |
+| **Integrations** | `player_discord` |
+| **Economy / ledger** | `ledger`, `defusion` |
+| **Stats (TimescaleDB)** | `stat_ore`, `stat_fuel`, `stat_capacity`, `stat_load`, `stat_structs_load`, `stat_power`, `stat_connection_count`, `stat_connection_capacity`, `stat_struct_health`, `stat_struct_status` |
+| **Config / moderation** | `setting`, `banned_word`, `address_tag`, `current_block` |
 
-**v0.8.0-beta**: Updated 2025-11-22 -- Latest messages for testnet 103.
-
-### signer_account
-
-Account signing function.
-
-**v0.8.0-beta**: Bug fix 2025-12-29 -- Resolved bug in the signer.
-
----
-
-## Triggers
-
-### cache.add_queue
-
-Main cache trigger for queue management. Processes chain events and dispatches to 41 handler functions.
-
-**v0.8.0-beta changes**:
-
-- Removed deprecated charge columns
-- Fixed struct type cache commit
-
-**v0.10.0-v0.13.0 changes**:
-
-- Fixed defender event processing (2026-01-11)
-- Added `handle_event_struct_defender_clear` (2026-01-11)
-- Major refactor of cache system (2026-01-21)
-- Added zero-value attribute cleanup (2026-02-03)
-- Added `destroyed_block` handling (2026-02-07)
-- Added `seized_ore` handling (2026-02-21)
-- Added player address handling for onboarding (2026-02-23)
-
-### player_address_cascade
-
-Trigger on `structs.player` table. Fires after insert or update. Cascades player data to associated addresses during onboarding.
-
-**v0.10.0-v0.13.0**: Added 2026-02-23 -- Fixes onboarding flow.
-
-### planet_activity_raid_status
-
-Trigger on `structs.planet_raid` table. Fires after insert or update. Logs raid status changes to `planet_activity`.
-
-### planet_activity_struct_movement
-
-Trigger on `structs.struct` table. Fires after update. Logs struct movement to `planet_activity`.
-
-### grass_grid
-
-GRASS grid trigger.
-
-**v0.8.0-beta**: Fix 2025-12-19 -- Fixed grass grid p values.
+**Dropped tables** (migrated 2026-05-25): `player_meta` → columns on `player`; `planet_meta` → `name` on `planet`.
 
 ---
 
-## Cache Handler Functions (cache schema)
+### `structs.player`
 
-41 handler functions processing chain events. Key handlers:
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `1-{index}` |
+| `index` | integer | Numeric portion of ID |
+| `guild_id` | varchar | Guild membership (`0-{index}`) |
+| `guild_rank` | bigint | Rank within guild (1 = highest; 101 = default on join) |
+| `substation_id` | varchar | Connected substation (`4-{index}`) |
+| `planet_id` | varchar | Home planet (`2-{index}`) |
+| `fleet_id` | varchar | Fleet (`9-{index}`) |
+| `primary_address` | varchar | Cosmos address |
+| `creator` | varchar | Creating address |
+| `username` | varchar | Chain UGC display name |
+| `pfp` | varchar | Chain UGC profile picture URI |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
 
-| Function | Purpose |
-|----------|---------|
-| `handle_event_struct` | Struct create/update/delete |
-| `handle_event_struct_attribute` | Struct attribute changes (health, status, etc.) |
-| `handle_event_struct_defender` | Defender assignment |
-| `handle_event_struct_defender_clear` | Defender removal (added v0.10.0) |
-| `handle_event_struct_type` | Struct type definitions |
-| `handle_event_planet` | Planet create/update |
-| `handle_event_planet_attribute` | Planet attribute changes |
-| `handle_event_fleet` | Fleet status/movement |
-| `handle_event_raid` | Raid events |
-| `handle_event_attack` | Attack events |
-| `handle_event_player` | Player create/update |
-| `handle_event_guild` | Guild operations |
-| `handle_event_guild_membership_application` | Guild membership |
-| `handle_event_infusion` | Infusion operations |
-| `handle_event_permission` | Permission changes |
-| `handle_event_ore_mine` | Mining events |
-| `handle_event_ore_theft` | Ore theft during raids |
-| `handle_event_alpha_refine` | Refinement events |
+`player_meta` was dropped; `username` and `pfp` live directly on this table. Sync-state writes them from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy fields.
 
 ---
 
-## Verification
+### `structs.planet`
 
-| Property | Value |
-|----------|-------|
-| Verified | Yes (partial) |
-| Verified Date | 2026-02-24 |
-| Method | Direct database connection via docker |
-| Note | Table schemas, views, triggers, enums, and cache functions verified against live database |
-| Source | https://github.com/playstructs/structs-pg |
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `2-{index}` |
+| `owner` | varchar | Player ID |
+| `max_ore` | integer | Maximum ore capacity |
+| `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts per ambit |
+| `status` | varchar | Planet status |
+| `name` | text | Chain UGC display name |
+| `seized_ore` | numeric | Cumulative ore seized across all raids |
+| `map` | jsonb | Planet map data |
+| `creator` | varchar | Creating address |
+| `location_list_start` / `location_list_end` | varchar | Location list bounds |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
+
+`planet_meta` was dropped; `name` lives directly on this table.
+
+Related: `planet_attribute` (key-value, e.g. `planetaryShield`), `planet_raid` (`planet_id` PK, `fleet_id`, `status`, `seized_ore` per raid).
+
+---
+
+### `structs.guild`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `0-{index}` |
+| `index` | integer | Numeric portion of ID |
+| `name` | varchar | Chain UGC display name |
+| `pfp` | varchar | Chain UGC profile picture URI |
+| `entry_rank` | bigint | Default rank for new members |
+| `endpoint` | varchar | Guild API endpoint |
+| `join_infusion_minimum` | numeric | Generated from `join_infusion_minimum_p` |
+| `join_infusion_minimum_p` | numeric | Raw infusion minimum |
+| `primary_reactor_id` | varchar | Guild reactor |
+| `entry_substation_id` | varchar | Default substation for new members |
+| `creator` / `owner` | varchar | Addresses |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
+
+---
+
+### `structs.guild_meta`
+
+Off-chain guild configuration — **not** chain UGC name/pfp (those are on `structs.guild`).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Guild ID (mirrors `structs.guild.id`) |
+| `name` | varchar | Legacy display name (prefer `structs.guild.name` for on-chain UGC) |
+| `description` | text | Guild description |
+| `tag` | varchar | Short guild tag |
+| `logo` | varchar | Logo URI |
+| `socials` | jsonb | Social links |
+| `denom` | jsonb | Guild token denomination map |
+| `services` | jsonb | Guild API / GRASS / webapp endpoints |
+| `domain` | varchar | Guild domain |
+| `website` | varchar | Guild website |
+| `base_energy` | numeric | Base energy allocation |
+| `this_infrastructure` | boolean | Whether this guild stack hosts this guild's infra |
+| `status` | varchar | Meta status |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
+
+`pfp` was removed from this table (2026-05-25); chain UGC lives on `structs.guild`.
+
+---
+
+### `structs.struct`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `5-{index}` |
+| `index` | integer | Numeric portion of ID |
+| `type` | integer | FK to `struct_type.id` (1–22) |
+| `owner` | varchar | Player ID |
+| `creator` | varchar | Creating address |
+| `location_type` | varchar | `fleet` or `planet` |
+| `location_id` | varchar | Fleet or planet ID |
+| `operating_ambit` | varchar | `space`, `air`, `land`, `water` |
+| `slot` | integer | Position within ambit (0–3) |
+| `is_destroyed` | boolean | Destruction state (default false) |
+| `destroyed_block` | bigint | Block height when destroyed |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
+
+Related: `struct_attribute` (`health`, `status`, `protectedStructIndex`, …), `struct_defender` (`defending_struct_id` PK → `protected_struct_id`). Full balance data in `struct_type` (~60 columns — weapons, defense, charges, difficulties).
+
+---
+
+### `structs.fleet`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | `9-{index}` |
+| `owner` | varchar | Player ID |
+| `status` | varchar | `on_station`, `away` |
+| `location_type` | varchar | `planet` |
+| `location_id` | varchar | Planet ID where fleet is located |
+| `command_struct` | varchar | Command Ship struct ID |
+| `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Available slots per ambit |
+| `map` | jsonb | Fleet map data |
+| `location_list_forward` / `location_list_backward` | varchar | Movement list bounds |
+| `created_at` / `updated_at` | timestamptz | Row timestamps |
+
+---
+
+### `structs.grid`
+
+Key-value store for resource attributes. **No dedicated `ore` column** — filter by `attribute_type`.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | varchar PK | Encoded `attribute_type-object_type-object_index` |
+| `object_id` | varchar | Player, planet, struct, etc. ID |
+| `object_type` | varchar | Entity type prefix |
+| `object_index` | integer | Entity index |
+| `attribute_type` | varchar | `ore`, `alpha`, `capacity`, `structsLoad`, `fuel`, `power`, … |
+| `val` | numeric | Attribute value |
+| `updated_at` | timestamptz | Last update |
+
+---
+
+### `structs.planet_activity`
+
+TimescaleDB hypertable — planet-level event log (GRASS source).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `time` | timestamptz | Event time (hypertable partition key) |
+| `seq` | integer | Monotonic sequence per planet (high-water mark for polling) |
+| `planet_id` | varchar | Planet where event occurred |
+| `category` | `grass_category` | Event type (see enum above) |
+| `detail` | jsonb | Event-specific payload |
+| `block_height` | bigint | Block height when event occurred (populated by sync-state) |
+
+#### Event categories (reference)
+
+| Category | Description |
+|----------|-------------|
+| `block` | New block committed |
+| `raid_status` | Raid initiated / completed / failed |
+| `fleet_arrive` | Fleet arrived at planet |
+| `fleet_advance` | Fleet movement in progress |
+| `fleet_depart` | Fleet departed |
+| `struct_attack` | Combat attack |
+| `struct_defense_add` | Defense assignment added |
+| `struct_defense_remove` | Defense assignment removed |
+| `struct_status` | Struct status change |
+| `struct_move` | Struct moved |
+| `struct_block_build_start` | Build PoW started |
+| `struct_block_ore_mine_start` | Mining PoW started |
+| `struct_block_ore_refine_start` | Refining PoW started |
+| `struct_health` | Struct health changed |
+| `guild_consensus` | Guild state changes |
+| `guild_meta` | Off-chain guild metadata |
+| `guild_membership` | Membership changes |
+| `player_consensus` | Player changes (including UGC) |
+
+---
+
+### Other `structs` tables (summary)
+
+| Table | Key columns | Purpose |
+|-------|-------------|---------|
+| `permission` | `object_id`, `player_id`, `val` | Per-player permission bitmask on objects |
+| `permission_guild_rank` | `object_id`, `guild_id`, `permission`, `rank` | Guild-rank permission grants (PK: object + guild + permission bit) |
+| `reactor` | `id`, `guild_id`, `validator`, `owner` | Validator-linked energy production |
+| `substation` | `id`, `owner`, `name`, `pfp` | Power distribution; chain UGC on `name` / `pfp` |
+| `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing |
+| `infusion` | `destination_id`, `address`, `fuel`, `power`, `commission` | Composite PK `(destination_id, address)` |
+| `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
+| `agreement` | `id`, provider/consumer refs, capacity, duration | Active purchase contracts |
+| `ledger` | `time`, `address`, `amount`, `action`, `direction`, `denom` | Financial transaction log (hypertable) |
+| `defusion` | `validator_address`, `delegator_address`, `amount`, `completes_at` | In-flight reactor unbonding |
+| `setting` | `name` PK, `value` | Live tunables (`REACTOR_RATIO`, `PLANET_STARTING_ORE`, …) |
+| `banned_word` | `word` PK | UGC name validation seed data |
+| `address_tag` | `address`, `label`, `entry` | Labelled address records |
+| `current_block` | `height`, `status`, `lag_blocks`, `tip_height` | Chain tip mirror (sync-state writes) |
+| `player_pending` | `primary_address` PK, `username`, `pfp`, … | Signup queue |
+| `player_address` | `address` PK, `player_id`, `guild_id`, `status` | Address ↔ player mapping |
+
+Stat hypertables (`stat_*`) share the pattern: `time`, `object_type`, `object_index`, `value`, `block_height` — one table per metric (ore, capacity, fuel, load, power, struct health, etc.).
+
+---
+
+## `sync_state` Schema
+
+Written by `structs-sync-state`. Operator and debugging tables.
+
+| Table | Purpose | Key columns |
+|-------|---------|-------------|
+| `sync_cursor` | Per-chain ingest pointer | `chain_id` PK, `last_height`, `status`, `lag_blocks`, `tip_height`, `last_block_hash`, `last_block_time` |
+| `block_log` | One row per ingested block | `chain_id`, `height`, `block_hash`, `num_txs`, `num_events`, `num_handler_errors` |
+| `handler_error_log` | Per-event handler failures | `chain_id`, `height`, `composite_key`, `error`, `severity`, `resolved_at` |
+| `raw_blocks` | Raw block mirror | `chain_id`, `height`, `block_time` |
+| `raw_tx_results` | Raw tx mirror | `height`, `tx_index`, `tx_hash` |
+| `raw_events` | Raw event mirror | `height`, `tx_index`, `event_index`, `event_type` |
+| `raw_attributes` | Raw attribute mirror | `height`, `tx_index`, `event_index`, `key`, `composite_key`, `value` |
+| `verification_report` | Output of `sync-state verify` runs | `run_id`, `scope`, `status`, `expected`, `actual` |
+| `genesis_log` | Genesis import audit trail | Genesis-state snapshots |
+| `unknown_event_log` | Unrecognized event types | Debugging unhandled chain events |
+
+Monitor indexer health:
+
+```sql
+SELECT chain_id, last_height, status, lag_blocks, tip_height
+FROM sync_state.sync_cursor;
+```
+
+---
+
+## `cache` Schema
+
+Read-only compatibility layer over `sync_state.raw_*`. The legacy event-sink schema was retired (2026-05-22); `cache` is now four views only.
+
+| View | Source | Notes |
+|------|--------|-------|
+| `cache.blocks` | `sync_state.raw_blocks` | `rowid` = `height` |
+| `cache.tx_results` | `sync_state.raw_tx_results` | `tx_result` is permanently NULL (protobuf not captured) |
+| `cache.events` | `sync_state.raw_events` | Surrogate `rowid` from height + tx_index + event_index |
+| `cache.attributes` | `sync_state.raw_attributes` | `event_id` matches `cache.events.rowid` |
+
+New code should query `sync_state.raw_*` directly. `cache.*` exists for webapp backward compatibility.
+
+---
+
+## `view` Schema
+
+Computed projections — prefer these over hand-joining raw tables where available.
+
+| View | Purpose |
+|------|---------|
+| `view.player` | Player + grid attributes + inline `username` / `pfp` |
+| `view.planet` | Planet + attributes + defense struct counts + `name` |
+| `view.guild` | Guild + off-chain meta + on-chain `name` / `pfp` |
+| `view.struct` | Struct joined with full `struct_type` balance data |
+| `view.substation` | Substation + grid attributes + UGC fields |
+| `view.reactor` | Reactor + grid attributes |
+| `view.grid` | Expanded grid with object metadata |
+| `view.permission_player` / `view.permission_address` | Permission projections — one boolean column per permission bit (`perm_play`, `perm_admin`, …, `perm_hash_raid`) |
+| `view.work` | Active PoW tasks (`object_id`, `player_id`, `category`, `block_start`, `difficulty_target`) |
+| `view.guild_bank` | Per-guild Central Bank position |
+| `view.leaderboard_guild` | Guild scoreboard |
+| `view.leaderboard_player` | Player scoreboard |
+
+### `view.permission_player` / `view.permission_address`
+
+Project `structs.permission` joined with `permission_guild_rank`, keyed by `player_id` and `address` respectively. Each exposes one boolean column per permission bit (`perm_play`, `perm_admin`, `perm_update`, …, `perm_hash_build`/`perm_hash_mine`/`perm_hash_refine`/`perm_hash_raid`) alongside `object_id`, `object_type`, and `updated_at`.
+
+`PermAll` = **33554431** (25 bits, 0..24 set; bit 24 = `PermGuildUGCUpdate` = 16777216).
+
+`signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll` so newly provisioned signer addresses receive every permission bit.
+
+---
+
+## `signer` Schema
+
+TSA (Transaction Signing Agent) infrastructure. Services insert into `signer.tx` with `status = 'pending'`; TSA claims, signs, and broadcasts.
+
+| Table | Key columns | Notes |
+|-------|-------------|-------|
+| `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
+| `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
+| `signer.tx` | `id`, `object_id`, `module`, `command`, `args` (jsonb), `status` | Status: `pending`, `claimed`, `broadcast`, `error` |
+
+### UGC signing wrappers
+
+12 PL/pgSQL `signer.tx_*` functions queue UGC updates:
+
+- **7 self-service** — require `PermUpdate` (4) on the target object
+- **5 guild-moderation** — require `PermGuildUGCUpdate` (16777216) on the target owner's guild
+
+Both groups broadcast the same chain messages (`MsgPlayerUpdateName`, `MsgGuildUpdatePfp`, etc.). Guild moderation is the same update message gated by moderator permissions; the chain emits `ugc_moderated` when actor ≠ owner.
+
+---
+
+## `sqitch` Schema
+
+Sqitch migration registry. Do not modify manually.
+
+---
+
+## See Also
+
+- [`knowledge/infrastructure/database-schema.md`](../knowledge/infrastructure/database-schema.md) — Agent query guide (grid patterns, planet_activity polling, energy commerce)
+- [`knowledge/infrastructure/guild-stack.md`](../knowledge/infrastructure/guild-stack.md) — Architecture and service topology
+- [`.cursor/skills/structs-guild-stack/SKILL.md`](../.cursor/skills/structs-guild-stack/SKILL.md) — Local deployment and common queries
+- [`knowledge/mechanics/permissions.md`](../knowledge/mechanics/permissions.md) — 25-bit permission flag reference

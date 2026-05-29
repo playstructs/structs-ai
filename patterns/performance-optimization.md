@@ -235,19 +235,18 @@ AND destroyed = false;
 
 **Problem**: Permission hash queries are slow
 
-**Solution**: Use indexed queries for permission_hash
+**Solution**: Query the boolean hash columns on the permission views
 
 **Strategy**:
-- Use `permission_hash` level in database queries
-- Query by permission_hash index if available
-- Combine with object_id for faster lookups
+- Use the `perm_hash_*` boolean columns in database queries
+- Query `view.permission_player` (by `player_id`) or `view.permission_address` (by `address`)
+- Combine with `object_id` for faster lookups
 
 **Implementation**:
 ```sql
-SELECT * FROM view.permission 
-WHERE permission_hash = true 
+SELECT * FROM view.permission_player
+WHERE perm_hash_mine = true
 AND object_id = '0-1';
--- Uses permission_hash index
 ```
 
 **Reference**: `schemas/database-schema.md`, `api/queries/permission.md`

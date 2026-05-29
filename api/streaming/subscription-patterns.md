@@ -28,7 +28,6 @@
 | Type | Schema |
 |------|--------|
 | player_consensus | `event-schemas.md#PlayerConsensusEvent` |
-| player_meta | `event-schemas.md#PlayerMetaEvent` |
 
 ```json
 // Subscribe:

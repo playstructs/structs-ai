@@ -3,7 +3,7 @@
 **Category**: webapp
 **Entity**: Player
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: May 13, 2026
+**Last Updated**: May 29, 2026
 
 ---
 
@@ -102,9 +102,11 @@ Search player raids.
 
 ---
 
-### Username updates (removed in v0.16.0)
+### Username and profile picture
 
-The `PUT /api/player/username` endpoint was removed in v0.16.0. Username (and the new profile-picture field) are now updated directly on chain via `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`. The webapp's signing client manager exposes `queueMsgPlayerUpdateName(playerId, name)` and `queueMsgPlayerUpdatePfp(playerId, pfp)` to queue these transactions; the database `player_meta` row is updated by the cache trigger after the chain commits.
+Username and PFP are chain UGC fields on `structs.player` (`username`, `pfp` columns). They are set at signup via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`, or updated later via `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`. The webapp queues these through `queueMsgPlayerUpdateName(playerId, name)` and `queueMsgPlayerUpdatePfp(playerId, pfp)`.
+
+The HTTP `PUT /api/player/username` endpoint no longer exists — all identity updates go through chain transactions.
 
 See `knowledge/mechanics/ugc-moderation.md` for the full UGC update flow and validation rules.
 

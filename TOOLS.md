@@ -39,7 +39,7 @@ Check which deployment you're connected to and update the URLs below accordingly
 
 ### Guild Stack (Advanced)
 
-For sub-second game state queries, real-time threat detection, and combat automation, deploy the **Guild Stack** locally via Docker Compose. It provides PostgreSQL-indexed game state, a local GRASS/NATS server, MCP server, and transaction signing agent.
+For sub-second game state queries, real-time threat detection, and combat automation, deploy the **Guild Stack** locally via Docker Compose. It provides PostgreSQL-indexed game state (via `structs-sync-state`), a local GRASS/NATS server, webapp, and optional transaction signing agent.
 
 **Repository**: `https://github.com/playstructs/docker-structs-guild`
 
@@ -70,7 +70,7 @@ By default, `structsd` commands connect to `localhost:26657`. If you are not run
 
 ```
 broadcast-mode = "sync"
-chain-id = "structstestnet-112"
+chain-id = "structstestnet-111"
 keyring-backend = "test"
 node = "https://public.testnet.structs.network:26657"
 output = "text"

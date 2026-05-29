@@ -39,7 +39,7 @@ Player UGC updates (username, pfp) are on-chain transactions, not webapp endpoin
 
 | Subject | Events | Schema |
 |---------|--------|--------|
-| `structs.player.*` | player_consensus, player_meta (incl. UGC username/pfp) | `api/streaming/event-schemas.md#PlayerConsensusEvent` |
+| `structs.player.*` | player_consensus (incl. UGC username/pfp on `structs.player`) | `api/streaming/event-schemas.md#PlayerConsensusEvent` |
 
 ---
 

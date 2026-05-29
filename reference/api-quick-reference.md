@@ -309,7 +309,7 @@ For untyped chain events (e.g. `ugc_moderated`) subscribe to `wss://public.testn
 - **Guild**: `guild_consensus`, `guild_meta`, `guild_membership`
 - **Planet**: `raid_status`, `planet_activity` (includes `struct_health` details), `fleet_arrive`, `fleet_advance`, `fleet_depart`
 - **Struct**: `struct_status`, `struct_move`, `struct_attack`, `struct_block_build_start`
-- **Player**: `player_consensus`, `player_meta`
+- **Player**: `player_consensus`
 
 **See**: `protocols/streaming.md` for complete documentation
 

@@ -51,8 +51,7 @@
 
 | Event Name | Description | Subject Pattern | Schema |
 |------------|-------------|-----------------|--------|
-| player_consensus | Player consensus data updates | `structs.player.*` | `event-schemas.md#PlayerConsensusEvent` |
-| player_meta | Player metadata updates | `structs.player.*` | `event-schemas.md#PlayerMetaEvent` |
+| player_consensus | Player state updates, including UGC `username`/`pfp` on `structs.player` | `structs.player.*` | `event-schemas.md#PlayerConsensusEvent` |
 
 ### Address Events
 
@@ -70,7 +69,7 @@
 
 The chain only emits this event when `actor_player_id != target_owner_player_id`. Self-service updates (a player renaming themselves, a guild owner renaming their own guild) are silent.
 
-The corresponding `player_meta` and `guild_meta` GRASS events also fire (see Player and Guild sections above) when the cache layer commits the new value to the database. Substation and planet UGC changes do **not** currently emit dedicated GRASS categories.
+The corresponding `player_consensus` GRASS events fire when sync-state commits UGC updates to `structs.player`. `guild_meta` fires for off-chain guild config on `structs.guild_meta`. Chain UGC on `structs.guild`, `structs.planet`, and `structs.substation` surface through chain events and `planet_activity`.
 
 ---
 

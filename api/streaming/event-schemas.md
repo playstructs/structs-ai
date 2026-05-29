@@ -33,20 +33,16 @@ Extends [BaseEvent](#base-event). Category: `player_consensus`
 | id | string | Player ID |
 | guildId | string | Guild ID |
 | primaryAddress | string | Player primary address |
+| username | string | Player display name (on `structs.player`; from chain UGC) |
+| pfp | string | Profile picture URI (on `structs.player`; from chain UGC) |
 
-### PlayerMetaEvent
+Fires when sync-state commits an insert or update to `structs.player`, including UGC changes from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy.
 
-Extends [BaseEvent](#base-event). Category: `player_meta`
+### PlayerMetaEvent (legacy)
 
-**Data Fields**:
+Extends [BaseEvent](#base-event). Category: `player_meta` (legacy enum value — **no longer emitted**)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | string | Player ID |
-| username | string | Player username (UGC; updated by `MsgPlayerUpdateName`, validated against `ValidatePlayerName`) |
-| pfp | string | Player profile picture (UGC; updated by `MsgPlayerUpdatePfp`, validated against `ValidatePfp`). Empty string if not set. |
-
-This event fires when the cache layer commits an update to `structs.player_meta`. As of v0.16.0 the chain is the sole source of truth for `username` and `pfp` -- the database `player_meta` table is no longer written by the webapp; both fields are populated from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` (or from `MsgGuildMembershipJoinProxy.playerName` / `playerPfp` at signup).
+The `player_meta` GRASS category was retired when UGC moved to `structs.player`. Subscribe to `player_consensus` instead.
 
 ### GuildConsensusEvent
 
@@ -63,8 +59,12 @@ Extends [BaseEvent](#base-event). Category: `guild_meta`
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | Guild ID |
-| name | string | Guild name (UGC; updated by `MsgGuildUpdateName`, validated against `ValidateEntityName`) |
-| pfp | string | Guild profile picture (UGC; updated by `MsgGuildUpdatePfp`, validated against `ValidatePfp`). Empty string if not set. |
+| description | string | Guild description (off-chain config on `structs.guild_meta`) |
+| tag | string | Short guild tag |
+| logo | string | Logo URI |
+| services | object | Guild API / GRASS / webapp endpoint map |
+
+Chain UGC `name` and `pfp` live on `structs.guild` and surface via `guild_consensus` / chain events — not through `guild_meta`.
 
 ### UGCModeratedEvent (Cosmos chain event)
 

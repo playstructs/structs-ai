@@ -68,14 +68,14 @@ The `create-player.mjs` script keeps your mnemonic local but sends to the guild'
 
 ### 5. MCP Server / Signing Agent Exposure
 
-The Guild Stack runs an MCP server on port 3000 and a "transaction signing agent" service. Either can become an attack surface if exposed beyond `localhost`:
+The Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). The **MCP server** ([`structs-mcp`](https://github.com/playstructs/structs-mcp)) is deployed separately — not part of `compose.yaml`. Either can become an attack surface if exposed beyond `localhost`:
 
 - The **MCP server** speaks the MCP protocol, which an attacker on the same network could call as if they were the agent.
 - The **signing agent** is designed to sign transactions on behalf of a configured key. If configured with a real key and exposed, anyone who can reach the port can spend on your behalf.
 
 **Mitigation**:
-- Bind MCP to `127.0.0.1` if not needed externally (compose override or env).
-- Remove the MCP service entirely for read-only PG profiles.
+- Bind MCP to `127.0.0.1` if deployed.
+- Use the read-only guild profile (`structsd`, `structs-pg`, `structs-sync-state`, `structs-grass`) — no signing surface by default.
 - **Do not configure the signing-agent service with a real key** until you have read its code and understood what it will sign.
 
 ### 6. Multi-Agent Key Isolation

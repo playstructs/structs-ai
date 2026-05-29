@@ -408,7 +408,7 @@ In addition to the bespoke endpoints below, the webapp exposes a uniform catalog
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
 | GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | No |
 
-> **v0.16.0**: `PUT /api/player/username` was removed. Username (and PFP) updates are now on-chain transactions (`MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`); the webapp queues them through the signing client manager. See `knowledge/mechanics/ugc-moderation.md`.
+> Username and PFP updates use on-chain `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`; the webapp queues them through the signing client manager. See `knowledge/mechanics/ugc-moderation.md`.
 
 **`GET /api/player/{player_id}`** (`webapp-player-by-id`)
 

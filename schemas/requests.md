@@ -214,7 +214,8 @@ The `@type` field must be one of the following active (non-deprecated) message t
 | `/structs.structs.MsgStructMove` | Move a struct |
 | `/structs.structs.MsgStructOreMinerComplete` | Complete ore mining |
 | `/structs.structs.MsgStructOreRefineryComplete` | Complete ore refining |
-| `/structs.structs.MsgPlanetExplore` | Explore a planet |
+| `/structs.structs.MsgPlanetExplore` | Explore a planet (optional `name` field) |
+| `/structs.structs.MsgGuildUpdatePrimaryReactor` | Reassign guild primary reactor |
 | `/structs.structs.MsgPlanetRaidComplete` | Complete a planet raid |
 | `/structs.structs.MsgFleetMove` | Move a fleet |
 | `/structs.structs.MsgReactorInfuse` | Infuse a reactor |

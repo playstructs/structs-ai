@@ -153,7 +153,7 @@ The script will:
 6. Poll the reactor API until the player ID is confirmed (default 120s timeout)
 7. Output JSON to stdout with all results
 
-**Note**: As of v0.16.0, the guild API forwards `username` and `pfp` to the chain via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`. The chain becomes the source of truth for player identity at creation, so the values you pass here are what other players see. `--pfp` is optional; omit it to leave the field empty.
+**Note**: The guild API forwards `username` and `pfp` to the chain via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`. The chain is the source of truth for player identity at creation.
 
 **Note**: When a player joins a guild, they receive a default guild rank of 101. Guild leadership can later promote members to lower (higher-privilege) ranks. See the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL) for rank management.
 

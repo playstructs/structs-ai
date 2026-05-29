@@ -413,18 +413,18 @@ Examples:
 Query the database to verify hash permission state:
 
 ```sql
-SELECT permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid
-FROM permission WHERE object_id = ? AND player_id = ?
+SELECT perm_hash_build, perm_hash_mine, perm_hash_refine, perm_hash_raid
+FROM view.permission_player WHERE object_id = ? AND player_id = ?
 ```
 
-Database to API mapping:
+Database to API mapping (boolean columns live on `view.permission_player` / `view.permission_address`; the raw `val` integer is on the base table `structs.permission`):
 
 | Database Column | Bit | API Equivalent |
 |----------------|-----|---------------|
-| `permission_hash_build = true` | 20 | `(permission.value & 1048576) == 1048576` |
-| `permission_hash_mine = true` | 21 | `(permission.value & 2097152) == 2097152` |
-| `permission_hash_refine = true` | 22 | `(permission.value & 4194304) == 4194304` |
-| `permission_hash_raid = true` | 23 | `(permission.value & 8388608) == 8388608` |
+| `perm_hash_build = true` | 20 | `(permission.value & 1048576) == 1048576` |
+| `perm_hash_mine = true` | 21 | `(permission.value & 2097152) == 2097152` |
+| `perm_hash_refine = true` | 22 | `(permission.value & 4194304) == 4194304` |
+| `perm_hash_raid = true` | 23 | `(permission.value & 8388608) == 8388608` |
 
 ## Guild Rank Permissions
 

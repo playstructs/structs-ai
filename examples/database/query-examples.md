@@ -14,7 +14,7 @@ These examples demonstrate SQL queries for database schema features: destroyed s
 
 - `destroyed_structs` -- New `destroyed` column on struct table
 - `cheatsheet_details` -- Cheatsheet and extended cheatsheet columns on struct_type table
-- `permission_hash` -- New permission hash level in the permission view
+- `perm_hash_*` -- Hash permission columns on `view.permission_player` / `view.permission_address`
 - `signer_tx_changes` -- Nonce type changes and new transaction types in signer_tx table
 
 ## Destroyed Structs
@@ -138,13 +138,13 @@ Useful for finding struct types by searching their cheatsheet content.
 
 ## Permission Hash
 
-**Database change**: Hash permissions are stored as granular columns in the `permission` view, mapping to bits 20-23 in the API permission value. PermHashAll = 15728640. The full permission bitmask is 25 bits (PermAll = 33554431); bit 24 (`PermGuildUGCUpdate` = 16777216) was added in v0.16.0 for guild-moderated UGC updates and is not yet exposed as a dedicated column in the `permission` view -- check it with `(permission.val & 16777216) > 0`.
+Hash permissions are stored as granular boolean columns (`perm_hash_build`, `perm_hash_mine`, `perm_hash_refine`, `perm_hash_raid`) on the `view.permission_player` and `view.permission_address` views, mapping to bits 20-23 in the API permission value. PermHashAll = 15728640. The full permission bitmask is 25 bits (PermAll = 33554431); bit 24 (`PermGuildUGCUpdate` = 16777216) for guild-moderated UGC updates is not exposed as a dedicated column -- check the raw integer on the base table with `(structs.permission.val & 16777216) > 0`.
 
 ### Get Hash Permissions for a Specific Permission
 
 ```sql
-SELECT permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid
-FROM permission WHERE object_id = ? AND player_id = ?
+SELECT perm_hash_build, perm_hash_mine, perm_hash_refine, perm_hash_raid
+FROM view.permission_player WHERE object_id = ? AND player_id = ?
 ```
 
 Parameters: `object_id` = `0-1`, `player_id` = `1-11`
@@ -155,10 +155,10 @@ Example result:
 {
   "object_id": "0-1",
   "player_id": "1-11",
-  "permission_hash_build": true,
-  "permission_hash_mine": true,
-  "permission_hash_refine": true,
-  "permission_hash_raid": true
+  "perm_hash_build": true,
+  "perm_hash_mine": true,
+  "perm_hash_refine": true,
+  "perm_hash_raid": true
 }
 ```
 
@@ -167,25 +167,25 @@ All hash columns `true` maps to `(permission.value & 15728640) == 15728640` in t
 ### Get All Permissions with All Hash Permissions
 
 ```sql
-SELECT * FROM permission
-WHERE permission_hash_build = true
-  AND permission_hash_mine = true
-  AND permission_hash_refine = true
-  AND permission_hash_raid = true
+SELECT * FROM view.permission_player
+WHERE perm_hash_build = true
+  AND perm_hash_mine = true
+  AND perm_hash_refine = true
+  AND perm_hash_raid = true
 ```
 
 Example result:
 
 ```json
 [
-  { "object_id": "0-1", "player_id": "1-11", "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 33554431 }
+  { "object_id": "0-1", "player_id": "1-11", "perm_hash_build": true, "perm_hash_mine": true, "perm_hash_refine": true, "perm_hash_raid": true }
 ]
 ```
 
 ### Get Permissions with Specific Hash Bit (e.g., Mine)
 
 ```sql
-SELECT * FROM permission WHERE player_id = ? AND permission_hash_mine = true
+SELECT * FROM view.permission_player WHERE player_id = ? AND perm_hash_mine = true
 ```
 
 Parameter: `player_id` = `1-11`
@@ -193,9 +193,9 @@ Parameter: `player_id` = `1-11`
 ### Get Hash Permissions for an Object
 
 ```sql
-SELECT * FROM permission WHERE object_id = ?
-  AND (permission_hash_build = true OR permission_hash_mine = true
-       OR permission_hash_refine = true OR permission_hash_raid = true)
+SELECT * FROM view.permission_player WHERE object_id = ?
+  AND (perm_hash_build = true OR perm_hash_mine = true
+       OR perm_hash_refine = true OR perm_hash_raid = true)
 ```
 
 Parameter: `object_id` = `0-1`
@@ -203,28 +203,30 @@ Parameter: `object_id` = `0-1`
 ### Count Permissions with Any Hash Bit
 
 ```sql
-SELECT COUNT(*) FROM permission
-WHERE permission_hash_build = true
-   OR permission_hash_mine = true
-   OR permission_hash_refine = true
-   OR permission_hash_raid = true
+SELECT COUNT(*) FROM view.permission_player
+WHERE perm_hash_build = true
+   OR perm_hash_mine = true
+   OR perm_hash_refine = true
+   OR perm_hash_raid = true
 ```
 
 ### Database to API Mapping
 
 | Database Column | Bit | API Equivalent (HasAll check) |
 |----------------|-----|-------------------------------|
-| `permission_hash_build = true` | 20 | `(permission.value & 1048576) == 1048576` |
-| `permission_hash_mine = true` | 21 | `(permission.value & 2097152) == 2097152` |
-| `permission_hash_refine = true` | 22 | `(permission.value & 4194304) == 4194304` |
-| `permission_hash_raid = true` | 23 | `(permission.value & 8388608) == 8388608` |
+| `perm_hash_build = true` | 20 | `(permission.value & 1048576) == 1048576` |
+| `perm_hash_mine = true` | 21 | `(permission.value & 2097152) == 2097152` |
+| `perm_hash_refine = true` | 22 | `(permission.value & 4194304) == 4194304` |
+| `perm_hash_raid = true` | 23 | `(permission.value & 8388608) == 8388608` |
 | All hash columns `true` | 20-23 | `(permission.value & 15728640) == 15728640` |
+
+The raw integer bitmask (`val`) lives on the base table `structs.permission`; the views expose one boolean column per bit instead.
 
 Example mapping:
 
 ```json
 {
-  "database": { "permission_hash_build": true, "permission_hash_mine": true, "permission_hash_refine": true, "permission_hash_raid": true, "val": 33554431 },
+  "database": { "perm_hash_build": true, "perm_hash_mine": true, "perm_hash_refine": true, "perm_hash_raid": true },
   "api": { "value": "33554431", "hasAllHashPermissions": true, "hasGuildUgcUpdate": true }
 }
 ```
@@ -233,7 +235,7 @@ Example mapping:
 
 **Permission audit**: Query hash permission columns to find all hash permission grants across the system, broken down by operation type.
 
-**Access control**: Query the specific hash column (e.g., `permission_hash_mine`) to verify a player has the required hash permission before allowing the operation.
+**Access control**: Query the specific hash column (e.g., `perm_hash_mine`) to verify a player has the required hash permission before allowing the operation.
 
 ## Signer Transaction Changes
 
@@ -319,9 +321,9 @@ Provides comprehensive information about destroyed structs including their type 
 ### All Hash Permissions for a Player
 
 ```sql
-SELECT * FROM permission WHERE player_id = ?
-  AND (permission_hash_build = true OR permission_hash_mine = true
-       OR permission_hash_refine = true OR permission_hash_raid = true)
+SELECT * FROM view.permission_player WHERE player_id = ?
+  AND (perm_hash_build = true OR perm_hash_mine = true
+       OR perm_hash_refine = true OR perm_hash_raid = true)
 ```
 
 Audits all hash permissions granted to a specific player across all objects, broken down by operation type.

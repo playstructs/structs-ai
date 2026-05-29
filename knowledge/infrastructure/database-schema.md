@@ -8,22 +8,28 @@
 
 ## Schema Overview
 
-PostgreSQL 17 with TimescaleDB extension. Four schemas:
+PostgreSQL 17 with TimescaleDB extension. Six schemas:
 
 | Schema | Purpose |
 |--------|---------|
 | `structs` | Game state (~50 tables covering all game objects) |
-| `cache` | Blockchain event indexing (event-sourcing from chain to game state) |
+| `sync_state` | Chain indexer state: sync cursor, block log, raw blocks/events, handler error log |
+| `cache` | Compatibility views over `sync_state.raw_*` (read-only; not an event-sink) |
+| `view` | Computed views (`view.player`, `view.guild`, leaderboards, permission projection) |
 | `signer` | Transaction signing queue (TSA account/role/tx management) |
 | `sqitch` | Schema migration tracking |
+
+Full table enumeration: [`schemas/database-schema.md`](../../schemas/database-schema.md).
+
+Chain events are ingested by the **`structs-sync-state`** service (not `structsd`). It polls the chain RPC and writes directly into `structs.*` and `sync_state.*`.
 
 ### Database Roles
 
 | Role | Access | Used By |
 |------|--------|---------|
 | `structs` | Superuser (owner) | Administration, migrations |
-| `structs_indexer` | Read/write on `structs.*`, `cache.*` | `structsd` (indexer), `structs-grass` |
-| `structs_webapp` | Read/write on most `structs.*`, full on `signer.*` | Webapp, MCP, TSA |
+| `structs_indexer` | Read/write on `structs.*`, `sync_state.*`, `cache.*` (views) | `structs-sync-state`, `structs-grass` |
+| `structs_webapp` | Read/write on most `structs.*`, full on `signer.*` | Webapp, TSA |
 | `structs_crawler` | Read-only on select tables | Crawler |
 
 For agent queries, use `structs_indexer` via the GRASS container (see guild-stack skill).
@@ -44,6 +50,8 @@ For agent queries, use `structs_indexer` via the GRASS container (see guild-stac
 | `fleet_id` | varchar | Fleet (e.g., `9-142`) |
 | `primary_address` | varchar | Cosmos address |
 | `creator` | varchar | Who created this player |
+| `username` | varchar | Player display name (chain UGC; from `MsgPlayerUpdateName` or signup proxy) |
+| `pfp` | varchar | Profile picture URI (chain UGC; from `MsgPlayerUpdatePfp` or signup proxy) |
 
 ### `structs.fleet`
 
@@ -128,6 +136,7 @@ Defense assignments.
 | `max_ore` | integer | Maximum ore capacity |
 | `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts |
 | `status` | varchar | Planet status |
+| `name` | text | Planet display name (chain UGC; from `MsgPlanetUpdateName` or optional name on `planet-explore`) |
 | `seized_ore` | numeric | Cumulative ore taken from this planet across raids (planet-level total; per-raid totals live in `planet_raid.seized_ore`) |
 
 ### `structs.planet_attribute`
@@ -208,6 +217,7 @@ TimescaleDB hypertable for all planet-level events.
 | `planet_id` | varchar | Planet where event occurred |
 | `category` | enum | Event type (see below) |
 | `detail` | JSONB | Event-specific data |
+| `block_height` | bigint | Block height when the event occurred (populated by sync-state) |
 
 ### Event Categories
 
@@ -230,8 +240,8 @@ TimescaleDB hypertable for all planet-level events.
 | `guild_consensus` | Guild consensus events |
 | `guild_meta` | Guild metadata changes |
 | `guild_membership` | Membership changes |
-| `player_consensus` | Player consensus events |
-| `player_meta` | Player metadata changes |
+| `player_consensus` | Player state changes (including UGC `username`/`pfp` updates) |
+| `guild_meta` | Guild off-chain metadata (description, tag, logo, services — not chain UGC name/pfp) |
 
 ### Polling Pattern (Real-Time Monitoring)
 
@@ -270,25 +280,27 @@ The `detail` column for `struct_attack` includes `attackerStructId`, `targetStru
 |--------|------|-------|
 | `id` | varchar PK | `0-{index}` (e.g., `0-1`) |
 | `entry_rank` | bigint | Default guild rank assigned to new members (chain default: 101) |
+| `name` | varchar | Guild display name (chain UGC; from `MsgGuildUpdateName`) |
+| `pfp` | varchar | Guild profile picture (chain UGC; from `MsgGuildUpdatePfp`) |
 
-### `structs.guild_meta` (UGC mirror)
+### `structs.guild_meta` (off-chain guild config)
+
+Guild presentation and infrastructure metadata — **not** chain UGC name/pfp (those live on `structs.guild`).
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | varchar PK | Guild ID, mirrors `structs.guild.id` |
-| `name` | text | Guild name (UGC; populated by chain `MsgGuildUpdateName` -> cache trigger) |
-| `pfp` | text | Guild profile picture (UGC; added in v0.16.0; populated by `MsgGuildUpdatePfp`) |
-
-### `structs.player_meta` (UGC mirror, v0.16.0)
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | varchar PK | Player ID. **PK collapsed in v0.16.0 from `(id, guild_id)` to `(id)`** -- there is now exactly one meta row per player |
-| `guild_id` | varchar | Player's current guild (kept in sync via `cache.handle_event_player`) |
-| `username` | text | Player username (UGC; chain is sole source of truth as of v0.16.0; written from `MsgPlayerUpdateName` and from `MsgGuildMembershipJoinProxy.playerName` at signup) |
-| `pfp` | text | Player profile picture (UGC; written from `MsgPlayerUpdatePfp` and from `MsgGuildMembershipJoinProxy.playerPfp`) |
-
-The webapp no longer writes `player_meta` directly. The `PLAYER_PENDING_MERGE` trigger was modified in v0.16.0 to skip the meta insert -- the chain UGC update is the only path that populates `username` and `pfp`. The trigger still writes the `lastAction` grid seed so newly merged players have a complete grid.
+| `name` | varchar | Legacy display name field (prefer `structs.guild.name` for on-chain UGC) |
+| `description` | text | Guild description |
+| `tag` | varchar | Short guild tag |
+| `logo` | varchar | Logo URI |
+| `socials` | jsonb | Social links |
+| `denom` | jsonb | Guild token denomination map |
+| `services` | jsonb | Guild API / GRASS / webapp endpoints |
+| `domain` | varchar | Guild domain |
+| `website` | varchar | Guild website |
+| `base_energy` | numeric | Base energy allocation |
+| `this_infrastructure` | boolean | Whether this guild stack hosts this guild's infra |
 
 ### `structs.substation` (with UGC fields)
 
@@ -296,12 +308,8 @@ The webapp no longer writes `player_meta` directly. The `PLAYER_PENDING_MERGE` t
 |--------|------|-------|
 | `id` | varchar PK | Substation ID |
 | `owner` | varchar | Owner player ID |
-| `name` | text | Substation name (UGC; added in v0.16.0; written from `MsgSubstationUpdateName` directly on the substation row -- no separate `substation_meta` table) |
-| `pfp` | text | Substation profile picture (UGC; added in v0.16.0; written from `MsgSubstationUpdatePfp`) |
-
-### `structs.planet_meta`
-
-Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain only updates the planet name when the chain event carries a non-empty value, so an auto-generated default name is never overwritten by an empty UGC update.
+| `name` | text | Substation name (chain UGC; from `MsgSubstationUpdateName`) |
+| `pfp` | text | Substation profile picture (chain UGC; from `MsgSubstationUpdatePfp`) |
 
 ### `structs.permission_guild_rank`
 
@@ -315,7 +323,28 @@ Planet name is written by `cache.handle_event_planet`. As of v0.16.0 the chain o
 
 Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechanics/permissions.md) for the guild rank permission system.
 
-The `permission` view is a 24-bit-mask projection over `structs.permission` rows joined with `permission_guild_rank` and exposes a `permission_hash` column so callers can compare aggregated permission state cheaply. The `PermAll` mask is `33554431` (bits 0..24 set).
+The `view.permission_player` (keyed by `player_id`) and `view.permission_address` (keyed by `address`) views project `structs.permission` rows joined with `permission_guild_rank`, exposing one boolean column per permission bit (`perm_play`, `perm_admin`, …, `perm_hash_build`/`perm_hash_mine`/`perm_hash_refine`/`perm_hash_raid`). The raw integer bitmask (`val`) lives on the base table `structs.permission`. The `PermAll` mask is `33554431` (bits 0..24 set).
+
+### `sync_state` schema (indexer)
+
+Written by `structs-sync-state`. Key operator tables:
+
+| Table | Purpose |
+|-------|---------|
+| `sync_cursor` | Per-chain ingest pointer (`last_height`, `status`, `lag_blocks`, `tip_height`) |
+| `block_log` | One row per ingested block (tx/event counts, handler error count) |
+| `handler_error_log` | Per-event handler failures (for debugging replay) |
+| `raw_blocks`, `raw_tx_results`, `raw_events`, `raw_attributes` | Raw chain event storage |
+| `verification_report` | Output of sync-state verify runs |
+
+Monitor indexer health:
+
+```sql
+SELECT chain_id, last_height, status, lag_blocks, tip_height
+FROM sync_state.sync_cursor;
+```
+
+The `cache` schema exposes four **views** (`blocks`, `tx_results`, `events`, `attributes`) over `sync_state.raw_*` for webapp backward compatibility.
 
 ### `structs.banned_word`
 
@@ -442,7 +471,7 @@ webapp signup
   -> PLAYER_PENDING_JOIN_PROXY trigger
   -> signer.tx (command=guild-membership-join-proxy, args.ugc={username, pfp, ...})
   -> TSA claims, signs MsgGuildMembershipJoinProxy with playerName/playerPfp
-  -> chain validates name/pfp, creates player, populates player_meta via cache trigger
+  -> chain validates name/pfp, creates player, sync-state writes username/pfp to structs.player
 ```
 
 ---
@@ -470,5 +499,6 @@ All game object IDs follow `{type_prefix}-{index}`. See [entity-relationships.md
 
 - `.cursor/skills/structs-guild-stack/SKILL.md` -- Setup and common queries
 - `knowledge/infrastructure/guild-stack.md` -- Architecture overview
+- `schemas/database-schema.md` -- Full structural schema catalog
 - `knowledge/entities/entity-relationships.md` -- Full entity graph and ID format
 - `knowledge/entities/struct-types.md` -- Struct type stats (mirrors `struct_type` table)

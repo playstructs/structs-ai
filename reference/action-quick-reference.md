@@ -134,7 +134,7 @@ This guide provides a quick reference for all game actions available to AI agent
 ### Exploration Actions
 
 **Planet Exploration**:
-- `planet-explore` - Explore a planet
+- `planet-explore` - Explore a planet; optional `[name]` sets display name at creation
 
 **Requirements**:
 - Player online
@@ -173,9 +173,10 @@ This guide provides a quick reference for all game actions available to AI agent
 **Token Transfer**:
 - `player-send` - Send tokens via structs module (requires `PermTokenTransfer`)
 
-**UGC Identity (v0.16.0)**:
+**UGC Identity**:
 - `guild-update-name` - Rename a guild (requires `PermUpdate` on guild)
 - `guild-update-pfp` - Set guild profile picture (requires `PermUpdate` on guild)
+- `guild-update-primary-reactor` - Reassign primary reactor (recovery for retired/jailed validator; requires `PermAdmin` on guild)
 - `player-update-name` - Rename a player (self-service via `PermUpdate` on the player, OR guild moderation via `PermGuildUGCUpdate` on the player's guild)
 - `player-update-pfp` - Set a player's profile picture (same permission rules as player-update-name)
 - `planet-update-name` - Rename a planet (self-service via `PermUpdate`, OR guild moderation via `PermGuildUGCUpdate` on the planet owner's guild)

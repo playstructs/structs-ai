@@ -120,22 +120,21 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 
 | Event | Description | React By |
 |-------|-------------|----------|
-| `player_consensus` | Player chain data updated | Update intel |
-| `player_meta` | Player metadata changed (includes `username` and `pfp` after a `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` lands and the cache trigger updates `structs.player_meta`) | Update intel |
+| `player_consensus` | Player state updated (including `username`/`pfp` on `structs.player` after chain UGC) | Update intel |
 
 ### Guild Events
 
 | Event | Description | React By |
 |-------|-------------|----------|
 | `guild_consensus` | Guild chain data updated | Update guild status |
-| `guild_meta` | Guild metadata changed (`name`, `pfp`) — fires after `MsgGuildUpdateName` / `MsgGuildUpdatePfp` lands and `structs.guild_meta` is updated | Update intel |
+| `guild_meta` | Off-chain guild metadata changed (`description`, `tag`, `logo`, `services` on `structs.guild_meta`) | Update intel |
 | `guild_membership` | Member joined/left guild | Update relationship map |
 
 ### UGC Moderation Events
 
 UGC name/pfp updates emit two distinct streams:
 
-1. **GRASS DB-trigger events** (the table above): `player_meta` and `guild_meta` fire when the cache layer commits the new value. Substation and planet name/pfp updates do **not** currently emit dedicated GRASS categories — they reach observers only through the chain event in the next bullet.
+1. **GRASS DB-trigger events** (the table above): `player_consensus` fires when sync-state commits player UGC (`username`/`pfp` on `structs.player`). `guild_meta` fires for off-chain guild config updates. Chain UGC `name`/`pfp` on guilds live on `structs.guild`. Planet and substation UGC reach observers via chain events and `planet_activity` entries.
 2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates).
 
 Subscribe to chain events via Tendermint's `tx.events` or `block_events` subscription (separate from GRASS) when you want a complete audit trail of moderation activity. Schema:

@@ -5,6 +5,24 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-05-29
+
+### Added
+
+- **Sync-state indexer architecture** documented across [`knowledge/infrastructure/guild-stack.md`](knowledge/infrastructure/guild-stack.md), [`.cursor/skills/structs-guild-stack/SKILL.md`](.cursor/skills/structs-guild-stack/SKILL.md), [`knowledge/infrastructure/database-schema.md`](knowledge/infrastructure/database-schema.md), and [`schemas/database-schema.md`](schemas/database-schema.md) — `structs-sync-state` service, `sync_state.*` schema, `cache.*` compatibility views, retired `player_meta`/`planet_meta` tables.
+- **`guild-update-primary-reactor`** CLI command and `MsgGuildUpdatePrimaryReactor` in [`schemas/actions.md`](schemas/actions.md) and [`reference/action-quick-reference.md`](reference/action-quick-reference.md).
+- **Optional planet name on explore** — `planet-explore [player-id] [name]` documented in exploration skill, [`schemas/actions.md`](schemas/actions.md), [`knowledge/mechanics/planet.md`](knowledge/mechanics/planet.md).
+
+### Changed
+
+- **Network identifiers** standardized to `structstestnet-111` / `NETWORK_VERSION=113b` in [`TOOLS.md`](TOOLS.md), guild-stack skill, and [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) (v0.17.0).
+- **UGC column locations** — `username`/`pfp` on `structs.player`, `name` on `structs.planet`, `name`/`pfp` on `structs.guild`; `guild_meta` documents off-chain config only.
+- **GRASS event paths** — `player_consensus` replaces `player_meta` for UGC; block height no longer via `current_block` NOTIFY; streaming protocol, event schemas, and streaming skill updated.
+- **Guild stack compose** — `compose.yaml` canonical filename; default profile is `structsd structs-pg structs-sync-state structs-grass`; MCP/proxy removed from compose (separate [`structs-mcp`](https://github.com/playstructs/structs-mcp) repo).
+- **`schemas/database-schema.md`** rewritten as current-state structural catalog (changelog sections removed).
+- **Combat mechanics** — defender counter-damage exclusion, distant-fleet defense restriction in [`knowledge/mechanics/combat.md`](knowledge/mechanics/combat.md).
+- **Webapp player API** — documents UGC on `structs.player` instead of `player_meta` in [`api/webapp/player.md`](api/webapp/player.md).
+
 ## [1.10.1] - 2026-05-13
 
 ### Added

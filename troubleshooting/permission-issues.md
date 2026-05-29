@@ -154,9 +154,9 @@ To grant `PermAll` (every bit including the new `PermGuildUGCUpdate` bit 24), us
 **Cause**: Hash permission levels not set or query references old schema
 
 **Diagnosis**:
-1. Check database schema: `structs.permission` table
-2. Verify hash permission columns exist (permission_hash_build, permission_hash_mine, permission_hash_refine, permission_hash_raid)
-3. Check permission view: `view.permission`
+1. Check database schema: `structs.permission` table (raw `val` integer bitmask)
+2. Verify hash permission columns exist (`perm_hash_build`, `perm_hash_mine`, `perm_hash_refine`, `perm_hash_raid`)
+3. Check permission views: `view.permission_player` (by `player_id`) or `view.permission_address` (by `address`)
 4. Verify the relevant hash permission bits are set in the API value
 
 **Solution**:
