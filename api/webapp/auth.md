@@ -12,9 +12,11 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| POST | `/api/auth/signup` | Sign up new user | No |
-| POST | `/api/auth/login` | Login user | No |
-| GET | `/api/auth/logout` | Logout user | Yes |
+| POST | `/api/auth/signup` | Register a new player (signature) | No (public) |
+| POST | `/api/auth/login` | Authenticate via Cosmos signature | No (public) |
+| GET | `/api/auth/logout` | Clear the current session | No (public prefix) |
+
+All `/api/auth/*` routes are public (no session enforced by `PlayerAuthenticator`). `logout` operates on the current session cookie if one is present.
 
 ---
 
@@ -22,28 +24,54 @@
 
 ### POST `/api/auth/signup`
 
-Sign up new user.
+Register a new player with the operating guild. Asynchronous: persisting the pending player triggers a `GuildMembershipJoinProxy` chain message and the player ID is assigned later — login must be called separately once the ID exists.
 
 - **ID**: `webapp-auth-signup`
 - **Authentication**: None
+
+**Request body:** `primary_address`, `signature`, `pubkey`, `guild_id` (required); `username`, `pfp` (optional). Signed message (`buildGuildMembershipJoinProxyMessage`): `GUILD{guildId}ADDRESS{address}NONCE{nonce}` (nonce `0`).
+
+Returns the standard envelope: `202 Accepted` with `{ "success": true, "errors": {}, "data": null }`, or `400`/`409` with keyed errors (`signature_validation_failed`, `resource_already_exists`).
 
 ---
 
 ### POST `/api/auth/login`
 
-Login user.
+Authenticate by Cosmos signature and receive a `PHPSESSID` session cookie. There is no username/password and no JWT/bearer token.
 
 - **ID**: `webapp-auth-login`
-- **Authentication**: None
+- **Authentication**: None (this is how you obtain a session)
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `address` | string | Yes | Cosmos address logging in (e.g. `structs1...`) |
+| `signature` | string | Yes | Base64 signature over the login message |
+| `pubkey` | string | Yes | Base64 public key for `address` |
+| `guild_id` | string | Yes | Guild being logged into, type 0 (e.g. `0-1`) |
+| `unix_timestamp` | string | Yes | Unix seconds; must be within 600s of server time |
+
+**Signed message** (`SignatureValidationManager::buildLoginMessage`):
+
+```
+LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
+```
+
+**Success (200):** `{ "success": true, "errors": {}, "data": null }` plus `Set-Cookie: PHPSESSID=...`.
+
+**Failure (401):** `{ "success": false, "errors": { "signature_validation_failed": "Invalid signature" }, "data": null }`. Other keys: `player_address_does_not_exists`, `player_does_not_exists`.
+
+See `examples/auth/webapp-login.md` for full flows.
 
 ---
 
 ### GET `/api/auth/logout`
 
-Logout user.
+Clear the current session. Returns the standard envelope `{ "success": true, "errors": {}, "data": null }`.
 
 - **ID**: `webapp-auth-logout`
-- **Authentication**: Required
+- **Authentication**: Public route (`^/api/auth/`); acts on the current session cookie if present
 
 ---
 

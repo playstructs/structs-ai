@@ -17,7 +17,7 @@ The seeded list of banned tokens used by the chain's UGC validators. The on-chai
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/banned-word/all/page/{page}` | List every banned word, paginated | No |
+| GET | `/api/banned-word/all/page/{page}` | List every banned word, paginated | Yes |
 
 ---
 
@@ -35,4 +35,4 @@ List every banned word.
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); rows are returned **directly in `data` as a flat array**. See `protocols/webapp-api-protocol.md`.

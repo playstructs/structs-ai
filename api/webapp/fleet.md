@@ -17,8 +17,8 @@ Catalog list of fleets. For per-fleet detail use the chain query at `/structs/fl
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/fleet/list/all/page/{page}` | List every fleet | No |
-| GET | `/api/fleet/list/location/{location_id}/page/{page}` | List fleets at a location | No |
+| GET | `/api/fleet/list/all/page/{page}` | List every fleet | Yes |
+| GET | `/api/fleet/list/location/{location_id}/page/{page}` | List fleets at a location | Yes |
 
 ---
 
@@ -47,4 +47,4 @@ List fleets currently at a location. The location is typically a planet ID (`2-x
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

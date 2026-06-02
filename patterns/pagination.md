@@ -69,20 +69,16 @@ Pagination patterns define how AI agents should handle paginated API responses w
 }
 ```
 
-### 2. Offset-Based Pagination (Some Webapp Endpoints)
+### 2. Page-Path Pagination (Webapp Catalog Reads)
 
-**Format**: Uses `offset` and `limit` parameters
+**Format**: The page number is a **path segment** (`/page/{n}`), 1-indexed and constrained to `\d+` (non-numeric → 404). Page size is **fixed at 100** — there are no `offset`/`limit`/`page_size` query params. Rows come back **directly in `data` as a flat array** inside the standard envelope.
 
 **Request**:
 ```json
 {
   "request": {
     "method": "GET",
-    "url": "/api/guild/directory",
-    "queryParams": {
-      "offset": 0,
-      "limit": 50
-    }
+    "url": "/api/reactor/all/page/1"
   }
 }
 ```
@@ -93,17 +89,17 @@ Pagination patterns define how AI agents should handle paginated API responses w
   "response": {
     "status": 200,
     "body": {
-      "guilds": [...],
-      "pagination": {
-        "offset": 0,
-        "limit": 50,
-        "total": 200,
-        "hasMore": true
-      }
+      "success": true,
+      "errors": {},
+      "data": [ { "id": "3-1" }, { "id": "3-2" } ]
     }
   }
 }
 ```
+
+**Detecting more pages**: if `data.length === 100`, request `page + 1`; if `< 100` (or empty), stop. Most webapp catalog reads also require an authenticated session cookie (see `protocols/webapp-api-protocol.md`).
+
+> `/api/guild/directory` and similar bespoke endpoints are **not** paginated this way — they return their full result set in `data` with no page parameter.
 
 ---
 
@@ -128,17 +124,12 @@ Pagination patterns define how AI agents should handle paginated API responses w
 - Used in some endpoints
 - Less efficient than key-based for large datasets
 
-### Web Application Parameters
+### Web Application Parameters (Catalog Reads)
 
-**offset** (integer, optional):
-- Number of items to skip
-- Default: 0
-- Increment by `limit` for next page
-
-**limit** (integer, optional):
-- Maximum number of items per page
-- Default: varies by endpoint
-- Maximum: typically 100
+**page** (path segment, required):
+- 1-indexed page number in the URL path (`/page/{n}`)
+- Constrained to `\d+`; non-numeric values return 404
+- Page size is fixed at 100 server-side; there is no client-side `offset`/`limit`/`page_size`
 
 ---
 
@@ -203,25 +194,16 @@ async function fetchAllPlayers() {
 
 **Use Case**: Need specific page of results
 
-**Pattern**:
+**Pattern** (webapp catalog read — page in the path, fixed size 100):
 ```json
 {
   "strategy": "fetch-specific-page",
   "page": 3,
-  "pageSize": 50,
   "steps": [
     {
       "step": 1,
-      "action": "calculate-offset",
-      "offset": "(page - 1) * pageSize"
-    },
-    {
-      "step": 2,
       "action": "fetch-page",
-      "pagination": {
-        "offset": 100,
-        "limit": 50
-      }
+      "url": "/api/reactor/all/page/3"
     }
   ]
 }
@@ -280,27 +262,23 @@ async function fetchAllPlayers() {
 - `pagination.next_key` (string|null): Key for next page, null if last page
 - `pagination.total` (string): Total number of items (may be approximate)
 
-### Web Application Format
+### Web Application Format (Catalog Reads)
 
 **Standard Format**:
 ```json
 {
-  "data": [...],
-  "pagination": {
-    "offset": 0,
-    "limit": 50,
-    "total": 200,
-    "hasMore": true
-  }
+  "success": true,
+  "errors": {},
+  "data": [ {...}, {...} ]
 }
 ```
 
 **Fields**:
-- `data` (array): Array of data objects
-- `pagination.offset` (integer): Current offset
-- `pagination.limit` (integer): Page size
-- `pagination.total` (integer): Total number of items
-- `pagination.hasMore` (boolean): Whether more pages exist
+- `success` (boolean): operation status
+- `errors` (object): keyed error map (empty `{}` on success)
+- `data` (array): the page of rows, **directly** in `data` (no nested `rows`/`pagination` object)
+
+There is no `total`, `hasMore`, `offset`, or `limit` field. Determine "more pages" from the row count: a full page is exactly 100 rows.
 
 ---
 
@@ -459,42 +437,35 @@ async function fetchAllPlayers() {
 }
 ```
 
-### Example 2: Fetch Guild Directory with Offset
+### Example 2: Page Through a Webapp Catalog (Reactors)
 
 ```json
 {
-  "workflow": "fetch-guild-directory",
+  "workflow": "fetch-all-reactors",
   "steps": [
     {
       "step": 1,
-      "endpoint": "webapp-guild-directory",
+      "endpoint": "webapp-reactor-all",
       "method": "GET",
-      "url": "/api/guild/directory",
-      "parameters": {
-        "offset": 0,
-        "limit": 50
-      },
+      "url": "/api/reactor/all/page/1",
       "extract": {
-        "guilds": "response.body.data",
-        "hasMore": "response.body.pagination.hasMore",
-        "total": "response.body.pagination.total"
+        "reactors": "response.body.data",
+        "rowCount": "response.body.data.length"
       }
     },
     {
       "step": 2,
-      "condition": "hasMore === true",
-      "endpoint": "webapp-guild-directory",
+      "condition": "rowCount === 100",
+      "endpoint": "webapp-reactor-all",
       "method": "GET",
-      "url": "/api/guild/directory",
-      "parameters": {
-        "offset": 50,
-        "limit": 50
-      },
-      "repeat": "until hasMore is false"
+      "url": "/api/reactor/all/page/2",
+      "repeat": "increment page until data.length < 100"
     }
   ]
 }
 ```
+
+> Note: `/api/guild/directory` is bespoke and returns its full result set in `data` with no paging. Most catalog reads require a session cookie.
 
 ---
 

@@ -11,16 +11,16 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/player/{player_id}` | Get player information from web application | No |
-| GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height for player | No |
-| GET | `/api/player/raid/search` | Search player raids | No |
-| GET | `/api/player/transfer/search` | Search player transfers | No |
-| GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | No |
-| GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
-| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | No |
-| GET | `/api/player/list/all/page/{page}` | Catalog list of all players, paginated | No |
-| GET | `/api/player/list/guild/{guild_id}/page/{page}` | Catalog list of players in a guild | No |
-| GET | `/api/player/list/substation/{substation_id}/page/{page}` | Catalog list of players connected to a substation | No |
+| GET | `/api/player/{player_id}` | Get player information from web application | Yes |
+| GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height for player | Yes |
+| GET | `/api/player/raid/search` | Search player raids | Yes |
+| GET | `/api/player/transfer/search` | Search player transfers | Yes |
+| GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | Yes |
+| GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | Yes |
+| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | Yes |
+| GET | `/api/player/list/all/page/{page}` | Catalog list of all players, paginated | Yes |
+| GET | `/api/player/list/guild/{guild_id}/page/{page}` | Catalog list of players in a guild | Yes |
+| GET | `/api/player/list/substation/{substation_id}/page/{page}` | Catalog list of players connected to a substation | Yes |
 
 ---
 
@@ -44,25 +44,32 @@ Get player information from web application.
 
 **Request**: `GET http://localhost:8080/api/player/1-11`
 
-**Response**:
+**Response** — envelope; `data` is a **single flat object whose keys are the SQL columns** from `PlayerManager::getPlayer` (snake_case), not nested `{player, guild, stats}`. Representative shape (column set may grow):
 
 ```json
 {
-  "player": {
+  "success": true,
+  "errors": {},
+  "data": {
     "id": "1-11",
+    "primary_address": "structs1...",
+    "guild_id": "0-1",
+    "guild_name": "GuildName",
+    "tag": "GLD",
+    "substation_id": "4-1",
+    "planet_id": "2-1",
+    "fleet_id": "9-11",
+    "fleet": { "...": "row_to_json of the fleet" },
     "username": "PlayerName",
-    "address": "cosmos1..."
-  },
-  "guild": {
-    "id": "2-1",
-    "name": "GuildName"
-  },
-  "stats": {
-    "total_ore": 1000,
-    "planets_completed": 5
+    "pfp": "...",
+    "alpha": "1000000",
+    "ore": "1000",
+    "load": "5"
   }
 }
 ```
+
+Guild fields are type 0 (`0-1`). Always unwrap `data` after checking `success`; treat keys as SQL column names.
 
 ---
 
@@ -84,11 +91,13 @@ Get last action block height for player.
 
 **Request**: `GET http://localhost:8080/api/player/1-11/action/last/block/height`
 
-**Response**:
+**Response** (envelope):
 
 ```json
 {
-  "height": 12345
+  "success": true,
+  "errors": {},
+  "data": { "height": 12345 }
 }
 ```
 
@@ -246,4 +255,4 @@ Player responses include reactor staking summary:
 }
 ```
 
-The `/api/player/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+The `/api/player/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke `/api/player/{player_id}` endpoints also use the `{ "success", "errors", "data" }` envelope; their `data` holds the SQL column names from the backing query (snake_case). See `protocols/webapp-api-protocol.md`.

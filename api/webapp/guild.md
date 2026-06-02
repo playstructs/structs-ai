@@ -11,20 +11,20 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/guild/this` | Get current user's guild | Yes |
-| GET | `/api/guild/name` | Get guild name | No |
-| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | No |
-| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | No |
-| GET | `/api/guild/count` | Get total guild count | No |
-| GET | `/api/guild/directory` | Get guild directory | No |
-| GET | `/api/guild/{guild_id}` | Get guild by ID | No |
-| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | No |
-| GET | `/api/guild/{guild_id}/roster` | Get guild roster | No |
-| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | No |
-| GET | `/api/guild/list/all/page/{page}` | Catalog list of every guild | No |
-| GET | `/api/guild/list/primary-reactor/{primary_reactor_id}/page/{page}` | List guilds by primary reactor | No |
-| GET | `/api/guild/list/entry-substation/{entry_substation_id}/page/{page}` | List guilds by entry substation | No |
-| GET | `/api/guild/list/owner/{owner}/page/{page}` | List guilds by owning player | No |
+| GET | `/api/guild/this` | Get the host/infrastructure guild for this deployment | No (public) |
+| GET | `/api/guild/name` | Get guild name | Yes |
+| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | Yes |
+| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | Yes |
+| GET | `/api/guild/count` | Get total guild count | Yes |
+| GET | `/api/guild/directory` | Get guild directory | Yes |
+| GET | `/api/guild/{guild_id}` | Get guild by ID | Yes |
+| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | Yes |
+| GET | `/api/guild/{guild_id}/roster` | Get guild roster | Yes |
+| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | Yes |
+| GET | `/api/guild/list/all/page/{page}` | Catalog list of every guild | Yes |
+| GET | `/api/guild/list/primary-reactor/{primary_reactor_id}/page/{page}` | List guilds by primary reactor | Yes |
+| GET | `/api/guild/list/entry-substation/{entry_substation_id}/page/{page}` | List guilds by entry substation | Yes |
+| GET | `/api/guild/list/owner/{owner}/page/{page}` | List guilds by owning player | Yes |
 
 Guild membership applications live in [`guild-membership-application.md`](guild-membership-application.md).
 
@@ -34,10 +34,22 @@ Guild membership applications live in [`guild-membership-application.md`](guild-
 
 ### GET `/api/guild/this`
 
-Get current user's guild.
+Return the **host / infrastructure guild for this webapp deployment** — the guild where `guild_meta.this_infrastructure = TRUE` (`GuildManager::getThisGuild`, joins `guild` + `reactor` + `guild_meta`, `LIMIT 1`). This is **not** the logged-in player's guild and it does **not** read the session.
+
+Use it pre-login to discover which guild a given webapp instance serves. The operator's own guild comes from the login context (`session.guild_id`, set at login) or from the player record — not from this endpoint.
 
 - **ID**: `webapp-guild-this`
-- **Authentication**: Required
+- **Authentication**: None (public route, no session required)
+
+**Response** (envelope; `data` is the single host-guild row, guild IDs are type 0):
+
+```json
+{
+  "success": true,
+  "errors": {},
+  "data": { "id": "0-1", "name": "GuildName" }
+}
+```
 
 ---
 
@@ -89,11 +101,13 @@ Get total guild count.
 
 **Request**: `GET http://localhost:8080/api/guild/count`
 
-**Response**:
+**Response** (envelope):
 
 ```json
 {
-  "count": 42
+  "success": true,
+  "errors": {},
+  "data": { "count": 42 }
 }
 ```
 
@@ -123,15 +137,19 @@ Get guild by ID.
 
 #### Example
 
-**Request**: `GET http://localhost:8080/api/guild/2-1`
+**Request**: `GET http://localhost:8080/api/guild/0-1` (guild IDs are type `0`, `^0-[0-9]+$`)
 
-**Response**:
+**Response** (envelope; bespoke `data` carries the SQL columns from `GuildManager`):
 
 ```json
 {
-  "id": "2-1",
-  "name": "GuildName",
-  "member_count": 10
+  "success": true,
+  "errors": {},
+  "data": {
+    "id": "0-1",
+    "name": "GuildName",
+    "member_count": 10
+  }
 }
 ```
 
@@ -238,4 +256,6 @@ List guilds by owning player.
 
 ---
 
-The `/api/guild/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+The `/api/guild/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke guild endpoints also use the `{ "success", "errors", "data" }` envelope. All guild routes require a session **except** `/api/guild/this` (public). See `protocols/webapp-api-protocol.md`.
+
+> There is no HTTP endpoint to read a guild's bank/token balance. `MsgGuildBankMint`/`MsgGuildBankRedeem` are chain transactions; read balances via chain queries (bank module) or the ledger, not the webapp.

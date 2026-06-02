@@ -17,10 +17,10 @@ Energy providers — the supply side of the agreement market. Each provider has 
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/provider/all/page/{page}` | List every provider | No |
-| GET | `/api/provider/owner/{owner}/page/{page}` | List providers owned by a player | No |
-| GET | `/api/provider/denom/{denom}/page/{page}` | List providers selling for a denom | No |
-| GET | `/api/provider/substation/{substation_id}/page/{page}` | List providers backed by a substation | No |
+| GET | `/api/provider/all/page/{page}` | List every provider | Yes |
+| GET | `/api/provider/owner/{owner}/page/{page}` | List providers owned by a player | Yes |
+| GET | `/api/provider/denom/{denom}/page/{page}` | List providers selling for a denom | Yes |
+| GET | `/api/provider/substation/{substation_id}/page/{page}` | List providers backed by a substation | Yes |
 
 ---
 
@@ -69,4 +69,4 @@ Energy providers — the supply side of the agreement market. Each provider has 
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

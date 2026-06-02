@@ -17,9 +17,9 @@ Per-planet activity log — raids, attacks, builds, defender changes, struct hea
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/planet-activity/all/page/{page}` | List every planet activity row | No |
-| GET | `/api/planet-activity/planet/{planet_id}/page/{page}` | List activity for a planet | No |
-| GET | `/api/planet-activity/category/{category}/page/{page}` | List activity by category | No |
+| GET | `/api/planet-activity/all/page/{page}` | List every planet activity row | Yes |
+| GET | `/api/planet-activity/planet/{planet_id}/page/{page}` | List activity for a planet | Yes |
+| GET | `/api/planet-activity/category/{category}/page/{page}` | List activity by category | Yes |
 
 ---
 
@@ -57,4 +57,4 @@ Per-planet activity log — raids, attacks, builds, defender changes, struct hea
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

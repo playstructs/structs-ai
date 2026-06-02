@@ -157,7 +157,9 @@ Base path: `/api`
 }
 ```
 
-### Login (Webapp)
+### Login (Webapp — Cosmos signature)
+
+Sign the message `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}` with the address's key; there is no username/password.
 
 ```json
 {
@@ -167,8 +169,11 @@ Base path: `/api`
     "Content-Type": "application/json"
   },
   "body": {
-    "username": "player_username",
-    "password": "player_password"
+    "address": "structs1...",
+    "signature": "base64-signature",
+    "pubkey": "base64-pubkey",
+    "guild_id": "0-1",
+    "unix_timestamp": "1715000000"
   }
 }
 ```
@@ -182,7 +187,9 @@ Response:
     "Set-Cookie": "PHPSESSID=..."
   },
   "body": {
-    "success": true
+    "success": true,
+    "errors": {},
+    "data": null
   }
 }
 ```

@@ -17,9 +17,9 @@ The grid table holds per-object scalar attributes (`capacity`, `connectionCapaci
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/grid/all/page/{page}` | List every grid attribute row | No |
-| GET | `/api/grid/object/{object_id}/page/{page}` | List all grid attributes for one object | No |
-| GET | `/api/grid/attribute-type/{attribute_type}/page/{page}` | List one attribute type across every object | No |
+| GET | `/api/grid/all/page/{page}` | List every grid attribute row | Yes |
+| GET | `/api/grid/object/{object_id}/page/{page}` | List all grid attributes for one object | Yes |
+| GET | `/api/grid/attribute-type/{attribute_type}/page/{page}` | List one attribute type across every object | Yes |
 
 ---
 
@@ -59,4 +59,4 @@ List one attribute type across every object that has it. Useful for "show me eve
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

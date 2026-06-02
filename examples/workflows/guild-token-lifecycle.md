@@ -60,7 +60,7 @@ Lock Alpha Matter as collateral for guild tokens.
         {
           "@type": "/structs.structs.MsgGuildLockCollateral",
           "creator": "structs1...",
-          "guildId": "1-1",
+          "guildId": "0-1",
           "alphaMatterAmount": "100000000"
         }
       ]
@@ -98,7 +98,7 @@ Mint new guild tokens backed by collateral.
         {
           "@type": "/structs.structs.MsgGuildMintTokens",
           "creator": "structs1...",
-          "guildId": "1-1",
+          "guildId": "0-1",
           "tokensToMint": "1000"
         }
       ]
@@ -157,7 +157,7 @@ Trade guild tokens on marketplace.
         {
           "@type": "/structs.structs.MsgTradeGuildToken",
           "creator": "structs1...",
-          "guildId": "1-1",
+          "guildId": "0-1",
           "quantity": 100,
           "price": 0.01,
           "type": "sell"
@@ -204,7 +204,7 @@ Revoke and burn tokens (can be used for economic warfare).
         {
           "@type": "/structs.structs.MsgGuildRevokeTokens",
           "creator": "structs1...",
-          "guildId": "1-1",
+          "guildId": "0-1",
           "tokensToRevoke": "100"
         }
       ]

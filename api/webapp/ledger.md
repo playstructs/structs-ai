@@ -11,12 +11,12 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/ledger/player/{player_id}/page/{page}` | Get ledger page for a player | No |
-| GET | `/api/ledger/player/{player_id}/count` | Get ledger count for a player | No |
-| GET | `/api/ledger/{tx_id}` | Get ledger entry by transaction ID | No |
-| GET | `/api/ledger/list/all/page/{page}` | List every ledger entry on the chain | No |
-| GET | `/api/ledger/list/player/{player_id}/page/{page}` | Catalog list of ledger entries for a player | No |
-| GET | `/api/ledger/list/address/{address}/page/{page}` | List ledger entries for a Cosmos address | No |
+| GET | `/api/ledger/player/{player_id}/page/{page}` | Get ledger page for a player | Yes |
+| GET | `/api/ledger/player/{player_id}/count` | Get ledger count for a player | Yes |
+| GET | `/api/ledger/{tx_id}` | Get ledger entry by transaction ID | Yes |
+| GET | `/api/ledger/list/all/page/{page}` | List every ledger entry on the chain | Yes |
+| GET | `/api/ledger/list/player/{player_id}/page/{page}` | Catalog list of ledger entries for a player | Yes |
+| GET | `/api/ledger/list/address/{address}/page/{page}` | List ledger entries for a Cosmos address | Yes |
 
 The `/api/ledger/list/...` family is the catalog read interface and is namespaced under `/list/` so it does not shadow the single-entry `GET /api/ledger/{tx_id}` route.
 
@@ -113,4 +113,10 @@ List ledger entries for a Cosmos address.
 
 ## Response Shape
 
-The `/api/ledger/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`). The ledger detail endpoints (`{tx_id}`, `player/{player_id}/page`, `player/{player_id}/count`) return their existing per-entity shapes.
+All ledger endpoints — catalog and bespoke — use the shared `{ "success", "errors", "data" }` envelope (see `protocols/webapp-api-protocol.md`):
+
+- `/api/ledger/list/...` and `/api/ledger/player/{player_id}/page/{page}` → `data` is a **flat array** of ledger rows (page size 100; fetch the next page when `data.length === 100`).
+- `/api/ledger/player/{player_id}/count` → `data` is a single object `{ "count": N }`.
+- `/api/ledger/{tx_id}` → `data` is a single ledger row object (or `null`).
+
+The `/list/` path prefix is required so the catalog routes don't shadow `GET /api/ledger/{tx_id}`.

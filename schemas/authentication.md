@@ -11,23 +11,27 @@
 
 ### WebappLoginRequest
 
-Webapp login request.
+Webapp login request. Authentication is by Cosmos signature, not username/password. Sign the message `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}`.
 
 - **Endpoint**: `POST /api/auth/login`
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| username | string | Yes | Player username |
-| password | string | Yes | Player password |
+| address | string | Yes | Cosmos address logging in |
+| signature | string | Yes | Base64 signature over the login message |
+| pubkey | string | Yes | Base64 public key for `address` |
+| guild_id | string | Yes | Guild being logged into (type 0, e.g. `0-1`) |
+| unix_timestamp | string | Yes | Unix seconds; must be within 600s of server time |
 
 ### WebappLoginResponse
 
-Webapp login response.
+Webapp login response — the standard `{ success, errors, data }` envelope. Success carries a `Set-Cookie: PHPSESSID` header; there is no JWT/bearer token.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | success | boolean | Yes | Login success status |
-| message | string | No | Response message |
+| errors | object | Yes | Keyed errors on failure (e.g. `signature_validation_failed`, `player_address_does_not_exists`); empty on success |
+| data | null | Yes | No body payload; identity is the session cookie |
 
 ### WebappSession
 
@@ -121,8 +125,10 @@ Complete authentication configuration covering all three services.
 | Field | Type | Sensitive | Description |
 |-------|------|-----------|-------------|
 | baseURL | string | No | Webapp base URL |
-| username | string | No | Webapp username |
-| password | string | **Yes** | Webapp password |
+| address | string | No | Cosmos address used to authenticate |
+| pubkey | string | No | Base64 public key for `address` |
+| privateKey | string | **Yes** | Key used to sign the login message (never expose in production) |
+| guild_id | string | No | Guild to authenticate into (type 0) |
 | session | WebappSession | No | Current session data |
 
 #### consensus
@@ -144,21 +150,21 @@ Uses the NATSConnection structure defined above.
 ### Webapp Login Flow
 
 **ID**: `webapp-login`
-**Status**: Needs Verification
+**Status**: Verified against Symfony `AuthManager::login`
 
-Session-based authentication for webapp API.
+Signature-based session authentication for the webapp API.
 
 **Steps**:
 
-1. **POST /api/auth/login** -- Submit login request (WebappLoginRequest), receive WebappLoginResponse. Store session.
-2. **Use session cookie** -- Include `Cookie: {{session.cookie}}` header in subsequent requests.
+1. **Sign** -- Build `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}` and sign it with the address's key.
+2. **POST /api/auth/login** -- Submit WebappLoginRequest, receive WebappLoginResponse + `Set-Cookie: PHPSESSID`.
+3. **Use session cookie** -- Include `Cookie: {{session.cookie}}` on subsequent requests (all `/api/` except `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`).
 
 **Error Handling**:
 
 | Code | Action |
 |------|--------|
-| 401 | Session expired, re-authenticate |
-| 403 | Invalid credentials or insufficient permissions |
+| 401 | `signature_validation_failed` (re-sign with fresh timestamp), `player_address_does_not_exists`, or expired session — re-authenticate |
 
 ### Consensus Transaction Flow
 

@@ -70,6 +70,8 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 **Security warning**: Guild tokens are trust-based. Guilds have full control over their Central Bank. There are no technical safeguards preventing a guild from revoking tokens or mismanaging collateral. Token revocation can be used as economic warfare -- but damages reputation.
 
+> **No HTTP bank-balance read.** `MsgGuildBankMint` / `MsgGuildBankRedeem` are chain transactions, and there is **no** webapp endpoint (e.g. `GET /api/guild/{id}/bank`) to read a guild's bank/token balance. Read balances via chain queries (the Cosmos `bank` module, e.g. balances of the `uguild.{guild_id}` denom) or by reconstructing from the ledger — not from the webapp.
+
 ---
 
 ## See Also

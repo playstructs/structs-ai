@@ -317,18 +317,18 @@ For untyped chain events (e.g. `ugc_moderated`) subscribe to `wss://public.testn
 
 ## Authentication
 
-### Web Application (Session-Based)
+### Web Application (Signature-Based Session)
 
-**Login**:
+**Login** (sign `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}`):
 ```
 POST /api/auth/login
-Body: {"username": "...", "password": "..."}
-Response: Set-Cookie header with session
+Body: {"address": "...", "signature": "...", "pubkey": "...", "guild_id": "0-1", "unix_timestamp": "..."}
+Response: 200 {"success": true, "errors": {}, "data": null} + Set-Cookie: PHPSESSID
 ```
 
-**Authenticated Request**:
+**Authenticated Request** (session required for all `/api/` except `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`):
 ```
-GET /api/guild/this
+GET /api/reactor/all/page/1
 Headers: {"Cookie": "PHPSESSID=..."}
 ```
 

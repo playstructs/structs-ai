@@ -17,9 +17,9 @@ Per-planet typed attributes (shield health, ore reserves, slot counts, defensive
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/planet-attribute/all/page/{page}` | List every planet attribute row | No |
-| GET | `/api/planet-attribute/object/{object_id}/page/{page}` | List attributes on a planet | No |
-| GET | `/api/planet-attribute/type/{attribute_type}/page/{page}` | List one attribute type across every planet | No |
+| GET | `/api/planet-attribute/all/page/{page}` | List every planet attribute row | Yes |
+| GET | `/api/planet-attribute/object/{object_id}/page/{page}` | List attributes on a planet | Yes |
+| GET | `/api/planet-attribute/type/{attribute_type}/page/{page}` | List one attribute type across every planet | Yes |
 
 ---
 
@@ -57,4 +57,4 @@ Per-planet typed attributes (shield health, ore reserves, slot counts, defensive
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

@@ -15,6 +15,24 @@ The surface has two layers:
 1. **Bespoke entity endpoints** — return joined / aggregated objects for common UI flows (e.g. `/api/player/{player_id}` returns the player + reactor staking summary; `/api/planet/{planet_id}/shield/health` returns the planet shield).
 2. **Catalog read endpoints** — uniform paginated lists under `/api/{entity}[/{filter}]/page/{page}`. Use these when iterating, syncing, or analysing rather than rendering a single screen.
 
+## Response Envelope
+
+Every webapp response — both layers, success and failure — uses one envelope (`ApiResponseContentDto`):
+
+```json
+{
+  "success": true,
+  "errors": {},
+  "data": null
+}
+```
+
+- `success` (boolean): `true` on HTTP 200, `false` on `400/401/403/404/409`.
+- `errors` (object): a **keyed map** of `error_key` → message (e.g. `{"signature_validation_failed":"Invalid signature"}`). Empty `{}` on success. It is never a string array, and there is no top-level `error`/`code`/`details`.
+- `data` (object | array | null): the payload. Single-row reads → object; catalog list reads → **flat array** (see Pattern 7); `null` on error or an empty single lookup.
+
+Parsing rule for all clients/agents: check `success`, then read `errors` or unwrap `data`. Browser clients must send `credentials: include` so the `PHPSESSID` cookie rides along.
+
 ## Base Configuration
 
 ```json
@@ -34,9 +52,19 @@ For the public Orbital Hydro guild webapp use `http://crew.oh.energy` as the bas
 
 ## Authentication
 
-### Session-Based Authentication
+### Signature-Based Session Authentication
 
-The webapp uses session-based authentication via cookies.
+The webapp authenticates by **Cosmos signature**, not username/password. The client signs a deterministic message with a Cosmos address's key; on success the server starts a session and returns a `PHPSESSID` cookie (no JWT/bearer token).
+
+**Public routes (no session required)** — only these four prefixes (`config/packages/security.yaml`): `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`. **Everything else under `/api/` requires a session** and returns `401` without a valid cookie.
+
+**Signed message format** (`SignatureValidationManager::buildLoginMessage`):
+
+```
+LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
+```
+
+`unix_timestamp` must be within 600 seconds of server time.
 
 **Login Flow**:
 ```json
@@ -48,8 +76,11 @@ The webapp uses session-based authentication via cookies.
       "Content-Type": "application/json"
     },
     "body": {
-      "username": "player_username",
-      "password": "player_password"
+      "address": "structs1...",
+      "signature": "base64-signature",
+      "pubkey": "base64-pubkey",
+      "guild_id": "0-1",
+      "unix_timestamp": "1715000000"
     }
   },
   "response": {
@@ -59,18 +90,21 @@ The webapp uses session-based authentication via cookies.
     },
     "body": {
       "success": true,
-      "message": "Login successful"
+      "errors": {},
+      "data": null
     }
   }
 }
 ```
 
-**Using Authenticated Requests**:
+On failure the server returns `401` with keyed errors (`signature_validation_failed`, `player_address_does_not_exists`, `player_does_not_exists`). See `examples/auth/webapp-login.md`.
+
+**Using Authenticated Requests** (send the cookie; browser clients use `credentials: include`):
 ```json
 {
   "request": {
     "method": "GET",
-    "url": "/api/guild/this",
+    "url": "/api/reactor/all/page/1",
     "headers": {
       "Cookie": "PHPSESSID=..."
     }
@@ -99,9 +133,13 @@ The webapp uses session-based authentication via cookies.
   "response": {
     "status": 200,
     "body": {
-      "player": {...},
-      "stats": {...},
-      "planets": [...]
+      "success": true,
+      "errors": {},
+      "data": {
+        "player": {...},
+        "stats": {...},
+        "planets": [...]
+      }
     }
   }
 }
@@ -129,12 +167,16 @@ The webapp uses session-based authentication via cookies.
   "response": {
     "status": 200,
     "body": {
-      "planet": {...},
-      "shield": {
-        "health": 100,
-        "maxHealth": 100
-      },
-      "structs": [...]
+      "success": true,
+      "errors": {},
+      "data": {
+        "planet": {...},
+        "shield": {
+          "health": 100,
+          "maxHealth": 100
+        },
+        "structs": [...]
+      }
     }
   }
 }
@@ -157,21 +199,27 @@ The webapp uses session-based authentication via cookies.
 {
   "request": {
     "method": "GET",
-    "url": "/api/guild/1"
+    "url": "/api/guild/0-1"
   },
   "response": {
     "status": 200,
     "body": {
-      "guild": {...},
-      "members": [...],
-      "stats": {...}
+      "success": true,
+      "errors": {},
+      "data": {
+        "guild": {...},
+        "members": [...],
+        "stats": {...}
+      }
     }
   }
 }
 ```
 
+Guild IDs are type `0` (`^0-[0-9]+$`), e.g. `0-1`. `GET /api/guild/{guild_id}` requires an authenticated session.
+
 **Related Endpoints**:
-- `GET /api/guild/this` - Current user's guild (requires auth)
+- `GET /api/guild/this` - Infrastructure / host guild for this deployment (`guild_meta.this_infrastructure = TRUE`). Public (no session); not the logged-in player's guild. The operator's own guild comes from the login session (`guild_id`) or the player record.
 - `GET /api/guild/{guild_id}/roster` - Guild roster
 - `GET /api/guild/{guild_id}/power/stats` - Power statistics
 - `GET /api/guild/{guild_id}/members/count` - Member count
@@ -195,7 +243,11 @@ The webapp uses session-based authentication via cookies.
   "response": {
     "status": 200,
     "body": {
-      "struct": {...}
+      "success": true,
+      "errors": {},
+      "data": {
+        "struct": {...}
+      }
     }
   }
 }
@@ -216,18 +268,20 @@ The webapp uses session-based authentication via cookies.
 {
   "request": {
     "method": "GET",
-    "url": "/api/ledger/player/1/page/1"
+    "url": "/api/ledger/player/1-11/page/1"
   },
   "response": {
     "status": 200,
     "body": {
-      "transactions": [...],
-      "page": 1,
-      "totalPages": 10
+      "success": true,
+      "errors": {},
+      "data": [ { "tx_id": "...", "...": "..." } ]
     }
   }
 }
 ```
+
+The page endpoint returns a **flat array** of ledger rows in `data` (page size 100 — fetch the next page when `data.length === 100`); there is no `transactions`/`page`/`totalPages` wrapper. `/count` returns `data: { count }` and `/{tx_id}` returns a single object in `data` — all inside the same envelope.
 
 **Related Endpoints**:
 - `GET /api/ledger/player/{player_id}/count` - Transaction count
@@ -253,7 +307,11 @@ The webapp uses session-based authentication via cookies.
   "response": {
     "status": 200,
     "body": {
-      "raids": [...]
+      "success": true,
+      "errors": {},
+      "data": {
+        "raids": [...]
+      }
     }
   }
 }
@@ -268,6 +326,9 @@ The webapp uses session-based authentication via cookies.
 Conventions:
 
 - `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
+- Page size is **fixed at 100** (`PaginationLimits::DEFAULT`); it is not client-configurable and there are no `offset`/`limit` query params.
+- Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
+- To detect more pages: if `data.length === 100`, fetch `page + 1`; if `< 100` (or empty), you have reached the end.
 - Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all/page/1`, `/api/permission-guild-rank/object/{object_id}/page/1`).
 - For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
 
@@ -282,9 +343,11 @@ Conventions:
   "response": {
     "status": 200,
     "body": {
-      "rows": [...],
-      "page": 1,
-      "page_size": 100
+      "success": true,
+      "errors": {},
+      "data": [
+        { "id": "6-1", "allocation_type": "static", "source_id": "4-1", "destination_id": "1-11", "creator": "structs1...", "controller": "1-11" }
+      ]
     }
   }
 }
@@ -307,17 +370,24 @@ Conventions:
   "response": {
     "status": 200,
     "body": {
-      "rows": [
-        { "ts": 1715000300, "value": 1024 },
-        { "ts": 1715000600, "value": 1018 }
-      ],
-      "page": 1
+      "success": true,
+      "errors": {},
+      "data": [
+        { "time": "2024-05-06T14:18:20Z", "value": 1024 },
+        { "time": "2024-05-06T14:23:20Z", "value": 1018 }
+      ]
     }
   }
 }
 ```
 
-If `start_time` or `end_time` is missing, the endpoint returns `400 Bad Request` with `errors.start_time_end_time_required` set to `start_time and end_time query params are required (unix seconds)`.
+`data` is a flat array of `{time, value}` (the column is `time`, not `ts`), page size 100. The window is `[start_time, end_time)` (start inclusive, end exclusive).
+
+**Constraints** (all `400` with keyed `errors`):
+- `start_time_end_time_required` — `start_time`/`end_time` query params missing.
+- `time_range_invalid` — `end_time` must be greater than `start_time`.
+- `time_range_too_large` — max window is **604800s (7 days)**.
+- `object_key_invalid` — malformed key, or wrong entity type for a **family-two** metric (`structs_load`→player, `connection_count`/`connection_capacity`→substation, `struct_health`/`struct_status`→struct). Family-one metrics (`ore`, `fuel`, `capacity`, `load`, `power`) accept any object type.
 
 ### Pattern 9: Live Tunables
 
@@ -331,18 +401,19 @@ Returns every entry from the `setting` table as a name/value map. Treat the resp
 
 ### Standard Error Response
 
+Webapp failures reuse the envelope with `success: false` and a keyed `errors` object (see "Response Envelope" above). There is no top-level `error`/`code`/`details` body.
+
 ```json
 {
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Player with ID '1' not found",
-    "details": {
-      "entity": "Player",
-      "id": "1"
-    }
-  }
+  "success": false,
+  "errors": {
+    "player_address_does_not_exists": "Player address does not exist"
+  },
+  "data": null
 }
 ```
+
+HTTP status conveys the category: `400` (validation), `401` (unauthenticated / signature failure), `403`, `404`, `409` (conflict).
 
 ### Error Handling Strategy
 
@@ -412,6 +483,11 @@ Returns every entry from the `setting` table as a name/value map. Treat the resp
 - real-time state queries
 - Block height and chain information
 - Module parameters
+- **Single-entity detail by ID** for entities the webapp only lists as catalogs (e.g. reactor, substation)
+
+### No webapp single-entity GET for some entities
+
+The webapp does **not** expose `GET /api/reactor/{id}` or `GET /api/substation/{id}` — those entities are **catalog-only** over HTTP (`/api/reactor/all|guild|...|/page/{n}`, `/api/substation/all|owner/page/{n}`). To get one such entity from the webapp you must scan/filter catalog pages client-side. The by-ID paths `GET /structs/reactor/{id}` and `GET /structs/substation/{id}` belong to the **consensus** (chain REST) base URL — keep the two base URLs distinct.
 
 ### Combined Strategy
 

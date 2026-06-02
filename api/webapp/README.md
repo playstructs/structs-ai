@@ -9,7 +9,11 @@
 
 This directory contains the structs-webapp HTTP API split per entity. Agents should load only the entity files they need rather than reading the full endpoint catalog.
 
-**Implementation**: PHP Symfony app at [`playstructs/structs-webapp`](https://github.com/playstructs/structs-webapp). Authentication is handled by the webapp itself (see `auth.md`); the catalog read endpoints below are unauthenticated.
+**Implementation**: PHP Symfony app at [`playstructs/structs-webapp`](https://github.com/playstructs/structs-webapp). Authentication is by Cosmos signature → session cookie (see `auth.md`).
+
+**Authentication required by default.** Per `config/packages/security.yaml`, the only public routes are `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, and `/api/setting`. **Every other `/api/` route — including all catalog read endpoints below — requires an authenticated `PHPSESSID` session** and returns `401` without one. Browser clients must send `credentials: include` so the cookie rides along.
+
+**Response envelope (all endpoints)**: every webapp response — bespoke or catalog, success or failure — is `{ "success": bool, "errors": {}, "data": ... }`. **Always check `success`, then unwrap `data`.** `errors` is a keyed object (e.g. `{"signature_validation_failed": "..."}`), never a string array. Bespoke endpoints return SQL column names (snake_case) inside `data` unless otherwise noted; catalog reads return a flat array of rows in `data`. See `../../protocols/webapp-api-protocol.md`.
 
 **Base URLs**:
 

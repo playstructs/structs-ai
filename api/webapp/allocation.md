@@ -17,11 +17,11 @@ Energy allocations route power between sources and destinations. Each allocation
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/allocation/all/page/{page}` | List every allocation | No |
-| GET | `/api/allocation/source/{source_id}/page/{page}` | List allocations from a source object | No |
-| GET | `/api/allocation/destination/{destination_id}/page/{page}` | List allocations targeting a destination object | No |
-| GET | `/api/allocation/creator/{creator}/page/{page}` | List allocations created by a player | No |
-| GET | `/api/allocation/controller/{controller}/page/{page}` | List allocations whose controller is a player | No |
+| GET | `/api/allocation/all/page/{page}` | List every allocation | Yes |
+| GET | `/api/allocation/source/{source_id}/page/{page}` | List allocations from a source object | Yes |
+| GET | `/api/allocation/destination/{destination_id}/page/{page}` | List allocations targeting a destination object | Yes |
+| GET | `/api/allocation/creator/{creator}/page/{page}` | List allocations created by a player | Yes |
+| GET | `/api/allocation/controller/{controller}/page/{page}` | List allocations whose controller is a player | Yes |
 
 ---
 
@@ -83,4 +83,4 @@ The controller of an allocation is the **player** authorised to mutate it.
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

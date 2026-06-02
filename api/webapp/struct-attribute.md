@@ -17,9 +17,9 @@ Per-struct typed attributes — health, ambit, build state, and other scalar pro
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/struct-attribute/all/page/{page}` | List every struct attribute row | No |
-| GET | `/api/struct-attribute/object/{object_id}/page/{page}` | List attributes on a struct | No |
-| GET | `/api/struct-attribute/type/{attribute_type}/page/{page}` | List one attribute type across every struct | No |
+| GET | `/api/struct-attribute/all/page/{page}` | List every struct attribute row | Yes |
+| GET | `/api/struct-attribute/object/{object_id}/page/{page}` | List attributes on a struct | Yes |
+| GET | `/api/struct-attribute/type/{attribute_type}/page/{page}` | List one attribute type across every struct | Yes |
 
 ---
 
@@ -57,4 +57,4 @@ Per-struct typed attributes — health, ambit, build state, and other scalar pro
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

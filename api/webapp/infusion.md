@@ -11,11 +11,11 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/infusion/player/{player_id}` | Get infusions for player (full reactor-staking detail) | No |
-| GET | `/api/infusion/list/all/page/{page}` | List every infusion on the chain | No |
-| GET | `/api/infusion/list/destination/{destination_id}/page/{page}` | List infusions targeting a destination object (e.g. a reactor) | No |
-| GET | `/api/infusion/list/address/{address}/page/{page}` | List infusions made by a Cosmos address | No |
-| GET | `/api/infusion/list/player/{player_id}/page/{page}` | Lightweight paginated list of infusions made by a player | No |
+| GET | `/api/infusion/player/{player_id}` | Get infusions for player (full reactor-staking detail) | Yes |
+| GET | `/api/infusion/list/all/page/{page}` | List every infusion on the chain | Yes |
+| GET | `/api/infusion/list/destination/{destination_id}/page/{page}` | List infusions targeting a destination object (e.g. a reactor) | Yes |
+| GET | `/api/infusion/list/address/{address}/page/{page}` | List infusions made by a Cosmos address | Yes |
+| GET | `/api/infusion/list/player/{player_id}/page/{page}` | Lightweight paginated list of infusions made by a player | Yes |
 
 The single-player endpoint (`/api/infusion/player/{player_id}`) returns full reactor-staking context. The `/api/infusion/list/...` family returns paginated catalog rows for browsing or analytics; choose the variant by the filter you have.
 
@@ -56,6 +56,8 @@ List every infusion on the chain, paginated.
 List infusions targeting a destination object.
 
 - **ID**: `webapp-infusion-list-by-destination`
+
+> **Multi-row, not a summary.** `structs.infusion` is keyed on `(destination_id, address)`, so this endpoint returns **one row per infusing address** at that destination — a reactor with many stakers returns many rows. **Do not treat `data[0]` as "the reactor's infusion"** — that silently drops every other staker. To get a destination's total you must aggregate across all rows (and all pages, since the page size is 100). There is **no** `/api/infusion/reactor/{id}` route in Symfony; use this `list/destination/{id}` path with the reactor ID as `destination_id`.
 
 #### Parameters
 
@@ -98,26 +100,50 @@ Paginated list of infusions made by a player. Use this when iterating large infu
 
 ## Response Schema
 
-`/api/infusion/player/{player_id}` includes reactor staking information:
+### Catalog rows (`/api/infusion/list/...`)
+
+All four `list/*` endpoints select the same raw `structs.infusion` columns (snake_case) and return them **directly in `data` as a flat array** — one row per `(destination_id, address)`:
+
+| Column | Description |
+|--------|-------------|
+| `destination_id` | Object being infused (e.g. reactor `3-1`) |
+| `address` | Cosmos address that infused |
+| `destination_type` | Destination kind (e.g. `reactor`, `struct`) |
+| `player_id` | Player owning `address` |
+| `fuel` / `fuel_p` | Fuel amount / pending fuel |
+| `defusing` / `defusing_p` | Defusing amount / pending |
+| `power` / `power_p` | Power contribution / pending |
+| `ratio` / `ratio_p` | Share ratio / pending |
+| `commission` | Commission rate |
+| `created_at` / `updated_at` | Timestamps |
 
 ```json
 {
-  "infusions": [
+  "success": true,
+  "errors": {},
+  "data": [
     {
-      "destinationId": "3-1",
-      "address": "cosmos1...",
+      "destination_id": "3-1",
+      "address": "structs1...",
+      "destination_type": "reactor",
+      "player_id": "1-11",
       "fuel": "1000000",
+      "fuel_p": "0",
       "power": "1000000",
-      "staking": {
-        "delegationStatus": "active",
-        "validationDelegation": {
-          "validator": "...",
-          "amount": "..."
-        }
-      }
+      "power_p": "0",
+      "ratio": "...",
+      "commission": "...",
+      "created_at": "...",
+      "updated_at": "..."
     }
   ]
 }
 ```
 
-The `/api/infusion/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Because the rows are multi-staker, derive a destination total by summing across **all** rows and pages — never from a single row.
+
+### Bespoke single-player (`/api/infusion/player/{player_id}`)
+
+This `InfusionController` endpoint joins infusion + reactor staking context for one player and returns it inside the envelope's `data` (richer than the raw catalog rows). Unwrap `data` after checking `success`.
+
+The `/api/infusion/list/...` endpoints use the shared envelope with rows directly in `data` as a flat array (page size 100). See `protocols/webapp-api-protocol.md`.

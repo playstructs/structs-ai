@@ -17,7 +17,9 @@ Live tunables that control chain economy and gameplay constants. The table is `(
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/setting` | Return every setting as a name/value map | No |
+| GET | `/api/setting` | Return every setting row | No (public) |
+
+`/api/setting` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); no session cookie required.
 
 ---
 
@@ -33,11 +35,13 @@ Return every setting in a single payload. There are no path or query parameters.
 
 **Request**: `GET http://localhost:8080/api/setting`
 
-**Response** (shape):
+**Response** (shape) — `queryAll` returns the `setting` rows **directly in `data` as a flat array** (`SELECT *` so each row carries the SQL columns, e.g. `name`, `value`, plus any timestamps):
 
 ```json
 {
-  "settings": [
+  "success": true,
+  "errors": {},
+  "data": [
     { "name": "REACTOR_RATIO", "value": "..." },
     { "name": "PLAYER_RESUME_CHARGE", "value": "..." },
     { "name": "PLANETARY_SHIELD_BASE", "value": "..." },
@@ -48,7 +52,7 @@ Return every setting in a single payload. There are no path or query parameters.
 }
 ```
 
-The exact key list grows over time — treat the response as an open name/value map and match by `name`.
+The exact key list grows over time — treat `data` as an open list of name/value rows and match by `name`.
 
 ---
 

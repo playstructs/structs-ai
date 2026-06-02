@@ -398,15 +398,17 @@ In addition to the bespoke endpoints below, the webapp exposes a uniform catalog
 
 ### Player Endpoints
 
+> All webapp `/api/` routes below require an authenticated `PHPSESSID` session (the only public routes are `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`). All responses use the `{ "success", "errors", "data" }` envelope — unwrap `data`.
+
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | `/api/player/{player_id}` | Get player information | No |
-| GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height | No |
-| GET | `/api/player/raid/search` | Search player raids | No |
-| GET | `/api/player/transfer/search` | Search player transfers | No |
-| GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | No |
-| GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | No |
-| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | No |
+| GET | `/api/player/{player_id}` | Get player information | Yes |
+| GET | `/api/player/{player_id}/action/last/block/height` | Get last action block height | Yes |
+| GET | `/api/player/raid/search` | Search player raids | Yes |
+| GET | `/api/player/transfer/search` | Search player transfers | Yes |
+| GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | Yes |
+| GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | Yes |
+| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | Yes |
 
 > Username and PFP updates use on-chain `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`; the webapp queues them through the signing client manager. See `knowledge/mechanics/ugc-moderation.md`.
 
@@ -420,20 +422,24 @@ Response schema: `schemas/responses.md#WebappPlayerResponse`
 
 ```json
 // Example request: GET http://localhost:8080/api/player/1-11
-// Example response:
+// Example response (envelope; data fields are SQL columns, snake_case):
 {
-  "player": {
-    "id": "1-11",
-    "username": "PlayerName",
-    "address": "cosmos1..."
-  },
-  "guild": {
-    "id": "2-1",
-    "name": "GuildName"
-  },
-  "stats": {
-    "total_ore": 1000,
-    "planets_completed": 5
+  "success": true,
+  "errors": {},
+  "data": {
+    "player": {
+      "id": "1-11",
+      "username": "PlayerName",
+      "address": "structs1..."
+    },
+    "guild": {
+      "id": "0-1",
+      "name": "GuildName"
+    },
+    "stats": {
+      "total_ore": 1000,
+      "planets_completed": 5
+    }
   }
 }
 ```
@@ -447,9 +453,11 @@ Response schema: `schemas/responses.md#WebappPlayerResponse`
 Response schema: `schemas/responses.md#BlockHeightResponse`
 
 ```json
-// Example response:
+// Example response (envelope):
 {
-  "height": 12345
+  "success": true,
+  "errors": {},
+  "data": { "height": 12345 }
 }
 ```
 
@@ -462,14 +470,18 @@ Response schema: `schemas/responses.md#BlockHeightResponse`
 Response schema: `schemas/responses.md#OreStatsResponse`
 
 ```json
-// Example response:
+// Example response (envelope):
 {
-  "player_id": "1-11",
-  "total_ore": 1000,
-  "ore_by_type": {
-    "iron": 500,
-    "copper": 300,
-    "silver": 200
+  "success": true,
+  "errors": {},
+  "data": {
+    "player_id": "1-11",
+    "total_ore": 1000,
+    "ore_by_type": {
+      "iron": 500,
+      "copper": 300,
+      "silver": 200
+    }
   }
 }
 ```
@@ -493,12 +505,16 @@ Response schema: `schemas/responses.md#OreStatsResponse`
 Response schema: `schemas/entities.md#Planet`
 
 ```json
-// Example response:
+// Example response (envelope):
 {
-  "id": "3-1",
-  "owner_id": "1-11",
-  "max_ore": 5,
-  "space_slots": 4
+  "success": true,
+  "errors": {},
+  "data": {
+    "id": "2-1",
+    "owner_id": "1-11",
+    "max_ore": 5,
+    "space_slots": 4
+  }
 }
 ```
 
@@ -511,11 +527,15 @@ Response schema: `schemas/entities.md#Planet`
 Response schema: `schemas/responses.md#ShieldHealthResponse`
 
 ```json
-// Example response:
+// Example response (envelope):
 {
-  "planet_id": "3-1",
-  "health": 1000,
-  "max_health": 1000
+  "success": true,
+  "errors": {},
+  "data": {
+    "planet_id": "2-1",
+    "health": 1000,
+    "max_health": 1000
+  }
 }
 ```
 
@@ -523,16 +543,16 @@ Response schema: `schemas/responses.md#ShieldHealthResponse`
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | `/api/guild/this` | Get current user's guild | Required |
-| GET | `/api/guild/name` | Get guild name | No |
-| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | No |
-| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | No |
-| GET | `/api/guild/count` | Get total guild count | No |
-| GET | `/api/guild/directory` | Get guild directory | No |
-| GET | `/api/guild/{guild_id}` | Get guild by ID | No |
-| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | No |
-| GET | `/api/guild/{guild_id}/roster` | Get guild roster | No |
-| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | No |
+| GET | `/api/guild/this` | Host/infrastructure guild for this deployment (`guild_meta.this_infrastructure = TRUE`) — not the logged-in player's guild | No (public) |
+| GET | `/api/guild/name` | Get guild name | Yes |
+| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | Yes |
+| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | Yes |
+| GET | `/api/guild/count` | Get total guild count | Yes |
+| GET | `/api/guild/directory` | Get guild directory | Yes |
+| GET | `/api/guild/{guild_id}` | Get guild by ID | Yes |
+| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | Yes |
+| GET | `/api/guild/{guild_id}/roster` | Get guild roster | Yes |
+| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | Yes |
 
 **`GET /api/guild/{guild_id}`** (`webapp-guild-by-id`)
 
@@ -543,11 +563,15 @@ Response schema: `schemas/responses.md#ShieldHealthResponse`
 Response schema: `schemas/entities.md#Guild`
 
 ```json
-// Example response:
+// Example response (envelope; guild IDs are type 0):
 {
-  "id": "2-1",
-  "name": "GuildName",
-  "member_count": 10
+  "success": true,
+  "errors": {},
+  "data": {
+    "id": "0-1",
+    "name": "GuildName",
+    "member_count": 10
+  }
 }
 ```
 
@@ -556,9 +580,11 @@ Response schema: `schemas/entities.md#Guild`
 Response schema: `schemas/responses.md#CountResponse`
 
 ```json
-// Example response:
+// Example response (envelope):
 {
-  "count": 42
+  "success": true,
+  "errors": {},
+  "data": { "count": 42 }
 }
 ```
 
@@ -566,9 +592,11 @@ Response schema: `schemas/responses.md#CountResponse`
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| POST | `/api/auth/signup` | Sign up new user | None |
-| POST | `/api/auth/login` | Login user | None |
-| GET | `/api/auth/logout` | Logout user | Required |
+| POST | `/api/auth/signup` | Register a new player (Cosmos signature) | None (public) |
+| POST | `/api/auth/login` | Authenticate via Cosmos signature → `PHPSESSID` cookie | None (public) |
+| GET | `/api/auth/logout` | Clear the current session | None (public prefix) |
+
+Login body: `{address, signature, pubkey, guild_id, unix_timestamp}`; signed message `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}`. See `api/webapp/auth.md`.
 
 ### Struct Endpoints
 
@@ -601,10 +629,11 @@ Response schema: `schemas/responses.md#CountResponse`
 Response schema: `schemas/responses.md#TimestampResponse`
 
 ```json
-// Example response:
+// Example response (envelope; data key is unix_timestamp). Public route.
 {
-  "timestamp": 1704067200,
-  "iso": "2024-01-01T00:00:00Z"
+  "success": true,
+  "errors": {},
+  "data": { "unix_timestamp": 1704067200 }
 }
 ```
 

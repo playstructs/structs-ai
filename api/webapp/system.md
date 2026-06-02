@@ -12,7 +12,9 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/timestamp` | Get current Unix timestamp | No |
+| GET | `/api/timestamp` | Get current Unix timestamp | No (public) |
+
+`/api/timestamp` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); it needs no session cookie. Use it to obtain server time for the login `unix_timestamp` (must be within 600s of server time).
 
 ---
 
@@ -30,12 +32,13 @@ Get current Unix timestamp.
 
 **Request**: `GET http://localhost:8080/api/timestamp`
 
-**Response**:
+**Response** (standard envelope; `data` holds the SQL/column key `unix_timestamp`):
 
 ```json
 {
-  "timestamp": 1704067200,
-  "iso": "2024-01-01T00:00:00Z"
+  "success": true,
+  "errors": {},
+  "data": { "unix_timestamp": 1704067200 }
 }
 ```
 

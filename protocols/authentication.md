@@ -60,7 +60,17 @@ The Authentication Protocol defines how AI agents should authenticate and author
 
 ## Web Application Authentication
 
+The webapp authenticates by **Cosmos signature**, not username/password. The client signs a deterministic message with a Cosmos address's key; on success the server starts a session and returns a `PHPSESSID` cookie. There is no JWT/bearer token. Only `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, and `/api/setting` are public; every other `/api/` route requires the session cookie.
+
 ### Login Flow
+
+**Step 0: Build and sign the message** (`SignatureValidationManager::buildLoginMessage`):
+
+```
+LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
+```
+
+`unix_timestamp` (unix seconds) must be within 600 seconds of server time.
 
 **Step 1: Login Request**
 
@@ -73,8 +83,11 @@ The Authentication Protocol defines how AI agents should authenticate and author
       "Content-Type": "application/json"
     },
     "body": {
-      "username": "player_username",
-      "password": "player_password"
+      "address": "structs1...",
+      "signature": "base64-signature",
+      "pubkey": "base64-pubkey",
+      "guild_id": "0-1",
+      "unix_timestamp": "1715000000"
     }
   }
 }
@@ -91,19 +104,22 @@ The Authentication Protocol defines how AI agents should authenticate and author
     },
     "body": {
       "success": true,
-      "message": "Login successful"
+      "errors": {},
+      "data": null
     }
   }
 }
 ```
 
-**Step 3: Using Session Cookie**
+On failure the server returns `401` with keyed errors (`signature_validation_failed`, `player_address_does_not_exists`, `player_does_not_exists`).
+
+**Step 3: Using Session Cookie** (browser clients use `credentials: include`)
 
 ```json
 {
   "request": {
     "method": "GET",
-    "url": "http://localhost:8080/api/guild/this",
+    "url": "http://localhost:8080/api/reactor/all/page/1",
     "headers": {
       "Cookie": "PHPSESSID=abc123def456",
       "Accept": "application/json"
@@ -125,8 +141,11 @@ The Authentication Protocol defines how AI agents should authenticate and author
         "method": "POST",
         "url": "/api/auth/login",
         "body": {
-          "username": "player_username",
-          "password": "player_password"
+          "address": "structs1...",
+          "signature": "base64-signature",
+          "pubkey": "base64-pubkey",
+          "guild_id": "0-1",
+          "unix_timestamp": "1715000000"
         }
       },
       "response": {
@@ -140,7 +159,7 @@ The Authentication Protocol defines how AI agents should authenticate and author
       "action": "authenticated-request",
       "request": {
         "method": "GET",
-        "url": "/api/guild/this",
+        "url": "/api/reactor/all/page/1",
         "headers": {
           "Cookie": "{{session.cookie}}"
         }
@@ -152,6 +171,8 @@ The Authentication Protocol defines how AI agents should authenticate and author
 
 ### Signup Flow
 
+Registration is also signature-based and **asynchronous**: persisting the pending player triggers a `GuildMembershipJoinProxy` chain message, and the player ID is assigned later. Login must be called separately once the ID exists. Signed message (`buildGuildMembershipJoinProxyMessage`): `GUILD{guildId}ADDRESS{address}NONCE{nonce}`.
+
 **Request**:
 ```json
 {
@@ -162,9 +183,12 @@ The Authentication Protocol defines how AI agents should authenticate and author
       "Content-Type": "application/json"
     },
     "body": {
+      "primary_address": "structs1...",
+      "signature": "base64-signature",
+      "pubkey": "base64-pubkey",
+      "guild_id": "0-1",
       "username": "new_player",
-      "password": "secure_password",
-      "email": "player@example.com"
+      "pfp": "optional-pfp"
     }
   }
 }
@@ -174,10 +198,11 @@ The Authentication Protocol defines how AI agents should authenticate and author
 ```json
 {
   "response": {
-    "status": 200,
+    "status": 202,
     "body": {
       "success": true,
-      "message": "Account created successfully"
+      "errors": {},
+      "data": null
     }
   }
 }
@@ -591,14 +616,15 @@ asyncio.run(main())
 }
 ```
 
-**Invalid Credentials**:
+**Signature Validation Failed**:
 ```json
 {
-  "error": "invalid-credentials",
+  "error": "signature_validation_failed",
   "recovery": {
     "step1": "log-error",
-    "step2": "do-not-retry",
-    "step3": "request-new-credentials"
+    "step2": "rebuild-login-message-with-fresh-unix-timestamp",
+    "step3": "re-sign-and-retry",
+    "note": "signatures expire after 600s; confirm the address is an approved guild member"
   }
 }
 ```
@@ -658,8 +684,10 @@ asyncio.run(main())
 {
   "webapp": {
     "baseUrl": "http://localhost:8080",
-    "username": "${WEBAPP_USERNAME}",
-    "password": "${WEBAPP_PASSWORD}"
+    "address": "${WEBAPP_ADDRESS}",
+    "pubkey": "${WEBAPP_PUBKEY}",
+    "privateKey": "${WEBAPP_PRIVATE_KEY}",
+    "guildId": "${WEBAPP_GUILD_ID}"
   },
   "consensus": {
     "rpcURL": "http://localhost:26657",

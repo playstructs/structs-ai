@@ -94,7 +94,7 @@ Workflows demonstrating authentication and authenticated operations.
 - Querying guild information
 - Demonstrating authentication flow
 
-**Dependencies**: Username and password
+**Dependencies**: A Cosmos address (approved guild member), its signing key, and the target guild ID — login is signature-based, not username/password
 
 **Related**: See `examples/auth/` for authentication examples
 

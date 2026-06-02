@@ -112,7 +112,7 @@ Fires when guild rank permissions are set or revoked on an object.
 {
   "guildRankPermissionRecord": {
     "objectId": "6-1",
-    "guildId": "4-1",
+    "guildId": "0-1",
     "permissions": 4,
     "rank": 3
   }

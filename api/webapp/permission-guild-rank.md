@@ -17,9 +17,9 @@ Permission grants attached to a **guild rank** rather than to a specific player.
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/permission-guild-rank/all/page/{page}` | List every guild-rank permission grant | No |
-| GET | `/api/permission-guild-rank/object/{object_id}/page/{page}` | List rank grants on an object | No |
-| GET | `/api/permission-guild-rank/guild/{guild_id}/page/{page}` | List rank grants belonging to a guild | No |
+| GET | `/api/permission-guild-rank/all/page/{page}` | List every guild-rank permission grant | Yes |
+| GET | `/api/permission-guild-rank/object/{object_id}/page/{page}` | List rank grants on an object | Yes |
+| GET | `/api/permission-guild-rank/guild/{guild_id}/page/{page}` | List rank grants belonging to a guild | Yes |
 
 ---
 
@@ -57,4 +57,4 @@ Permission grants attached to a **guild rank** rather than to a specific player.
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

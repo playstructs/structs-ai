@@ -5862,13 +5862,13 @@ structsd query structs guild-rank-permission-by-object-and-guild {objectId} {gui
   "guild_rank_permission_records": [
     {
       "objectId": "6-1",
-      "guildId": "4-1",
+      "guildId": "0-1",
       "permissions": "4",
       "rank": "3"
     },
     {
       "objectId": "6-1",
-      "guildId": "4-1",
+      "guildId": "0-1",
       "permissions": "16384",
       "rank": "3"
     }
@@ -5905,7 +5905,7 @@ Emitted for each guild rank permission bit that changes:
 {
   "guildRankPermissionRecord": {
     "objectId": "6-1",
-    "guildId": "4-1",
+    "guildId": "0-1",
     "permissions": 4,
     "rank": 3
   }
@@ -7716,6 +7716,8 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 **Security warning**: Guild tokens are trust-based. Guilds have full control over their Central Bank. There are no technical safeguards preventing a guild from revoking tokens or mismanaging collateral. Token revocation can be used as economic warfare -- but damages reputation.
 
+> **No HTTP bank-balance read.** `MsgGuildBankMint` / `MsgGuildBankRedeem` are chain transactions, and there is **no** webapp endpoint (e.g. `GET /api/guild/{id}/bank`) to read a guild's bank/token balance. Read balances via chain queries (the Cosmos `bank` module, e.g. balances of the `uguild.{guild_id}` denom) or by reconstructing from the ledger — not from the webapp.
+
 ---
 
 ## See Also
@@ -8233,6 +8235,7 @@ Struct.passiveDraw (when online)
 | Planet's structs | Filter structs by `locationId` = planetId |
 | Player's fleet | `GET /structs/fleet` → filter by ownerId |
 | Agreements by provider | `GET /structs/agreement_by_provider/{providerId}` |
+| Agreements for a guild (webapp) | No `guild_id` on agreements. Resolve guild → `entry_substation_id` → `GET /api/provider/substation/{id}/page/{n}` → `GET /api/agreement/provider/{provider_id}/page/{n}` |
 | Allocations by source/dest | `GET /structs/allocation_by_source/{id}`, `_by_destination/{id}` |
 
 ---

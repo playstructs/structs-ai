@@ -9,28 +9,39 @@
 
 ## General Responses
 
-### SuccessResponse
+### ApiResponseContentDto (webapp envelope)
 
-Generic success response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| success | boolean | Yes | Operation success status |
-| message | string | No | Success message |
-
-### ErrorResponse
-
-Error response format.
+Every `structs-webapp` JSON response — success or failure, bespoke or catalog — uses this single envelope (PHP `App\Dto\ApiResponseContentDto`). Clients must check `success`, then read `errors` or unwrap `data`.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| error | string | Yes | Error message |
-| code | integer | No | Error code |
-| details | array of string | No | Error details |
+| success | boolean | Yes | `true` on success, `false` on failure |
+| errors | object | Yes | Keyed map of `error_key` → message (e.g. `{"signature_validation_failed":"Invalid signature"}`). Empty `{}` on success. Never a string array. |
+| data | object \| array \| null | Yes | Payload. Single-row reads → object; list/catalog reads → flat array; `null` on error or empty single lookup. |
 
-### PaginationResponse
+Examples:
 
-Paginated response wrapper. Included alongside entity-specific data.
+```json
+{ "success": true, "errors": {}, "data": { "id": "1-11" } }
+```
+
+```json
+{ "success": true, "errors": {}, "data": [ { "id": "3-1" }, { "id": "3-2" } ] }
+```
+
+```json
+{ "success": false, "errors": { "player_address_does_not_exists": "Player address does not exist" }, "data": null }
+```
+
+> The consensus network (chain REST) API does NOT use this envelope — it returns Cosmos-SDK shapes with top-level `code`/`message` on error. See `protocols/error-handling.md`.
+
+### Catalog pagination
+
+Catalog list reads put rows **directly in `data` as a flat JSON array** — there is no `rows`/`page`/`page_size` wrapper. Page size is fixed at 100 and the page number is a 1-indexed path segment (`/page/{n}`). To detect more pages: if `data.length === 100`, fetch the next page; if fewer than 100 (or empty), stop. See `protocols/webapp-api-protocol.md`.
+
+### Consensus PaginationResponse
+
+Key-based pagination used only by the consensus network API (`/structs/...`).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -43,13 +54,13 @@ Paginated response wrapper. Included alongside entity-specific data.
 
 ### AuthResponse
 
-Authentication response.
+Webapp login response. Login uses Cosmos signature verification and returns a **session cookie** (`PHPSESSID`); there is no JWT/bearer token. See `examples/auth/webapp-login.md`.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| success | boolean | Authentication success status |
-| player | PlayerData | Player data (see below) |
-| token | string | Authentication token (if applicable) |
+| success | boolean | `true` on successful login (HTTP 200) |
+| errors | object | Keyed errors on failure (HTTP 401), e.g. `signature_validation_failed`, `player_address_does_not_exists` |
+| data | null | Login carries no body payload; identity is established via the `Set-Cookie: PHPSESSID` header |
 
 ### PlayerData
 
@@ -65,9 +76,11 @@ Player data structure, reused across multiple responses.
 
 ## Player Responses
 
+> Webapp note: all webapp response bodies below are carried inside the `data` field of the `ApiResponseContentDto` envelope (`{ "success": true, "errors": {}, "data": ... }`). Bespoke endpoints return SQL column names (snake_case) from their backing query unless otherwise noted. Always unwrap `data` after checking `success`.
+
 ### WebappPlayerResponse
 
-Web application player response.
+Web application player response (`data` payload of `GET /api/player/{player_id}`).
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -192,12 +205,11 @@ Count response.
 
 ### TimestampResponse
 
-Unix timestamp response.
+Unix timestamp response. The webapp returns this inside `data` as `{ "unix_timestamp": <int> }` (no `iso` field). The fields below describe the `data` payload.
 
 | Field | Type | Required | Format | Description |
 |-------|------|----------|--------|-------------|
-| timestamp | integer | Yes | | Unix timestamp |
-| iso | string | No | date-time | ISO 8601 formatted timestamp |
+| unix_timestamp | integer | Yes | | Current server time in unix seconds |
 
 ---
 

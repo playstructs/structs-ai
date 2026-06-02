@@ -128,6 +128,7 @@ Struct.passiveDraw (when online)
 | Planet's structs | Filter structs by `locationId` = planetId |
 | Player's fleet | `GET /structs/fleet` → filter by ownerId |
 | Agreements by provider | `GET /structs/agreement_by_provider/{providerId}` |
+| Agreements for a guild (webapp) | No `guild_id` on agreements. Resolve guild → `entry_substation_id` → `GET /api/provider/substation/{id}/page/{n}` → `GET /api/agreement/provider/{provider_id}/page/{n}` |
 | Allocations by source/dest | `GET /structs/allocation_by_source/{id}`, `_by_destination/{id}` |
 
 ---

@@ -11,13 +11,13 @@
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/struct/player/{player_id}` | Get structs by player ID | No |
-| GET | `/api/struct/planet/{planet_id}` | Get structs on planet | No |
-| GET | `/api/struct/type` | Get struct types | No |
-| GET | `/api/struct/{struct_id}` | Get struct by ID | No |
-| GET | `/api/struct/list/all/page/{page}` | Catalog list of every struct | No |
-| GET | `/api/struct/list/owner/{owner}/page/{page}` | Catalog list of structs owned by a player | No |
-| GET | `/api/struct/list/location/{location_id}/page/{page}` | Catalog list of structs at a location | No |
+| GET | `/api/struct/player/{player_id}` | Get structs by player ID | Yes |
+| GET | `/api/struct/planet/{planet_id}` | Get structs on planet | Yes |
+| GET | `/api/struct/type` | Get struct types | Yes |
+| GET | `/api/struct/{struct_id}` | Get struct by ID | Yes |
+| GET | `/api/struct/list/all/page/{page}` | Catalog list of every struct | Yes |
+| GET | `/api/struct/list/owner/{owner}/page/{page}` | Catalog list of structs owned by a player | Yes |
+| GET | `/api/struct/list/location/{location_id}/page/{page}` | Catalog list of structs at a location | Yes |
 
 Per-struct attributes and defender relationships live in [`struct-attribute.md`](struct-attribute.md) and [`struct-defender.md`](struct-defender.md).
 
@@ -43,18 +43,28 @@ Get structs by player ID.
 
 **Request**: `GET http://localhost:8080/api/struct/player/1-11`
 
-**Response**:
+**Response** — envelope; `data` is a flat array of `struct s.*` rows (snake_case) plus joined `health`, `status`, `defending_struct_ids`:
 
 ```json
-[
-  {
-    "id": "5-1",
-    "structTypeId": 14,
-    "owner": "1-11",
-    "locationId": "2-1",
-    "health": 100
-  }
-]
+{
+  "success": true,
+  "errors": {},
+  "data": [
+    {
+      "id": "5-1",
+      "type": 14,
+      "owner": "1-11",
+      "location_type": "planet",
+      "location_id": "2-1",
+      "operating_ambit": "space",
+      "slot": 0,
+      "is_destroyed": false,
+      "health": 100,
+      "status": 1,
+      "defending_struct_ids": []
+    }
+  ]
+}
 ```
 
 ---
@@ -77,18 +87,28 @@ Get structs on planet.
 
 **Request**: `GET http://localhost:8080/api/struct/planet/2-1`
 
-**Response**:
+**Response** (envelope; flat array of snake_case struct rows):
 
 ```json
-[
-  {
-    "id": "5-1",
-    "structTypeId": 14,
-    "owner": "1-11",
-    "locationId": "2-1",
-    "health": 100
-  }
-]
+{
+  "success": true,
+  "errors": {},
+  "data": [
+    {
+      "id": "5-1",
+      "type": 14,
+      "owner": "1-11",
+      "location_type": "planet",
+      "location_id": "2-1",
+      "operating_ambit": "space",
+      "slot": 0,
+      "is_destroyed": false,
+      "health": 100,
+      "status": 1,
+      "defending_struct_ids": []
+    }
+  ]
+}
 ```
 
 ---
@@ -105,17 +125,21 @@ Get struct types.
 
 **Request**: `GET http://localhost:8080/api/struct/type`
 
-**Response**:
+**Response** (envelope; flat array of `struct_type` rows, snake_case):
 
 ```json
-[
-  {
-    "id": 14,
-    "name": "Command Ship",
-    "cheatsheet_details": "...",
-    "cheatsheet_extended_details": "..."
-  }
-]
+{
+  "success": true,
+  "errors": {},
+  "data": [
+    {
+      "id": 14,
+      "name": "Command Ship",
+      "cheatsheet_details": "...",
+      "cheatsheet_extended_details": "..."
+    }
+  ]
+}
 ```
 
 ---
@@ -138,15 +162,25 @@ Get struct by ID.
 
 **Request**: `GET http://localhost:8080/api/struct/5-1`
 
-**Response**:
+**Response** (envelope; `data` is a single snake_case struct row, or `null`):
 
 ```json
 {
-  "id": "5-1",
-  "structTypeId": 14,
-  "owner": "1-11",
-  "locationId": "2-1",
-  "health": 100
+  "success": true,
+  "errors": {},
+  "data": {
+    "id": "5-1",
+    "type": 14,
+    "owner": "1-11",
+    "location_type": "planet",
+    "location_id": "2-1",
+    "operating_ambit": "space",
+    "slot": 0,
+    "is_destroyed": false,
+    "health": 100,
+    "status": 1,
+    "defending_struct_ids": []
+  }
 }
 ```
 
@@ -200,16 +234,25 @@ Catalog list of structs sitting on a given location object (planet, fleet, or ot
 
 ### Struct Response
 
-Destroyed structs are filtered out of responses. The `is_destroyed` field is used in queries (`WHERE s.is_destroyed = false`) but destroyed structs are not returned to clients.
+Destroyed structs are filtered out of responses. The `is_destroyed` field is used in queries (`WHERE s.is_destroyed = false`) but destroyed structs are not returned to clients. The bespoke struct managers select `struct s.*` (snake_case DB columns) plus joined `health`, `status`, and `defending_struct_ids`, wrapped in the standard envelope:
 
 ```json
 {
-  "id": "5-1",
-  "structTypeId": 14,
-  "owner": "1-11",
-  "locationId": "2-1",
-  "health": 100,
-  "is_building": false
+  "success": true,
+  "errors": {},
+  "data": {
+    "id": "5-1",
+    "type": 14,
+    "owner": "1-11",
+    "location_type": "planet",
+    "location_id": "2-1",
+    "operating_ambit": "space",
+    "slot": 0,
+    "is_destroyed": false,
+    "health": 100,
+    "status": 1,
+    "defending_struct_ids": []
+  }
 }
 ```
 
@@ -229,4 +272,4 @@ Struct type responses include cheatsheet fields (verified via `SELECT * FROM str
 
 **See**: `reviews/webapp-review-findings.md` for code review verification
 
-The `/api/struct/list/...` endpoints return the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+The `/api/struct/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke struct endpoints also use the `{ "success", "errors", "data" }` envelope. See `protocols/webapp-api-protocol.md`.

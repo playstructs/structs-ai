@@ -60,45 +60,48 @@ The Error Handling Protocol defines how AI agents should handle errors when inte
 
 ### Web Application API Error Response
 
+Every webapp (`structs-webapp`) JSON response — success or failure — uses the same `ApiResponseContentDto` envelope. On failure the HTTP status is `400` (bad request / validation), `401` (unauthenticated or signature failure), `403`, `404`, or `409`, `success` is `false`, and `errors` is a **keyed object** (NOT an array).
+
 **Format**:
 ```json
 {
   "success": false,
-  "data": null,
-  "errors": [
-    "Error message 1",
-    "Error message 2"
-  ]
+  "errors": {
+    "signature_validation_failed": "Invalid signature"
+  },
+  "data": null
 }
 ```
 
 **Fields**:
-- `success` (boolean): Always `false` for errors
-- `data` (null): No data on error
-- `errors` (array): Array of error messages
+- `success` (boolean): `false` for errors
+- `errors` (object): Map of `error_key` → human-readable message. Empty `{}` on success. Never a string array.
+- `data` (object | array | null): `null` on error
 
-**Example**:
+**Example** (validation failure on a catalog read with a missing required param):
 ```json
 {
   "request": {
     "method": "GET",
-    "url": "/api/player/999",
+    "url": "/api/stat/power/object/1-11/range/page/1",
     "headers": {
       "Accept": "application/json"
     }
   },
   "response": {
-    "status": 404,
+    "status": 400,
     "body": {
       "success": false,
-      "data": null,
-      "errors": [
-        "Player not found"
-      ]
+      "errors": {
+        "start_time_end_time_required": "start_time and end_time query params are required (unix seconds)"
+      },
+      "data": null
     }
   }
 }
 ```
+
+> Parsing rule: always check `success` first, then read `errors` (keyed object) or unwrap `data`. Never assume a top-level `error`/`code`/`details` body for webapp responses — that shape is only used by the consensus network API above.
 
 ### HTTP Status Codes
 

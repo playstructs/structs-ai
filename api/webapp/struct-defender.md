@@ -17,9 +17,9 @@ Defender relationships between structs. A row `(defending_struct_id, protected_s
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/struct-defender/all/page/{page}` | List every defender relationship | No |
-| GET | `/api/struct-defender/defending/{defending_struct_id}` | Get the relationship a defender has (returns one row) | No |
-| GET | `/api/struct-defender/protected/{protected_struct_id}/page/{page}` | List defenders covering a protected struct | No |
+| GET | `/api/struct-defender/all/page/{page}` | List every defender relationship | Yes |
+| GET | `/api/struct-defender/defending/{defending_struct_id}` | Get the relationship a defender has (returns one row) | Yes |
+| GET | `/api/struct-defender/protected/{protected_struct_id}/page/{page}` | List defenders covering a protected struct | Yes |
 
 ---
 
@@ -60,4 +60,4 @@ A protected struct can have many defenders.
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. The `defending/{defending_struct_id}` lookup is single-row (`data` is one object or `null`). See `protocols/webapp-api-protocol.md`.

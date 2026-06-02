@@ -17,8 +17,8 @@ Labelled address records — used by guild webapps to attach human-readable tags
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/address-tag/all/page/{page}` | List every address tag, paginated | No |
-| GET | `/api/address-tag/address/{address}/page/{page}` | List tags attached to a specific address | No |
+| GET | `/api/address-tag/all/page/{page}` | List every address tag, paginated | Yes |
+| GET | `/api/address-tag/address/{address}/page/{page}` | List tags attached to a specific address | Yes |
 
 ---
 
@@ -53,4 +53,4 @@ List tags attached to a specific Cosmos address.
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

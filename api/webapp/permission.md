@@ -17,9 +17,9 @@ Per-object, per-player permission grants. The chain stores a 25-bit permission m
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/permission/all/page/{page}` | List every permission grant | No |
-| GET | `/api/permission/object/{object_id}/page/{page}` | List grants on an object | No |
-| GET | `/api/permission/player/{player_id}/page/{page}` | List grants held by a player | No |
+| GET | `/api/permission/all/page/{page}` | List every permission grant | Yes |
+| GET | `/api/permission/object/{object_id}/page/{page}` | List grants on an object | Yes |
+| GET | `/api/permission/player/{player_id}/page/{page}` | List grants held by a player | Yes |
 
 ---
 
@@ -57,4 +57,4 @@ Per-object, per-player permission grants. The chain stores a 25-bit permission m
 
 ---
 
-Responses use the standard catalog envelope (see `protocols/webapp-api-protocol.md`).
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

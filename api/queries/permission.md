@@ -122,7 +122,7 @@ Returns all guild rank permission records for a given object. Each record repres
 ```json
 {
   "guild_rank_permission_records": [
-    {"objectId": "6-1", "guildId": "4-1", "permissions": "4", "rank": "3"}
+    {"objectId": "6-1", "guildId": "0-1", "permissions": "4", "rank": "3"}
   ]
 }
 ```
@@ -153,7 +153,7 @@ Returns guild rank permission records for a specific (objectId, guildId) pair. R
 ```json
 {
   "guild_rank_permission_records": [
-    {"objectId": "6-1", "guildId": "4-1", "permissions": "4", "rank": "3"}
+    {"objectId": "6-1", "guildId": "0-1", "permissions": "4", "rank": "3"}
   ]
 }
 ```

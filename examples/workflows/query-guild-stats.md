@@ -26,17 +26,18 @@ Query guild statistics including member count and power stats.
 
 | Parameter | Example Value |
 |-----------|---------------|
-| guild_id | `2-1` |
+| guild_id | `0-1` (guild IDs are type 0, `^0-[0-9]+$`) |
 
-**Data Extraction**:
+**Data Extraction** (unwrap the envelope `data`):
 
-- `guild_id` from `response.id`
-- `guild_name` from `response.name`
+- `guild_id` from `response.data.id`
+- `guild_name` from `response.data.name`
 
 **Error Handling**:
 
 | Status | Action |
 |--------|--------|
+| 401 | Session required — log in first (signature flow) |
 | 404 | Guild not found - verify guild_id |
 
 ### 2. Get Guild Member Count
@@ -53,7 +54,7 @@ Query guild statistics including member count and power stats.
 
 **Data Extraction**:
 
-- `member_count` from `response.count`
+- `member_count` from `response.data.count`
 
 **Error Handling**:
 
@@ -75,7 +76,7 @@ Query guild statistics including member count and power stats.
 
 **Data Extraction**:
 
-- `power_stats` from `response`
+- `power_stats` from `response.data`
 
 **Error Handling**:
 

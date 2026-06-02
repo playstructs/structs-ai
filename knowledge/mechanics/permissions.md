@@ -374,13 +374,13 @@ structsd query structs guild-rank-permission-by-object-and-guild {objectId} {gui
   "guild_rank_permission_records": [
     {
       "objectId": "6-1",
-      "guildId": "4-1",
+      "guildId": "0-1",
       "permissions": "4",
       "rank": "3"
     },
     {
       "objectId": "6-1",
-      "guildId": "4-1",
+      "guildId": "0-1",
       "permissions": "16384",
       "rank": "3"
     }
@@ -417,7 +417,7 @@ Emitted for each guild rank permission bit that changes:
 {
   "guildRankPermissionRecord": {
     "objectId": "6-1",
-    "guildId": "4-1",
+    "guildId": "0-1",
     "permissions": 4,
     "rank": 3
   }

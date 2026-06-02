@@ -32,9 +32,9 @@ This pattern provides security best practices for AI agents when handling authen
   "credentialStorage": {
     "method": "environment-variables",
     "variables": {
-      "PRIVATE_KEY": "Blockchain private key",
-      "WEBAPP_USERNAME": "Webapp username",
-      "WEBAPP_PASSWORD": "Webapp password",
+      "PRIVATE_KEY": "Blockchain private key (also signs webapp login)",
+      "WEBAPP_ADDRESS": "Cosmos address used to authenticate to the webapp",
+      "WEBAPP_GUILD_ID": "Guild to authenticate into (type 0)",
       "NATS_PASSWORD": "NATS password (if configured)"
     }
   }
@@ -45,13 +45,11 @@ This pattern provides security best practices for AI agents when handling authen
 ```javascript
 // ✅ Good: Use environment variables
 const privateKey = process.env.PRIVATE_KEY;
-const username = process.env.WEBAPP_USERNAME;
-const password = process.env.WEBAPP_PASSWORD;
+const webappAddress = process.env.WEBAPP_ADDRESS;
+const webappGuildId = process.env.WEBAPP_GUILD_ID;
 
-// ❌ Bad: Hardcode credentials
+// ❌ Bad: Hardcode the signing key
 const privateKey = "0x1234567890abcdef...";
-const username = "myusername";
-const password = "mypassword";
 ```
 
 **Security Benefits**:
@@ -582,18 +580,17 @@ function maskSensitiveHeaders(headers) {
 
 **Code Example**:
 ```javascript
-async function authenticate(username, password) {
-  // Validate credentials format
-  if (!isValidUsername(username) || !isValidPassword(password)) {
-    throw new Error('Invalid credentials format');
-  }
-  
-  // Authenticate
-  const session = await login(username, password);
-  
+async function authenticate(address, guildId, signFn) {
+  const unixTimestamp = Math.floor(Date.now() / 1000).toString();
+  const message = `LOGIN_GUILD${guildId}ADDRESS${address}DATETIME${unixTimestamp}`;
+  const { signature, pubkey } = await signFn(message); // sign with the address's key
+
+  // Authenticate (server sets a PHPSESSID cookie on success)
+  const session = await login({ address, signature, pubkey, guild_id: guildId, unix_timestamp: unixTimestamp });
+
   // Store session securely
   await storeSessionSecurely(session);
-  
+
   return session;
 }
 ```
