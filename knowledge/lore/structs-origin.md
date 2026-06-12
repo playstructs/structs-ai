@@ -52,7 +52,7 @@ Structs do not eat, sleep, or age. They consume energy and execute instructions.
 Structs are **computation embodied**. Every action—mining, attacking, building—requires:
 
 1. **Power**: Supplied by reactors fed with Alpha Matter. Conversion efficiency varies: Reactor (1g→1kW, low risk), Field Generator (1g→2kW, high risk), Continental Power Plant (1g→5kW, high risk), World Engine (1g→10kW, high risk).
-2. **Charge**: A discrete cost for activation. Structs must accumulate charge before bringing units online.
+2. **Charge**: A discrete cost for activation and other actions. Charge is a single per-player resource — the commander accumulates charge over time and spends it to bring units online, move, or fire.
 3. **Proof-of-work**: Mining and raiding require computational proofs. Structs generate these; biological species typically cannot at scale.
 
 The Struct economy is a loop: mine ore → refine to Alpha Matter → convert to energy → power Structs → mine more ore. Efficiency in this loop determines survival.

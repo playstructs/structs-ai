@@ -19,7 +19,7 @@ Each full cycle is one "tick" of the game loop. PoW operations run as background
 
 ### 0. Check Jobs
 
-Before anything else, check all background PoW terminals. Mark completions in `memory/jobs.md`. On completion: activate structs, start next operations, update charge tracker. This is the highest-priority step — completed PoW means new capabilities or exposed resources.
+Before anything else, check all background PoW terminals (or run `scripts/job-status.sh`). Update the affected `memory/jobs/<job>.json`. On completion: activate structs, start next operations, refresh `memory/player.json`'s charge plan. This is the highest-priority step — completed PoW means new capabilities or exposed resources.
 
 See [Async Operations](async-operations.md) for background job management.
 
@@ -46,7 +46,7 @@ See [Async Operations](async-operations.md) for background job management.
 ### 4. Dispatch
 
 - Launch PoW compute in background terminals for anything where difficulty has dropped to D <= 8
-- Record new jobs in `memory/jobs.md`
+- Record new jobs in `memory/jobs/<job>.json`
 - Execute non-PoW actions (activate, attack, move fleet, set defense)
 
 ### 5. Verify
@@ -57,9 +57,10 @@ See [Async Operations](async-operations.md) for background job management.
 
 ### 6. Update Memory
 
-- Update `memory/jobs.md` with new and completed jobs
-- Update `memory/charge-tracker.md` with struct states
-- Update `memory/game-state.md` with strategic picture
+- Update `memory/jobs/<job>.json` for new and completed jobs
+- Update `memory/player.json` (lastActionBlock + charge plan for your next action)
+- Update `memory/game-state.json` with the strategic picture
+- At session end, write `memory/scorecard.json` (see [scorecard.md](scorecard.md))
 
 ### 7. Repeat
 

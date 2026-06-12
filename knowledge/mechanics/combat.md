@@ -32,7 +32,7 @@ Which ambits each struct's primary weapon can hit:
 | Struct | Lives In | Targets (Primary) | Targets (Secondary) |
 |--------|----------|--------------------|---------------------|
 | Command Ship | Any (movable) | Local only (flag 32 = current ambit) | — |
-| Battleship | Space | Space, Land, Water | — |
+| Battleship | Space | Land, Water (armour-piercing) | Space |
 | Starfighter | Space | Space | Space |
 | Frigate | Space | Space, Air | — |
 | Pursuit Fighter | Air | Air | — |
@@ -51,16 +51,16 @@ Which structs can attack into each ambit:
 
 | Target Ambit | Threatened By |
 |--------------|---------------|
-| Space | Battleship, Starfighter, Frigate, High Altitude Interceptor, SAM Launcher, Submersible |
+| Space | Battleship (secondary), Starfighter, Frigate, High Altitude Interceptor, SAM Launcher, Submersible |
 | Air | Frigate, Pursuit Fighter, High Altitude Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
 | Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
 | Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
 
-The Command Ship can attack into any ambit but must first move there (see below).
+The Command Ship can attack into any ambit but must first move there (see below). The Battleship's armour-piercing primary covers Land and Water; its guided secondary reaches Space.
 
 ### Command Ship Ambit Mobility
 
-The Command Ship is the **only struct that can change ambits**. All other structs are fixed in their operating ambit.
+The Command Ship is the **only struct that can change ambits** (`movable=true`). All other structs are fixed in their operating ambit, and the chain rejects `struct-move` on a non-movable struct — only the Command Ship can be moved.
 
 - **Offensive use**: Move the Command Ship to the target's ambit before attacking. It can only hit structs in its current ambit.
 - **Defensive use**: If the enemy fleet can only target water, moving the Command Ship out of water protects it from direct attack.
@@ -75,7 +75,13 @@ Each struct has a Max HP that determines how much damage it can absorb before de
 | Struct | Max HP |
 |--------|--------|
 | Command Ship | 6 |
-| All other structs | 3 |
+| Other fleet structs (IDs 2-13) | 3 |
+| Baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, PDC) | 6 |
+| Field Generator | 8 |
+| Continental Power Plant | 10 |
+| World Engine | 10 |
+
+Planetary structs are hardened so a raider cannot casually demolish a planet's infrastructure; the power generators are the toughest (and carry `armour`, damage reduction 1), making a power kill a deliberate objective. Armour-piercing weapons (Battleship primary) bypass that reduction.
 
 - Damage reduces current HP. At 0 HP the struct is destroyed (see Struct Destruction below).
 - **HP does not regenerate.** A damaged struct stays damaged.
@@ -99,10 +105,13 @@ else health = health - damage
 | weaponShotSuccessRate | Per-shot success (Numerator/Denominator) |
 | weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`, added in v0.16.0) |
 | weaponDamage | Damage per successful shot |
-| damageReduction | Defense reduction |
+| damageReduction | Defense reduction (target's `attackReduction`, e.g. Tank/generator armour = 1); **negated when the weapon is armour-piercing** |
+| armourPiercing | If the weapon is armour-piercing (`primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`), the target's `damageReduction` is treated as 0 |
 | health | Target current health |
 
-**Algorithm**: For shot index `i` in `0..weaponShots`, the shot hits if `i < weaponGuaranteedShots` OR `IsSuccessful(weaponShotSuccessRate)`. The first `weaponGuaranteedShots` shots are auto-hits; only the remaining shots roll against the success rate. Sum the damage from successful shots, apply `damageReduction`. Minimum damage after reduction is 1. Cap at target health.
+**Algorithm**: For shot index `i` in `0..weaponShots`, the shot hits if `i < weaponGuaranteedShots` OR `IsSuccessful(weaponShotSuccessRate)`. The first `weaponGuaranteedShots` shots are auto-hits; only the remaining shots roll against the success rate. Sum the damage from successful shots, then apply `damageReduction` (unless the weapon is armour-piercing, in which case reduction is skipped). Minimum damage after reduction is 1. Cap at target health.
+
+**Armour-piercing**: A weapon flagged armour-piercing negates the target's damage reduction during volley resolution. The Battleship's primary is armour-piercing — it deals full damage to Tanks and to power generators (which otherwise reduce incoming damage by 1). Each shot's piercing is reported on `EventAttackShotDetail.armourPiercing`.
 
 **Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. This was the v0.16.0 fix for the Starfighter's Attack Run feeling unreliable. The chain currently uses guaranteed shots only on Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
 
@@ -124,20 +133,20 @@ The interaction between a weapon's control type (guided/unguided) and the target
 |----------------|-----------|-------------|
 | Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
 | Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
-| Armour (Tank) | Full hit, -1 damage | Full hit, -1 damage |
+| Armour (Tank, Field Generator, Continental Power Plant, World Engine) | Full hit, -1 damage | Full hit, -1 damage |
 | Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
 | Indirect Combat Module (Mobile Artillery) | Full hit | Full hit |
 | None | Full hit | Full hit |
 
-**Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour always reduces damage by 1 regardless of weapon control.
+**Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour reduces damage by 1 regardless of weapon control — **except** against armour-piercing weapons (Battleship primary), which ignore it entirely. The Battleship is the dedicated answer to Tanks and to armoured power generators.
 
 ### Stealth
 
 Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
 
 - **Attacking breaks stealth**: When a stealthed struct attacks, its stealth is **instantly deactivated** (firing reveals position).
-- **Re-activation**: Stealth must be manually re-activated after deactivation. Costs 1 charge.
-- **Activation**: `struct-stealth-activate [struct-id]` (1 charge). Deactivation: `struct-stealth-deactivate [struct-id]`.
+- **Re-activation**: Stealth must be manually re-activated after deactivation. Costs 2 charge (from the player's shared charge bar).
+- **Activation**: `struct-stealth-activate [struct-id]` (2 charge). Deactivation: `struct-stealth-deactivate [struct-id]`.
 
 ### Recoil Damage
 
@@ -241,24 +250,42 @@ Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Ru
 
 | Requirement | Attack | Raid |
 |-------------|--------|------|
-| Player online | ✓ | ✓ |
-| Sufficient power | ✓ | ✓ |
-| Sufficient charge | ✓ | ✓ |
-| Fleet away | — | ✓ |
-| Command Ship online | — | ✓ |
+| Raider online (sufficient power) | ✓ | ✓ |
+| Sufficient charge | ✓ | — |
+| Raider fleet away (at the target) | — | ✓ |
+| Raider Command Ship online | — | ✓ |
+| **Defender's shields vulnerable** (defender Command Ship offline, destroyed, or non-existent) | — | ✓ |
+| Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
+
+Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
 
 ---
 
-## Outcomes
+## Raid Phases and SHIELDS_VULNERABLE
 
-| Outcome | Description |
-|---------|-------------|
-| victory | Attacker/raider wins |
-| defeat | Defender wins |
-| attackerRetreated | Attacker withdrew |
+A raid is only winnable while the **defending player's Command Ship is offline, destroyed, or non-existent**. While the defender's Command Ship is online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. This makes keeping your Command Ship online the single most effective raid defense.
 
-**Raid status**: Raid status includes `seizedOre` -- the amount of ore stolen during the raid. This is tracked on the `planet_raid` record and simplifies victory handling. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+The `blockStartRaid` attribute is the **Command-Ship vulnerability clock**, and raid PoW age is measured from it:
+
+- Set when the defending Command Ship goes offline (or when raiders arrive to find it already down).
+- Cleared (back to 0) when the defending Command Ship comes back online, and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
+
+So a raider must catch the defender's Command Ship down *and* let the clock age before the puzzle becomes solvable. If the defender brings the Command Ship back online mid-raid, the clock resets and the raider must wait for it to go down again.
+
+### Raid statuses
+
+| Status | Meaning |
+|--------|---------|
+| initiated | Raider fleet has arrived at the planet |
+| shieldsVulnerable | Defender's Command Ship is down — the raid is now winnable and the clock is running |
+| ongoing | Defender's Command Ship came back online mid-raid — shields restored, completion blocked |
+| raidSuccessful / victory | Raider won and seized ore |
+| defeat | Defender won (e.g. raider Command Ship destroyed) |
+| attackerRetreated | Raider withdrew before completion |
+| demilitarized | Planet has no defenders to resolve against |
+
+**Raid status** also includes `seizedOre` -- the amount of ore stolen during the raid, tracked on the `planet_raid` record. See `schemas/entities/planet.md` for the `planet_raid` table schema.
 
 ---
 

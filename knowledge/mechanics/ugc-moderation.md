@@ -12,6 +12,7 @@ Five things on chain accept player-supplied identity:
 |--------|-------|----------------|
 | Player | `name` (a.k.a. username) | `MsgPlayerUpdateName` |
 | Player | `pfp` (profile picture) | `MsgPlayerUpdatePfp` |
+| Player | `pfpClientRenderAttributes` (render hints for a locally-rendered pfp) | `MsgPlayerUpdatePfpClientRenderAttributes` (also settable at guild join via `MsgGuildMembershipJoinProxy.playerPfpClientRenderAttributes`) |
 | Guild | `name` | `MsgGuildUpdateName` |
 | Guild | `pfp` | `MsgGuildUpdatePfp` |
 | Planet | `name` | `MsgPlanetUpdateName` |
@@ -154,6 +155,20 @@ Anything else (`data:`, `javascript:`, `vbscript:`, `file:`, `ftp:`, `gopher:`, 
 - For `ipfs`, `ipns`, `ar`: at least one of `Host`, `Opaque`, or `Path` must be non-empty (so `ipfs://CID`, `ipfs:CID`, and `ipfs:/CID` all work).
 
 The scheme allow-list is intentionally narrow. Renderers in the webapp and other clients can hard-code support for these schemes without worrying about legacy or dangerous handlers.
+
+### Pfp client render attributes
+
+`pfpClientRenderAttributes` is a separate player field that carries **render hints for a locally-rendered profile picture** (for example, layer/trait selections a client composites into an avatar). It is set with `MsgPlayerUpdatePfpClientRenderAttributes`, or supplied at guild signup via `MsgGuildMembershipJoinProxy.playerPfpClientRenderAttributes`. It is **self-service / owner-only** — it does not route through `UGCPermissionCheck`, so guild moderators cannot rewrite it the way they can `name`/`pfp`.
+
+Validation (`ValidatePfpClientRenderAttributes` in `x/structs/types/ugc.go`):
+
+- The empty string is allowed and **clears** the value.
+- The value must be a **JSON object** — arrays, scalars, and malformed JSON are rejected (`"must be a valid JSON object"`).
+- Maximum **512 bytes** (`MaxPfpClientRenderAttributesBytes`), measured in **bytes, not runes**, because the blob is re-marshaled into the Player record and emitted on every player write.
+- The chain stores the **compacted** (whitespace-stripped) form, so padding the cap with whitespace does not help.
+- There is intentionally **no key/value schema** — contents stay flexible as the client render model evolves.
+
+Example acceptable value: `{"layers":["base","helm-3"],"palette":2}` (compacted on store). Rejected: `[1,2,3]` (array, not object), `"hello"` (scalar), a 600-byte object (over cap).
 
 ### Name uniqueness comparison
 

@@ -79,10 +79,10 @@ This document provides quick reference for error codes and their meanings. For c
 ### Charge Errors
 - **Code**: 7
 - **Name**: INSUFFICIENT_CHARGE
-- **Description**: Struct has insufficient charge
-- **Action**: Wait for charge to build
+- **Description**: Player has insufficient charge (charge is a single per-player bar, not per-struct)
+- **Action**: Wait for charge to build (1 per block; charge = CurrentBlockHeight - player.lastActionBlock)
 - **Retryable**: No
-- **Requires**: Check struct charge, wait for charge
+- **Requires**: Check player charge, wait for charge
 
 ---
 

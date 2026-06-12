@@ -50,13 +50,13 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 - Next planned action:
 
 ## Active PoW Jobs
-[Copy from memory/jobs.md — which jobs are running, which terminals, estimated completion]
+[Summarize memory/jobs/*.json — which jobs are running, their PIDs/terminals, estimated completion block]
 
 ## Pending Initiations
 [Actions initiated but not yet ready to compute — what's aging, when it reaches D=3]
 
 ## Charge Status
-[Key structs and their readiness — last action block, charge needed, ready block]
+[Per-player charge bar: player's last action block, charge needed for the next planned action, ready block]
 ```
 
 ---
@@ -65,7 +65,7 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 
 1. Create `memory/` directory if it doesn't exist
 2. Fill template with current state (use `structs_query_player`, `structs_query_planet`, etc.)
-3. **Update `memory/jobs.md`** with all running PoW jobs and their terminal IDs
+3. **Update `memory/jobs/<job>.json`** for all running PoW jobs (PID, status, expected ready block)
 4. Write clear resume command
 5. Optionally: append to session log in `memory/`
 

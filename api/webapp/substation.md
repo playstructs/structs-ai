@@ -9,7 +9,7 @@
 
 ## Overview
 
-Substations route reactor power to connected players and structs. Each substation has an owning player. See `knowledge/mechanics/power.md` and `.cursor/skills/structs-power/SKILL.md`.
+Substations route reactor power to connected players and structs. Each substation has an owning player. See `knowledge/mechanics/power.md` and `.cursor/skills/structs-energy/SKILL.md`.
 
 > **Webapp vs consensus — no single-substation GET.** The webapp exposes substations as **catalog reads only** (`/api/substation/all|owner/.../page/{n}`). There is **no `GET /api/substation/{id}`** in Symfony. To fetch one substation over HTTP, scan/filter the catalog pages client-side. The single-entity path `GET /structs/substation/{id}` is the **consensus (chain REST)** API, not the webapp.
 

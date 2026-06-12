@@ -1,6 +1,6 @@
 # Competitive Intelligence
 
-Persistent intelligence on players, guilds, and the galaxy. Updated by the `structs-reconnaissance` skill. Read by `awareness/` for threat detection and opportunity identification.
+Persistent intelligence on players, guilds, and the galaxy. Updated by the `structs-intel` skill. Read by `awareness/` for threat detection and opportunity identification.
 
 ---
 
@@ -132,7 +132,7 @@ Active threats ranked by severity. Updated every session.
 
 ## See Also
 
-- `.cursor/skills/structs-reconnaissance/` -- How to gather intel
+- `.cursor/skills/structs-intel/` -- How to gather intel
 - `awareness/threat-detection.md` -- Using intel for threat assessment
 - `awareness/opportunity-identification.md` -- Using intel to spot opportunities
 - `playbooks/meta/reading-opponents.md` -- Identifying soul types from behavior

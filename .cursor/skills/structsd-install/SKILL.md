@@ -1,6 +1,8 @@
 ---
 name: structsd-install
 description: Installs the structsd binary. Covers downloading prebuilt release binaries (recommended) and building from source via the Makefile (Go 1.23+). Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
+level: entry
+domain: infra
 ---
 
 # Install structsd
@@ -21,8 +23,8 @@ After either path, `structsd` will be available on your PATH and `structsd versi
 The chain ships signed binaries via GoReleaser on every tag. Pick the asset for your OS/arch from the latest release at <https://github.com/playstructs/structsd/releases>.
 
 ```bash
-# Pick one (replace VERSION with e.g. v0.17.0):
-VERSION=v0.17.0
+# Pick one (replace VERSION with e.g. v0.18.0):
+VERSION=v0.18.0
 
 # Linux amd64
 curl -L -o structsd.tar.gz \
@@ -137,7 +139,7 @@ structsd version
 ```bash
 cd structsd
 git fetch --tags
-git checkout v0.17.0   # or `git pull origin main` for tip-of-tree
+git checkout v0.18.0   # or `git pull origin main` for tip-of-tree
 make install
 ```
 

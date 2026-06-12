@@ -141,11 +141,14 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --guild-api "http://crew.oh.energy/api/" \
   --reactor-api "https://public.testnet.structs.network" \
   --username "your-chosen-name" \
-  --pfp "ipfs://bafy..."
+  --pfp "ipfs://bafy..." \
+  --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
+`--pfp-client-render-attributes` (optional, structsd v0.18.0+) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+
 The script will:
-1. Validate `--username` and `--pfp` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
+1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
 2. Generate a new mnemonic (or use `--mnemonic "..."` to recover an existing one)
 3. Derive the address and pubkey
 4. Check if a player already exists for this address
@@ -169,6 +172,7 @@ The script will:
   "guild_id": "0-1",
   "username": "your-chosen-name",
   "pfp": "ipfs://bafy...",
+  "pfp_client_render_attributes": "{\"theme\":\"dark\"}",
   "created": true,
   "next_step": "structsd tx structs planet-explore --from [key-name] --gas auto --gas-adjustment 1.5 -- 1-42"
 }
@@ -282,7 +286,7 @@ The `-D` flag (range 1-64) tells compute to wait until the difficulty drops to t
 
 ## Charge
 
-Build operations cost 8 charge. Charge accumulates at 1 per block (~6 seconds). Wait at least **48 seconds** (8 blocks) between successive build-initiate actions on the same struct. During onboarding, charge is rarely a bottleneck since each struct is different. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the full charge cost table.
+Charge is a **single per-player bar**, not a per-struct value: `charge = CurrentBlockHeight - player.lastActionBlock`. It accrues at 1 per block (~6 seconds) and resets whenever you take a charge-consuming action. Build-initiate costs 8 charge, so wait at least **~48 seconds** (8 blocks) after any charge-consuming action before initiating a build. During onboarding charge is rarely a bottleneck since builds are spaced by their proof-of-work waits. See [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) for the full charge cost table and [conventions.md](https://structs.ai/skills/conventions) for the canonical explainer.
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
@@ -312,7 +316,7 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
 | Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -- [player-addr] [reactor-addr] [amount]` |
-| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."]` |
+| Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."] [--pfp-client-render-attributes "{...}"]` |
 | Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
 | Build compute (PoW + auto-complete + auto-activate) | `structsd tx structs struct-build-compute -D [difficulty] --from [key] --gas auto -y -- [struct-id]` *(documented `-y` exception — auto-submits later)* |

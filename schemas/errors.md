@@ -35,7 +35,7 @@
 | 4 | INSUFFICIENT_GAS | error | Insufficient gas for transaction | increase gas limit | yes | -- |
 | 5 | INVALID_MESSAGE | error | Message format is invalid | validate message format | no | -- |
 | 6 | PLAYER_HALTED | error | Player is halted (offline) | wait for player online | no | check player status, wait for player online |
-| 7 | INSUFFICIENT_CHARGE | error | Struct has insufficient charge | wait for charge | no | check struct charge, wait for charge |
+| 7 | INSUFFICIENT_CHARGE | error | Player has insufficient charge (per-player bar, not per-struct) | wait for charge | no | check player charge, wait for charge |
 | 8 | INVALID_LOCATION | error | Location is invalid or inaccessible | validate location | no | -- |
 | 9 | INVALID_TARGET | error | Target is invalid or not attackable | validate target | no | -- |
 

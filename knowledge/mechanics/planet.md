@@ -66,6 +66,7 @@ All newly explored planets start with identical properties.
 - **What gets stolen**: The player's `storedOre` (mined but unrefined ore). Raids seize ore from the player who owns the planet, not from the planet itself.
 - **What is NOT at risk**: The planet's `remainingOre` (unmined ore still in the ground). Unmined ore can only be extracted by an Ore Extractor — raiders cannot touch it.
 - Once ore is refined into Alpha Matter, it is cryptographically secure and cannot be stolen.
+- **Shields gate the raid**: A planet can only be raided to completion while the owner's **Command Ship is offline, destroyed, or non-existent** (`shieldsVulnerable`). While your Command Ship is online, raids against you are rejected. Keeping the Command Ship online — and well defended — is the primary raid defense. See the raid phases in [combat.md](combat.md#raid-phases-and-shields_vulnerable).
 - **Seized ore tracking**: The `planet_raid` table includes a `seized_ore` field that records the amount of ore stolen from the player during a raid.
 - See [combat.md](combat.md), [resources.md](resources.md)
 

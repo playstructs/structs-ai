@@ -29,7 +29,7 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 |-------|----------|------------------|
 | Alpha Matter | `structs_query_player` | `alphaMatter` or equivalent balance |
 | Ore (unrefined) | `structs_query_struct` (Ore Bunker, Miner) | Stored ore = liability until refined |
-| Charge | `structs_query_struct` | Structs need charge for mining, attacking, activating |
+| Charge | `structs_query_player` | Per-player charge bar (CurrentBlockHeight - lastActionBlock) gates attacking, activating, moving, building |
 
 **Ore rule**: Ore is stealable. Alpha Matter is not. Refine immediately via `struct-ore-refinery-complete`. Unrefined ore = raid target.
 

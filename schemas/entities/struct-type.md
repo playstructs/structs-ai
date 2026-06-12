@@ -97,7 +97,7 @@
 
 | Field | Type | Description |
 |-------|------|-------------|
-| activateCharge | string | Charge cost to activate struct. Genesis sets activateCharge = 1 for all struct types. |
+| activateCharge | string | Charge cost to activate struct. Genesis sets activateCharge = 2 for all struct types. |
 | oreMiningCharge | string | Charge cost for ore mining (if applicable) |
 | oreRefiningCharge | string | Charge cost for ore refining (if applicable) |
 | oreMiningDifficulty | string | Proof-of-work difficulty for ore mining (if applicable) |

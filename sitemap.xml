@@ -31,13 +31,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-diplomacy/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/structs-permissions/SKILL</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-economy/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/structs-commerce/SKILL</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -49,7 +49,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-exploration/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/structs-planets-fleet/SKILL</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -61,7 +61,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-mining/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/structs-production/SKILL</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -73,13 +73,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-power/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/conventions</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://structs.ai/.cursor/skills/structs-reconnaissance/SKILL</loc>
+    <loc>https://structs.ai/.cursor/skills/structs-intel/SKILL</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

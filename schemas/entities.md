@@ -400,6 +400,9 @@
 | storedOre | integer | ore | -- | Raw ore stored by player (can be stolen in raids). Separate from refined Alpha Matter. |
 | halted | boolean | -- | -- | Whether player is halted (disabled) |
 | nonce | integer | -- | -- | Nonce for randomness generation (increments with each use) |
+| username | string | -- | -- | Player display name (UGC; see `knowledge/mechanics/ugc-moderation.md`). Set via `MsgPlayerUpdateName`. |
+| pfp | string | -- | -- | Profile picture reference (opaque content id or allow-listed URL). Set via `MsgPlayerUpdatePfp`. |
+| pfpClientRenderAttributes | string | -- | -- | Optional render hints (compacted JSON object, ≤512 bytes) for a locally-rendered pfp. Owner-only; set via `MsgPlayerUpdatePfpClientRenderAttributes`. |
 
 ### Planet Definition
 
@@ -438,7 +441,7 @@
 | buildDraw | integer | milliwatts | -- | -- | Power draw during building |
 | passiveDraw | integer | milliwatts | -- | -- | Power draw when active (online) |
 | buildDifficulty | integer | -- | -- | -- | Proof-of-work difficulty for building |
-| activateCharge | integer | -- | -- | -- | Charge cost to activate struct. Genesis sets activateCharge = 1 for all struct types. |
+| activateCharge | integer | -- | -- | -- | Charge cost to activate struct. Genesis sets activateCharge = 2 for all struct types. |
 | buildCharge | integer | -- | -- | -- | Charge cost to build struct |
 | oreMiningCharge | integer | -- | -- | -- | Charge cost for ore mining |
 | oreRefiningCharge | integer | -- | -- | -- | Charge cost for ore refining |

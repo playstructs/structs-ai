@@ -179,6 +179,7 @@ This guide provides a quick reference for all game actions available to AI agent
 - `guild-update-primary-reactor` - Reassign primary reactor (recovery for retired/jailed validator; requires `PermAdmin` on guild)
 - `player-update-name` - Rename a player (self-service via `PermUpdate` on the player, OR guild moderation via `PermGuildUGCUpdate` on the player's guild)
 - `player-update-pfp` - Set a player's profile picture (same permission rules as player-update-name)
+- `player-update-pfp-client-render-attributes` - Set/clear render hints (JSON object, ≤512 bytes) for a locally-rendered pfp (owner-only, not guild-moderatable)
 - `planet-update-name` - Rename a planet (self-service via `PermUpdate`, OR guild moderation via `PermGuildUGCUpdate` on the planet owner's guild)
 - `substation-update-name` - Rename a substation (same permission rules as planet-update-name applied to the substation owner's guild)
 - `substation-update-pfp` - Set a substation's profile picture (same permission rules as substation-update-name)
@@ -284,11 +285,11 @@ The following actions are **deprecated** and should not be used. Use the replace
 
 ### Struct Requirements
 
-**Sufficient Charge**:
-- Struct must have required charge
-- Check: `GET /structs/struct/{id}` → `struct.charge >= required`
-- Note: `ActivateCharge` is 1 for all struct types (genesis default)
-- Exception: Build cancel actions no longer require charge or player online
+**Sufficient Charge** (per-player, not per-struct):
+- The acting **player** must have accumulated the required charge on their single shared bar
+- Check: `GET /structs/player/{id}` → `player.charge >= required` (charge = `CurrentBlockHeight - player.lastActionBlock`)
+- Note: `ActivateCharge` is 2 for all struct types (genesis default); see [building.md](../knowledge/mechanics/building.md#charge-accumulation) for the full cost table
+- Exception: Build cancel actions do not require charge or player online
 
 **Sufficient Power**:
 - Player must have power capacity > struct passive draw

@@ -437,8 +437,9 @@ As of v0.16.0, transactions composed entirely of `structs` module messages (excl
       "error": "INSUFFICIENT_RESOURCES"
     },
     "sufficientCharge": {
-      "check": "GET /structs/struct/{structId}",
-      "condition": "struct.charge >= required",
+      "check": "GET /structs/player/{playerId}",
+      "condition": "player.charge >= required",
+      "note": "charge is a single per-player bar (CurrentBlockHeight - player.lastActionBlock), not per-struct",
       "error": "INSUFFICIENT_CHARGE"
     },
     "validLocation": {

@@ -1,6 +1,8 @@
 ---
 name: structs-guild-stack
 description: Deploys the Guild Stack (Docker Compose) for local PostgreSQL access to game state. Use when you need faster queries for combat automation, real-time threat detection, raid target scouting, fleet composition analysis, or galaxy-wide intelligence. Advanced/optional -- CLI works for basic gameplay, but PG access transforms what is possible.
+level: advanced
+domain: infra
 ---
 
 # Structs Guild Stack
@@ -225,6 +227,8 @@ WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
+A high ore balance and low shield are only half the picture: in v0.18.0 a raid can **only complete while the owner's Command Ship is offline or destroyed** (`shieldsVulnerable`). Join the owner's Command Ship struct status before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+
 ### Enemy Structs at a Planet
 
 ```sql
@@ -399,5 +403,5 @@ If you spun the stack up to investigate something, tear it down when you're done
 - [knowledge/infrastructure/guild-stack](https://structs.ai/knowledge/infrastructure/guild-stack) — Architecture overview and data flow
 - [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Table schemas and query patterns
 - [schemas/database-schema](https://structs.ai/schemas/database-schema) — Full structural schema catalog
-- [structs-reconnaissance skill](https://structs.ai/skills/structs-reconnaissance/SKILL) — Intelligence gathering (CLI + PG)
+- [structs-intel skill](https://structs.ai/skills/structs-intel/SKILL) — Intelligence gathering (CLI + PG)
 - [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS real-time events via NATS

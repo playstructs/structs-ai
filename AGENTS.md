@@ -55,19 +55,19 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | Skill | Purpose |
 |-------|---------|
 | [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
+| [`conventions`](.cursor/skills/conventions) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
 | [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds) |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
-| [`structs-mining`](.cursor/skills/structs-mining/SKILL) | Ore extraction and refining (mine-compute/complete → refine-compute/complete) |
+| [`structs-production`](.cursor/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
-| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (fleet-move → raid-compute/complete), defense setup |
-| [`structs-exploration`](.cursor/skills/structs-exploration/SKILL) | Planet discovery, fleet movement, grid/attribute queries |
-| [`structs-economy`](.cursor/skills/structs-economy/SKILL) | Reactor staking, providers, agreements, allocations, generator infusion, token transfers |
-| [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Guild creation, membership workflows, settings, Central Bank mint/redeem |
-| [`structs-power`](.cursor/skills/structs-power/SKILL) | Substations, allocations, player connections, power monitoring |
-| [`structs-diplomacy`](.cursor/skills/structs-diplomacy/SKILL) | Object/address permissions, address registration, multi-address management |
-| [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Energy capacity management — reactor/generator infusion, buying/selling energy, commission mechanics |
+| [`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
+| [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Capacity management — offline recovery, substations, allocations, reactor/generator infusion |
+| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (shield-vulnerability doctrine), defense setup |
+| [`structs-commerce`](.cursor/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, settings, UGC moderation, Central Bank |
+| [`structs-permissions`](.cursor/skills/structs-permissions/SKILL) | Object/address permissions, address registration, multi-address & delegate agents |
+| [`structs-intel`](.cursor/skills/structs-intel/SKILL) | Full query catalog, scouting, intelligence persistence to memory/intel/ |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
-| [`structs-reconnaissance`](.cursor/skills/structs-reconnaissance/SKILL) | Full query catalog, intelligence persistence to memory/intel/ |
 | [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
 
 ---

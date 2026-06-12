@@ -5,6 +5,48 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-06-12
+
+A decision-first rebuild of the skills layer, plus a read-only script toolkit, machine-readable memory, and learning/measurement scaffolding. Every skill now states **when to use it**, the **decisions** it helps you make, and the exact commands — with shared boilerplate factored out once.
+
+### Added
+
+- **[`conventions.md`](.cursor/skills/conventions.md)** — single source for shared skill boilerplate: transaction flags (`TX_FLAGS` / `TX_FLAGS_APPROVED`), the `--` entity-ID rule, the per-player charge bar, proof-of-work `-D` policy, one-transaction-at-a-time, and the skill-authoring template (`level` / `domain` front matter).
+- **New consolidated skills** — [`structs-production`](.cursor/skills/structs-production/SKILL.md) (absorbs mining), [`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL.md) (absorbs exploration), [`structs-energy`](.cursor/skills/structs-energy/SKILL.md) (absorbs power; capacity-side), [`structs-commerce`](.cursor/skills/structs-commerce/SKILL.md) (absorbs economy; market-side), [`structs-permissions`](.cursor/skills/structs-permissions/SKILL.md) (replaces diplomacy; adds delegate-agent recipes), [`structs-intel`](.cursor/skills/structs-intel/SKILL.md) (replaces reconnaissance).
+- **Script toolkit** in [`scripts/`](scripts/README.md) — read-only helpers that turn multi-step queries into one-line decisions: [`assess.sh`](scripts/assess.sh), [`power-budget.sh`](scripts/power-budget.sh), [`scout.sh`](scripts/scout.sh) (raid go/no-go with the shield-vulnerability gate), [`job-status.sh`](scripts/job-status.sh), [`watch-defense.mjs`](scripts/watch-defense.mjs) (GRASS defense alerts), [`check-drift.sh`](scripts/check-drift.sh) (flag doc constants that drift from the live chain), and a shared [`lib.sh`](scripts/lib.sh).
+- **Machine-readable memory** — [`memory/README.md`](memory/README.md) defines JSON schemas for operational state (`player.json`, `game-state.json`, `jobs/<job>.json`); new [`memory/jobs/`](memory/jobs/README.md) directory convention (`.json` / `.log` / `.pid` per expedition).
+- **Learning & measurement** — [golden transcripts](examples/transcripts/README.md) ([zero-to-mining](examples/transcripts/01-zero-to-mining.md), [raid go/no-go](examples/transcripts/02-raid-go-no-go.md)), the [agent scorecard](awareness/scorecard.md), and a [local devnet guide](reference/local-devnet.md) for safe practice.
+- **`llms-core.txt`** — a tight starter bundle (identity + conventions + core-loop skills + key knowledge) alongside the full `llms-full.txt`; both emitted by [`scripts/generate-llms-full.sh`](scripts/generate-llms-full.sh).
+- **`--pfp-client-render-attributes`** support in [`create-player.mjs`](.cursor/skills/structs-onboarding/scripts/create-player.mjs), with local v0.18.0 validation (≤512-byte JSON object).
+
+### Changed
+
+- **All skills are now decision-first** with `level` / `domain` front matter and a "When to use it" + "Decisions" section. Rewrote [`structs-building`](.cursor/skills/structs-building/SKILL.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) (v0.18.0 raid doctrine), and [`structs-guild`](.cursor/skills/structs-guild/SKILL.md) (guild-choice criteria); refocused [`play-structs`](.cursor/skills/play-structs/SKILL.md) and [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL.md) on the new skill map and per-player charge.
+- **Skill index & cross-links** updated across [`.cursor/skills/index.md`](.cursor/skills/index.md), [`AGENTS.md`](AGENTS.md), [`SAFETY.md`](SAFETY.md), [`SITEMAP.md`](SITEMAP.md), [`llms.txt`](llms.txt), and `sitemap.xml`.
+
+### Removed
+
+- **Merged/renamed skills deleted** — `structs-mining`, `structs-exploration`, `structs-power`, `structs-economy`, `structs-diplomacy`, `structs-reconnaissance` (their content lives in the consolidated skills above). Root `skills/` symlinks updated to match.
+
+## [1.12.0] - 2026-06-12
+
+### Fixed
+
+- **Charge is per-player, not per-struct** — corrected the fundamental framing everywhere it was wrong. Charge is a single shared bar per player (`charge = CurrentBlockHeight - player.lastActionBlock`); every charge-consuming action by any of the player's structs draws from and resets the same bar. Rewrote [`knowledge/mechanics/building.md`](knowledge/mechanics/building.md#charge-accumulation) as the canonical explainer and fixed per-struct phrasing in [`schemas/actions.md`](schemas/actions.md), [`schemas/errors.md`](schemas/errors.md), [`schemas/entities.md`](schemas/entities.md), [`protocols/action-protocol.md`](protocols/action-protocol.md), [`protocols/error-handling.md`](protocols/error-handling.md), [`reference/action-quick-reference.md`](reference/action-quick-reference.md), [`troubleshooting/error-codes.md`](troubleshooting/error-codes.md), [`awareness/state-assessment.md`](awareness/state-assessment.md), [`awareness/async-operations.md`](awareness/async-operations.md), [`awareness/context-handoff.md`](awareness/context-handoff.md), [`awareness/continuity.md`](awareness/continuity.md), [`knowledge/infrastructure/guild-stack.md`](knowledge/infrastructure/guild-stack.md), and [`knowledge/lore/structs-origin.md`](knowledge/lore/structs-origin.md).
+
+### Changed (structsd v0.18.0 gameplay rebalance)
+
+- **Charge rebalance** — `activateCharge` 1→2 and `stealthActivateCharge` 1→2 (all types); Command Ship `moveCharge` 8→3; primary weapon charges rebased to 3 (Command Ship, Starfighter, Pursuit Fighter, Tank) or 5 (all other armed hulls); secondary charges 5 (Battleship, Starfighter) / 3 (Cruiser). Updated [`building.md`](knowledge/mechanics/building.md), [`struct-types.md`](knowledge/entities/struct-types.md), [`combat.md`](knowledge/mechanics/combat.md).
+- **Planetary struct health & armour** — baseline planetary structs to 6 HP; power generators hardened (Field Generator 8, Continental Power Plant 10, World Engine 10) and given `armour` (damage reduction 1). Fleet HP unchanged.
+- **Armour-piercing + Battleship rework** — added `primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing` (negate the target's damage reduction). Battleship primary is now armour-piercing, restricted to Land/Water, and gains a guided secondary that reaches Space — the dedicated counter to Tanks and armoured generators.
+- **Build limits** — Orbital Shield Generator and Ore Bunker (shield-only structs) are now unlimited per player; corrected the per-player limits table.
+- **Raid `SHIELDS_VULNERABLE`** — documented that `planet-raid-complete` only succeeds while the defender's Command Ship is offline/destroyed/non-existent, the `blockStartRaid` vulnerability clock, and the new `shieldsVulnerable` / `ongoing` raid statuses. Planetary shield values rebased onto a base shield of 25.
+- **Movement** — clarified that only the Command Ship is `movable`; the chain rejects `struct-move` on any other struct.
+
+### Added
+
+- **`pfpClientRenderAttributes`** — new player field carrying render hints (a compacted JSON object, ≤512 bytes) for a locally-rendered profile picture, set via `MsgPlayerUpdatePfpClientRenderAttributes` (or at guild signup). Owner-only; not guild-moderatable. Documented in [`ugc-moderation.md`](knowledge/mechanics/ugc-moderation.md), [`schemas/validation.md`](schemas/validation.md), [`schemas/actions.md`](schemas/actions.md), [`schemas/entities.md`](schemas/entities.md), [`reference/action-quick-reference.md`](reference/action-quick-reference.md), [`transactions.md`](knowledge/mechanics/transactions.md).
+
 ## [1.11.0] - 2026-05-29
 
 ### Added

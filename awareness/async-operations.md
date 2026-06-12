@@ -112,7 +112,7 @@ time_seconds = age_blocks * 6
 
 Launch compute commands in background terminals. The CLI's `-D` flag handles the waiting internally — it polls the chain for current block height and starts hashing when difficulty drops to the target.
 
-After launching, track the job in `memory/jobs.md` (see template below) and periodically check the terminal for completion.
+After launching, track the job in `memory/jobs/` (one `<job>.json` + `.log` + `.pid` per compute — see template below) and periodically check the terminal for completion.
 
 ### Polling Strategy
 
@@ -125,25 +125,24 @@ After launching, track the job in `memory/jobs.md` (see template below) and peri
 
 ## Job Tracker
 
-Maintain `memory/jobs.md` to track all background PoW across sessions:
+Track all background PoW in `memory/jobs/` — one record per compute, so a later session can verify each independently. Each job is `<type>-<structId>` with three files (`.json`, `.log`, `.pid`). The `.json` shape:
 
-```markdown
-# Active Jobs
-
-| Job | Struct | Action | Start Block | D=3 Est Block | Terminal | Status |
-|-----|--------|--------|-------------|---------------|----------|--------|
-| J1 | 5-715 | build | 23042 | ~23611 | term-3 | running |
-| J2 | 5-716 | build | 23042 | ~23611 | term-4 | running |
-| J3 | 5-715 | mine | 23500 | ~33840 | -- | pending (not yet launched) |
-
-# Completed Jobs
-
-| Job | Struct | Action | Completed Block | Result |
-|-----|--------|--------|-----------------|--------|
-| J0 | 5-714 | build | 23000 | success |
+```json
+{
+  "job": "mine-14-5",
+  "type": "mine",
+  "structId": "14-5",
+  "blockStart": 1283900,
+  "difficulty": 14000,
+  "targetD": 3,
+  "pid": 48213,
+  "status": "running",
+  "expectedReadyBlock": 1294100,
+  "autoSubmits": true
+}
 ```
 
-Update this file every game loop tick. On session resume, check all "running" jobs immediately using the procedure below — they may have completed, failed silently, or still be in flight.
+`status`: `running` | `landed` | `failed` | `recalled`. Full schema and launch template: [`memory/README.md`](../memory/README.md#jobs--background-proof-of-work-jobs) and [`memory/jobs/README.md`](../memory/jobs/README.md). Update the relevant `.json` every game loop tick. On session resume, check every `running` job immediately using the procedure below — they may have completed, failed silently, or still be in flight.
 
 ---
 
@@ -218,19 +217,22 @@ If the world has changed materially since you launched, the right action may be 
 
 ## Charge Tracker
 
-Maintain `memory/charge-tracker.md` to know when structs can act:
+Charge is a single **per-player** bar (`charge = CurrentBlockHeight - player.lastActionBlock`), shared across all your structs — not a per-struct value. Track the player's last action block and the cost of the next planned action to know when it can fire:
 
 ```markdown
-# Struct Charge Status
+# Player Charge Status
 
-| Struct | Type | Last Action Block | Next Action | Charge Needed | Ready Block |
-|--------|------|-------------------|-------------|---------------|-------------|
-| 5-714 | CMD | 23000 | attack | 1 | 23001 |
-| 5-715 | Ext | 23500 | mine | 8 (build) | 23508 |
-| 5-716 | Ref | 23500 | refine | 8 (build) | 23508 |
+Player: 5-1
+Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block)
+
+| Next planned action | Charge Needed | Ready Block |
+|---------------------|---------------|-------------|
+| activate struct     | 2             | 23002 |
+| build initiate      | 8             | 23008 |
+| Battleship primary  | 5             | 23005 |
 ```
 
-At ~6 sec/block, most charge costs are trivial (8 blocks = 48 seconds). But rapid repeated attacks on heavy weapons (charge 20) take 2 minutes between shots.
+At ~6 sec/block, most charge costs are trivial (8 blocks = ~48 seconds). The constraint appears when you chain many actions in quick succession (activating several structs, or repeated attacks): each action resets the shared bar, so space them out by the next action's cost.
 
 ---
 
@@ -287,9 +289,9 @@ workspace/
 │   │   ├── IDENTITY.md        # Player-specific identity
 │   │   ├── TOOLS.md           # Player-specific config (address, servers)
 │   │   └── memory/
-│   │       ├── jobs.md        # Player-specific job tracker
-│   │       ├── charge-tracker.md
-│   │       └── game-state.md
+│   │       ├── jobs/          # Player-specific job records (.json/.log/.pid)
+│   │       ├── player.json    # lastActionBlock + per-player charge plan
+│   │       └── game-state.json
 │   ├── beta/
 │   │   ├── IDENTITY.md
 │   │   ├── TOOLS.md

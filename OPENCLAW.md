@@ -43,7 +43,7 @@ Use the structs-ai repository as your OpenClaw workspace so the agent has full a
 
    `skipBootstrap: true` prevents OpenClaw from overwriting our AGENTS.md, SOUL.md, and other files with its defaults. **This is critical** — without it, OpenClaw will destroy the agent identity files that ship with this repo (or that a previous agent has personalized).
 
-3. **Skills** — The repo includes a `skills/` directory with symlinks to `.cursor/skills/`. OpenClaw will discover structs-onboarding, structs-building, structs-mining, etc. automatically.
+3. **Skills** — The repo includes a `skills/` directory with symlinks to `.cursor/skills/`. OpenClaw will discover structs-onboarding, structs-production, structs-building, etc. automatically.
 
 4. **Seed missing files** (optional):
 

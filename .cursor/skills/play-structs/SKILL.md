@@ -147,18 +147,29 @@ Mining and refining are multi-hour background operations. Launch compute, then d
 
 You're mining. Now expand your capabilities:
 
+**Core loop** (master these first):
+
 | Skill | What It Does |
 |-------|-------------|
-| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth |
-| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids, defense formations, ambit targeting |
-| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Increase capacity, sell surplus energy, reactor/generator infusion |
-| [structs-economy](https://structs.ai/skills/structs-economy/SKILL) | Allocations, providers, agreements, token transfers |
-| [structs-exploration](https://structs.ai/skills/structs-exploration/SKILL) | Discover new planets, move fleets |
-| [structs-mining](https://structs.ai/skills/structs-mining/SKILL) | Advanced mining and refining workflows |
-| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Guild membership, Central Bank tokens |
-| [structs-power](https://structs.ai/skills/structs-power/SKILL) | Substations, allocations, power monitoring |
-| [structs-diplomacy](https://structs.ai/skills/structs-diplomacy/SKILL) | Permissions, multi-address management |
-| [structs-reconnaissance](https://structs.ai/skills/structs-reconnaissance/SKILL) | Intelligence gathering, threat assessment |
+| [structs-production](https://structs.ai/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
+| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth, generator infusion |
+| [structs-planets-fleet](https://structs.ai/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
+| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Capacity management, offline recovery, substations, infusion |
+| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
+
+**Economy & social**:
+
+| Skill | What It Does |
+|-------|-------------|
+| [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
+| [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) | Permissions, multi-address management, delegate agents |
+| [structs-intel](https://structs.ai/skills/structs-intel/SKILL) | Scouting players/planets/guilds; persisting intel to memory |
+
+**Advanced infra**:
+
+| Skill | What It Does |
+|-------|-------------|
 | [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |
 | [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |
 

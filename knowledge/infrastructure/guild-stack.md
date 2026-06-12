@@ -28,12 +28,12 @@ The performance difference between CLI queries and PG is not incremental — it 
 
 ### The Combat Math
 
-One blockchain block is ~6 seconds. Fast-fire units (Command Ship, Pursuit Fighter, Tank, Starfighter) recharge in 1 block. In active combat, the decision loop is:
+One blockchain block is ~6 seconds. Charge is a single **per-player** bar (shared across all your structs), regenerating 1 per block. Fast-fire primaries (Command Ship, Pursuit Fighter, Tank, Starfighter) cost 3 charge — roughly 3 blocks (~18s) between shots if you fire nothing else; heavier hulls cost 5. In active combat, the decision loop is:
 
 1. Query enemy state (who's alive, what defenses)
 2. Pick optimal attacker + target + weapon
 3. Submit attack transaction
-4. Wait for charge (~6s)
+4. Wait for the player's charge bar to refill to the next action's cost (~18-30s)
 5. Repeat
 
 **With CLI**: Steps 1-2 take 5-10 seconds. Your 6-second combat cycle becomes 15 seconds. You fire at half rate, and state may be stale by the time you act.

@@ -28,8 +28,9 @@ Read in this order:
 
 Then, if resuming:
 
-- `memory/jobs.md` — **Check first.** PoW jobs may have completed while you were away.
-- `memory/charge-tracker.md` — Which structs are ready to act
+- `memory/jobs/` — **Check first.** PoW jobs may have completed (or failed) while you were away.
+- `memory/player.json` — Your player's `lastActionBlock` and charge plan (when the next action can fire)
+- `memory/game-state.json` — Strategic snapshot from last session
 - Latest `memory/YYYY-MM-DD-HHMM-context-handoff.md` — Where you left off
 - Recent `memory/` session logs — What happened last session
 
@@ -49,16 +50,17 @@ Before ending a session:
 
 **Path**: `memory/`
 
-**Contents**:
+**Contents** (full shapes in [`memory/README.md`](../memory/README.md)):
 
-- `jobs.md` — Active/completed PoW background jobs (check first on resume)
-- `charge-tracker.md` — Struct charge states and action readiness
-- `game-state.md` — Strategic picture, resources, threats, priority queue
+- `jobs/` — Active/completed PoW background jobs as `<job>.json` + `.log` + `.pid` (check **first** on resume)
+- `player.json` — Player id, `lastActionBlock`, and the per-player charge plan (next action + cost + ready block)
+- `game-state.json` — Strategic snapshot: power, resources, planet (shield/`blockStartRaid`/storedOre), priorities, threats
+- `scorecard.json` — Session self-review (see [scorecard.md](scorecard.md))
 - `YYYY-MM-DD-HHMM-context-handoff.md` — Handoff snapshots
-- Session logs — Date-stamped notes, intelligence, decisions
-- Strategic notes — Plans, guild intel, player assessments
+- `intel/` — Target dossiers, territory notes (Markdown)
+- Session logs — Date-stamped narrative notes, decisions
 
-**Convention**: Use descriptive filenames. `2026-02-22-session-raid-on-2-5.md`. `2026-02-22-guild-alliance-notes.md`.
+**Convention**: Operational state is JSON (parse without guessing); narrative/intel is Markdown with descriptive filenames, e.g. `2026-02-22-session-raid-on-2-5.md`.
 
 ---
 

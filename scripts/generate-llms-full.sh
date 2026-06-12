@@ -2,9 +2,41 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT="$REPO_ROOT/llms-full.txt"
+FULL_OUTPUT="$REPO_ROOT/llms-full.txt"
+CORE_OUTPUT="$REPO_ROOT/llms-core.txt"
 
-FILES=(
+# CORE: a tight starter set — identity, conventions, the core-loop skills, the
+# highest-leverage knowledge, and the awareness an agent needs to act safely.
+# Designed to fit comfortably in context when the full bundle is too large.
+CORE_FILES=(
+  SOUL.md
+  SAFETY.md
+  AGENTS.md
+  QUICKSTART.md
+  identity/manifesto.md
+
+  .cursor/skills/conventions.md
+  .cursor/skills/play-structs/SKILL.md
+  .cursor/skills/structs-onboarding/SKILL.md
+  .cursor/skills/structs-production/SKILL.md
+  .cursor/skills/structs-building/SKILL.md
+  .cursor/skills/structs-planets-fleet/SKILL.md
+  .cursor/skills/structs-energy/SKILL.md
+  .cursor/skills/structs-combat/SKILL.md
+
+  knowledge/mechanics/building.md
+  knowledge/mechanics/combat.md
+  knowledge/mechanics/resources.md
+  knowledge/mechanics/power.md
+  knowledge/entities/struct-types.md
+
+  awareness/priority-framework.md
+  awareness/game-loop.md
+  awareness/async-operations.md
+)
+
+# FULL: the complete canonical corpus.
+FULL_FILES=(
   # Identity
   SOUL.md
   QUICKSTART.md
@@ -27,20 +59,21 @@ FILES=(
   identity/souls/killer.md
 
   # Skills
+  .cursor/skills/index.md
+  .cursor/skills/conventions.md
   .cursor/skills/play-structs/SKILL.md
   .cursor/skills/structsd-install/SKILL.md
   .cursor/skills/structs-onboarding/SKILL.md
-  .cursor/skills/structs-mining/SKILL.md
+  .cursor/skills/structs-production/SKILL.md
   .cursor/skills/structs-building/SKILL.md
-  .cursor/skills/structs-combat/SKILL.md
-  .cursor/skills/structs-exploration/SKILL.md
-  .cursor/skills/structs-economy/SKILL.md
-  .cursor/skills/structs-guild/SKILL.md
-  .cursor/skills/structs-power/SKILL.md
-  .cursor/skills/structs-diplomacy/SKILL.md
+  .cursor/skills/structs-planets-fleet/SKILL.md
   .cursor/skills/structs-energy/SKILL.md
+  .cursor/skills/structs-combat/SKILL.md
+  .cursor/skills/structs-commerce/SKILL.md
+  .cursor/skills/structs-guild/SKILL.md
+  .cursor/skills/structs-permissions/SKILL.md
+  .cursor/skills/structs-intel/SKILL.md
   .cursor/skills/structs-streaming/SKILL.md
-  .cursor/skills/structs-reconnaissance/SKILL.md
   .cursor/skills/structs-guild-stack/SKILL.md
 
   # Knowledge - Lore
@@ -98,24 +131,42 @@ FILES=(
   awareness/async-operations.md
   awareness/context-handoff.md
   awareness/continuity.md
+  awareness/scorecard.md
+
+  # Examples - Golden Transcripts
+  examples/transcripts/README.md
+  examples/transcripts/01-zero-to-mining.md
+  examples/transcripts/02-raid-go-no-go.md
+
+  # Reference
+  reference/local-devnet.md
 )
 
-> "$OUTPUT"
+# emit_bundle <output-path> <file...>
+emit_bundle() {
+  local output="$1"; shift
+  : > "$output"
+  local file filepath
+  for file in "$@"; do
+    filepath="$REPO_ROOT/$file"
+    if [[ -f "$filepath" ]]; then
+      {
+        echo "<document>"
+        echo "<source>$file</source>"
+        cat "$filepath"
+        echo ""
+        echo "</document>"
+        echo ""
+      } >> "$output"
+    else
+      echo "WARNING: $file not found, skipping" >&2
+    fi
+  done
+  local size lines
+  size=$(wc -c < "$output" | tr -d ' ')
+  lines=$(wc -l < "$output" | tr -d ' ')
+  echo "Generated $output ($lines lines, $size bytes)"
+}
 
-for file in "${FILES[@]}"; do
-  filepath="$REPO_ROOT/$file"
-  if [[ -f "$filepath" ]]; then
-    echo "<document>" >> "$OUTPUT"
-    echo "<source>$file</source>" >> "$OUTPUT"
-    cat "$filepath" >> "$OUTPUT"
-    echo "" >> "$OUTPUT"
-    echo "</document>" >> "$OUTPUT"
-    echo "" >> "$OUTPUT"
-  else
-    echo "WARNING: $file not found, skipping" >&2
-  fi
-done
-
-size=$(wc -c < "$OUTPUT" | tr -d ' ')
-lines=$(wc -l < "$OUTPUT" | tr -d ' ')
-echo "Generated $OUTPUT ($lines lines, $size bytes)"
+emit_bundle "$FULL_OUTPUT" "${FULL_FILES[@]}"
+emit_bundle "$CORE_OUTPUT" "${CORE_FILES[@]}"

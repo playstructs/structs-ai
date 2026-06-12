@@ -23,15 +23,15 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 | 11 | Cruiser | fleet | Cruiser | 515 | 110 kW | 110 kW | 3 | 2 | water |
 | 12 | Destroyer | fleet | Destroyer | 600 | 100 kW | 100 kW | 3 | 2 | water |
 | 13 | Submersible | fleet | Submersible | 455 | 125 kW | 125 kW | 3 | 2 | water |
-| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
-| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
-| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 kW | 200 kW | 3 | 16 | space |
-| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 kW | 600 kW | 3 | 16 | space |
-| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 kW | 750 kW | 3 | 4 | land |
-| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 kW | 600 kW | 3 | 6 | land, water |
-| 20 | Field Generator | planet | Field Generator | 700 | 500 kW | 500 kW | 3 | 6 | land, water |
-| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 kW | 10,000 kW | 3 | 6 | land, water |
-| 22 | World Engine | planet | World Engine | 5,000 | 100,000 kW | 100,000 kW | 3 | 6 | land, water |
+| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 kW | 500 kW | 6 | 6 | land, water |
+| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 kW | 500 kW | 6 | 6 | land, water |
+| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 kW | 200 kW | 6 | 16 | space |
+| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 kW | 600 kW | 6 | 16 | space |
+| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 kW | 750 kW | 6 | 4 | land |
+| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 kW | 600 kW | 6 | 6 | land, water |
+| 20 | Field Generator | planet | Field Generator | 700 | 500 kW | 500 kW | 8 | 6 | land, water |
+| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 kW | 10,000 kW | 10 | 6 | land, water |
+| 22 | World Engine | planet | World Engine | 5,000 | 100,000 kW | 100,000 kW | 10 | 6 | land, water |
 
 ### Special Properties
 
@@ -40,22 +40,24 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 | 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. **Can I rebuild after destruction? YES** — the old instance is gone, but you can build a brand new Command Ship (type 1, new struct ID, full PoW ~17 min at D=3). Choose starting ambit at build time. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
-| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player |
-| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player |
-| 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player |
+| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
+| 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
+| 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
+
+Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP.
 
 ### Planetary Shield Contributions
 
-Planet structs that contribute to your planet's shield (reduces raid PoW difficulty for attackers):
+Planet structs that contribute to your planet's shield (a higher shield raises raid PoW difficulty for attackers). Shield values are scaled as fractions of the Command Ship rebuild window (BuildDifficulty 200), on top of a base shield of **25**:
 
 | ID | Type | Shield Contribution | Build Limit |
 |----|------|--------------------:|-------------|
-| 16 | Orbital Shield Generator | 1,500 | 1 per player |
-| 17 | Jamming Satellite | 4,500 | 1 per player |
-| 18 | Ore Bunker | **9,000** | 1 per player |
-| 19 | Planetary Defense Cannon | 4,500 | 1 per player |
+| 16 | Orbital Shield Generator | 25 | unlimited |
+| 17 | Jamming Satellite | 12 | 1 per player |
+| 18 | Ore Bunker | 50 | unlimited |
+| 19 | Planetary Defense Cannon | 13 | 1 per player |
 
-Total maximum shield per player: 19,500 (from all four). All planet structs have a build limit of 1 per player.
+A planet's shield = base 25 + the contributions of its **online** defense structs. One each of all four yields 25 + 25 + 12 + 50 + 13 = **125**. Orbital Shield Generator and Ore Bunker (the structs whose only effect is shield) are unlimited, so the practical maximum is power-gated — stack them to harden a planet. The shield only matters while the raid is winnable (the defender's Command Ship must be offline/destroyed — see [combat.md](../mechanics/combat.md)).
 
 ### Detailed Fleet Combat Properties
 
@@ -65,21 +67,21 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 
 | Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
 |--------|--------|-------------|--------------------|-----------| ------|
-| Command Ship | 1 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
-| Battleship | 20 | unguided | Space, Land, Water | — | Highest charge cost; broadest space coverage |
-| Starfighter | 1 / 8 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary now floors at 1 hit per Attack Run (v0.16.0 `secondaryWeaponGuaranteedShots = 1`) |
-| Frigate | 8 | guided | Space, Air | — | Only space unit hitting air |
-| Pursuit Fighter | 1 | guided | Air | — | Cheapest air offense |
-| Stealth Bomber | 8 | guided | Land, Water | — | Stealth (1 charge to activate) |
-| High Alt Interceptor | 8 | guided | Space, Air | — | Air-to-space capability |
-| Mobile Artillery | 8 | unguided | Land, Water | — | Cannot counter-attack when attacked |
-| Tank | 1 | unguided | Land | — | Damage reduction: 1 (takes 3 hits to kill) |
-| SAM Launcher | 8 | guided | Space, Air | — | Land-based anti-air/space |
-| Cruiser | 8 / 1 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
-| Destroyer | 8 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
-| Submersible | 8 | guided | Space, Water | — | Stealth (1 charge to activate) |
+| Command Ship | 3 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
+| Battleship | 5 / 5 | unguided / guided | Land, Water | Space: 1 shot × 1 dmg | **Armour-piercing primary** (negates target damage reduction); anti-Tank/anti-generator on land + water. Guided secondary reaches space |
+| Starfighter | 3 / 5 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary floors at 1 hit per Attack Run (`secondaryWeaponGuaranteedShots = 1`) |
+| Frigate | 5 | guided | Space, Air | — | Only space unit hitting air |
+| Pursuit Fighter | 3 | guided | Air | — | Cheapest air offense |
+| Stealth Bomber | 5 | guided | Land, Water | — | Stealth (2 charge to activate) |
+| High Alt Interceptor | 5 | guided | Space, Air | — | Air-to-space capability |
+| Mobile Artillery | 5 | unguided | Land, Water | — | Cannot counter-attack when attacked |
+| Tank | 3 | unguided | Land | — | Damage reduction 1 (takes 3 normal hits to kill; armour-piercing ignores the reduction) |
+| SAM Launcher | 5 | guided | Space, Air | — | Land-based anti-air/space |
+| Cruiser | 5 / 3 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
+| Destroyer | 5 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
+| Submersible | 5 | guided | Space, Water | — | Stealth (2 charge to activate) |
 
-All primary weapons are blockable and counterable. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
 
 #### Defensive Properties
 
@@ -99,20 +101,23 @@ All primary weapons are blockable and counterable. See [combat.md](../mechanics/
 | Destroyer | `noUnitDefenses` | 1 / **2** | — | 0 | No | Best same-ambit counter-attacker |
 | Submersible | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
 
-**Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (1 charge to re-activate).
+**Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (2 charge to re-activate).
 
 #### Charge Costs (All Struct Types)
+
+Charge is a single **per-player** bar (see [building.md](../mechanics/building.md#charge-accumulation)); these are the costs each action draws from it, not per-struct values.
 
 | Action | Charge Cost |
 |--------|-------------|
 | Build initiate | 8 |
-| Activate | 1 |
-| Attack (primary) | 1-20 (varies per struct, see table above) |
+| Activate | 2 |
+| Attack (primary) | 3-5 (varies per struct, see table above) |
+| Attack (secondary) | 3-5 (Battleship/Starfighter 5, Cruiser 3) |
 | Defend change | 1 |
-| Move (Command Ship only) | 8 |
-| Stealth activate | 1 |
+| Move (Command Ship only) | 3 |
+| Stealth activate | 2 |
 
-At 1 charge per block (~6 seconds), plan ~48 seconds between actions costing 8 charge.
+At 1 charge per block (~6 seconds), plan ~30 seconds of idle accumulation between 5-charge actions. The bar is shared across all the player's structs.
 
 ### Weapon Target Ambits
 
@@ -124,10 +129,12 @@ Which structs can attack into each ambit:
 
 | Target Ambit | Threatened By |
 |--------------|---------------|
-| Space | Battleship, Starfighter, Frigate, High Alt Interceptor, SAM Launcher, Submersible |
+| Space | Battleship (secondary), Starfighter, Frigate, High Alt Interceptor, SAM Launcher, Submersible |
 | Air | Frigate, Pursuit Fighter, High Alt Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
 | Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
 | Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
+
+Battleship's armour-piercing primary covers Land and Water (ignoring damage reduction on Tanks and generators); its guided secondary reaches Space.
 
 The Command Ship can attack into any ambit but must first move there via `struct-move`.
 
@@ -190,7 +197,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-compute` handles hash + submit |
 
-`activateCharge` = 1, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types. All planet structs have a build limit of 1 per player. Command Ship is limited to 1 per player. Fleet combat structs (IDs 2-13) have no build limit.
+`activateCharge` = 2, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types (charge is a per-player bar). Most planet structs and the Command Ship are limited to 1 per player; Orbital Shield Generator and Ore Bunker (shield-only) and fleet combat structs (IDs 2-13) have no build limit.
 
 ---
 

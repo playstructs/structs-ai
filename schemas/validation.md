@@ -107,6 +107,18 @@ User-generated identity fields (player/guild/planet/substation names and pfps) a
 | has `:` -> URL | scheme (lowercased) must be one of `https`, `http`, `ipfs`, `ipns`, `ar`; URL must `url.Parse` cleanly; for `https`/`http` the host must be non-empty; for `ipfs`/`ipns`/`ar` at least one of host, opaque, or path must be non-empty |
 | validator (Go) | `types.ValidatePfp` |
 
+### pfpClientRenderAttributes (`MsgPlayerUpdatePfpClientRenderAttributes`, `MsgGuildMembershipJoinProxy.playerPfpClientRenderAttributes`)
+
+| Property | Value |
+|----------|-------|
+| empty allowed | yes (clears the field) |
+| max size | 512 **bytes** (`MaxPfpClientRenderAttributesBytes`), byte-denominated not rune count |
+| required shape | must decode as a JSON **object** (arrays, scalars, and malformed JSON are rejected) |
+| stored form | compacted (whitespace-stripped) JSON |
+| schema | none enforced — contents are free-form |
+| permission | owner-only / self-service (does not route through `UGCPermissionCheck`; not guild-moderatable) |
+| validator (Go) | `types.ValidatePfpClientRenderAttributes` |
+
 ### Name uniqueness comparison
 
 Uniqueness indexes (e.g. guild names) MUST key on the `NormalizeName` form: NFC + ASCII lowercase + trim leading/trailing whitespace. Two names that produce the same `NormalizeName` value are considered identical and cannot both be registered.

@@ -281,16 +281,16 @@ All error codes are defined in `schemas/errors.md`. Categories include:
 **Example**:
 ```json
 {
-  "scenario": "Mining requires charge but struct has insufficient charge",
+  "scenario": "Action requires charge but the player's shared charge bar is too low",
   "error": {
     "code": 7,
     "name": "INSUFFICIENT_CHARGE",
-    "description": "Struct has insufficient charge"
+    "description": "Player has insufficient charge (charge is per-player, not per-struct)"
   },
   "recovery": {
-    "action": "Query struct charge level",
+    "action": "Query player charge level (CurrentBlockHeight - player.lastActionBlock)",
     "wait": "Monitor charge until sufficient",
-    "retry": "Retry mining when charge >= required"
+    "retry": "Retry the action when charge >= required"
   }
 }
 ```

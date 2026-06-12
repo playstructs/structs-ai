@@ -17,7 +17,7 @@
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
 | guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipLeave, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
-| ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
+| ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgPlayerUpdatePfpClientRenderAttributes, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
 | struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
 ## Common Requirements
@@ -26,7 +26,7 @@
 |-------------|-------------|
 | playerOnline | Player must be online (not halted) |
 | sufficientResources | Player must have sufficient resources |
-| sufficientCharge | Struct must have sufficient charge |
+| sufficientCharge | Acting player must have sufficient charge (charge is a single per-player bar, not per-struct) |
 | proofOfWork | Action requires proof-of-work computation |
 | validLocation | Location must be valid and accessible |
 | validTarget | Target must be valid and attackable |
@@ -1184,6 +1184,20 @@ User-generated content (name and pfp) updates. Added in v0.16.0. All seven messa
 |-------------|---------|
 | permission | `PermUpdate` (4) on the player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
 | validPfp | Must satisfy `ValidatePfp` (empty string clears; otherwise <=256 runes, no control/bidi/whitespace/`<>``"\\` chars; no `:` -> `^[A-Za-z0-9._/\-]{1,256}$`; with `:` -> scheme in {https, http, ipfs, ipns, ar} and parses cleanly) |
+
+### MsgPlayerUpdatePfpClientRenderAttributes
+
+- **ID**: `player-update-pfp-client-render-attributes`
+- **Name**: Update Player Pfp Client Render Attributes
+- **Message Type**: `/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes`
+- **Description**: Set or clear render hints (a JSON object) for a player's locally-rendered profile picture. Owner-only — not guild-moderatable.
+
+**Required Fields**: `creator`, `playerId`, `pfpClientRenderAttributes`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermUpdate` (4) on the player (self-service only; does **not** route through `UGCPermissionCheck`) |
+| validAttributes | Must satisfy `ValidatePfpClientRenderAttributes` (empty string clears; otherwise a JSON object <=512 bytes, stored compacted; arrays/scalars/malformed JSON rejected) |
 
 ### MsgGuildUpdateName
 

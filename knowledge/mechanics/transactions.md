@@ -34,7 +34,7 @@ Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for
 
 - All `MsgAddress*`, `MsgAgreement*`, `MsgAllocation*`, `MsgPlayer*`, `MsgProvider*`, `MsgReactor*`, `MsgStruct*`, `MsgSubstation*`, `MsgPermission*` messages.
 - `MsgFleetMove`, `MsgPlanetExplore`, `MsgPlanetRaidComplete`, `MsgPlanetUpdateName`.
-- All guild messages: `MsgGuildCreate`, `MsgGuildBank*`, `MsgGuildMembership*`, `MsgGuildUpdate*` (including the seven new UGC messages: `MsgGuildUpdateName/Pfp`, `MsgPlayerUpdateName/Pfp`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName/Pfp`).
+- All guild messages: `MsgGuildCreate`, `MsgGuildBank*`, `MsgGuildMembership*`, `MsgGuildUpdate*` (including the UGC messages: `MsgGuildUpdateName/Pfp`, `MsgPlayerUpdateName/Pfp`, `MsgPlayerUpdatePfpClientRenderAttributes`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName/Pfp`).
 
 Excluded from the free path:
 

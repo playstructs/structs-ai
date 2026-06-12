@@ -209,7 +209,7 @@ Append to `memory/audit/<session>.md` after every Tier 1+ tx:
 2026-05-13T19:42:18Z  agent-1-42  struct-build-initiate  1-42 14 land 0  txhash:ABC...  seq:127
 ```
 
-Lets your commander review what you did, and lets future-you reconstruct sessions. The streaming and reconnaissance skills can feed back into this.
+Lets your commander review what you did, and lets future-you reconstruct sessions. The streaming and intel skills can feed back into this.
 
 ---
 
@@ -218,15 +218,16 @@ Lets your commander review what you did, and lets future-you reconstruct session
 Every skill in this repository has a public security audit at ClawHub. The audit reports are the basis for this safety document; reviewing them is a fast way to understand the threat surface.
 
 - [structs-onboarding](https://clawhub.ai/abstrct/structs-onboarding/security/clawscan)
-- [structs-mining](https://clawhub.ai/abstrct/structs-mining/security/clawscan)
+- [structs-production](https://clawhub.ai/abstrct/structs-production/security/clawscan)
 - [structs-building](https://clawhub.ai/abstrct/structs-building/security/clawscan)
+- [structs-planets-fleet](https://clawhub.ai/abstrct/structs-planets-fleet/security/clawscan)
 - [structs-combat](https://clawhub.ai/abstrct/structs-combat/security/clawscan)
-- [structs-economy](https://clawhub.ai/abstrct/structs-economy/security/clawscan)
+- [structs-commerce](https://clawhub.ai/abstrct/structs-commerce/security/clawscan)
 - [structs-energy](https://clawhub.ai/abstrct/structs-energy/security/clawscan)
-- [structs-power](https://clawhub.ai/abstrct/structs-power/security/clawscan)
-- [structs-diplomacy](https://clawhub.ai/abstrct/structs-diplomacy/security/clawscan)
-- [structs-exploration](https://clawhub.ai/abstrct/structs-exploration/security/clawscan)
+- [structs-permissions](https://clawhub.ai/abstrct/structs-permissions/security/clawscan)
+- [structs-intel](https://clawhub.ai/abstrct/structs-intel/security/clawscan)
 - [structs-guild](https://clawhub.ai/abstrct/structs-guild/security/clawscan)
+- [structs-streaming](https://clawhub.ai/abstrct/structs-streaming/security/clawscan)
 - [structs-guild-stack](https://clawhub.ai/abstrct/structs-guild-stack/security/clawscan)
 - [structsd-install](https://clawhub.ai/abstrct/structsd-install) (Pass)
 

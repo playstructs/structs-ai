@@ -88,23 +88,27 @@ At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is 
 
 ## Charge Accumulation
 
+Charge is a **per-player** resource — a single shared bar, not a per-struct value. It is the number of blocks since the player's last charge-consuming action:
+
 ```
-charge = CurrentBlockHeight - LastActionBlock
+charge = CurrentBlockHeight - player.LastActionBlock
 ```
 
-Charge accumulates passively from the last action. Different actions consume different amounts:
+Every charge-consuming action by **any** of the player's structs (build, activate, attack, move, defense change, stealth) draws from and resets this **one** shared bar. Charge accumulates passively at 1 per block (~6 sec/block) while the player is idle. There is no separate charge per struct — to know whether an action can fire, query the player, not the struct.
+
+Action costs (the charge the player's bar must hold to act):
 
 | Action | Charge Cost | Notes |
 |--------|------------|-------|
-| Activate | 1 | Same for all struct types |
-| Build complete | 8 | Same for all struct types |
+| Build (initiate) | 8 | Same for all struct types |
+| Activate | 2 | Same for all struct types |
 | Defend change | 1 | Set or clear defense assignment |
-| Move | 8 | Command Ship only |
-| Primary weapon | 1-20 | Varies by struct type (1 for fast attackers, 8-20 for heavy) |
-| Secondary weapon | 1-8 | Only Starfighter, Cruiser |
-| Stealth activate | 1 | Only Stealth Bomber, Submersible |
+| Move | 3 | Command Ship only |
+| Primary weapon | 3-5 | 3 for fast attackers (Command Ship, Starfighter, Pursuit Fighter, Tank); 5 for heavier hulls |
+| Secondary weapon | 3-5 | Battleship/Starfighter 5, Cruiser 3 |
+| Stealth activate | 2 | Only Stealth Bomber, Submersible |
 
-At ~6 sec/block, 8 blocks of charge = ~48 seconds. Charge is not a bottleneck for most actions but matters for rapid repeated attacks.
+At ~6 sec/block, a 5-charge action needs ~30 seconds of accumulation since the player's last action. Because the bar is shared, rapid sequences (activating several structs, or repeated attacks) are gated by it — space the actions out, or they fail with `"required charge X but player had Y"`.
 
 ---
 
@@ -112,8 +116,19 @@ At ~6 sec/block, 8 blocks of charge = ~48 seconds. Charge is not a bottleneck fo
 
 | Struct Type | Limit |
 |-------------|-------|
-| Planetary Defense Cannon | 1 |
 | Command Ship | 1 |
+| Ore Extractor | 1 |
+| Ore Refinery | 1 |
+| Jamming Satellite | 1 |
+| Planetary Defense Cannon | 1 |
+| Field Generator | 1 |
+| Continental Power Plant | 1 |
+| World Engine | 1 |
+| Orbital Shield Generator | unlimited |
+| Ore Bunker | unlimited |
+| Fleet combat structs (IDs 2-13) | unlimited |
+
+Orbital Shield Generator and Ore Bunker are the planet structs whose only effect is contributing to the planetary shield; both are unlimited, so a player can stack them (power permitting) to raise the shield. All other planet structs and the Command Ship remain 1 per player.
 
 ---
 
@@ -145,7 +160,7 @@ Materialized → Built (Offline) → Built (Online) → Destroyed
 3. Fleet onStation (if building on planet)
 4. Sufficient power capacity (BuildDraw + PassiveDraw)
 5. Available slots (correct type: space/air/land/water)
-6. Per-player limits (1 PDC, 1 Command Ship)
+6. Per-player build limits (most planet structs and the Command Ship are 1 per player; Orbital Shield Generator, Ore Bunker, and fleet structs are unlimited)
 
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
 

@@ -33,18 +33,18 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 | Skill | File | Purpose |
 |-------|------|---------|
 | **play-structs** | [SKILL.md](.cursor/skills/play-structs/SKILL.md) | **Start here.** Zero to mining Alpha Matter in one skill |
+| conventions | [conventions.md](.cursor/skills/conventions.md) | Shared boilerplate: transaction flags, `--` ID rule, per-player charge, PoW policy |
 | structsd-install | [SKILL.md](.cursor/skills/structsd-install/SKILL.md) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+) |
 | structs-onboarding | [SKILL.md](.cursor/skills/structs-onboarding/SKILL.md) | Address creation, player registration, planet exploration, first builds |
-| structs-mining | [SKILL.md](.cursor/skills/structs-mining/SKILL.md) | Ore extraction and refining (mine-compute → refine-compute) |
+| structs-production | [SKILL.md](.cursor/skills/structs-production/SKILL.md) | Mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | structs-building | [SKILL.md](.cursor/skills/structs-building/SKILL.md) | Construction, activation, movement, defense positioning |
-| structs-combat | [SKILL.md](.cursor/skills/structs-combat/SKILL.md) | Attacks, raids, defense setup, stealth, ambit targeting |
-| structs-exploration | [SKILL.md](.cursor/skills/structs-exploration/SKILL.md) | Planet discovery, fleet movement, grid queries |
-| structs-economy | [SKILL.md](.cursor/skills/structs-economy/SKILL.md) | Reactor staking, providers, agreements, allocations, transfers |
-| structs-energy | [SKILL.md](.cursor/skills/structs-energy/SKILL.md) | Energy capacity management — reactor/generator infusion, buying/selling |
-| structs-guild | [SKILL.md](.cursor/skills/structs-guild/SKILL.md) | Guild creation, membership, settings, Central Bank operations |
-| structs-power | [SKILL.md](.cursor/skills/structs-power/SKILL.md) | Substations, allocations, player connections, power monitoring |
-| structs-diplomacy | [SKILL.md](.cursor/skills/structs-diplomacy/SKILL.md) | Permissions, address management, multi-address coordination |
-| structs-reconnaissance | [SKILL.md](.cursor/skills/structs-reconnaissance/SKILL.md) | Query catalog, intelligence gathering, persistence to memory/ |
+| structs-planets-fleet | [SKILL.md](.cursor/skills/structs-planets-fleet/SKILL.md) | Planet evaluation, exploration, fleet movement, evacuation |
+| structs-energy | [SKILL.md](.cursor/skills/structs-energy/SKILL.md) | Capacity management — offline recovery, substations, allocations, infusion |
+| structs-combat | [SKILL.md](.cursor/skills/structs-combat/SKILL.md) | Attacks, raids (shield-vulnerability doctrine), defense setup, stealth |
+| structs-commerce | [SKILL.md](.cursor/skills/structs-commerce/SKILL.md) | Providers, agreements, reactor staking, guild Central Bank, transfers |
+| structs-guild | [SKILL.md](.cursor/skills/structs-guild/SKILL.md) | Choosing/joining a guild, ranks, membership, UGC moderation, Central Bank |
+| structs-permissions | [SKILL.md](.cursor/skills/structs-permissions/SKILL.md) | Permissions, address management, multi-address & delegate agents |
+| structs-intel | [SKILL.md](.cursor/skills/structs-intel/SKILL.md) | Query catalog, scouting, intelligence persistence to memory/ |
 | structs-streaming | [SKILL.md](.cursor/skills/structs-streaming/SKILL.md) | GRASS real-time events via NATS WebSocket |
 | structs-guild-stack | [SKILL.md](.cursor/skills/structs-guild-stack/SKILL.md) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, real-time monitoring |
 
