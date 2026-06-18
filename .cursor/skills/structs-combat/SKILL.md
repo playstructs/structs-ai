@@ -1,13 +1,13 @@
 ---
 name: structs-combat
-description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The v0.18.0 rule that governs everything: a planet is only raidable while the defender's Command Ship is offline/destroyed.
+description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while the defender's Command Ship is offline/destroyed.
 level: core
 domain: combat
 ---
 
 # Structs Combat
 
-Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important v0.18.0 fact: **a planet can only be raided to completion while the defender's Command Ship is offline, destroyed, or non-existent.** Keep your Command Ship online and you are effectively unraidable; to raid someone, you must catch theirs down.
+Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while the defender's Command Ship is offline, destroyed, or non-existent.** Keep your Command Ship online and you are effectively unraidable; to raid someone, you must catch theirs down.
 
 Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](https://structs.ai/skills/conventions).
 
@@ -34,21 +34,23 @@ A raid is only worth launching when **all** of these hold. Use `scripts/scout.sh
 ### Defense doctrine
 
 - **Keep your Command Ship online — always.** That alone makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you).
-- **Stack shields now that you can.** Orbital Shield Generator and Ore Bunker are unlimited (v0.18.0) — build several to push raid difficulty up as a second layer behind the CMD-ship gate.
+- **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate.
 - **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](https://structs.ai/skills/structs-production/SKILL)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
 
 Decisions live in [`playbooks/situations/under-attack`](https://structs.ai/playbooks/situations/under-attack), [`guild-war`](https://structs.ai/playbooks/situations/guild-war), and [`playbooks/meta/counter-strategies`](https://structs.ai/playbooks/meta/counter-strategies).
 
-## How a raid actually resolves (v0.18.0)
+## How a raid resolves
 
 `blockStartRaid` is the **defender's Command-Ship vulnerability clock**, and raid PoW age is measured from it:
 
 - It starts when the defender's Command Ship goes offline (or when you arrive to find it down).
 - It resets to 0 if the defender brings the Command Ship back online — and completion is rejected (`raid_clock_unset` when 0; the raid status flips to `ongoing` with shields restored).
-- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (CMD ship down, clock running, winnable) → `raidSuccessful` / `defeat` / `attackerRetreated`. `demilitarized` means no defenders to resolve against.
+- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (CMD ship down, clock running, winnable) → `raidSuccessful` / `attackerRetreated`. `attackerDefeated` means your raiding Command Ship was destroyed while away. `demilitarized` means no defenders to resolve against.
 
 So a raid is a race against the defender noticing and restoring their Command Ship. Scout the CMD ship first; don't move your fleet until it's down.
+
+**A raid steals ore.** A successful raid seizes **all** of the defender's `storedOre` and nothing more — it does not destroy the player or their structs. Killing the defender's Command Ship opens the `shieldsVulnerable` window so the raid can complete; if the defender restores or rebuilds it before you finish, completion is rejected (`shields_active`) and you get **nothing**. Beware the reverse: `trigger_raid_defeat_by_destruction` is on the Command Ship, so if **your** raiding CMD ship is destroyed while away, your fleet is defeated (`attackerDefeated`) and sent home. Win path for ore: strip same-ambit blockers → destroy the defender's CMD ship → complete the raid before they rebuild it (most reliable vs an offline defender).
 
 ## Procedure — raid
 
@@ -70,7 +72,7 @@ If the defender restores their Command Ship mid-raid, the clock resets — withd
 
 ## Procedure — direct attack
 
-Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (multi-target across guilds is a Tier 2 act of war).
+Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
 
 ```
 structsd tx structs struct-attack TX_FLAGS -- [operating-struct-id] [target-id,target-id2,...] [weapon-system]
@@ -124,10 +126,14 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 
 ### Combat resolution notes
 
+- **Counters are ambit-gated, blocks are ambit-matched.** A defender counters whenever its weapon can reach the **attacker's** ambit (regardless of what it's defending); it can only **block** when it shares the **target's** ambit. Consequence: attacking land structs from air/water/space (an ambit the defenders can't reach) takes **zero counter damage** — the single biggest combat lever. Pick your attacking ambit to dodge counters.
 - Each struct counters at most **once per `struct-attack` invocation** (not per target/shot). Defender counter fires before block and even on evaded shots; target counter fires after all shots (destroyed targets can't counter).
 - Block only fires on non-evaded shots and only from a defender in the **target's** ambit.
+- **Single-target**: every weapon has `primaryWeaponTargets = 1` (one struct per volley) — no multi-target weapon exists. The comma-list in `struct-attack` doesn't make a single-target weapon spread.
+- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions.
+- **Planetary defenses (attacking a planet)**: the **Jamming Satellite** runs a low-orbit ballistic interceptor network that can **evade your air/space attacks against the planet's land/water structs** (`evadedByPlanetaryDefenses`) — hit those land/water structs from land/water instead, or expect 0s from the air/space. Guided weapons that miss come from the target's unit-level `signalJamming`, not the satellite. The PDC and the interceptor network are the planetary defenses that affect combat.
 - PDC auto-fires after all targets resolve (it does not counter); multiple players' PDCs stack.
-- A successful raid seizes **all** of the defender's `storedOre`. Destroyed structs are gone forever but can be rebuilt (full PoW). Losing your Command Ship disables the whole fleet until you build a new one — protect it above all.
+- A successful raid seizes **all** of the defender's `storedOre` and nothing else — there is no player-elimination outcome (see raid section). Destroyed structs are gone forever but can be rebuilt (full PoW). Losing your Command Ship disables the whole fleet until you build a new one — protect it above all, and never let your raiding CMD ship die while away (`attackerDefeated`).
 
 ## Commands reference
 

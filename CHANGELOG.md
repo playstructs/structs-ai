@@ -5,6 +5,27 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-06-17
+
+Combat-and-raid documentation hardening from live-play findings, **verified against the structsd v0.18.0 source** (tag `v0.18.0`, commit `173e7a2`). An initial pass documented several player-reported mechanics that source verification then corrected — the net result below is what the code actually does, with file:line citations.
+
+### Added (verified against source)
+
+- **Raid does ore theft only — no player elimination** — `planet-raid-complete` seizes **all** of the defender's `storedOre` and nothing else; there is no player-destruction outcome. Killing the defender's Command Ship only opens the `shieldsVulnerable` window (`IsDefenderCommandStructVulnerable`); if it's restored before completion the raid is rejected (`shields_active`). `trigger_raid_defeat_by_destruction` is on the **Command Ship** and defeats the **attacking** fleet when its away-from-home CMD is destroyed (`attackerDefeated`), per `struct_cache.go` `CanTriggerRaidDefeatByDestruction` and `fleet_cache.go` `Defeat()`. Updated [`combat.md`](knowledge/mechanics/combat.md#what-a-raid-does), [`planet.md`](knowledge/mechanics/planet.md#raid-vulnerability), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md). Added `attackerDefeated` to the raid-status table.
+- **Planetary defenses (only two are wired in v0.18.0)** — the PDC and the **low-orbit ballistic interceptor network** (provided by the **Jamming Satellite**, type 17, which has `noUnitDefenses`). The interceptor network evades attacks only when the **attacker is in air/space and the target is in land/water** (`attack_context.go:155-171`, `evadedByPlanetaryDefenses` / `lowOrbitBallisticInterceptorNetwork`). The `orbitalJammingStation`, `coordinatedGlobalShieldNetwork`, and `repairNetwork` attributes exist but are not incremented by any struct nor read in combat. Updated [`combat.md`](knowledge/mechanics/combat.md#other-planetary-defense-structs), [`struct-types.md`](knowledge/entities/struct-types.md).
+- **Single-target weapons** — all 13 fleet types have `primaryWeaponTargets = 1` (and `secondaryWeaponTargets = 1` where a secondary exists) in `genesis_struct_type.go`; no multi-target weapon exists, though the field supports >1. Distinguished from multi-*shot* (`primaryWeaponShots`). Updated [`combat.md`](knowledge/mechanics/combat.md#targets-per-attack), [`struct-types.md`](knowledge/entities/struct-types.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md), [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt).
+- **Charge cannot be banked or burst** — `charge = CurrentBlockHeight - LastActionBlock`, so every action resets the bar to 0; no alpha-strike. Added to [`building.md`](knowledge/mechanics/building.md#charge-accumulation), cross-referenced from [`combat.md`](knowledge/mechanics/combat.md).
+- **Numeric struct `status` field** — documented as the `StructState` bit-flag (`struct.go`): Materialized 1, Built 2, Online 4, Stored 8, Hidden 16, Destroyed 32, Locked 64. Common composites: 0 stateless, 1 materialized, 3 built/offline, 7 online, **35 = destroyed (1+2+32)**. Added to [`building.md`](knowledge/mechanics/building.md#status-field-numeric).
+
+### Corrected (initial draft → source-verified)
+
+- **Removed the "player elimination" raid outcome** — it does not exist; `trigger_raid_defeat_by_destruction` defeats the *attacker's* fleet, not the defender.
+- **Jamming Satellite** does **not** zero guided weapons; its real effect is the low-orbit ballistic interceptor network (air/space-vs-land/water evasion). Guided weapons missing is the **unit-level** `signalJamming` defense on the *target* (66% vs guided).
+- **No generator HP boost** — Field/Orbital Shield Generators do not raise neighbours' HP; the observed "6–8 HP" are normal max-HP values.
+- **No defender cap** — `defense-set`/`ResolveDefenders` impose no per-ambit cap; the "4 per ambit" is just the planet's 4 slots/ambit.
+- **`status` 35** is a destroyed struct (not an unknown/ambit value).
+- **Attack charge** is the source-verified **3/5** (CMD/Starfighter/Pursuit/Tank = 3; other armed hulls = 5); the report's "≈ 8" was a misread of build charge (8).
+
 ## [1.13.0] - 2026-06-12
 
 A decision-first rebuild of the skills layer, plus a read-only script toolkit, machine-readable memory, and learning/measurement scaffolding. Every skill now states **when to use it**, the **decisions** it helps you make, and the exact commands — with shared boilerplate factored out once.

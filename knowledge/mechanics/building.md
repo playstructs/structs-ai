@@ -110,6 +110,8 @@ Action costs (the charge the player's bar must hold to act):
 
 At ~6 sec/block, a 5-charge action needs ~30 seconds of accumulation since the player's last action. Because the bar is shared, rapid sequences (activating several structs, or repeated attacks) are gated by it — space the actions out, or they fail with `"required charge X but player had Y"`.
 
+**Charge cannot be banked or burst.** Because `charge = CurrentBlockHeight - LastActionBlock`, every charge-consuming action resets the bar to **0** — you do not draw a cost off a running balance, the whole bar zeroes and refills linearly from there. There is no way to stockpile charge for an "alpha strike" of several expensive attacks in one block; idling longer than your next action's cost gains you nothing extra. Plan combat as a sequence of single actions spaced ~1 block/charge apart, not a saved-up burst.
+
 ---
 
 ## Struct Limits (Per Player)
@@ -150,6 +152,32 @@ Materialized → Built (Offline) → Built (Online) → Destroyed
 | Destroyed | None | No | Terminal state |
 
 **StructSweepDelay**: After destruction, the slot may appear occupied for 5 blocks. Planet/fleet slot arrays may still reference the destroyed struct ID during this delay. The `destroyed_block` field records the exact block height of destruction.
+
+### Status field (numeric)
+
+The struct `status` field is a **bit-flag integer** (`StructState`). The chain sets and clears individual bits, so any value is a composite of these bits:
+
+| Bit | Value | Meaning |
+|-----|-------|---------|
+| Materialized | 1 | Slot reserved, awaiting proof-of-work |
+| Built | 2 | Build complete |
+| Online | 4 | Active / drawing passive power |
+| Stored | 8 | In storage |
+| Hidden | 16 | Stealth active |
+| Destroyed | 32 | Destroyed (terminal) |
+| Locked | 64 | Locked |
+
+Common composite values you'll see:
+
+| Status | Bits | Meaning |
+|--------|------|---------|
+| 0 | (none) | Stateless — pre-build / not yet materialized |
+| 1 | Materialized | Build initiated, awaiting PoW |
+| 3 | Materialized + Built | Built but offline |
+| 7 | Materialized + Built + Online | Online / active (normal operating state) |
+| 35 | Materialized + Built + Destroyed (1+2+32) | **Destroyed** (the Online bit is cleared on destruction) |
+
+Read `status` as flags, not an enum: the Online bit (`status & 4`) is what gates whether a struct can act, and the Destroyed bit (`status & 32`) marks a terminal struct (a `status` of `35` is a destroyed struct).
 
 ---
 

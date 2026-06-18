@@ -62,7 +62,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
 | [`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
 | [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Capacity management — offline recovery, substations, allocations, reactor/generator infusion |
-| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (multi-target), raids (shield-vulnerability doctrine), defense setup |
+| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup |
 | [`structs-commerce`](.cursor/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
 | [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, settings, UGC moderation, Central Bank |
 | [`structs-permissions`](.cursor/skills/structs-permissions/SKILL) | Object/address permissions, address registration, multi-address & delegate agents |

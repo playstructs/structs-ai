@@ -58,6 +58,13 @@ Which structs can attack into each ambit:
 
 The Command Ship can attack into any ambit but must first move there (see below). The Battleship's armour-piercing primary covers Land and Water; its guided secondary reaches Space.
 
+### Targets per attack
+
+`struct-attack` accepts a **comma-separated list of target IDs**, but how many of those targets a weapon engages is governed by that weapon's `primaryWeaponTargets` / `secondaryWeaponTargets` value.
+
+- **Every weapon is single-target** — `primaryWeaponTargets = 1` on all fleet hulls, and `secondaryWeaponTargets = 1` on the three hulls with a secondary (Battleship, Starfighter, Cruiser). Listing extra IDs does not let a `targets = 1` weapon spread its volley across them.
+- This is distinct from **multi-shot** (`primaryWeaponShots`), which is how many projectiles a weapon fires *at a single target* (e.g. Starfighter Attack Run = 3 shots, 1 target).
+
 ### Command Ship Ambit Mobility
 
 The Command Ship is the **only struct that can change ambits** (`movable=true`). All other structs are fixed in their operating ambit, and the chain rejects `struct-move` on a non-movable struct — only the Command Ship can be moved.
@@ -103,7 +110,7 @@ else health = health - damage
 |----------|-------------|
 | weaponShots | Number of shots per attack (`primaryWeaponShots` / `secondaryWeaponShots`) |
 | weaponShotSuccessRate | Per-shot success (Numerator/Denominator) |
-| weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`, added in v0.16.0) |
+| weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`) |
 | weaponDamage | Damage per successful shot |
 | damageReduction | Defense reduction (target's `attackReduction`, e.g. Tank/generator armour = 1); **negated when the weapon is armour-piercing** |
 | armourPiercing | If the weapon is armour-piercing (`primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`), the target's `damageReduction` is treated as 0 |
@@ -113,7 +120,7 @@ else health = health - damage
 
 **Armour-piercing**: A weapon flagged armour-piercing negates the target's damage reduction during volley resolution. The Battleship's primary is armour-piercing — it deals full damage to Tanks and to power generators (which otherwise reduce incoming damage by 1). Each shot's piercing is reported on `EventAttackShotDetail.armourPiercing`.
 
-**Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. This was the v0.16.0 fix for the Starfighter's Attack Run feeling unreliable. The chain currently uses guaranteed shots only on Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
+**Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. Guaranteed shots apply only to the Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
 
 **Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 
@@ -211,6 +218,13 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 - PDC does NOT counter-attack -- it only auto-fires at the end of the attack sequence
 - Multiple players' PDCs on the same planet stack correctly
 
+### Other Planetary Defense Structs
+
+Two planetary defenses are wired to structs and affect combat: the Planetary Defense Cannon and the **low-orbit ballistic interceptor network** (provided by the Jamming Satellite struct).
+
+- **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade an incoming attack when the attacker is in air or space and the target struct is in land or water**. On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage (for example, a Battleship's space secondary against a land or water struct). It has no effect against water- or land-based attackers. Each additional interceptor on the planet compounds the evade chance.
+- **Guided weapons that miss repeatedly** are evading the **unit-level** `signalJamming` defense carried by the *target struct* (Battleship, Pursuit Fighter, Cruiser — 66% guided miss). This is a per-struct defense, not a planetary field. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
+
 ---
 
 ## Attack Resolution Sequence
@@ -280,12 +294,29 @@ So a raider must catch the defender's Command Ship down *and* let the clock age 
 | initiated | Raider fleet has arrived at the planet |
 | shieldsVulnerable | Defender's Command Ship is down — the raid is now winnable and the clock is running |
 | ongoing | Defender's Command Ship came back online mid-raid — shields restored, completion blocked |
-| raidSuccessful / victory | Raider won and seized ore |
-| defeat | Defender won (e.g. raider Command Ship destroyed) |
+| raidSuccessful | Raider won and seized all of the defender's stored ore |
+| attackerDefeated | Raider's own Command Ship was destroyed while away (`trigger_raid_defeat_by_destruction`) — the raiding fleet is defeated and sent home |
 | attackerRetreated | Raider withdrew before completion |
-| demilitarized | Planet has no defenders to resolve against |
+| demilitarized | Planet has no defenders to resolve against (`fleet.PeaceDeal()`) |
+
+Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a defender loses to a raid is all of their stored ore (`raidSuccessful`).
 
 **Raid status** also includes `seizedOre` -- the amount of ore stolen during the raid, tracked on the `planet_raid` record. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+
+### What a raid does
+
+A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs.
+
+Destroying the defender's Command Ship makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender brings the Command Ship back online or rebuilds it before completion, the shields return and `planet-raid-complete` is rejected with `shields_active`. So the Command Ship is either down at completion — and the raider takes all the ore — or up, and the raid is rejected.
+
+`trigger_raid_defeat_by_destruction` is a property of the Command Ship. When a Command Ship is destroyed while **away from home** (its planet's owner differs from its own owner), its fleet is defeated: the raid ends with `attackerDefeated` and the fleet is sent home. This defeats an **attacking** fleet whose Command Ship dies during a raid.
+
+**Raid attack doctrine:**
+
+1. Strip **same-ambit blockers** so your attacks reach the Command Ship (cross-ambit defenders counter but cannot block — see [Blocking](#blocking)).
+2. Destroy the defender's **Command Ship** to open the `shieldsVulnerable` window.
+3. Complete the **raid** while it is down to seize all stored ore.
+4. Expect an online defender to rebuild the Command Ship — a destroyed Command Ship can be rebuilt (see [Struct Destruction](#struct-destruction)), which shuts the window. Raids are most reliable against an **offline** defender who cannot restore it.
 
 ---
 
@@ -303,6 +334,8 @@ So a raider must catch the defender's Command Ship down *and* let the clock age 
 - **Target validation**: Target struct existence is validated before attack proceeds
 - **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
 - **PDC stacking**: Multiple players' Planetary Defense Cannons on the same planet stack correctly.
+- **No defender cap**: there is no per-ambit limit on how many structs can defend another — `defense-set` only checks co-location, and attack resolution iterates every registered defender. The planet's **slot** structure provides 4 slots per ambit, which caps how many structs can exist per ambit, not how many can defend.
+- **No charge banking before an attack**: Charge cannot be stockpiled for an alpha-strike. Any charge-consuming action resets the player's shared bar to 0 and it only refills linearly (~1/block); you cannot "burst" multiple expensive attacks back-to-back. See [building.md — Charge Accumulation](building.md#charge-accumulation).
 
 ---
 

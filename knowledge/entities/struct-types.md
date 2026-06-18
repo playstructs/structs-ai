@@ -40,7 +40,9 @@ All 22 struct types, verified from the database. Draw values are in kW (multiply
 | 1 | Command Ship | `is_command=true`, `movable=true` (only movable struct — can change ambits via `struct-move`), 1 per player, required for planet ops. **Can I rebuild after destruction? YES** — the old instance is gone, but you can build a brand new Command Ship (type 1, new struct ID, full PoW ~17 min at D=3). Choose starting ambit at build time. Until the replacement is online, the fleet cannot move, raid, or build in space. Protect at all costs. |
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
-| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
+| 16 | Orbital Shield Generator | Shield contribution only (see below). Unlimited. |
+| 17 | Jamming Satellite | 1 per player. `noUnitDefenses`. Provides the planet's **low-orbit ballistic interceptor network** — a chance to **evade attacks from air/space attackers against the planet's land/water structs**. See [combat.md](../mechanics/combat.md#other-planetary-defense-structs) |
+| 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player. `armour` unit defense, damage reduction 1. |
 | 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 | 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 
@@ -82,6 +84,8 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Submersible | 5 | guided | Space, Water | — | Stealth (2 charge to activate) |
 
 All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+
+**Single-target**: every fleet weapon has `primaryWeaponTargets = 1` (and `secondaryWeaponTargets = 1` on the Battleship, Starfighter, and Cruiser) — one struct hit per volley. `struct-attack` accepts a comma list of target IDs, but a `targets = 1` weapon engages only one of them. This is distinct from multi-*shot* (`primaryWeaponShots`), which is multiple projectiles at a single target. See [combat.md](../mechanics/combat.md#targets-per-attack).
 
 #### Defensive Properties
 

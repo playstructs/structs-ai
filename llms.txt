@@ -49,7 +49,7 @@
 - [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion
 - [Planets & Fleet](https://structs.ai/skills/structs-planets-fleet/SKILL): Planet evaluation, exploration, fleet movement, evacuation
 - [Energy](https://structs.ai/skills/structs-energy/SKILL): Capacity management -- offline recovery, substations, allocations, reactor/generator infusion
-- [Combat](https://structs.ai/skills/structs-combat/SKILL): Attacks (multi-target), raids (shield-vulnerability doctrine), defense setup
+- [Combat](https://structs.ai/skills/structs-combat/SKILL): Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup
 - [Commerce](https://structs.ai/skills/structs-commerce/SKILL): Providers, agreements, reactor staking, guild Central Bank, token transfers
 - [Guild](https://structs.ai/skills/structs-guild/SKILL): Choosing/joining a guild, ranks, membership, UGC moderation, Central Bank
 - [Permissions](https://structs.ai/skills/structs-permissions/SKILL): Object/address permissions, address registration, multi-address & delegate agents
