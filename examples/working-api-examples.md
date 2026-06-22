@@ -278,46 +278,20 @@ ws.onmessage = (event) => {
 
 ## TypeScript Client
 
-Package: `structs-client-ts` (Ignite-generated). May not be published to npm -- install from source.
+You build the TypeScript client yourself from the [`structsd`](https://github.com/playstructs/structsd) repo using its make system, which generates the proto bindings with `ts-proto` via `buf`:
 
-### Initialize Client
-
-```typescript
-import { Client } from 'structs-client-ts';
-import { Env } from 'structs-client-ts/env';
-
-const env = new Env({
-  rpcURL: 'https://rpc.structs.network:26657',
-  apiURL: 'https://api.structs.network:1317',
-  prefix: 'structs'
-});
-
-const client = await Client.connect(env);
+```bash
+git clone https://github.com/playstructs/structsd.git
+cd structsd
+make proto-gen-ts      # TypeScript proto/message bindings (ts-proto via buf)
+make proto-swagger     # optional: OpenAPI/Swagger spec for the REST API
 ```
 
-### Query Player (TypeScript)
+Use the generated message and service types with [CosmJS](https://github.com/cosmos/cosmjs) (`SigningStargateClient` plus a registry of the generated types) to sign and broadcast transactions. For reads, direct HTTP against the REST endpoints is the simplest and most reliable path.
 
-```typescript
-const playerResponse = await client.StructsStructs.query.queryPlayer({
-  id: '1'
-});
+### Direct HTTP (Recommended for reads)
 
-console.log('Player:', playerResponse.data.player);
-```
-
-### Query Planet (TypeScript)
-
-```typescript
-const planetResponse = await client.StructsStructs.query.queryPlanet({
-  id: '1-1'
-});
-
-console.log('Planet:', planetResponse.data.planet);
-```
-
-### Direct HTTP (Recommended)
-
-For more reliable operation, use direct HTTP requests instead of the client library:
+Query game state with plain HTTP requests:
 
 ```typescript
 const response = await fetch('http://localhost:1317/structs/player/1-1');
@@ -425,7 +399,7 @@ async function queryWithRetry(url, maxRetries = 3) {
 - All consensus API endpoints use the `/structs/` prefix (not `/cosmos/game/v1beta1/`)
 - All webapp API endpoints use the `/api/` prefix (not `/api/v1/`)
 - GRASS uses NATS messaging (not direct WebSocket). Connect to `nats://localhost:4222` or `ws://localhost:1443`
-- `structs-client-ts` is Ignite-generated and may not be published to npm. Use direct HTTP requests for reliability.
+- The TypeScript client is generated from the `structsd` repo via `make proto-gen-ts`. For reads, prefer direct HTTP requests for reliability; use the generated bindings with CosmJS for signing.
 
 ## Cross-References
 

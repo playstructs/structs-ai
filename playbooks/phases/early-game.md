@@ -88,7 +88,7 @@ The Entrepreneur may rush generators for tempo. The Achiever may overbuild. You:
 ## What Not to Do
 
 - **Don't** explore before you have a stable base. Scouting is tempting; dying with ore in the ground is worse.
-- **Don't** raid before you can defend. You become a target.
+- **Don't** raid before you can defend. Raiding sends your fleet off-station, and your Command Ship only shields your home while the fleet is on station — so while you're away raiding, your own planet's shields are vulnerable. Refine your stored ore before you leave, or you become the easier target.
 - **Don't** join a guild yet—you have nothing to offer and little to gain. Establish value first.
 - **Don't** convert all Alpha Matter to energy. Keep reserves for the next struct.
 

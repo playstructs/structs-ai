@@ -11,9 +11,8 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Actions | 36 |
-| Verified | 26 |
-| Deprecated | 7 |
+| Total Actions | 30 |
+| Verified | 30 |
 | Requires Proof-of-Work | 3 |
 | Requires Charge | 5 |
 | Requires Power | 1 |
@@ -24,8 +23,8 @@
 |----------|-------|
 | construction | 2 |
 | combat | 2 |
-| resource | 9 |
-| economic | 5 |
+| resource | 10 |
+| economic | 2 |
 | exploration | 1 |
 | fleet | 1 |
 | guild | 5 |
@@ -102,10 +101,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 | reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Remove Alpha Matter from reactor |
 | reactor-begin-migration | Begin Reactor Migration | `/structs.structs.MsgReactorBeginMigration` | No | Begin redelegation process for reactor validation stake |
 | reactor-cancel-defusion | Cancel Reactor Defusion | `/structs.structs.MsgReactorCancelDefusion` | No | Cancel undelegation process for reactor validation stake |
-| reactor-allocate | Allocate Reactor Energy | `/structs.structs.MsgReactorAllocate` | No | **DEPRECATED** -- Allocate energy from a reactor |
 | substation-create | Create Substation | `/structs.structs.MsgSubstationCreate` | Yes | Create a new substation for power distribution |
 | substation-player-connect | Connect Player to Substation | `/structs.structs.MsgSubstationPlayerConnect` | Yes | Connect a player to a substation for power capacity |
-| substation-connect | Connect to Substation | `/structs.structs.MsgSubstationConnect` | No | **DEPRECATED** -- Connect a struct to a substation |
 | substation-allocation-connect | Connect Allocation to Substation | `/structs.structs.MsgSubstationAllocationConnect` | Yes | Connect an allocation to a substation for power distribution |
 
 **Details**:
@@ -117,10 +114,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 - **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `proto/structs/structs/tx.proto:96` | Abstracts validation undelegation; reactor staking managed at player level
 - **reactor-begin-migration**: Begins redelegation process for validation stake; reactor staking managed at player level
 - **reactor-cancel-defusion**: Cancels ongoing undelegation process; reactor staking managed at player level
-- **reactor-allocate**: **DEPRECATED** -- Message type does not exist. Energy allocation is handled via allocations and substations, not direct reactor allocation. See MsgAllocationCreate for creating allocations.
 - **substation-create**: Code: `x/structs/keeper/msg_server_substation_create.go` | Proto: `proto/structs/structs/tx.proto:131`
 - **substation-player-connect**: Code: `x/structs/keeper/msg_server_substation_player_connect.go` | Proto: `proto/structs/structs/tx.proto:135`
-- **substation-connect**: **DEPRECATED** -- Message type does not exist. Use `substation-allocation-connect` (`MsgSubstationAllocationConnect`) instead. Replacement code: `x/structs/keeper/msg_server_substation_allocation_connect.go` | Proto: `proto/structs/structs/tx.proto:133`
 - **substation-allocation-connect**: Code: `x/structs/keeper/msg_server_substation_allocation_connect.go` | Proto: `proto/structs/structs/tx.proto:133`
 
 All resource actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
@@ -133,19 +128,11 @@ All resource actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 |----|------|-------------|----------|-------------|
 | provider-create | Create Energy Provider | `/structs.structs.MsgProviderCreate` | Yes | Create an energy provider |
 | agreement-open | Open Energy Agreement | `/structs.structs.MsgAgreementOpen` | Yes | Open an energy agreement with a provider |
-| agreement-create | Create Energy Agreement | `/structs.structs.MsgAgreementCreate` | No | **DEPRECATED** -- Create an automated energy agreement |
-| ore-mining | Mine Alpha Ore | `/structs.structs.MsgOreMining` | No | **DEPRECATED** -- Mine Alpha Ore from a planet |
-| ore-refining | Refine Alpha Ore to Alpha Matter | `/structs.structs.MsgOreRefining` | No | **DEPRECATED** -- Refine Alpha Ore to Alpha Matter |
-| generator-allocate | Allocate Energy from Generator | `/structs.structs.MsgGeneratorAllocate` | No | **DEPRECATED** -- Allocate energy from a generator |
 
 **Details**:
 
 - **provider-create**: Code: `x/structs/keeper/msg_server_provider_create.go` | Proto: `proto/structs/structs/tx.proto:83`
 - **agreement-open**: Code: `x/structs/keeper/msg_server_agreement_open.go` | Proto: `proto/structs/structs/tx.proto:32`
-- **agreement-create**: **DEPRECATED** -- Message type does not exist. Use `agreement-open` (`MsgAgreementOpen`) instead. Replacement code: `x/structs/keeper/msg_server_agreement_open.go` | Proto: `proto/structs/structs/tx.proto:32`
-- **ore-mining**: **DEPRECATED** -- Message type does not exist. Use `struct-ore-miner-complete` (`MsgStructOreMinerComplete`) instead. Replacement code: `x/structs/keeper/msg_server_struct_ore_miner_complete.go` | Proto: `proto/structs/structs/tx.proto:122`
-- **ore-refining**: **DEPRECATED** -- Message type does not exist. Use `struct-ore-refinery-complete` (`MsgStructOreRefineryComplete`) instead. Replacement code: `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` | Proto: `proto/structs/structs/tx.proto:124`
-- **generator-allocate**: **DEPRECATED** -- Message type does not exist. Use `struct-generator-infuse` (`MsgStructGeneratorInfuse`) instead. Replacement code: `x/structs/keeper/msg_server_struct_generator_infuse.go` | Proto: `proto/structs/structs/tx.proto:120`
 
 All economic actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
@@ -188,7 +175,6 @@ Endpoint: `POST /cosmos/tx/v1beta1/txs`
 | guild-membership-kick | Kick Guild Member | `/structs.structs.MsgGuildMembershipKick` | Yes | Remove a member from a guild |
 | guild-bank-mint | Mint Guild Tokens | `/structs.structs.MsgGuildBankMint` | Yes | Mint guild tokens |
 | guild-bank-redeem | Redeem Guild Tokens | `/structs.structs.MsgGuildBankRedeem` | Yes | Redeem guild tokens for resources |
-| guild-membership-leave | Leave Guild | `/structs.structs.MsgGuildMembershipLeave` | No | **DEPRECATED** -- Leave current guild |
 
 **Details**:
 
@@ -197,7 +183,6 @@ Endpoint: `POST /cosmos/tx/v1beta1/txs`
 - **guild-membership-kick**: Code: `x/structs/keeper/msg_server_guild_membership_kick.go` | Proto: `proto/structs/structs/tx.proto:62`
 - **guild-bank-mint**: Code: `x/structs/keeper/msg_server_guild_bank_mint.go` | Proto: `proto/structs/structs/tx.proto:46`
 - **guild-bank-redeem**: Code: `x/structs/keeper/msg_server_guild_bank_redeem.go` | Proto: `proto/structs/structs/tx.proto:47`
-- **guild-membership-leave**: **DEPRECATED** -- Message type does not exist. Use `guild-membership-kick` (`MsgGuildMembershipKick`) instead. Replacement code: `x/structs/keeper/msg_server_guild_membership_kick.go` | Proto: `proto/structs/structs/tx.proto:62`
 
 All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
@@ -205,4 +190,4 @@ All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 ## Verification Notes
 
-26 actions fully verified with code references. 7 actions are deprecated (marked with replacement actions). 1 action (reactor-allocate) is deprecated with no direct replacement (use allocation system). 4 replacement actions added: substation-allocation-connect, agreement-open, guild-membership-kick, struct-generator-infuse.
+All actions verified with code references against structsd v0.19.1. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`.

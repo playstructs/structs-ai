@@ -34,7 +34,8 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 |------|-------------|
 | Limit | 1 per player |
 | Planet building | Required online |
-| Raids | Required online (fleet away) |
+| Home defense | Defends the home planet's shields only while the fleet is on station — an off-station fleet leaves the planet's shields vulnerable |
+| Raids | Fleet away; raider's player online |
 | Grant | Gifted at player creation |
 
 ---
@@ -51,6 +52,8 @@ Fleet index matches player index: player `1-N` has fleet `9-N`.
 | Explore first planet (no current planet yet) | n/a | n/a |
 
 For an existing planet owner, `planet-explore` requires the fleet to be `onStation` at the current planet. Brand-new players exploring for the first time skip this check.
+
+**Trade-off**: an `away` fleet is what lets you raid, but while it is away the Command Ship is not defending home — your own planet's shields are vulnerable until the fleet returns. You cannot simultaneously raid with your fleet and keep your home shields up.
 
 ---
 
@@ -87,7 +90,7 @@ Fleets do **not** auto-return on a timer. For raids, you have until one of the a
 ## See Also
 
 - [building.md](building.md) — Fleet on station requirement
-- [combat.md](combat.md) — Raid requirements (fleet away)
+- [combat.md](combat.md) — Raid requirements (fleet away, shields vulnerable)
 - [planet.md](planet.md) — Exploration, planet ownership
 - `schemas/entities/fleet.md` — Fleet entity definition
 - `knowledge/entities/entity-relationships.md` — Fleet entity relationships

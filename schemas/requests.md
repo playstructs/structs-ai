@@ -50,9 +50,9 @@ Authenticate and log in a player.
 
 ## Player Requests
 
-### PlayerUsernameUpdateRequest (removed in v0.16.0)
+### Player Name and PFP Updates
 
-`PUT /api/player/username` and the corresponding webapp request schema were removed in v0.16.0. Username (and PFP) are now updated via the on-chain transactions `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp`. The validation rules previously applied at the webapp boundary (length, character set) have been replaced by the chain validators in `ValidatePlayerName` / `ValidatePfp` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the new rules.
+Username and PFP are updated via the on-chain transactions `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp`. Validation is enforced by the chain validators in `ValidatePlayerName` / `ValidatePfp` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the rules.
 
 ### PlayerRaidSearchQuery
 
@@ -197,7 +197,7 @@ Each message type has specific required fields beyond what is listed here.
 
 #### Available Message Types
 
-The `@type` field must be one of the following active (non-deprecated) message types:
+The `@type` field must be one of the following message types:
 
 | Message Type | Description |
 |-------------|-------------|
@@ -220,15 +220,17 @@ The `@type` field must be one of the following active (non-deprecated) message t
 | `/structs.structs.MsgFleetMove` | Move a fleet |
 | `/structs.structs.MsgReactorInfuse` | Infuse a reactor |
 | `/structs.structs.MsgReactorDefuse` | Defuse a reactor |
+| `/structs.structs.MsgStructGeneratorInfuse` | Infuse a generator with Alpha Matter |
 | `/structs.structs.MsgSubstationCreate` | Create a substation |
 | `/structs.structs.MsgSubstationPlayerConnect` | Connect player to substation |
+| `/structs.structs.MsgSubstationAllocationConnect` | Connect an allocation to a substation |
 | `/structs.structs.MsgProviderCreate` | Create a provider |
+| `/structs.structs.MsgAgreementOpen` | Open an energy agreement |
 | `/structs.structs.MsgGuildCreate` | Create a guild |
 | `/structs.structs.MsgGuildMembershipJoin` | Join a guild |
+| `/structs.structs.MsgGuildMembershipKick` | Remove a member from a guild |
 | `/structs.structs.MsgGuildBankMint` | Mint from guild bank |
 | `/structs.structs.MsgGuildBankRedeem` | Redeem from guild bank |
-
-Deprecated message types (removed from enum): `MsgReactorAllocate`, `MsgSubstationConnect`, `MsgAgreementCreate`, `MsgOreMining`, `MsgOreRefining`, `MsgGeneratorAllocate`, `MsgGuildMembershipLeave`. See `reference/action-index.md` for deprecated types and their replacements.
 
 ---
 

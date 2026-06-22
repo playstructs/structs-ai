@@ -22,7 +22,6 @@ The Economic Protocol defines how AI agents should interact with economic system
       "entity": "AlphaOre",
       "security": "stealable",
       "actionType": "MsgStructOreMinerComplete",
-      "structs:deprecated": "MsgOreMining (deprecated - use MsgStructOreMinerComplete)",
       "requirements": ["Ore Extractor struct", "Planet with ore", "Proof-of-work"]
     },
     {
@@ -31,7 +30,6 @@ The Economic Protocol defines how AI agents should interact with economic system
       "entity": "AlphaMatter",
       "security": "non-stealable",
       "actionType": "MsgStructOreRefineryComplete",
-      "structs:deprecated": "MsgOreRefining (deprecated - use MsgStructOreRefineryComplete)",
       "requirements": ["Ore Refinery struct", "Alpha Ore", "Proof-of-work"],
       "conversion": "1 gram Ore = 1 gram Matter"
     },
@@ -41,7 +39,6 @@ The Economic Protocol defines how AI agents should interact with economic system
       "entity": "Energy",
       "security": "ephemeral",
       "actionType": "MsgReactorInfuse or MsgStructGeneratorInfuse",
-      "structs:deprecated": "MsgReactorAllocate and MsgGeneratorAllocate (deprecated - use MsgReactorInfuse or MsgStructGeneratorInfuse)",
       "options": {
         "reactor": {
           "rate": 1,
@@ -138,7 +135,6 @@ The Economic Protocol defines how AI agents should interact with economic system
 ```json
 {
   "action": "MsgReactorInfuse",
-  "structs:deprecated": "MsgReactorAllocate (deprecated - use MsgReactorInfuse for reactor energy production)",
   "production": {
     "input": "Alpha Matter (grams)",
     "output": "Energy (kW)",
@@ -177,7 +173,6 @@ The Economic Protocol defines how AI agents should interact with economic system
 ```json
 {
   "action": "MsgStructGeneratorInfuse",
-  "structs:deprecated": "MsgGeneratorAllocate (deprecated - use MsgStructGeneratorInfuse)",
   "generatorTypes": {
     "fieldGenerator": {
       "rate": 2,
@@ -418,7 +413,6 @@ The membership join process has been improved to streamline redelegation of stak
     "miningDifficulty": 14000
   },
   "action": "MsgStructOreMinerComplete",
-  "structs:deprecated": "MsgOreMining (deprecated - use MsgStructOreMinerComplete)",
   "output": {
     "resource": "AlphaOre",
     "security": "stealable"
@@ -439,7 +433,6 @@ The membership join process has been improved to streamline redelegation of stak
     "refiningDifficulty": 28000
   },
   "action": "MsgStructOreRefineryComplete",
-  "structs:deprecated": "MsgOreRefining (deprecated - use MsgStructOreRefineryComplete)",
   "conversion": {
     "input": "AlphaOre",
     "output": "AlphaMatter",
@@ -463,7 +456,6 @@ The membership join process has been improved to streamline redelegation of stak
     "passiveDraw": 500000
   },
   "action": "MsgStructGeneratorInfuse",
-  "structs:deprecated": "MsgGeneratorAllocate (deprecated - use MsgStructGeneratorInfuse)",
   "production": {
     "input": "AlphaMatter",
     "output": "Energy",
@@ -545,7 +537,6 @@ The membership join process has been improved to streamline redelegation of stak
       "selfEnforcing": true
     },
     "action": "MsgAgreementOpen",
-    "structs:deprecated": "MsgAgreementCreate (deprecated - use MsgAgreementOpen)",
     "properties": {
       "persistent": true,
       "subscription": true,
@@ -652,7 +643,6 @@ The membership join process has been improved to streamline redelegation of stak
       {
         "step": 1,
         "action": "MsgStructOreMinerComplete",
-        "structs:deprecated": "MsgOreMining (deprecated - use MsgStructOreMinerComplete)",
         "request": {
           "body": {
             "body": {
@@ -677,7 +667,6 @@ The membership join process has been improved to streamline redelegation of stak
       {
         "step": 2,
         "action": "MsgStructOreRefineryComplete",
-        "structs:deprecated": "MsgOreRefining (deprecated - use MsgStructOreRefineryComplete)",
         "request": {
           "body": {
             "body": {
@@ -702,7 +691,6 @@ The membership join process has been improved to streamline redelegation of stak
       {
         "step": 3,
         "action": "MsgReactorInfuse",
-        "structs:deprecated": "MsgReactorAllocate (deprecated - use MsgReactorInfuse for reactor energy production)",
         "request": {
           "body": {
             "body": {

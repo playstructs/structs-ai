@@ -21,7 +21,7 @@ The Guild Stack runs persistent services on your machine and (if exposed) on you
 
 - **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-sync-state structs-grass`). Enable more services explicitly when you need them.
 - **Pin a release tag.** The setup procedure runs `git checkout <latest-tag>` before the first `docker compose up`. Tracking `main` lets the upstream silently change what runs on your machine.
-- **MCP server** — not part of `compose.yaml`. Deploy [`structs-mcp`](https://github.com/playstructs/structs-mcp) separately if needed; bind to `127.0.0.1` only.
+- **MCP server** — not part of the Guild Stack. Agents connect through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop); see [`TOOLS.md`](https://structs.ai/TOOLS). The Guild Stack just provides the PostgreSQL data store and event bridge behind it.
 - **Transaction signing agent** — only started when you opt in. *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* See `Signing-Agent Caveat` below.
 - **Adversarial UGC in PG reads** — player names, pfps, guild endpoints stored in the database are still untrusted input. See [`awareness/agent-security`](https://structs.ai/awareness/agent-security).
 
@@ -227,7 +227,7 @@ WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
-A high ore balance and low shield are only half the picture: in v0.18.0 a raid can **only complete while the owner's Command Ship is offline or destroyed** (`shieldsVulnerable`). Join the owner's Command Ship struct status before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. Join the owner's fleet and Command Ship status before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
 
 ### Enemy Structs at a Planet
 
@@ -323,7 +323,6 @@ The setup procedure above starts only `structsd`, `structs-pg`, `structs-sync-st
 | `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally |
 | `structs-tsa` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
 | `structs-crawler` | Guild metadata crawler | When running a guild node that publishes guild config |
-| `structs-mcp` (separate repo) | MCP server on port 3000 | Deploy from [`structs-mcp`](https://github.com/playstructs/structs-mcp); bind to `127.0.0.1` |
 
 To enable a service, add it to the `docker compose up -d` argument list:
 

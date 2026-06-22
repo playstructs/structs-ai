@@ -12,11 +12,11 @@
 |----------|---------|
 | construction | MsgStructBuild, MsgStructBuildInitiate, MsgStructBuildComplete |
 | combat | MsgStructAttack, MsgPlanetRaidComplete |
-| resource | MsgReactorAllocate, MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgSubstationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
-| economic | MsgProviderCreate, MsgAgreementCreate, MsgOreMining, MsgOreRefining, MsgGeneratorAllocate |
+| resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
+| economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse |
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
-| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipLeave, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
+| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
 | ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgPlayerUpdatePfpClientRenderAttributes, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
 | struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
@@ -181,10 +181,9 @@ Transaction may broadcast but struct not created if requirements not met. Always
 
 | Requirement | Details |
 |-------------|---------|
-| playerOnline | true |
+| structOnline | true (the attacking struct, and its owner, must be online — the attacker's Command Ship does not need to be online) |
 | sufficientCharge | true |
-| structOnline | true |
-| validTarget | true |
+| validTarget | true (the target must be a built struct; an unbuilt struct is rejected with `unbuilt` and a destroyed struct with `destroyed`. The target's online status is irrelevant) |
 
 ```json
 {
@@ -213,9 +212,11 @@ Transaction may broadcast but struct not created if requirements not met. Always
 
 | Requirement | Details |
 |-------------|---------|
-| playerOnline | true |
+| playerOnline | true (the raider's player must be online) |
 | fleetAway | true |
 | fleetFirstInLine | true |
+| defenderShieldsVulnerable | true (defender's fleet off-station, or their Command Ship offline/destroyed/non-existent; otherwise rejected with `shields_active`) |
+| raidClockStarted | true (`blockStartRaid` != 0; otherwise `raid_clock_unset`) |
 | proofOfWork | true |
 
 ```json
@@ -238,38 +239,6 @@ Transaction may broadcast but struct not created if requirements not met. Always
 ---
 
 ## Resource Actions
-
-### MsgReactorAllocate
-
-- **ID**: `reactor-allocate`
-- **Name**: Allocate Reactor Energy
-- **Message Type**: `/structs.structs.MsgReactorAllocate`
-- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Allocate energy from a reactor
-
-**Required Fields**: `creator`, `reactorId`, `destinationId`, `amount`
-
-| Requirement | Details |
-|-------------|---------|
-| playerOnline | true |
-| sufficientEnergy | true |
-| validDestination | true |
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgReactorAllocate",
-        "creator": "structs1...",
-        "reactorId": "1-1",
-        "destinationId": "2-1",
-        "amount": "1000000"
-      }
-    ]
-  }
-}
-```
 
 ### MsgReactorInfuse
 
@@ -405,31 +374,31 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 }
 ```
 
-### MsgSubstationConnect
+### MsgSubstationAllocationConnect
 
-- **ID**: `substation-connect`
-- **Name**: Connect to Substation
-- **Message Type**: `/structs.structs.MsgSubstationConnect`
+- **ID**: `substation-allocation-connect`
+- **Name**: Connect Allocation to Substation
+- **Message Type**: `/structs.structs.MsgSubstationAllocationConnect`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Connect a struct to a substation
+- **Description**: Connect an allocation to a substation as its energy source
 
-**Required Fields**: `creator`, `substationId`, `structId`
+**Required Fields**: `creator`, `allocationId`, `destinationId`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| validSubstation | true |
-| validStruct | true |
+| validAllocation | true |
+| validDestination | true |
 
 ```json
 {
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgSubstationConnect",
+        "@type": "/structs.structs.MsgSubstationAllocationConnect",
         "creator": "structs1...",
-        "substationId": "1-1",
-        "structId": "2-1"
+        "allocationId": "6-1",
+        "destinationId": "4-1"
       }
     ]
   }
@@ -619,160 +588,61 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 }
 ```
 
-### MsgAgreementCreate
+### MsgAgreementOpen
 
-- **ID**: `agreement-create`
-- **Name**: Create Energy Agreement
-- **Message Type**: `/structs.structs.MsgAgreementCreate`
+- **ID**: `agreement-open`
+- **Name**: Open Energy Agreement
+- **Message Type**: `/structs.structs.MsgAgreementOpen`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Create an automated energy agreement
+- **Description**: Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks
 
-**Required Fields**: `creator`, `providerId`, `terms`
+**Required Fields**: `creator`, `providerId`, `duration`, `capacity`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
 | validProvider | true |
-| validTerms | true |
+| providerHasCapacity | true |
 
 ```json
 {
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgAgreementCreate",
+        "@type": "/structs.structs.MsgAgreementOpen",
         "creator": "structs1...",
-        "providerId": "1-1",
-        "terms": {}
+        "providerId": "10-1",
+        "duration": "100000",
+        "capacity": "50000"
       }
     ]
   }
 }
 ```
 
-### MsgOreMining
+### MsgStructGeneratorInfuse
 
-- **ID**: `ore-mining`
-- **Name**: Mine Alpha Ore
-- **Message Type**: `/structs.structs.MsgOreMining`
+- **ID**: `struct-generator-infuse`
+- **Name**: Infuse a Generator
+- **Message Type**: `/structs.structs.MsgStructGeneratorInfuse`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Mine Alpha Ore from a planet using Ore Extractor struct. Requires proof-of-work. Alpha Ore can be stolen.
-- **Follow-Up Action**: MsgOreRefining
+- **Description**: Infuse Alpha Matter into a generator struct (Field Generator, Continental Power Plant, or World Engine) to produce energy. Higher rates than a reactor but the Alpha Matter is annihilated (no defusion) and a raided generator takes the infused matter with it.
 
-**Required Fields**: `creator`, `structId`, `hash`, `nonce`
+**Required Fields**: `creator`, `structId`, `infuseAmount`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| structOnline | true |
-| oreExtractorBuilt | true |
-| planetHasOre | true |
-| sufficientCharge | true |
-| proofOfWork | true |
-
-**Security**: Alpha Ore can be stolen by other players. Refine to Alpha Matter for security.
-
-**Costs**:
-
-| Cost | Value |
-|------|-------|
-| buildDraw | 500,000 milliwatts |
-| passiveDraw | 500,000 milliwatts |
-| miningCharge | 20 |
-| miningDifficulty | 14,000 |
-
-**Result**: Alpha Ore amount extracted (grams). Ore is stealable.
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgOreMining",
-        "creator": "structs1...",
-        "structId": "1-1",
-        "hash": "proof-of-work-hash",
-        "nonce": "proof-of-work-nonce"
-      }
-    ]
-  }
-}
-```
-
-### MsgOreRefining
-
-- **ID**: `ore-refining`
-- **Name**: Refine Alpha Ore to Alpha Matter
-- **Message Type**: `/structs.structs.MsgOreRefining`
-- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Refine Alpha Ore to Alpha Matter using Ore Refinery struct. Requires proof-of-work. Alpha Matter cannot be stolen.
-- **Follow-Up Action**: MsgReactorInfuse or MsgStructGeneratorInfuse
-- **Deprecated**: MsgReactorAllocate and MsgGeneratorAllocate (use MsgReactorInfuse or MsgStructGeneratorInfuse instead)
-
-**Required Fields**: `creator`, `structId`, `hash`, `nonce`
-
-| Requirement | Details |
-|-------------|---------|
-| playerOnline | true |
-| structOnline | true |
-| oreRefineryBuilt | true |
-| hasAlphaOre | true |
-| sufficientCharge | true |
-| proofOfWork | true |
-
-**Security**: Alpha Matter cannot be stolen once refined. This secures your resources.
-
-**Costs**:
-
-| Cost | Value |
-|------|-------|
-| buildDraw | 500,000 milliwatts |
-| passiveDraw | 500,000 milliwatts |
-| refiningCharge | 20 |
-| refiningDifficulty | 28,000 |
-
-**Conversion**: 1 gram Alpha Ore = 1 gram Alpha Matter.
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgOreRefining",
-        "creator": "structs1...",
-        "structId": "1-1",
-        "hash": "proof-of-work-hash",
-        "nonce": "proof-of-work-nonce"
-      }
-    ]
-  }
-}
-```
-
-### MsgGeneratorAllocate
-
-- **ID**: `generator-allocate`
-- **Name**: Allocate Energy from Generator
-- **Message Type**: `/structs.structs.MsgGeneratorAllocate`
-- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Allocate energy from a generator (Field Generator, Continental Power Plant, or World Engine) to a struct or player. Higher rates but higher risk.
-
-**Required Fields**: `creator`, `generatorId`, `destinationType`, `destinationId`, `alphaMatterAmount`
-
-| Requirement | Details |
-|-------------|---------|
-| playerOnline | true |
-| generatorActive | true |
+| generatorOnline | true |
 | sufficientAlphaMatter | true |
-| validDestination | true |
 
 **Generator Types**:
 
-| Generator | Rate | Formula | Risk |
-|-----------|------|---------|------|
-| Field Generator | 2 | Energy (kW) = Alpha Matter (grams) x 2 | high |
-| Continental Power Plant | 5 | Energy (kW) = Alpha Matter (grams) x 5 | high |
-| World Engine | 10 | Energy (kW) = Alpha Matter (grams) x 10 | high |
+| Generator | Rate | Formula |
+|-----------|------|---------|
+| Field Generator | 2 | Energy (kW) = Alpha Matter (grams) x 2 |
+| Continental Power Plant | 5 | Energy (kW) = Alpha Matter (grams) x 5 |
+| World Engine | 10 | Energy (kW) = Alpha Matter (grams) x 10 |
 
 **Energy Properties**: Energy is ephemeral -- must be consumed immediately upon production, cannot be stored. Energy is shared across all Structs connected to the same power source.
 
@@ -781,19 +651,17 @@ This action abstracts validation undelegation. Reactor staking is managed at the
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgGeneratorAllocate",
+        "@type": "/structs.structs.MsgStructGeneratorInfuse",
         "creator": "structs1...",
-        "generatorId": "1-1",
-        "destinationType": 1,
-        "destinationId": "2-1",
-        "alphaMatterAmount": "100000000"
+        "structId": "20-1",
+        "infuseAmount": "100000000"
       }
     ]
   }
 }
 ```
 
-Note: `alphaMatterAmount` is in micrograms (100 grams = 100,000,000 micrograms).
+Note: `infuseAmount` is in micrograms (100 grams = 100,000,000 micrograms).
 
 ---
 
@@ -961,7 +829,7 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 - **Name**: Proxy Join Guild
 - **Message Type**: `/structs.structs.MsgGuildMembershipJoinProxy`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: A guild member signs in a brand-new player on behalf of an unfunded address. Used during onboarding to bootstrap a player without requiring them to first acquire `ualpha` to pay fees. As of v0.16.0 the proxy can also seed the new player's UGC name and pfp directly so the chain becomes the single source of truth for player identity from creation.
+- **Description**: A guild member signs in a brand-new player on behalf of an unfunded address. Used during onboarding to bootstrap a player without requiring them to first acquire `ualpha` to pay fees. The proxy can also seed the new player's UGC name and pfp directly so the chain is the single source of truth for player identity from creation.
 
 **Required Fields**: `creator`, `address`, `proofPubKey`, `proofSignature`
 **Optional Fields**: `substationId` (override the guild's default entry substation), `playerName` (set new player's name immediately), `playerPfp` (set new player's pfp immediately)
@@ -995,28 +863,31 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 }
 ```
 
-### MsgGuildMembershipLeave
+### MsgGuildMembershipKick
 
-- **ID**: `guild-membership-leave`
-- **Name**: Leave Guild
-- **Message Type**: `/structs.structs.MsgGuildMembershipLeave`
+- **ID**: `guild-membership-kick`
+- **Name**: Remove Guild Member
+- **Message Type**: `/structs.structs.MsgGuildMembershipKick`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Leave current guild
+- **Description**: Remove a player from a guild (used both to leave your own guild and, with the right rank permission, to remove another member)
 
-**Required Fields**: `creator`
+**Required Fields**: `creator`, `guildId`, `playerId`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| inGuild | Player must be in a guild. Check: query player.guildId, must not be null or empty. |
+| inGuild | The target player must be in the guild. Check: query player.guildId matches `guildId`. |
+| permission | Removing another member requires the appropriate guild rank permission on the guild. |
 
 ```json
 {
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgGuildMembershipLeave",
-        "creator": "structs1..."
+        "@type": "/structs.structs.MsgGuildMembershipKick",
+        "creator": "structs1...",
+        "guildId": "0-1",
+        "playerId": "1-11"
       }
     ]
   }
@@ -1155,7 +1026,7 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 
 ## UGC Actions
 
-User-generated content (name and pfp) updates. Added in v0.16.0. All seven messages are part of the free-gas Structs path. The `Update*Name` and `Update*Pfp` messages on player, planet, and substation route through `UGCPermissionCheck` (self-service via `PermUpdate` on the target, OR guild moderation via `PermGuildUGCUpdate` on the target owner's guild). Guild rename/repfp uses the standard `PermissionCheck` with `PermUpdate` on the guild itself. Validation is enforced by `types.ValidatePlayerName` / `ValidateEntityName` / `ValidatePlanetName` / `ValidatePfp` (see `schemas/validation.md` and `knowledge/mechanics/ugc-moderation.md`). When the actor is not the target's owner, the chain emits a `ugc_moderated` event.
+User-generated content (name and pfp) updates. All seven messages are part of the free-gas Structs path. The `Update*Name` and `Update*Pfp` messages on player, planet, and substation route through `UGCPermissionCheck` (self-service via `PermUpdate` on the target, OR guild moderation via `PermGuildUGCUpdate` on the target owner's guild). Guild rename/repfp uses the standard `PermissionCheck` with `PermUpdate` on the guild itself. Validation is enforced by `types.ValidatePlayerName` / `ValidateEntityName` / `ValidatePlanetName` / `ValidatePfp` (see `schemas/validation.md` and `knowledge/mechanics/ugc-moderation.md`). When the actor is not the target's owner, the chain emits a `ugc_moderated` event.
 
 ### MsgPlayerUpdateName
 

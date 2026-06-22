@@ -10,7 +10,7 @@ The Action Protocol defines how AI agents should perform actions (transactions) 
 
 ### Fees
 
-As of v0.16.0, transactions composed entirely of `structs` module messages (excluding `MsgUpdateParams`) are routed through a free-gas meter and require no `ualpha` fee. Pure-staking transactions (`MsgDelegate`, `MsgUndelegate`, `MsgBeginRedelegate`, `MsgCancelUnbondingDelegation`, `MsgCreateValidator`, `MsgEditValidator`) are also free, capped at one per signer per block. Mixed transactions and other Cosmos messages still pay fees in `ualpha`. The transaction examples below intentionally use empty `fee.amount` arrays for free Structs txs. Always include `--gas auto --gas-adjustment 1.5` (or set `gas_limit` explicitly) so the simulator can size the meter correctly. See `knowledge/mechanics/transactions.md` for the full ante handler routing rules.
+Transactions composed entirely of `structs` module messages (excluding `MsgUpdateParams`) are routed through a free-gas meter and require no `ualpha` fee. Pure-staking transactions (`MsgDelegate`, `MsgUndelegate`, `MsgBeginRedelegate`, `MsgCancelUnbondingDelegation`, `MsgCreateValidator`, `MsgEditValidator`) are also free, capped at one per signer per block. Mixed transactions and other Cosmos messages still pay fees in `ualpha`. The transaction examples below intentionally use empty `fee.amount` arrays for free Structs txs. Always include `--gas auto --gas-adjustment 1.5` (or set `gas_limit` explicitly) so the simulator can size the meter correctly. See `knowledge/mechanics/transactions.md` for the full ante handler routing rules.
 
 ## Base Configuration
 
@@ -411,7 +411,6 @@ As of v0.16.0, transactions composed entirely of `structs` module messages (excl
     },
     {
       "@type": "/structs.structs.MsgReactorInfuse",
-      "structs:deprecated": "MsgReactorAllocate (deprecated - use MsgReactorInfuse)",
       ...
     }
   ],

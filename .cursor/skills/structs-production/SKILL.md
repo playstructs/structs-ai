@@ -27,7 +27,7 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 **Advanced considerations**:
 - **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
-- **Protect stored ore** with Ore Bunkers — now **unlimited** build (v0.18.0). They guard `storedOre` and raise the planetary shield. Stacking them hardens the refine window without touching your CPU budget.
+- **Protect stored ore** with Ore Bunkers — **unlimited** build (no per-player cap). They guard `storedOre` and raise the planetary shield. Stacking them hardens the refine window without touching your CPU budget.
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
 

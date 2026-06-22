@@ -264,13 +264,16 @@ Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Ru
 
 | Requirement | Attack | Raid |
 |-------------|--------|------|
-| Raider online (sufficient power) | ✓ | ✓ |
+| Operating struct online, and its owner online | ✓ | — |
+| Raider player online (sufficient power) | — | ✓ |
 | Sufficient charge | ✓ | — |
+| Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
 | Raider fleet away (at the target) | — | ✓ |
-| Raider Command Ship online | — | ✓ |
-| **Defender's shields vulnerable** (defender Command Ship offline, destroyed, or non-existent) | — | ✓ |
+| **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
 | Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
+
+An attack action depends only on the attacking struct (and its owner) being online — the attacker's Command Ship does not need to be online, and the same holds for defensive changes (`struct-defense-set`) and stealth changes. The target must be a built struct; `struct-attack` against a struct that is still building is rejected (`unbuilt`), and a destroyed struct is rejected (`destroyed`). The target's online status is irrelevant.
 
 Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
 
@@ -278,22 +281,22 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 ## Raid Phases and SHIELDS_VULNERABLE
 
-A raid is only winnable while the **defending player's Command Ship is offline, destroyed, or non-existent**. While the defender's Command Ship is online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. This makes keeping your Command Ship online the single most effective raid defense.
+A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
 
-The `blockStartRaid` attribute is the **Command-Ship vulnerability clock**, and raid PoW age is measured from it:
+The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
 
-- Set when the defending Command Ship goes offline (or when raiders arrive to find it already down).
-- Cleared (back to 0) when the defending Command Ship comes back online, and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
+- Set when the planet becomes vulnerable (the defending Command Ship goes offline or the defender's fleet leaves station), or when raiders arrive to find it already vulnerable.
+- Cleared (back to 0) when the planet stops being vulnerable (the Command Ship comes back online with the fleet on station), and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
 
-So a raider must catch the defender's Command Ship down *and* let the clock age before the puzzle becomes solvable. If the defender brings the Command Ship back online mid-raid, the clock resets and the raider must wait for it to go down again.
+So a raider must catch the defender vulnerable *and* let the clock age before the puzzle becomes solvable. If the defender restores their shields mid-raid (Command Ship back online with the fleet on station), the clock resets and the raider must wait for the planet to become vulnerable again.
 
 ### Raid statuses
 
 | Status | Meaning |
 |--------|---------|
 | initiated | Raider fleet has arrived at the planet |
-| shieldsVulnerable | Defender's Command Ship is down — the raid is now winnable and the clock is running |
-| ongoing | Defender's Command Ship came back online mid-raid — shields restored, completion blocked |
+| shieldsVulnerable | Defender's shields are down (fleet off-station, or Command Ship offline/destroyed) — the raid is now winnable and the clock is running |
+| ongoing | Defender restored shields mid-raid (Command Ship back online with the fleet on station) — completion blocked |
 | raidSuccessful | Raider won and seized all of the defender's stored ore |
 | attackerDefeated | Raider's own Command Ship was destroyed while away (`trigger_raid_defeat_by_destruction`) — the raiding fleet is defeated and sent home |
 | attackerRetreated | Raider withdrew before completion |
@@ -307,7 +310,7 @@ Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a def
 
 A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs.
 
-Destroying the defender's Command Ship makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender brings the Command Ship back online or rebuilds it before completion, the shields return and `planet-raid-complete` is rejected with `shields_active`. So the Command Ship is either down at completion — and the raider takes all the ore — or up, and the raid is rejected.
+Destroying the defender's Command Ship (or catching their fleet off-station) makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender restores their shields before completion — Command Ship back online with the fleet on station — the shields return and `planet-raid-complete` is rejected with `shields_active`. So the planet is either vulnerable at completion — and the raider takes all the ore — or shielded, and the raid is rejected.
 
 `trigger_raid_defeat_by_destruction` is a property of the Command Ship. When a Command Ship is destroyed while **away from home** (its planet's owner differs from its own owner), its fleet is defeated: the raid ends with `attackerDefeated` and the fleet is sent home. This defeats an **attacking** fleet whose Command Ship dies during a raid.
 

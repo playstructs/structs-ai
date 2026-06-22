@@ -6,17 +6,6 @@
 
 ---
 
-## Resolved Bugs
-
-| Bug | Status | Description |
-|-----|--------|-------------|
-| GetInfusionByID array split bug | resolved | Bug in GetInfusionByID array split logic has been resolved |
-| EventGuildBankAddress format bug | resolved | Bug in EventGuildBankAddress format has been resolved |
-| BankAddress format logging bug | resolved | Bug in BankAddress format logging has been resolved |
-| Fleet movement logic | resolved | Fleet movement bug fixes and improvements applied |
-
----
-
 ## Error Codes
 
 ### Success

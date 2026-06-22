@@ -72,14 +72,14 @@ Get detailed provider information.
 }
 ```
 
-### 4. Create Energy Agreement
+### 4. Open Energy Agreement
 
-Create automated energy agreement with provider.
+Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks.
 
 - **Method**: `POST`
 - **Endpoint**: `/cosmos/tx/v1beta1/txs`
-- **Message Type**: `/structs.structs.MsgAgreementCreate`
-- **Schema**: `schemas/actions.md#/actions/MsgAgreementCreate`
+- **Message Type**: `/structs.structs.MsgAgreementOpen`
+- **Schema**: `schemas/actions.md#/actions/MsgAgreementOpen`
 
 **Required Fields**:
 
@@ -87,11 +87,8 @@ Create automated energy agreement with provider.
 {
   "creator": "player-id",
   "providerId": "provider-id",
-  "terms": {
-    "energyAmount": "number",
-    "price": "number",
-    "duration": "number"
-  }
+  "duration": "blocks",
+  "capacity": "watts"
 }
 ```
 
@@ -100,20 +97,15 @@ Create automated energy agreement with provider.
 ```json
 {
   "body": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgAgreementOpen",
-          "creator": "structs1...",
-          "providerId": "1-1",
-          "terms": {
-            "energyAmount": 100,
-            "price": 0.01,
-            "duration": 1000
-          }
-        }
-      ]
-    }
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgAgreementOpen",
+        "creator": "structs1...",
+        "providerId": "10-1",
+        "duration": "100000",
+        "capacity": "50000"
+      }
+    ]
   }
 }
 ```

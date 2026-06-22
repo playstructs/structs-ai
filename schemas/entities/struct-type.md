@@ -69,7 +69,7 @@
 | primaryWeaponShots | string | Number of shots primary weapon can fire |
 | primaryWeaponShotSuccessRateNumerator | string | Numerator of the per-shot success rate |
 | primaryWeaponShotSuccessRateDenominator | string | Denominator of the per-shot success rate |
-| primaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Added in v0.16.0. Defaults to `0` (no guarantee). |
+| primaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Defaults to `0` (no guarantee). |
 | primaryWeaponDamage | string | Primary weapon damage |
 | primaryWeaponRecoilDamage | string | Damage applied to attacker per attack |
 | primaryWeaponBlockable | boolean | Whether primary weapon damage can be blocked |
@@ -87,7 +87,7 @@
 | secondaryWeaponShots | string | Number of shots secondary weapon can fire |
 | secondaryWeaponShotSuccessRateNumerator | string | Numerator of the per-shot success rate |
 | secondaryWeaponShotSuccessRateDenominator | string | Denominator of the per-shot success rate |
-| secondaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Added in v0.16.0. Currently set to `1` for the Starfighter Attack Run; defaults to `0` everywhere else. |
+| secondaryWeaponGuaranteedShots | string | Minimum shots that hit before the success rate roll applies. Set to `1` for the Starfighter Attack Run; defaults to `0` everywhere else. |
 | secondaryWeaponDamage | string | Secondary weapon damage |
 | secondaryWeaponRecoilDamage | string | Damage applied to attacker per attack |
 | secondaryWeaponBlockable | boolean | Whether secondary weapon damage can be blocked |
@@ -131,6 +131,3 @@
 ### Database Notes
 
 - Columns include `cheatsheet_details` and `cheatsheet_extended_details` for UI display
-- Deprecated charge columns for mine and refine have been removed
-
-Cheatsheet details added for better struct type documentation. Deprecated charge columns removed from database.

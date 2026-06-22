@@ -70,7 +70,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
 |--------|--------|-------------|--------------------|-----------| ------|
 | Command Ship | 3 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
-| Battleship | 5 / 5 | unguided / guided | Land, Water | Space: 1 shot × 1 dmg | **Armour-piercing primary** (negates target damage reduction); anti-Tank/anti-generator on land + water. Guided secondary reaches space |
+| Battleship | 5 / 5 | unguided / guided | Land, Water | Space: 1 shot × 2 dmg | **Armour-piercing primary** (negates target damage reduction); anti-Tank/anti-generator on land + water. Guided secondary reaches space |
 | Starfighter | 3 / 5 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary floors at 1 hit per Attack Run (`secondaryWeaponGuaranteedShots = 1`) |
 | Frigate | 5 | guided | Space, Air | — | Only space unit hitting air |
 | Pursuit Fighter | 3 | guided | Air | — | Cheapest air offense |

@@ -33,7 +33,7 @@ Have Alpha Matter?
 
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
-**Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (and they're now armoured + higher HP in v0.18.0, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
+**Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
 ### "Am I about to go offline?"
 

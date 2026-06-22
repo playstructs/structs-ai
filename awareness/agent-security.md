@@ -68,13 +68,13 @@ The `create-player.mjs` script keeps your mnemonic local but sends to the guild'
 
 ### 5. MCP Server / Signing Agent Exposure
 
-The Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). The **MCP server** ([`structs-mcp`](https://github.com/playstructs/structs-mcp)) is deployed separately — not part of `compose.yaml`. Either can become an attack surface if exposed beyond `localhost`:
+Agents reach the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop), and the Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). Either can become an attack surface if exposed beyond `localhost`:
 
-- The **MCP server** speaks the MCP protocol, which an attacker on the same network could call as if they were the agent.
+- The **embedded MCP server** speaks the MCP protocol over a local port and is gated by a bearer token (connection details are in the app's Debug menu). Anyone who reaches the port *with the token* can act as your agent — keep the token secret and the port bound to `localhost`.
 - The **signing agent** is designed to sign transactions on behalf of a configured key. If configured with a real key and exposed, anyone who can reach the port can spend on your behalf.
 
 **Mitigation**:
-- Bind MCP to `127.0.0.1` if deployed.
+- Keep the embedded MCP server bound to `127.0.0.1` and treat its bearer token like a key — never paste it into untrusted tools or share it.
 - Use the read-only guild profile (`structsd`, `structs-pg`, `structs-sync-state`, `structs-grass`) — no signing surface by default.
 - **Do not configure the signing-agent service with a real key** until you have read its code and understood what it will sign.
 

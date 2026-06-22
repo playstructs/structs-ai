@@ -251,50 +251,6 @@ This document describes common issues AI agents encounter and how to resolve the
 
 ---
 
-## Resolved Issues
-
-The following bugs have been resolved:
-
-### GetInfusionByID Array Split Bug
-
-**Status**: ✅ Resolved
-
-**Description**: Bug in GetInfusionByID array split logic has been fixed.
-
-**Impact**: Infusion queries now work correctly.
-
----
-
-### EventGuildBankAddress Format Bug
-
-**Status**: ✅ Resolved
-
-**Description**: Bug in EventGuildBankAddress format has been fixed.
-
-**Impact**: Guild bank address events now have correct format.
-
----
-
-### BankAddress Format Logging Bug
-
-**Status**: ✅ Resolved
-
-**Description**: Bug in BankAddress format logging has been fixed.
-
-**Impact**: Bank address logging now uses correct format.
-
----
-
-### Fleet Movement Logic
-
-**Status**: ✅ Resolved
-
-**Description**: Fleet movement bug fixes and improvements have been applied.
-
-**Impact**: Fleet movement is now more reliable with better validation and error handling.
-
----
-
 ## General Troubleshooting Steps
 
 ### Step 1: Identify the Issue

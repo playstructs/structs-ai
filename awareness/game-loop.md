@@ -29,14 +29,14 @@ See [Async Operations](async-operations.md) for background job management.
 - Run [Threat Detection](threat-detection.md) — Fleet movements, ore exposure, power instability, hostile activity
 - Run [Opportunity Identification](opportunity-identification.md) — Undefended planets, agreements, weakened opponents
 
-**Tools**: `structs_query_player`, `structs_query_fleet`, `structs_query_planet`, `structs_query_planet_activity`, `structs_list_structs`, `structs_query_guild`
+**Tools**: `structs_dashboard` (fast self-snapshot), `structs_query` (any entity), `structs_intel` (scout, valid targets, simulate, forecasts), `structs_events` (activity feed)
 
 ### 2. Plan
 
 - Apply [Priority Framework](priority-framework.md) — Highest unmet tier wins
 - **Think in pipelines**: what should I initiate now so it's ready later?
 - Pick actions and also identify future actions whose age clocks should start now
-- Validate: `structs_validate_gameplay_requirements`, `structs_calculate_power`, `structs_calculate_damage` as needed
+- Validate: `structs_action` runs preflight checks before executing; `structs_intel` simulates outcomes and forecasts power as needed
 
 ### 3. Initiate
 

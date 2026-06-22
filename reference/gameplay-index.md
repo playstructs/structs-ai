@@ -163,4 +163,4 @@ Core gameplay loop. See: [gameplay.md](../schemas/gameplay.md#gameplayloop)
 | Category | Actions | Schema |
 |----------|---------|--------|
 | Fleet Management | MsgFleetMove | [actions.md](../schemas/actions.md#msgfleetmove) |
-| Guild Operations | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipLeave, MsgGuildBankMint, MsgGuildBankRedeem | [actions.md](../schemas/actions.md) |
+| Guild Operations | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildBankMint, MsgGuildBankRedeem | [actions.md](../schemas/actions.md) |

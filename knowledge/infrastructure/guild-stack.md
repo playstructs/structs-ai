@@ -70,7 +70,7 @@ One blockchain block is ~6 seconds. Charge is a single **per-player** bar (share
 
 The PostgreSQL schema (`structs.*`, `sync_state.*`, `cache.*` views, `signer.*`, `view.*` — see [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. Pin the schema branch with `STRUCTS_PG_BRANCH` in `.env`.
 
-**MCP server** ([`structs-mcp`](https://github.com/playstructs/structs-mcp)) is **not** part of `compose.yaml`. Deploy it separately if you need MCP tools; bind to `127.0.0.1` only.
+The Guild Stack does not include an MCP server. Agents connect to the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop); the Guild Stack provides the PostgreSQL data store and event bridge that back it. See [`TOOLS.md`](../../TOOLS.md) for the MCP interface.
 
 ---
 
@@ -117,7 +117,7 @@ structsd (CometBFT + Cosmos SDK)
 
 **Read path (slow)**: CLI queries via `structsd query` (hits the node's local state store).
 
-**Real-time path**: sync-state writes game state → PG triggers fire `NOTIFY 'grass'` → `structs-grass` → NATS → WebSocket clients. Block height is tracked in `sync_state.sync_cursor` and `structs.current_block`; it is no longer pushed as a `block` GRASS category from a `current_block` NOTIFY trigger.
+**Real-time path**: sync-state writes game state → PG triggers fire `NOTIFY 'grass'` → `structs-grass` → NATS → WebSocket clients. Block height is tracked in `sync_state.sync_cursor` and `structs.current_block`.
 
 ---
 
@@ -152,7 +152,7 @@ This is the same system documented in the `structs-streaming` skill. The guild s
 
 ## Node Upgrades (Cosmovisor)
 
-The `structsd` Docker image runs under [cosmovisor](https://docs.cosmos.network/main/build/tooling/cosmovisor). On-chain `x/upgrade` plans swap the binary in-place without restarting the container. The image bakes in upgrade binaries (e.g. v0.16.0 at height 385730, v0.17.0 at height 867678). Roll out a new `structs/structsd` image **before** the next on-chain upgrade height. See [`docker-structsd` README](https://github.com/playstructs/docker-structsd) for operator details.
+The `structsd` Docker image runs under [cosmovisor](https://docs.cosmos.network/main/build/tooling/cosmovisor). On-chain `x/upgrade` plans swap the binary in-place without restarting the container. The image bakes in the upgrade binaries keyed to their scheduled heights. Roll out a new `structs/structsd` image **before** the next on-chain upgrade height. See [`docker-structsd` README](https://github.com/playstructs/docker-structsd) for operator details.
 
 ---
 

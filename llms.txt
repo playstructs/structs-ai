@@ -43,7 +43,7 @@
 
 - [Play Structs](https://structs.ai/skills/play-structs/SKILL): **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills.
 - [Conventions](https://structs.ai/skills/conventions): Shared boilerplate every skill assumes: transaction flags, the -- ID rule, the per-player charge bar, proof-of-work policy
-- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds)
+- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds)
 - [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
 - [Production](https://structs.ai/skills/structs-production/SKILL): The mine then refine then stake pipeline; ore vulnerability, depletion handoff
 - [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion

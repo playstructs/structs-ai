@@ -39,8 +39,6 @@ Uses an Ore Extractor to mine Alpha Ore via `MsgStructOreMinerComplete`.
 | Mining Charge | 20 |
 | Mining Difficulty | 14,000 |
 
-*Deprecated: `MsgOreMining` -- use `MsgStructOreMinerComplete` instead.*
-
 ### Refining
 
 Uses an Ore Refinery to refine ore into Alpha Matter via `MsgStructOreRefineryComplete`.
@@ -53,8 +51,6 @@ Uses an Ore Refinery to refine ore into Alpha Matter via `MsgStructOreRefineryCo
 | Refining Charge | 20 |
 | Refining Difficulty | 28,000 |
 
-*Deprecated: `MsgOreRefining` -- use `MsgStructOreRefineryComplete` instead.*
-
 ### Energy Production
 
 Multiple options with varying rates and risk profiles:
@@ -66,9 +62,7 @@ Multiple options with varying rates and risk profiles:
 | Continental Power Plant | `MsgStructGeneratorInfuse` | 5x | High (design intent) | Disabled |
 | World Engine | `MsgStructGeneratorInfuse` | 10x | High (design intent) | Disabled |
 
-*Deprecated: `MsgReactorAllocate` -- use `MsgReactorInfuse`. `MsgGeneratorAllocate` -- use `MsgStructGeneratorInfuse`.*
-
-Code verification (December 7, 2025): Generator conversion is deterministic. No risk calculation is implemented in the current code, despite the design intent mentioning risk for generators.
+Generator conversion is deterministic: no risk calculation is implemented, despite the design intent mentioning risk for generators.
 
 ## Workflow
 

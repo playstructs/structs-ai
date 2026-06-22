@@ -25,11 +25,11 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) come from [`conv
 
 **Should I explore now? (the one-planet model)** You can only hold one planet. Exploring a *subsequent* planet **destroys your current one** — every struct on it is gone and visiting fleets scatter. So subsequent-explore is a Tier 2, deliberate act, only after `currentOre == 0` and after you've moved anything you want to keep into the fleet.
 
-**Fleet position is a raid trade-off**: `away` lets you raid but means you **cannot build, mine, refine, or explore**, and your home planet is undefended by fleet structs. `onStation` is your default safe posture. Don't leave the fleet parked in hostile space — it can be stranded.
+**Fleet position is a raid trade-off**: `away` lets you raid but means you **cannot build, mine, refine, or explore**, and your home planet's shields are vulnerable (the Command Ship only defends home while the fleet is `onStation`). `onStation` is your default safe posture. Don't leave the fleet parked in hostile space — it can be stranded.
 
 **Advanced considerations**:
 - **Fleet composition** = ambit coverage. Each combat struct is locked to its ambit; only the Command Ship can change ambits. Build a spread that can both threaten and defend across space/air/land/water. See the threat matrix in [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
-- **The raid clock cares about your Command Ship, not your fleet location.** Your planet is only raidable while *your* Command Ship is offline/destroyed. Sending the fleet `away` to raid takes your Command Ship with it — leaving home exposed only if the CMD ship also goes offline. Plan offense around keeping your own shields up.
+- **Fleet position drives your shields.** Your Command Ship defends your home planet's shields only while your fleet is `onStation`. The moment your fleet goes `away` — including when you send it off to raid — your planet's shields are vulnerable and it can be raided, even with the Command Ship online. So offense and home defense compete for the same fleet: plan to refine stored ore before you leave, and keep raids short.
 - Decisions live in [`playbooks/phases/mid-game`](https://structs.ai/playbooks/phases/mid-game) (when to expand) and [`playbooks/situations/under-attack`](https://structs.ai/playbooks/situations/under-attack) (evacuation).
 
 ## Fleet status cheat-sheet

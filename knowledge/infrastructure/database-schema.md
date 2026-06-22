@@ -434,7 +434,7 @@ The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.c
 |-------|-------------|-------|
 | `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
-| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types as of v0.16.0. |
+| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types. |
 
 ### `signer.signer_tx_type` (UGC enum values)
 
@@ -461,9 +461,9 @@ There is no `MsgGuildModerate*` chain message — moderation is the same `Msg*Up
 
 `signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll = 33554431` (bits 0..24) so newly provisioned signer addresses receive every permission, including `PermGuildUGCUpdate`, by default.
 
-### `PLAYER_PENDING_JOIN_PROXY` (v0.16.0)
+### `PLAYER_PENDING_JOIN_PROXY`
 
-The `PLAYER_PENDING_JOIN_PROXY` trigger was modified to thread `username` and `pfp` from the pending row through to `signer.CREATE_TRANSACTION` for the `guild-membership-join-proxy` command, packaged into the `ugc` JSONB argument. The webapp's signup flow becomes:
+The `PLAYER_PENDING_JOIN_PROXY` trigger threads `username` and `pfp` from the pending row through to `signer.CREATE_TRANSACTION` for the `guild-membership-join-proxy` command, packaged into the `ugc` JSONB argument. The webapp's signup flow is:
 
 ```text
 webapp signup

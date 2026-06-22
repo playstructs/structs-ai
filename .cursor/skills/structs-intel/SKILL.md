@@ -7,7 +7,7 @@ domain: social
 
 # Structs Intel
 
-Information is the cheapest weapon in Structs — queries are free and instant. Before you commit hours of proof-of-work to a raid or a build, **scout**. The most valuable single fact in v0.18.0 is whether a target's **Command Ship is offline or destroyed**: a planet can only be raided to completion while its shields are vulnerable (see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL)). Intel that isn't written down dies with your context window — persist it to `memory/intel/`.
+Information is the cheapest weapon in Structs — queries are free and instant. Before you commit hours of proof-of-work to a raid or a build, **scout**. The most valuable single fact for a raid is whether a target's shields are vulnerable — its owner's **fleet is off-station, or their Command Ship is offline or destroyed**: a planet can only be raided to completion while its shields are vulnerable (see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL)). Intel that isn't written down dies with your context window — persist it to `memory/intel/`.
 
 Conventions are in [`conventions.md`](https://structs.ai/skills/conventions). Everything here is read-only (queries) — no transactions, no charge, no risk.
 

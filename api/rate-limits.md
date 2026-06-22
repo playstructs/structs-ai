@@ -46,7 +46,7 @@ Rate limits may vary by deployment and are subject to change. Always check respo
 | webapp-player-by-id | `/api/player/{player_id}` | GET | 100 | 6,000 | Standard webapp query endpoint |
 | webapp-guild-directory | `/api/guild/directory` | GET | 30 | 1,800 | Directory/list endpoints may have lower limits |
 
-> **v0.16.0**: `PUT /api/player/username` was removed. UGC writes (username/pfp) now flow through chain transactions and are subject to per-block gas caps rather than HTTP rate limits -- see `knowledge/mechanics/transactions.md`.
+> UGC writes (username/pfp) flow through chain transactions and are subject to per-block gas caps rather than HTTP rate limits -- see `knowledge/mechanics/transactions.md`.
 
 ### RPC Endpoints
 

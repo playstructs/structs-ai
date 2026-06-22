@@ -14,7 +14,7 @@ There are two supported paths for installing `structsd`:
 
 After either path, `structsd` will be available on your PATH and `structsd version` will print the chain version.
 
-> Ignite CLI is **no longer required** to build `structsd`. It is only needed if you want to run a local devnet via `make serve`. The Makefile builds via plain `go build`.
+> The Makefile builds `structsd` via plain `go build`, so no Ignite CLI is needed for installation. Ignite is only used to run a local devnet via `make serve`.
 
 ---
 
@@ -23,8 +23,8 @@ After either path, `structsd` will be available on your PATH and `structsd versi
 The chain ships signed binaries via GoReleaser on every tag. Pick the asset for your OS/arch from the latest release at <https://github.com/playstructs/structsd/releases>.
 
 ```bash
-# Pick one (replace VERSION with e.g. v0.18.0):
-VERSION=v0.18.0
+# Pick one (replace VERSION with e.g. v0.19.1):
+VERSION=v0.19.1
 
 # Linux amd64
 curl -L -o structsd.tar.gz \
@@ -139,7 +139,7 @@ structsd version
 ```bash
 cd structsd
 git fetch --tags
-git checkout v0.18.0   # or `git pull origin main` for tip-of-tree
+git checkout v0.19.1   # or `git pull origin main` for tip-of-tree
 make install
 ```
 
@@ -195,4 +195,5 @@ If any command fails, revisit the corresponding step above.
 
 - [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)
 - [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)
+- [structs-desktop](https://github.com/playstructs/structs-desktop) — Desktop app for human players; embeds the MCP server agents connect to (see [TOOLS](https://structs.ai/TOOLS))
 - [structsd releases](https://github.com/playstructs/structsd/releases) — Prebuilt binaries per OS/arch and changelog per tag

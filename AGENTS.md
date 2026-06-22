@@ -56,7 +56,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 |-------|---------|
 | [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
 | [`conventions`](.cursor/skills/conventions) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
-| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds) |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds) |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-production`](.cursor/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
@@ -188,7 +188,7 @@ Auto-approved flags (only after commander approval; see [`SAFETY.md`](SAFETY.md)
 
 Full command list: `structsd tx structs --help` and `structsd query structs --help`
 
-If MCP tools are available (e.g. `user-structs` server), they wrap these same CLI commands. See [`TOOLS.md`](TOOLS.md) for environment-specific tool configuration.
+If you're connected to the [`structs-desktop`](https://github.com/playstructs/structs-desktop) app, its embedded MCP server exposes these same game actions as tools (`structs_action`, `structs_query`, `structs_sequence`, and more). See [`TOOLS.md`](TOOLS.md) for the MCP interface and environment-specific configuration.
 
 ---
 

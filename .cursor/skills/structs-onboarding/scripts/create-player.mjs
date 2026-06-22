@@ -16,7 +16,7 @@
 //   node create-player.mjs --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "https://public.testnet.structs.network"
 //   node create-player.mjs --mnemonic "word1 word2 ..." --guild-id "0-1" --guild-api "http://crew.oh.energy/api/" --reactor-api "https://public.testnet.structs.network" --username "my-agent" --pfp "ipfs://bafy..."
 //
-// As of structsd v0.16.0, the guild API forwards `username` and `pfp` to the
+// The guild API forwards `username` and `pfp` to the
 // chain via MsgGuildMembershipJoinProxy.playerName / playerPfp, so the chain
 // rejects invalid values at signup time. This script preflights the same
 // validators as `x/structs/types/ugc.go` so failures surface locally instead
@@ -51,7 +51,7 @@ function parseArgs(argv) {
   return args;
 }
 
-// --- UGC validation (mirror of x/structs/types/ugc.go in structsd v0.16.0) ---
+// --- UGC validation (mirror of x/structs/types/ugc.go) ---
 // These checks must agree with the chain validators or signup will appear to
 // succeed and then silently fail. If you change one side, change the other.
 
@@ -200,7 +200,7 @@ function validatePfp(pfp) {
   return pfp;
 }
 
-// pfpClientRenderAttributes (structsd v0.18.0): owner-supplied client render
+// pfpClientRenderAttributes: owner-supplied client render
 // hints. The chain stores an opaque JSON object, max 512 bytes, no schema.
 // Empty string clears it. Mirror x/structs/types/ugc.go validation.
 function validatePfpClientRenderAttributes(value) {
@@ -359,7 +359,7 @@ async function main() {
     pfp
   };
   // Forwarded to MsgGuildMembershipJoinProxy.playerPfpClientRenderAttributes
-  // when the guild API supports it (structsd v0.18.0+). Older guild APIs
+  // when the guild API supports it. Older guild APIs
   // ignore unknown fields, so this is safe to always include when provided.
   if (pfpClientRenderAttributes !== null) {
     signupPayload.pfp_client_render_attributes = pfpClientRenderAttributes;

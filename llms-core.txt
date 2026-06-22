@@ -398,7 +398,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 |-------|---------|
 | [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
 | [`conventions`](.cursor/skills/conventions) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
-| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; Ignite no longer required for builds) |
+| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds) |
 | [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
 | [`structs-production`](.cursor/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
@@ -530,7 +530,7 @@ Auto-approved flags (only after commander approval; see [`SAFETY.md`](SAFETY.md)
 
 Full command list: `structsd tx structs --help` and `structsd query structs --help`
 
-If MCP tools are available (e.g. `user-structs` server), they wrap these same CLI commands. See [`TOOLS.md`](TOOLS.md) for environment-specific tool configuration.
+If you're connected to the [`structs-desktop`](https://github.com/playstructs/structs-desktop) app, its embedded MCP server exposes these same game actions as tools (`structs_action`, `structs_query`, `structs_sequence`, and more). See [`TOOLS.md`](TOOLS.md) for the MCP interface and environment-specific configuration.
 
 ---
 
@@ -723,7 +723,7 @@ charge = CurrentBlockHeight - player.lastActionBlock
 
 Every charge-consuming action by **any** of your structs (build, activate, attack, move, defense change, stealth) draws from and resets this one bar. It regenerates at 1 per block (~6 sec/block) whenever you are idle. To know whether an action can fire, query the **player**, not the struct.
 
-Action costs (v0.18.0): activate 2, build-initiate 8, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost.
+Action costs: activate 2, build-initiate 8, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost.
 
 ---
 
@@ -1154,7 +1154,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional, structsd v0.18.0+) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
@@ -1403,7 +1403,7 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 **Advanced considerations**:
 - **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
-- **Protect stored ore** with Ore Bunkers — now **unlimited** build (v0.18.0). They guard `storedOre` and raise the planetary shield. Stacking them hardens the refine window without touching your CPU budget.
+- **Protect stored ore** with Ore Bunkers — **unlimited** build (no per-player cap). They guard `storedOre` and raise the planetary shield. Stacking them hardens the refine window without touching your CPU budget.
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
 
@@ -1529,8 +1529,8 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 **Always pre-check power.** Before initiating, confirm `availableCapacity ≥ struct.buildDraw + struct.passiveDraw`. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to project headroom-after-activation in one call. If it won't fit, raise capacity first or the struct will materialize but never come online.
 
 **Advanced considerations**:
-- **Defense scaling changed in v0.18.0**: Orbital Shield Generator and Ore Bunker are now **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else stays 1 per player.
-- **What to build to kill what**: the Battleship is now the armour-piercing answer to Tanks and to (newly armoured) power generators; planetary structs are tougher (6/8/10 HP). Match builds to the threat — see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
+- **Defense scaling**: Orbital Shield Generator and Ore Bunker are **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else is 1 per player.
+- **What to build to kill what**: the Battleship is the armour-piercing answer to Tanks and to armoured power generators; planetary structs are tough (6/8/10 HP). Match builds to the threat — see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
 - Decisions live in [`playbooks/phases/early-game`](https://structs.ai/playbooks/phases/early-game) and [`playbooks/meta/economy-of-force`](https://structs.ai/playbooks/meta/economy-of-force).
 
 ## Procedure
@@ -1552,7 +1552,7 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 
 `struct-build-compute` performs the PoW and auto-submits `struct-build-complete`; you only call `struct-build-complete` directly if you hashed externally.
 
-## v0.18.0 struct catalog (the numbers that drive decisions)
+## Struct catalog (the numbers that drive decisions)
 
 Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types). Key current values:
 
@@ -1663,11 +1663,11 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) come from [`conv
 
 **Should I explore now? (the one-planet model)** You can only hold one planet. Exploring a *subsequent* planet **destroys your current one** — every struct on it is gone and visiting fleets scatter. So subsequent-explore is a Tier 2, deliberate act, only after `currentOre == 0` and after you've moved anything you want to keep into the fleet.
 
-**Fleet position is a raid trade-off**: `away` lets you raid but means you **cannot build, mine, refine, or explore**, and your home planet is undefended by fleet structs. `onStation` is your default safe posture. Don't leave the fleet parked in hostile space — it can be stranded.
+**Fleet position is a raid trade-off**: `away` lets you raid but means you **cannot build, mine, refine, or explore**, and your home planet's shields are vulnerable (the Command Ship only defends home while the fleet is `onStation`). `onStation` is your default safe posture. Don't leave the fleet parked in hostile space — it can be stranded.
 
 **Advanced considerations**:
 - **Fleet composition** = ambit coverage. Each combat struct is locked to its ambit; only the Command Ship can change ambits. Build a spread that can both threaten and defend across space/air/land/water. See the threat matrix in [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
-- **The raid clock cares about your Command Ship, not your fleet location.** Your planet is only raidable while *your* Command Ship is offline/destroyed. Sending the fleet `away` to raid takes your Command Ship with it — leaving home exposed only if the CMD ship also goes offline. Plan offense around keeping your own shields up.
+- **Fleet position drives your shields.** Your Command Ship defends your home planet's shields only while your fleet is `onStation`. The moment your fleet goes `away` — including when you send it off to raid — your planet's shields are vulnerable and it can be raided, even with the Command Ship online. So offense and home defense compete for the same fleet: plan to refine stored ore before you leave, and keep raids short.
 - Decisions live in [`playbooks/phases/mid-game`](https://structs.ai/playbooks/phases/mid-game) (when to expand) and [`playbooks/situations/under-attack`](https://structs.ai/playbooks/situations/under-attack) (evacuation).
 
 ## Fleet status cheat-sheet
@@ -1798,7 +1798,7 @@ Have Alpha Matter?
 
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
-**Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (and they're now armoured + higher HP in v0.18.0, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
+**Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
 ### "Am I about to go offline?"
 
@@ -1904,14 +1904,14 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 <source>.cursor/skills/structs-combat/SKILL.md</source>
 ---
 name: structs-combat
-description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while the defender's Command Ship is offline/destroyed.
+description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed.
 level: core
 domain: combat
 ---
 
 # Structs Combat
 
-Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while the defender's Command Ship is offline, destroyed, or non-existent.** Keep your Command Ship online and you are effectively unraidable; to raid someone, you must catch theirs down.
+Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while its shields are vulnerable** — the defender's **fleet is off-station**, or their **Command Ship is offline, destroyed, or non-existent**. Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must catch them vulnerable. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid exposes your own planet until it returns.)
 
 Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](https://structs.ai/skills/conventions).
 
@@ -1928,7 +1928,7 @@ Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-
 
 A raid is only worth launching when **all** of these hold. Use `scripts/scout.sh [planet-id]` to get this as a structured go/no-go, or check manually:
 
-1. **Defender's Command Ship is offline / destroyed / absent.** If it's online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how long you grind. This is the gate.
+1. **Defender's shields are vulnerable** — their fleet is off-station, or their Command Ship is offline / destroyed / absent. If their fleet is on station with the Command Ship online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how long you grind. This is the gate.
 2. **There is ore to take** — defender's `storedOre > 0` (ideally a lot; a successful raid seizes **all** of it, not a share).
 3. **The shield is low enough** that the raid PoW is feasible in the time you have (shield raises raid difficulty; base 25, +contributions of online defense structs).
 4. **The defender's fleet is away / weak** so your fleet survives the resolution.
@@ -1937,7 +1937,7 @@ A raid is only worth launching when **all** of these hold. Use `scripts/scout.sh
 
 ### Defense doctrine
 
-- **Keep your Command Ship online — always.** That alone makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you).
+- **Keep your Command Ship online and your fleet on station — always.** That combination makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice" — or "I sent my fleet off to raid and left my own shields down." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you). Treat raiding with your own fleet as a deliberate trade: while it's away, your home is exposed.
 - **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate.
 - **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](https://structs.ai/skills/structs-production/SKILL)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
@@ -1946,13 +1946,13 @@ Decisions live in [`playbooks/situations/under-attack`](https://structs.ai/playb
 
 ## How a raid resolves
 
-`blockStartRaid` is the **defender's Command-Ship vulnerability clock**, and raid PoW age is measured from it:
+`blockStartRaid` is the **defender's vulnerability clock**, and raid PoW age is measured from it:
 
-- It starts when the defender's Command Ship goes offline (or when you arrive to find it down).
-- It resets to 0 if the defender brings the Command Ship back online — and completion is rejected (`raid_clock_unset` when 0; the raid status flips to `ongoing` with shields restored).
-- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (CMD ship down, clock running, winnable) → `raidSuccessful` / `attackerRetreated`. `attackerDefeated` means your raiding Command Ship was destroyed while away. `demilitarized` means no defenders to resolve against.
+- It starts when the defender's shields become vulnerable — their Command Ship goes offline or their fleet leaves station (or when you arrive to find it already vulnerable).
+- It resets to 0 if the defender restores their shields (Command Ship back online with the fleet on station) — and completion is rejected (`raid_clock_unset` when 0; the raid status flips to `ongoing` with shields restored).
+- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (shields down, clock running, winnable) → `raidSuccessful` / `attackerRetreated`. `attackerDefeated` means your raiding Command Ship was destroyed while away. `demilitarized` means no defenders to resolve against.
 
-So a raid is a race against the defender noticing and restoring their Command Ship. Scout the CMD ship first; don't move your fleet until it's down.
+So a raid is a race against the defender noticing and restoring their shields. Scout the CMD ship and fleet position first; don't move your fleet until they're vulnerable.
 
 **A raid steals ore.** A successful raid seizes **all** of the defender's `storedOre` and nothing more — it does not destroy the player or their structs. Killing the defender's Command Ship opens the `shieldsVulnerable` window so the raid can complete; if the defender restores or rebuilds it before you finish, completion is rejected (`shields_active`) and you get **nothing**. Beware the reverse: `trigger_raid_defeat_by_destruction` is on the Command Ship, so if **your** raiding CMD ship is destroyed while away, your fleet is defeated (`attackerDefeated`) and sent home. Win path for ore: strip same-ambit blockers → destroy the defender's CMD ship → complete the raid before they rebuild it (most reliable vs an offline defender).
 
@@ -1960,7 +1960,7 @@ So a raid is a race against the defender noticing and restoring their Command Sh
 
 1. **Scout** — `scripts/scout.sh [planet-id]` (or `structsd query structs planet [id]` + struct/player queries). Confirm the four go conditions above, especially the defender's **Command Ship status**.
 2. **Optional stealth** — stealth a unit before approach (`struct-stealth-activate`, 2 charge); attacking later auto-drops it.
-3. **Move fleet to the target** (instant). Your fleet (and your Command Ship) is now `away`; you can't build/mine at home while away.
+3. **Move fleet to the target** (instant). Your fleet (and your Command Ship) is now `away`; you can't build/mine at home while away, **and your own planet's shields are now vulnerable** until the fleet returns — refine your home ore before you leave.
    ```
    structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]
    ```
@@ -1976,7 +1976,7 @@ If the defender restores their Command Ship mid-raid, the clock resets — withd
 
 ## Procedure — direct attack
 
-Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
+Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The attack needs only the attacking struct and its owner online — your Command Ship does not need to be online to attack, change defenders, or change stealth. The **target must be a built struct**: a struct that is still building cannot be attacked (`unbuilt`), and a destroyed one is rejected (`destroyed`); the target's online status is irrelevant. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
 
 ```
 structsd tx structs struct-attack TX_FLAGS -- [operating-struct-id] [target-id,target-id2,...] [weapon-system]
@@ -2064,8 +2064,9 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 
 ## Errors
 
-- **"shields_active" / raid rejected** — defender's Command Ship is online. You cannot win until it's down. Stop grinding.
-- **"raid_clock_unset"** — `blockStartRaid` is 0 (CMD ship never went down or came back). Wait for it to drop.
+- **"shields_active" / raid rejected** — the defender's shields are up (fleet on station with the Command Ship online). You cannot win until they're vulnerable again. Stop grinding.
+- **"raid_clock_unset"** — `blockStartRaid` is 0 (the defender is not currently vulnerable). Wait for their CMD ship to drop or their fleet to leave station.
+- **"unbuilt" / "destroyed" (attack)** — the target struct isn't a valid combat target: it's still building or already destroyed. Pick a built target.
 - **"unreachable" / "out_of_range"** — your weapon can't reach that ambit; reposition the Command Ship or use a different struct.
 - **"fleet not away"** — move the fleet to the target first.
 - **"insufficient charge"** — per-player bar too low; wait (see conventions).
@@ -2586,13 +2587,16 @@ Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Ru
 
 | Requirement | Attack | Raid |
 |-------------|--------|------|
-| Raider online (sufficient power) | ✓ | ✓ |
+| Operating struct online, and its owner online | ✓ | — |
+| Raider player online (sufficient power) | — | ✓ |
 | Sufficient charge | ✓ | — |
+| Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
 | Raider fleet away (at the target) | — | ✓ |
-| Raider Command Ship online | — | ✓ |
-| **Defender's shields vulnerable** (defender Command Ship offline, destroyed, or non-existent) | — | ✓ |
+| **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
 | Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
+
+An attack action depends only on the attacking struct (and its owner) being online — the attacker's Command Ship does not need to be online, and the same holds for defensive changes (`struct-defense-set`) and stealth changes. The target must be a built struct; `struct-attack` against a struct that is still building is rejected (`unbuilt`), and a destroyed struct is rejected (`destroyed`). The target's online status is irrelevant.
 
 Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
 
@@ -2600,22 +2604,22 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 ## Raid Phases and SHIELDS_VULNERABLE
 
-A raid is only winnable while the **defending player's Command Ship is offline, destroyed, or non-existent**. While the defender's Command Ship is online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. This makes keeping your Command Ship online the single most effective raid defense.
+A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
 
-The `blockStartRaid` attribute is the **Command-Ship vulnerability clock**, and raid PoW age is measured from it:
+The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
 
-- Set when the defending Command Ship goes offline (or when raiders arrive to find it already down).
-- Cleared (back to 0) when the defending Command Ship comes back online, and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
+- Set when the planet becomes vulnerable (the defending Command Ship goes offline or the defender's fleet leaves station), or when raiders arrive to find it already vulnerable.
+- Cleared (back to 0) when the planet stops being vulnerable (the Command Ship comes back online with the fleet on station), and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
 
-So a raider must catch the defender's Command Ship down *and* let the clock age before the puzzle becomes solvable. If the defender brings the Command Ship back online mid-raid, the clock resets and the raider must wait for it to go down again.
+So a raider must catch the defender vulnerable *and* let the clock age before the puzzle becomes solvable. If the defender restores their shields mid-raid (Command Ship back online with the fleet on station), the clock resets and the raider must wait for the planet to become vulnerable again.
 
 ### Raid statuses
 
 | Status | Meaning |
 |--------|---------|
 | initiated | Raider fleet has arrived at the planet |
-| shieldsVulnerable | Defender's Command Ship is down — the raid is now winnable and the clock is running |
-| ongoing | Defender's Command Ship came back online mid-raid — shields restored, completion blocked |
+| shieldsVulnerable | Defender's shields are down (fleet off-station, or Command Ship offline/destroyed) — the raid is now winnable and the clock is running |
+| ongoing | Defender restored shields mid-raid (Command Ship back online with the fleet on station) — completion blocked |
 | raidSuccessful | Raider won and seized all of the defender's stored ore |
 | attackerDefeated | Raider's own Command Ship was destroyed while away (`trigger_raid_defeat_by_destruction`) — the raiding fleet is defeated and sent home |
 | attackerRetreated | Raider withdrew before completion |
@@ -2629,7 +2633,7 @@ Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a def
 
 A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs.
 
-Destroying the defender's Command Ship makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender brings the Command Ship back online or rebuilds it before completion, the shields return and `planet-raid-complete` is rejected with `shields_active`. So the Command Ship is either down at completion — and the raider takes all the ore — or up, and the raid is rejected.
+Destroying the defender's Command Ship (or catching their fleet off-station) makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender restores their shields before completion — Command Ship back online with the fleet on station — the shields return and `planet-raid-complete` is rejected with `shields_active`. So the planet is either vulnerable at completion — and the raider takes all the ore — or shielded, and the raid is rejected.
 
 `trigger_raid_defeat_by_destruction` is a property of the Command Ship. When a Command Ship is destroyed while **away from home** (its planet's owner differs from its own owner), its fleet is defeated: the raid ends with `attackerDefeated` and the fleet is sent home. This defeats an **attacking** fleet whose Command Ship dies during a raid.
 
@@ -3061,7 +3065,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Struct | Charge | Weapon Type | Targets (Primary) | Secondary | Notes |
 |--------|--------|-------------|--------------------|-----------| ------|
 | Command Ship | 3 | guided | Local (current ambit only, flag 32) | — | Must `struct-move` to target's ambit first; "unreachable" error means wrong ambit |
-| Battleship | 5 / 5 | unguided / guided | Land, Water | Space: 1 shot × 1 dmg | **Armour-piercing primary** (negates target damage reduction); anti-Tank/anti-generator on land + water. Guided secondary reaches space |
+| Battleship | 5 / 5 | unguided / guided | Land, Water | Space: 1 shot × 2 dmg | **Armour-piercing primary** (negates target damage reduction); anti-Tank/anti-generator on land + water. Guided secondary reaches space |
 | Starfighter | 3 / 5 | guided / guided | Space / Space | Attack Run: 3 shots × 1 dmg (1 guaranteed hit + 2 shots @ 1/3) | Cheap primary; secondary floors at 1 hit per Attack Run (`secondaryWeaponGuaranteedShots = 1`) |
 | Frigate | 5 | guided | Space, Air | — | Only space unit hitting air |
 | Pursuit Fighter | 3 | guided | Air | — | Cheapest air offense |
@@ -3300,9 +3304,9 @@ Don't try to fix everything at once. Pick the highest-priority unmet tier. Do on
 
 ### 3. Use Validation, Not Guessing
 
-- `structs_validate_gameplay_requirements` — Is the action possible?
-- `structs_calculate_damage` — Will the attack work?
-- `structs_calculate_power` — Will I stay online?
+- `structs_action` — Is the action possible?
+- `structs_intel` — Will the attack work?
+- `structs_intel` — Will I stay online?
 
 If validation fails, skip to next option. Don't loop on impossible actions.
 
@@ -3372,14 +3376,14 @@ See [Async Operations](async-operations.md) for background job management.
 - Run [Threat Detection](threat-detection.md) — Fleet movements, ore exposure, power instability, hostile activity
 - Run [Opportunity Identification](opportunity-identification.md) — Undefended planets, agreements, weakened opponents
 
-**Tools**: `structs_query_player`, `structs_query_fleet`, `structs_query_planet`, `structs_query_planet_activity`, `structs_list_structs`, `structs_query_guild`
+**Tools**: `structs_dashboard` (fast self-snapshot), `structs_query` (any entity), `structs_intel` (scout, valid targets, simulate, forecasts), `structs_events` (activity feed)
 
 ### 2. Plan
 
 - Apply [Priority Framework](priority-framework.md) — Highest unmet tier wins
 - **Think in pipelines**: what should I initiate now so it's ready later?
 - Pick actions and also identify future actions whose age clocks should start now
-- Validate: `structs_validate_gameplay_requirements`, `structs_calculate_power`, `structs_calculate_damage` as needed
+- Validate: `structs_action` runs preflight checks before executing; `structs_intel` simulates outcomes and forecasts power as needed
 
 ### 3. Initiate
 

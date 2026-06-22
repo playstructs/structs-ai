@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/lib.sh"
 preflight
 
-# Expected values for the current documented release (structsd v0.18.0).
+# Expected values for the current documented release (structsd v0.19.1).
 # Format: "<struct-type-id>|<jq-field-alternation>|<expected>|<label>"
 # The jq alternation tolerates snake_case vs camelCase field naming.
 CHECKS=(
@@ -44,7 +44,7 @@ extract() {
 }
 
 pass=0; drift=0; skip=0
-echo "${C_CYN}== Doc drift check (expected = structsd v0.18.0 docs) ==${C_RST}"
+echo "${C_CYN}== Doc drift check (expected = structsd v0.19.1 docs) ==${C_RST}"
 
 declare -A CACHE
 for row in "${CHECKS[@]}"; do

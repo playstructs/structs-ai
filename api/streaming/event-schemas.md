@@ -38,12 +38,6 @@ Extends [BaseEvent](#base-event). Category: `player_consensus`
 
 Fires when sync-state commits an insert or update to `structs.player`, including UGC changes from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy.
 
-### PlayerMetaEvent (legacy)
-
-Extends [BaseEvent](#base-event). Category: `player_meta` (legacy enum value — **no longer emitted**)
-
-The `player_meta` GRASS category was retired when UGC moved to `structs.player`. Subscribe to `player_consensus` instead.
-
 ### GuildConsensusEvent
 
 Extends [BaseEvent](#base-event). Category: `guild_consensus`
@@ -176,15 +170,7 @@ Extends [BaseEvent](#base-event). Category: `block`
 | guild | `guild_consensus`, `guild_meta`, `guild_membership`, `guild_rank_permission` |
 | planet | `raid_status`, `fleet_arrive`, `fleet_advance`, `fleet_depart`, `planet_activity` |
 | struct | `struct_attack`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
-| player | `player_consensus`, `player_meta` |
-
----
-
----
-
-## Breaking Changes
-
-- **`targetPlayerId` moved**: The `targetPlayerId` field has moved from `EventAttackDetail` to `EventAttackShotDetail`. Clients parsing attack events must update to read this field from the shot detail level instead of the top-level attack detail.
+| player | `player_consensus` |
 
 ---
 

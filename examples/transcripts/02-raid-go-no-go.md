@@ -6,7 +6,7 @@ title: "Transcript 02 — Raid Go/No-Go"
 
 **Goal**: Decide whether to raid a neighbor's planet for ore.
 **Skills**: [structs-intel](../../.cursor/skills/structs-intel/SKILL.md), [structs-combat](../../.cursor/skills/structs-combat/SKILL.md).
-**Why it's "golden"**: the agent scouts before committing hours of proof-of-work, applies the v0.18.0 shield-vulnerability gate, does the target economics, and **walks away** when the numbers don't work — discipline, not reflex.
+**Why it's "golden"**: the agent scouts before committing hours of proof-of-work, applies the shield-vulnerability gate, does the target economics, and **walks away** when the numbers don't work — discipline, not reflex.
 
 ---
 
@@ -21,14 +21,15 @@ scripts/scout.sh 2-117
   owner                  1-204
   stealable ore          900
   command ship           present=yes status=online
+  fleet                  onStation (away=no)
   shields vulnerable     no
   defenders on planet    3
-  verdict: NO-GO — Command Ship online — shields up, raid cannot complete
+  verdict: NO-GO — fleet on station with Command Ship online — shields up, raid cannot complete
 ```
 
-> The gate fails immediately. In v0.18.0 a raid can only **complete** while the owner's Command Ship is offline or destroyed (`shieldsVulnerable`). Owner `1-204`'s Command Ship is online, so no amount of damage to planetary structs lets the raid finish. **No-go.** I don't launch anything — that would burn proof-of-work for nothing.
+> The gate fails immediately. A raid can only **complete** while the owner's shields are vulnerable — their fleet off-station, or their Command Ship offline/destroyed. Owner `1-204`'s fleet is on station with the Command Ship online, so no amount of damage to planetary structs lets the raid finish. **No-go.** I don't launch anything — that would burn proof-of-work for nothing.
 
-**Agent:** Is there a cheaper path to make them vulnerable? Their shields drop only if their Command Ship goes offline (e.g. power starvation) or is destroyed. Destroying a Command Ship in the fleet means winning a fleet engagement first — a much bigger commitment than this 900 ore justifies. I'll instead **watch** for them to slip up, cheaply.
+**Agent:** Is there a cheaper path to make them vulnerable? Their shields drop if their Command Ship goes offline (e.g. power starvation) or is destroyed, or if they send their own fleet off-station. Destroying a Command Ship in the fleet means winning a fleet engagement first — a much bigger commitment than this 900 ore justifies. I'll instead **watch** for them to slip up, cheaply.
 
 ```bash
 node scripts/watch-defense.mjs structs.player.0-1.1-204 structs.planet.2-117
@@ -51,6 +52,7 @@ scripts/scout.sh 2-117
 ```
   stealable ore          900
   command ship           present=yes status=offline
+  fleet                  onStation (away=no)
   shields vulnerable     yes
   defenders on planet    3
   verdict: GO (verify) — shields vulnerable and ore present — confirm you out-damage 3 defender(s)
@@ -82,7 +84,7 @@ nohup structsd tx structs struct-ore-raid-compute -D 3 --from ferro --gas auto -
 ## What made this good
 
 - **Scouted first** — one free query prevented hours of wasted proof-of-work.
-- **Applied the v0.18.0 gate correctly**: no Command-Ship-offline → no completable raid, full stop.
+- **Applied the shield-vulnerability gate correctly**: fleet on station with the Command Ship online → no completable raid, full stop.
 - **Chose the cheap option** (watch + wait) over a disproportionate fleet war for modest ore.
 - **Re-scouted on fresh signal** before committing, and only then did the **target economics** (armour-piercing vs. Tank armour, reward vs. cost).
 - **Stayed disciplined**: an honest NO-GO is a win, not a failure.

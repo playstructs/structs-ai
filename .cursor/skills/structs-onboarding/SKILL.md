@@ -145,7 +145,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional, structsd v0.18.0+) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.

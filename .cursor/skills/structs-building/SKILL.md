@@ -32,8 +32,8 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 **Always pre-check power.** Before initiating, confirm `availableCapacity ≥ struct.buildDraw + struct.passiveDraw`. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to project headroom-after-activation in one call. If it won't fit, raise capacity first or the struct will materialize but never come online.
 
 **Advanced considerations**:
-- **Defense scaling changed in v0.18.0**: Orbital Shield Generator and Ore Bunker are now **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else stays 1 per player.
-- **What to build to kill what**: the Battleship is now the armour-piercing answer to Tanks and to (newly armoured) power generators; planetary structs are tougher (6/8/10 HP). Match builds to the threat — see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
+- **Defense scaling**: Orbital Shield Generator and Ore Bunker are **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else is 1 per player.
+- **What to build to kill what**: the Battleship is the armour-piercing answer to Tanks and to armoured power generators; planetary structs are tough (6/8/10 HP). Match builds to the threat — see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
 - Decisions live in [`playbooks/phases/early-game`](https://structs.ai/playbooks/phases/early-game) and [`playbooks/meta/economy-of-force`](https://structs.ai/playbooks/meta/economy-of-force).
 
 ## Procedure
@@ -55,7 +55,7 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 
 `struct-build-compute` performs the PoW and auto-submits `struct-build-complete`; you only call `struct-build-complete` directly if you hashed externally.
 
-## v0.18.0 struct catalog (the numbers that drive decisions)
+## Struct catalog (the numbers that drive decisions)
 
 Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types). Key current values:
 

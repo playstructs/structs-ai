@@ -1,6 +1,6 @@
 # Transactions, Gas, and Fees
 
-**Purpose**: Explain how the v0.16.0 ante handler routes Structs gameplay transactions and Cosmos staking transactions through a free-gas path while everything else continues to pay fees in `ualpha`.
+**Purpose**: Explain how the ante handler routes Structs gameplay transactions and Cosmos staking transactions through a free-gas path while everything else continues to pay fees in `ualpha`.
 
 ---
 
@@ -30,7 +30,7 @@ Both `ConditionalMempoolFeeDecorator` and `ConditionalFeeDecorator` short-circui
 
 ## Free Structs gameplay messages
 
-Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for the free-gas path, except `MsgUpdateParams` (governance). The list covers, as of v0.16.0:
+Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for the free-gas path, except `MsgUpdateParams` (governance). The list covers:
 
 - All `MsgAddress*`, `MsgAgreement*`, `MsgAllocation*`, `MsgPlayer*`, `MsgProvider*`, `MsgReactor*`, `MsgStruct*`, `MsgSubstation*`, `MsgPermission*` messages.
 - `MsgFleetMove`, `MsgPlanetExplore`, `MsgPlanetRaidComplete`, `MsgPlanetUpdateName`.

@@ -15,9 +15,10 @@ include:
   - .cursor
 
 exclude:
-  - structs-mcp
+  - structs-desktop
   - structs-webapp
   - memory
+  - .references
   - scripts
   - node_modules
   - "*.sh"

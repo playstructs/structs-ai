@@ -4,7 +4,7 @@
 // Watches your planet/struct/player subjects and prints a line every time
 // something defense-relevant happens: a raid against you, an attack on your
 // struct, or your Command Ship going offline/destroyed (which drops your
-// shields and makes the planet raidable in v0.18.0).
+// home shields and makes the planet raidable; an away fleet does the same).
 //
 // READ-ONLY: it never signs or submits anything. It only observes and alerts.
 //

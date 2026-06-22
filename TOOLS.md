@@ -31,6 +31,7 @@ The guild signup script reads the mnemonic from its `--mnemonic` argument. Pass 
 
 Structs can run in several configurations:
 
+- **Structs Desktop** — The [`structs-desktop`](https://github.com/playstructs/structs-desktop) app gives a human the game interface and embeds an MCP server their agent connects to (see [MCP Tools](#mcp-tools)). This is the standard setup for a human playing alongside their agent — nothing else to deploy.
 - **Local Docker Compose** — Full stack (chain, DB, webapp) running locally. Default ports below.
 - **Remote Testnet** — Connect to a shared testnet via RPC endpoint.
 - **Hosted** — Managed deployment with provided endpoints.
@@ -139,39 +140,67 @@ To discover available guilds and their configs, see the onboarding skill's guild
 
 ## MCP Tools
 
-47 tools available via the `user-structs` MCP server. Key categories:
+Agents play Structs through the MCP server embedded in **[`structs-desktop`](https://github.com/playstructs/structs-desktop)**. The human runs the desktop app for the game interface, and their agent connects to that same app over MCP — one program gives both the human's screen and the agent's tools, with no separate infrastructure to deploy. This is the standard way for a human and their agent to play together.
 
-- **Query** (17): `structs_query_player`, `structs_query_planet`, `structs_query_struct`, `structs_query_fleet`, `structs_query_guild`, etc.
-- **List** (8): `structs_list_players`, `structs_list_planets`, `structs_list_structs`, etc.
-- **Action** (6): `structs_action_build_struct`, `structs_action_activate_struct`, `structs_action_attack`, `structs_action_move_fleet`, `structs_action_create_player`, `structs_action_submit_transaction`
-- **Calculate** (8): `structs_calculate_power`, `structs_calculate_damage`, `structs_calculate_mining`, `structs_calculate_cost`, etc.
-- **Validate** (5): `structs_validate_gameplay_requirements`, `structs_validate_action`, etc.
-- **Workflow** (3): `structs_workflow_execute`, `structs_workflow_monitor`, `structs_workflow_get_steps`
+### Connecting
 
-### MCP Query Parameters
+The embedded server runs on `http://127.0.0.1:8420/mcp` with bearer-token authentication. The exact URL and token are shown in the app's **Debug menu panel** (and the browser console); the Debug panel can copy a ready-made `.mcp.json` for you:
 
-Query tools use **entity-specific parameter names**, not a generic `id`. The `id` alias is also accepted for compatibility.
+```json
+{
+  "mcpServers": {
+    "structs-game": {
+      "type": "http",
+      "url": "http://127.0.0.1:8420/mcp",
+      "headers": { "Authorization": "Bearer YOUR_TOKEN_HERE" }
+    }
+  }
+}
+```
 
-| Tool | Primary Parameter | Example |
-|------|-------------------|---------|
-| `structs_query_player` | `player_id` | `{ "player_id": "1-11" }` |
-| `structs_query_planet` | `planet_id` | `{ "planet_id": "2-1" }` |
-| `structs_query_guild` | `guild_id` | `{ "guild_id": "0-1" }` |
-| `structs_query_fleet` | `fleet_id` | `{ "fleet_id": "9-1" }` |
-| `structs_query_struct` | `struct_id` | `{ "struct_id": "5-1" }` |
-| `structs_query_reactor` | `reactor_id` | `{ "reactor_id": "3-1" }` |
-| `structs_query_substation` | `substation_id` | `{ "substation_id": "4-1" }` |
-| `structs_query_provider` | `provider_id` | `{ "provider_id": "10-1" }` |
-| `structs_query_agreement` | `agreement_id` | `{ "agreement_id": "11-1" }` |
-| `structs_query_allocation` | `allocation_id` | `{ "allocation_id": "6-1" }` |
+The bearer token is generated on first launch and stored with the app's config. Every request must carry it — requests without the token are rejected (`400 Bad Request`), which keeps other local processes and websites from driving the game. Treat the token like a key.
 
-**Entity ID format**: `{type}-{index}` (e.g., `1-11` = player type 1, index 11). If an ID is missing or invalid, the server returns a clear validation error.
+### Tools (9)
+
+| Tool | Purpose |
+|------|---------|
+| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events |
+| `structs_query` | Query any game entity with enriched output (resolved names, decoded flags, 25-bit permission decode, formatted units) |
+| `structs_hash` | Manage proof-of-work tasks with ETAs (list, start, stop, progress) |
+| `structs_action` | Execute game actions with preflight checks (explore, build, mine, attack, defend, raid, resync, etc.) |
+| `structs_intel` | Strategic intelligence + perception: whoami, scout, valid_targets, battle_log, ruleset, simulate, slot_map, is_active, intents, power forecast, economy, timeline |
+| `structs_policy` | Standing orders (auto_refine, power_alert, agent_ui, combat orders) |
+| `structs_ui` | Drive the human's screen for co-op play (menus, map previews, HUD badges, prompts) — display/elicitation only, never signs |
+| `structs_events` | Long-poll event feed (raids, attacks, fleet moves, completions) so agents react instead of polling |
+| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates (e.g. CMD-ship HP floor) |
+
+### Prompts (6)
+
+| Prompt | Purpose |
+|--------|---------|
+| `structs_first_session` | Orientation for new agents — check dashboard, identify priorities |
+| `structs_game_loop` | One tick: dashboard → assess → plan → execute → verify |
+| `structs_state_assessment` | Deep analysis with risk ratings: power, threats, economy, operations |
+| `structs_combat_planning` | Scout, simulate, recommend attack/wait/abort |
+| `structs_threat_check` | Assess hostile activity using planet history + valid targets |
+| `structs_market_check` | Survey the power-rental market |
+
+### Resources
+
+This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://knowledge/mechanics/combat.md`, `structs://playbooks/phases/early-game.md`, `structs://QUICKSTART.md`).
+
+### Charge-paced queueing and agent-driven UI
+
+Two features make the embedded MCP more than a thin CLI wrapper:
+
+- **Charge-paced action queueing** (`structs_sequence`): queue a chain of actions and the app executes them smoothly as the per-player charge bar refills over time, with abort predicates (for example, stop if the Command Ship's HP drops below a floor). You don't have to hand-time each action to the charge cooldown.
+- **Agent-driven UI** (`structs_ui`): the agent can render on the human's screen — menus, map previews, HUD badges, prompts — for human+agent co-op. These directives are **display/elicitation only and can never sign**; every surface is marked "⚡ Agent", the `agent_ui` policy is a master off-switch, and any action the human selects still flows through the approval-gated transaction bridge.
+
+Transactions submitted via `structs_action`/`structs_sequence` are signed through the app's CosmJS bridge after preflight checks — the engine never auto-signs outside these gated paths.
 
 ### CLI Fallback
 
-If MCP tools are unavailable, fall back to direct CLI commands: `structsd tx structs [command]` and `structsd query structs [command]`.
-
-See `reference/api-quick-reference.md` for endpoint details.
+When the desktop app isn't running, fall back to direct CLI commands: `structsd tx structs [command]` and `structsd query structs [command]`. See `reference/api-quick-reference.md` for endpoint details.
 
 ---
 

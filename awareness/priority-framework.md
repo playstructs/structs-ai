@@ -78,9 +78,9 @@ Don't try to fix everything at once. Pick the highest-priority unmet tier. Do on
 
 ### 3. Use Validation, Not Guessing
 
-- `structs_validate_gameplay_requirements` — Is the action possible?
-- `structs_calculate_damage` — Will the attack work?
-- `structs_calculate_power` — Will I stay online?
+- `structs_action` — Is the action possible?
+- `structs_intel` — Will the attack work?
+- `structs_intel` — Will I stay online?
 
 If validation fails, skip to next option. Don't loop on impossible actions.
 

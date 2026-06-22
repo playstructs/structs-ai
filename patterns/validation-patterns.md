@@ -122,6 +122,57 @@ This document describes validation patterns for AI agents interacting with Struc
 }
 ```
 
+### 4. Attacking an Unbuilt Struct
+
+**Action**: `MsgStructAttack` against a target struct  
+**Symptom**: Transaction broadcasts but no damage is dealt  
+**Cause**: The target struct is not built. Structs still under construction (build slot occupied, not yet completed) cannot be attacked.
+
+**Requirements Check**:
+```json
+{
+  "requirements": {
+    "operatingStructOnline": "Your attacking struct must be online",
+    "ownerOnline": "You (the attacking player) must be online",
+    "targetBuilt": "Target struct must be fully built (not mid-construction)",
+    "ambitMatch": "Counter weapons require the target to share the weapon's operating ambit",
+    "sufficientCharge": "You must have enough charge on your per-player charge bar"
+  }
+}
+```
+
+**Note**: The attacker's Command Ship does not need to be online or on-station to attack. Readiness is evaluated on the operating struct and the owning player only.
+
+### 5. Raid Won't Complete (Shields Not Vulnerable)
+
+**Action**: `MsgPlanetRaidComplete` against a defender's planet  
+**Symptom**: Transaction broadcasts but the planet is not raided and no ore is stolen  
+**Cause**: The defender's command struct (shields) is not vulnerable, so the raid cannot resolve.
+
+**Requirements Check**:
+```json
+{
+  "requirements": {
+    "raiderPlayerOnline": "You (the raiding player) must be online",
+    "raiderFleetAway": "Your fleet must be off-station (moved away) to run the raid",
+    "defenderShieldsVulnerable": "The defender's command struct must be vulnerable: their fleet is off-station, OR their Command Ship is offline/destroyed",
+    "raidClockStarted": "The raid clock must have started and elapsed",
+    "proofOfWork": "Raid completion requires proof-of-work"
+  }
+}
+```
+
+**Verification**:
+```json
+{
+  "verification": {
+    "checkDefenderFleet": "Query the defender's fleet status: onStation means shields are protected",
+    "checkDefenderCommandShip": "An offline or destroyed Command Ship also exposes the shields",
+    "ifProtected": "If the defender's fleet is onStation and the Command Ship is online, the raid will not complete -- wait for them to move the fleet or take the Command Ship offline"
+  }
+}
+```
+
 ## Validation Status Codes
 
 ### Transaction Status Values

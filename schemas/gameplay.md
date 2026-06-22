@@ -67,7 +67,6 @@ Combat action definition.
 | Field | Type | Values | Description |
 |-------|------|--------|-------------|
 | status | string | `victory`, `defeat`, `attackerRetreated` | Combat outcome status |
-| victory | boolean | | Whether attacker won (deprecated: use `status` instead) |
 | alphaMatterGained | number | | Alpha Matter gained by victor |
 | unitsDestroyed | array of string | | Struct IDs destroyed |
 | resourcesLost | object | | Resources lost by defender (e.g., `ore` amount stolen in raids) |

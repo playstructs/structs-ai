@@ -8,7 +8,7 @@
 
 ## Overview
 
-Permissions are 25-bit flags (bits 0-24, PermAll = 33554431). Bit 24 (`PermGuildUGCUpdate` = 16777216) was added in v0.16.0 to gate guild-moderated name/pfp updates on player, planet, and substation objects. Permission checks use **HasAll** semantics — all required bits must be present, not just any one.
+Permissions are 25-bit flags (bits 0-24, PermAll = 33554431). Bit 24 (`PermGuildUGCUpdate` = 16777216) gates guild-moderated name/pfp updates on player, planet, and substation objects. Permission checks use **HasAll** semantics — all required bits must be present, not just any one.
 
 ## Permission Bit Values
 
@@ -92,7 +92,7 @@ Examples:
 | Permission Value | Has All Hash? | Has Hash Mine? | Explanation |
 |-----------------|---------------|----------------|-------------|
 | `33554431` | Yes | Yes | PermAll includes all hash bits |
-| `16777215` | Yes | Yes | Pre-v0.16.0 PermAll (no UGC bit) — still has all hash bits |
+| `16777215` | Yes | Yes | All bits 0-23 (no UGC moderation bit) — still has all hash bits |
 | `15728640` | Yes | Yes | PermHashAll is exactly all hash bits |
 | `2097152` | No | Yes | Only PermHashMine set |
 | `1048575` | No | No | Bits 0-19 only, no hash bits |
@@ -401,7 +401,7 @@ Examples:
 |-------|--------|--------|
 | `33554431` | Yes | PermAll, maximum valid value |
 | `16777216` | Yes | PermGuildUGCUpdate alone (bit 24) |
-| `16777215` | Yes | All bits 0-23 (pre-v0.16.0 PermAll, no UGC bit) |
+| `16777215` | Yes | All bits 0-23 (no UGC moderation bit) |
 | `15728640` | Yes | PermHashAll |
 | `2097152` | Yes | PermHashMine only |
 | `33554432` | No | Exceeds maximum (33554431) |

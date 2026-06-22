@@ -1,13 +1,13 @@
 ---
 name: structs-combat
-description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while the defender's Command Ship is offline/destroyed.
+description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed.
 level: core
 domain: combat
 ---
 
 # Structs Combat
 
-Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while the defender's Command Ship is offline, destroyed, or non-existent.** Keep your Command Ship online and you are effectively unraidable; to raid someone, you must catch theirs down.
+Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while its shields are vulnerable** — the defender's **fleet is off-station**, or their **Command Ship is offline, destroyed, or non-existent**. Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must catch them vulnerable. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid exposes your own planet until it returns.)
 
 Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](https://structs.ai/skills/conventions).
 
@@ -24,7 +24,7 @@ Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-
 
 A raid is only worth launching when **all** of these hold. Use `scripts/scout.sh [planet-id]` to get this as a structured go/no-go, or check manually:
 
-1. **Defender's Command Ship is offline / destroyed / absent.** If it's online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how long you grind. This is the gate.
+1. **Defender's shields are vulnerable** — their fleet is off-station, or their Command Ship is offline / destroyed / absent. If their fleet is on station with the Command Ship online, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how long you grind. This is the gate.
 2. **There is ore to take** — defender's `storedOre > 0` (ideally a lot; a successful raid seizes **all** of it, not a share).
 3. **The shield is low enough** that the raid PoW is feasible in the time you have (shield raises raid difficulty; base 25, +contributions of online defense structs).
 4. **The defender's fleet is away / weak** so your fleet survives the resolution.
@@ -33,7 +33,7 @@ A raid is only worth launching when **all** of these hold. Use `scripts/scout.sh
 
 ### Defense doctrine
 
-- **Keep your Command Ship online — always.** That alone makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you).
+- **Keep your Command Ship online and your fleet on station — always.** That combination makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice" — or "I sent my fleet off to raid and left my own shields down." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you). Treat raiding with your own fleet as a deliberate trade: while it's away, your home is exposed.
 - **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate.
 - **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](https://structs.ai/skills/structs-production/SKILL)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
@@ -42,13 +42,13 @@ Decisions live in [`playbooks/situations/under-attack`](https://structs.ai/playb
 
 ## How a raid resolves
 
-`blockStartRaid` is the **defender's Command-Ship vulnerability clock**, and raid PoW age is measured from it:
+`blockStartRaid` is the **defender's vulnerability clock**, and raid PoW age is measured from it:
 
-- It starts when the defender's Command Ship goes offline (or when you arrive to find it down).
-- It resets to 0 if the defender brings the Command Ship back online — and completion is rejected (`raid_clock_unset` when 0; the raid status flips to `ongoing` with shields restored).
-- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (CMD ship down, clock running, winnable) → `raidSuccessful` / `attackerRetreated`. `attackerDefeated` means your raiding Command Ship was destroyed while away. `demilitarized` means no defenders to resolve against.
+- It starts when the defender's shields become vulnerable — their Command Ship goes offline or their fleet leaves station (or when you arrive to find it already vulnerable).
+- It resets to 0 if the defender restores their shields (Command Ship back online with the fleet on station) — and completion is rejected (`raid_clock_unset` when 0; the raid status flips to `ongoing` with shields restored).
+- Raid statuses you'll see: `initiated` → `shieldsVulnerable` (shields down, clock running, winnable) → `raidSuccessful` / `attackerRetreated`. `attackerDefeated` means your raiding Command Ship was destroyed while away. `demilitarized` means no defenders to resolve against.
 
-So a raid is a race against the defender noticing and restoring their Command Ship. Scout the CMD ship first; don't move your fleet until it's down.
+So a raid is a race against the defender noticing and restoring their shields. Scout the CMD ship and fleet position first; don't move your fleet until they're vulnerable.
 
 **A raid steals ore.** A successful raid seizes **all** of the defender's `storedOre` and nothing more — it does not destroy the player or their structs. Killing the defender's Command Ship opens the `shieldsVulnerable` window so the raid can complete; if the defender restores or rebuilds it before you finish, completion is rejected (`shields_active`) and you get **nothing**. Beware the reverse: `trigger_raid_defeat_by_destruction` is on the Command Ship, so if **your** raiding CMD ship is destroyed while away, your fleet is defeated (`attackerDefeated`) and sent home. Win path for ore: strip same-ambit blockers → destroy the defender's CMD ship → complete the raid before they rebuild it (most reliable vs an offline defender).
 
@@ -56,7 +56,7 @@ So a raid is a race against the defender noticing and restoring their Command Sh
 
 1. **Scout** — `scripts/scout.sh [planet-id]` (or `structsd query structs planet [id]` + struct/player queries). Confirm the four go conditions above, especially the defender's **Command Ship status**.
 2. **Optional stealth** — stealth a unit before approach (`struct-stealth-activate`, 2 charge); attacking later auto-drops it.
-3. **Move fleet to the target** (instant). Your fleet (and your Command Ship) is now `away`; you can't build/mine at home while away.
+3. **Move fleet to the target** (instant). Your fleet (and your Command Ship) is now `away`; you can't build/mine at home while away, **and your own planet's shields are now vulnerable** until the fleet returns — refine your home ore before you leave.
    ```
    structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]
    ```
@@ -72,7 +72,7 @@ If the defender restores their Command Ship mid-raid, the clock resets — withd
 
 ## Procedure — direct attack
 
-Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
+Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The attack needs only the attacking struct and its owner online — your Command Ship does not need to be online to attack, change defenders, or change stealth. The **target must be a built struct**: a struct that is still building cannot be attacked (`unbuilt`), and a destroyed one is rejected (`destroyed`); the target's online status is irrelevant. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
 
 ```
 structsd tx structs struct-attack TX_FLAGS -- [operating-struct-id] [target-id,target-id2,...] [weapon-system]
@@ -160,8 +160,9 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 
 ## Errors
 
-- **"shields_active" / raid rejected** — defender's Command Ship is online. You cannot win until it's down. Stop grinding.
-- **"raid_clock_unset"** — `blockStartRaid` is 0 (CMD ship never went down or came back). Wait for it to drop.
+- **"shields_active" / raid rejected** — the defender's shields are up (fleet on station with the Command Ship online). You cannot win until they're vulnerable again. Stop grinding.
+- **"raid_clock_unset"** — `blockStartRaid` is 0 (the defender is not currently vulnerable). Wait for their CMD ship to drop or their fleet to leave station.
+- **"unbuilt" / "destroyed" (attack)** — the target struct isn't a valid combat target: it's still building or already destroyed. Pick a built target.
 - **"unreachable" / "out_of_range"** — your weapon can't reach that ambit; reposition the Command Ship or use a different struct.
 - **"fleet not away"** — move the fleet to the target first.
 - **"insufficient charge"** — per-player bar too low; wait (see conventions).

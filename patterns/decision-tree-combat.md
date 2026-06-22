@@ -27,12 +27,12 @@ flowchart TD
 ```mermaid
 flowchart TD
     raidStart["Raid"] --> fleetCheck{"Fleet is away?"}
-    fleetCheck -->|Yes| csCheck{"Command Ship online?"}
+    fleetCheck -->|Yes| playerCheck{"Raider player online?"}
     fleetCheck -->|No| errFleet["Error: Fleet must be away\nto raid - move fleet first"]
-    csCheck -->|Yes| playerCheck{"Player online?"}
-    csCheck -->|No| errCS["Error: Command Ship\nmust be online to raid"]
-    playerCheck -->|Yes| executeRaid["Execute raid\n(requires proof-of-work)"]
+    playerCheck -->|Yes| shieldCheck{"Defender shields vulnerable?\n(fleet off-station, or CMD\noffline/destroyed)"}
     playerCheck -->|No| errPlayer["Error: Player must\nbe online to raid"]
+    shieldCheck -->|Yes| executeRaid["Execute raid\n(requires proof-of-work)"]
+    shieldCheck -->|No| errShield["Rejected: shields_active -\nwait for defender vulnerability"]
 ```
 
 ### Defend Flow
@@ -71,9 +71,9 @@ flowchart TD
 |-----------|-----------|------------|-------|
 | combatType == attack | Scout, assess, prepare, execute | Check other combat types | First branch of combat type evaluation |
 | risk <= acceptable | Prepare forces and execute | Abort attack | Assessed after scouting target |
-| fleetAway == true | Check Command Ship status | Error: move fleet first | Required for raid initiation |
-| commandShipOnline == true | Check player status | Error: CS must be online | Required for raid execution |
-| playerOnline == true | Execute raid with PoW | Error: player must be online | Required for raid execution |
+| fleetAway == true | Check raider player status | Error: move fleet first | Required for raid initiation |
+| playerOnline == true | Check defender shields | Error: player must be online | Raider's player must be online |
+| defenderShieldsVulnerable == true | Execute raid with PoW | Rejected: shields_active | Defender's fleet off-station, or CMD offline/destroyed |
 | battleOutcome == victory | Secure position | Rebuild and recover | Evaluated after defense resolution |
 
 ## Attack Workflow
@@ -92,8 +92,8 @@ If risk is deemed too high during assessment, the attack is aborted to preserve 
 Raids have strict prerequisites that must all be satisfied in sequence:
 
 1. **Fleet Away** -- The fleet must have departed its home station before a raid can begin.
-2. **Command Ship Online** -- The Command Ship must be online to coordinate the raid.
-3. **Player Online** -- The player must be online to authorize the raid action.
+2. **Player Online** -- The raider's player must be online to authorize the raid action.
+3. **Defender Shields Vulnerable** -- The target's shields must be vulnerable (defender's fleet off-station, or their Command Ship offline/destroyed/non-existent); otherwise completion is rejected with `shields_active`.
 4. **Proof-of-Work** -- Raid execution requires a proof-of-work submission.
 
 Failure at any step produces a specific error and halts the raid attempt.
@@ -117,8 +117,8 @@ Defense operates differently from offensive actions:
 
 | Combat Type | Requirements |
 |-------------|-------------|
-| Attack | playerOnline, sufficientPower, structsOnline, validTarget |
-| Raid | playerOnline, fleetAway, commandShipOnline, proofOfWork |
+| Attack | structOnline, ownerOnline, sufficientCharge, targetBuilt (validTarget) |
+| Raid | playerOnline, fleetAway, defenderShieldsVulnerable, proofOfWork |
 | Defend | defensiveStructuresActive |
 
 ## Principles
@@ -127,7 +127,8 @@ Defense operates differently from offensive actions:
 - Assess enemy strength and required forces
 - Prepare sufficient power and forces
 - Ensure online status before combat
-- For raids: fleet must be away, Command Ship online, player online, proof-of-work required
+- An attack only requires the attacking struct and its owner online (not the attacker's Command Ship); the target must be a built struct
+- For raids: fleet must be away, raider's player online, defender's shields vulnerable, proof-of-work required
 
 ## Related Documentation
 

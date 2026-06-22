@@ -64,7 +64,7 @@ Example: "Resume Structs session. Read memory/2026-02-22-1430-context-handoff.md
 ## Saving Handoff State
 
 1. Create `memory/` directory if it doesn't exist
-2. Fill template with current state (use `structs_query_player`, `structs_query_planet`, etc.)
+2. Fill template with current state (use `structs_dashboard` for your snapshot, `structs_query` for specific entities, etc.)
 3. **Update `memory/jobs/<job>.json`** for all running PoW jobs (PID, status, expected ready block)
 4. Write clear resume command
 5. Optionally: append to session log in `memory/`

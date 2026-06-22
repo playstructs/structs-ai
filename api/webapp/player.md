@@ -115,7 +115,7 @@ Search player raids.
 
 Username and PFP are chain UGC fields on `structs.player` (`username`, `pfp` columns). They are set at signup via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`, or updated later via `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`. The webapp queues these through `queueMsgPlayerUpdateName(playerId, name)` and `queueMsgPlayerUpdatePfp(playerId, pfp)`.
 
-The HTTP `PUT /api/player/username` endpoint no longer exists — all identity updates go through chain transactions.
+All identity updates go through chain transactions; there is no HTTP endpoint for username updates.
 
 See `knowledge/mechanics/ugc-moderation.md` for the full UGC update flow and validation rules.
 

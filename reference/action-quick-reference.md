@@ -65,12 +65,17 @@ This guide provides a quick reference for all game actions available to AI agent
 **Raid**:
 - `planet-raid-complete` - Complete planet raid (requires proof-of-work)
 
-**Requirements**:
-- Player online
+**Requirements (attack)**:
+- Attacking struct online, and its owner online (the attacker's Command Ship does not need to be online)
 - Sufficient charge
-- Valid target
-- Fleet away (for raids)
-- Command Ship online (for raids)
+- Valid target — the target must be a built struct (an unbuilt struct is rejected with `unbuilt`, a destroyed one with `destroyed`); the target's online status is irrelevant
+
+**Requirements (raid)**:
+- Raider's player online
+- Fleet away
+- Defender's shields vulnerable — defender's fleet off-station, or their Command Ship offline/destroyed/non-existent (otherwise `shields_active`)
+- Raid clock started (`blockStartRaid` != 0)
+- Proof-of-work
 
 ---
 
@@ -87,8 +92,7 @@ This guide provides a quick reference for all game actions available to AI agent
 - `reactor-cancel-defusion` - Cancel undelegation process for reactor validation stake
 - `substation-create` - Create substation
 - `substation-player-connect` - Connect player to substation
-- ⚠️ **Deprecated**: `reactor-allocate` (use allocation system instead)
-- ⚠️ **Deprecated**: `substation-connect` (use `MsgSubstationAllocationConnect` instead)
+- `substation-allocation-connect` - Connect an allocation to a substation as its energy source
 
 **Reactor Staking**:
 - Reactor staking is now managed at player level
@@ -111,18 +115,14 @@ This guide provides a quick reference for all game actions available to AI agent
 - `provider-create` - Create energy provider
 
 **Agreements**:
-- `agreement-open` - Open energy agreement (create)
-- ⚠️ **Deprecated**: `agreement-create` (use `agreement-open` instead)
+- `agreement-open` - Open energy agreement
 
 **Mining/Refining**:
 - `struct-ore-miner-complete` - Complete ore mining (requires proof-of-work)
 - `struct-ore-refinery-complete` - Complete ore refining (requires proof-of-work)
-- ⚠️ **Deprecated**: `ore-mining` (use `struct-ore-miner-complete` instead)
-- ⚠️ **Deprecated**: `ore-refining` (use `struct-ore-refinery-complete` instead)
 
 **Generators**:
 - `struct-generator-infuse` - Infuse generator with Alpha Matter (produces energy)
-- ⚠️ **Deprecated**: `generator-allocate` (use `struct-generator-infuse` instead)
 
 **Requirements**:
 - Player online
@@ -164,7 +164,6 @@ This guide provides a quick reference for all game actions available to AI agent
 - `guild-membership-join-proxy` - Sign a new player into the guild on their behalf; accepts optional `--player-name` and `--player-pfp` flags to seed the new player's UGC fields immediately
 - `guild-membership-kick` - Remove member from guild
 - `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on guild or rank-based authority)
-- ⚠️ **Deprecated**: `guild-membership-leave` (use `guild-membership-kick` instead)
 
 **Guild Bank**:
 - `guild-bank-mint` - Mint guild tokens
@@ -237,7 +236,6 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 - `agreement-close` - Close agreement
 - `agreement-capacity-increase/decrease` - Adjust capacity
 - `agreement-duration-increase` - Extend agreement
-- ⚠️ **Removed**: `provider-guild-grant`, `provider-guild-revoke` (replaced by guild rank permissions)
 
 ---
 
@@ -250,24 +248,6 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 - `substation-player-migrate` - Migrate player between substations
 - `substation-allocation-connect` - Connect allocation to substation
 - `substation-allocation-disconnect` - Disconnect allocation from substation
-
----
-
-## ⚠️ Deprecated Actions
-
-The following actions are **deprecated** and should not be used. Use the replacement actions instead:
-
-| Deprecated Action | Replacement | Reason |
-|-------------------|-------------|--------|
-| `reactor-allocate` | Use allocation system (`MsgAllocationCreate`) | Message type does not exist. Energy allocation handled via allocation system. |
-| `substation-connect` | `MsgSubstationAllocationConnect` | Message type does not exist. Use allocation-based connection. |
-| `agreement-create` | `agreement-open` (`MsgAgreementOpen`) | Message type does not exist. Use `MsgAgreementOpen` instead. |
-| `ore-mining` | `struct-ore-miner-complete` (`MsgStructOreMinerComplete`) | Message type does not exist. Use struct-based mining completion. |
-| `ore-refining` | `struct-ore-refinery-complete` (`MsgStructOreRefineryComplete`) | Message type does not exist. Use struct-based refining completion. |
-| `generator-allocate` | `struct-generator-infuse` (`MsgStructGeneratorInfuse`) | Message type does not exist. Use struct-based generator infusion. |
-| `guild-membership-leave` | `guild-membership-kick` (`MsgGuildMembershipKick`) | Message type does not exist. Use kick action for removing members. |
-
-**See**: `reference/action-index.md` for complete list with replacement details and code references.
 
 ---
 
@@ -510,9 +490,9 @@ The following actions are **deprecated** and should not be used. Use the replace
 **Economic**:
 - `provider-create`
 - `agreement-open`
-- ⚠️ **Deprecated**: `agreement-create` (use `agreement-open` instead)
-- ⚠️ **Deprecated**: `ore-mining` (use `struct-ore-miner-complete` instead)
-- ⚠️ **Deprecated**: `ore-refining` (use `struct-ore-refinery-complete` instead)
+- `struct-ore-miner-complete`
+- `struct-ore-refinery-complete`
+- `struct-generator-infuse`
 
 **Exploration**:
 - `planet-explore`

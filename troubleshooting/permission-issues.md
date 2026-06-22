@@ -9,13 +9,13 @@
 
 This guide helps troubleshoot issues with permissions and permission bit manipulation. Permission values are 25-bit flags (bits 0-24) combined using bitwise OR. The maximum value (PermAll) is `33554431`.
 
-Bit 24 (`PermGuildUGCUpdate`, value `16777216`) was added in v0.16.0 for guild-moderated UGC (name/pfp) updates on player, planet, and substation objects. See `knowledge/mechanics/ugc-moderation.md`.
+Bit 24 (`PermGuildUGCUpdate`, value `16777216`) gates guild-moderated UGC (name/pfp) updates on player, planet, and substation objects. See `knowledge/mechanics/ugc-moderation.md`.
 
 The permission system uses **HasAll** semantics: all required bits must be present in the permission value. A check like `(value & required) == required` must match every bit — a single matching bit is not sufficient.
 
 ### Hash Permission Split
 
-The old single Hash permission has been replaced by four granular hash permissions:
+Hash authority is split across four granular hash permissions:
 
 | Permission | Bit | Value | Description |
 |------------|-----|-------|-------------|
@@ -79,7 +79,7 @@ To grant `PermAll` (every bit including the new `PermGuildUGCUpdate` bit 24), us
 4. Common values:
    - `33554431` — PermAll (all 25-bit permissions)
    - `16777216` — PermGuildUGCUpdate only (guild moderation flag, bit 24)
-   - `16777215` — Pre-v0.16.0 PermAll (all 24 lower bits without `PermGuildUGCUpdate`)
+   - `16777215` — All 24 lower bits without `PermGuildUGCUpdate`
    - `15728640` — PermHashAll only (all four hash bits)
    - `1048576` — PermHashBuild only
    - `2097152` — PermHashMine only
@@ -121,12 +121,12 @@ To grant `PermAll` (every bit including the new `PermGuildUGCUpdate` bit 24), us
 
 **Symptom**: Permission check passes when it should fail, or fails when it should pass
 
-**Cause**: Using old HasOneOf check (`(value & required) != 0`) instead of new HasAll check (`(value & required) == required`)
+**Cause**: Using a HasOneOf check (`(value & required) != 0`) where the HasAll check (`(value & required) == required`) is required
 
 **Diagnosis**:
 1. Identify the check pattern in your code
-2. Old pattern (wrong): `(value & required) != 0` — passes if *any* required bit is set
-3. New pattern (correct): `(value & required) == required` — passes only if *all* required bits are set
+2. Wrong pattern: `(value & required) != 0` — passes if *any* required bit is set
+3. Correct pattern: `(value & required) == required` — passes only if *all* required bits are set
 
 **Example**:
 ```json
@@ -282,7 +282,7 @@ structsd tx structs permission-guild-rank-revoke \
 - **4194304**: PermHashRefine only
 - **8388608**: PermHashRaid only
 - **15728640**: PermHashAll (all four hash bits, bits 20-23)
-- **16777215**: Pre-v0.16.0 PermAll (bits 0-23, no UGC moderation)
+- **16777215**: Bits 0-23 (no UGC moderation bit)
 - **16777216**: PermGuildUGCUpdate only (bit 24)
 - **33554431**: PermAll (all permissions, bits 0-24)
 

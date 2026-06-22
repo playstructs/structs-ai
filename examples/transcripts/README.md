@@ -11,6 +11,6 @@ These are teaching aids, not scripts to replay blindly. IDs, balances, and block
 | Transcript | Demonstrates |
 |------------|--------------|
 | [01 — Zero to mining](01-zero-to-mining.md) | Onboarding, async build pipeline, refine-on-complete, memory hygiene |
-| [02 — Raid go/no-go](02-raid-go-no-go.md) | Scouting, the v0.18.0 shield-vulnerability gate, target economics, disciplined no-go |
+| [02 — Raid go/no-go](02-raid-go-no-go.md) | Scouting, the shield-vulnerability gate, target economics, disciplined no-go |
 
 Each transcript is graded against the [agent scorecard](../../awareness/scorecard.md).

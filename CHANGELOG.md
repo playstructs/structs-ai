@@ -5,6 +5,26 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-06-22
+
+Documentation rolled forward to **structsd v0.19.1** (tag `v0.19.1`), with the toolchain refocused on [`structs-desktop`](https://github.com/playstructs/structs-desktop) and its embedded MCP server.
+
+### Changed (structsd v0.19.1 gameplay, verified against source)
+
+- **Battle actions no longer require the Command Ship** — `struct-attack`, `struct-defense-set`, and stealth changes evaluate readiness on the operating struct and its owner only (`msg_server_struct_attack.go`, `struct_cache.go` `ReadinessCheck`). The attacker's Command Ship need not be online or on-station. Updated [`combat.md`](knowledge/mechanics/combat.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md), [`fleet.md`](knowledge/mechanics/fleet.md), [`schemas/actions.md`](schemas/actions.md), [`reference/action-quick-reference.md`](reference/action-quick-reference.md), [`patterns/validation-patterns.md`](patterns/validation-patterns.md).
+- **Unbuilt structs cannot be attacked** — `CanAttack` rejects a target that is not yet built (`struct_cache.go`, error `unbuilt`); a destroyed target is rejected (`destroyed`). Documented across combat docs and the validation patterns.
+- **Fleet-away exposes home shields** — a defender's command struct is vulnerable whenever their fleet is off-station **or** their Command Ship is offline/destroyed (`planet_cache.go` `IsDefenderCommandStructVulnerable`). Sending your fleet away to raid leaves your own planet raidable until it returns. Updated [`combat.md`](knowledge/mechanics/combat.md), [`planet.md`](knowledge/mechanics/planet.md), [`fleet.md`](knowledge/mechanics/fleet.md), [`patterns/decision-tree-combat.md`](patterns/decision-tree-combat.md), [`structs-combat`](.cursor/skills/structs-combat/SKILL.md), [`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL.md), [`scripts/scout.sh`](scripts/scout.sh).
+- **Battleship secondary damage 1 → 2** — the Battleship's guided space secondary now deals 2 damage per shot (`genesis_struct_type.go`). Updated [`struct-types.md`](knowledge/entities/struct-types.md).
+
+### Changed (toolchain)
+
+- **MCP via `structs-desktop`** — all MCP guidance now points to the MCP server embedded in the `structs-desktop` app: a 9-tool catalog (`structs_dashboard`, `structs_query`, `structs_hash`, `structs_action`, `structs_intel`, `structs_policy`, `structs_ui`, `structs_events`, `structs_sequence`) and 6 guided prompts, with charge-paced action queueing and agent-driven UI for human+agent co-op. Connection details live in the app's Debug menu. Rewrote the MCP section of [`TOOLS.md`](TOOLS.md); updated [`AGENTS.md`](AGENTS.md), [`SITEMAP.md`](SITEMAP.md), and the awareness docs.
+- **TypeScript bindings** — generated from `structsd`'s make system (`make proto-gen-ts`) and used directly with CosmJS; no separate client package.
+
+### Removed
+
+- References to `structs-client-ts`, `structs-compendium`, and `structs-mcp` — these are no longer part of the toolchain. Build TypeScript bindings via `structsd`; connect agents through the `structs-desktop` MCP server.
+
 ## [1.14.0] - 2026-06-17
 
 Combat-and-raid documentation hardening from live-play findings, **verified against the structsd v0.18.0 source** (tag `v0.18.0`, commit `173e7a2`). An initial pass documented several player-reported mechanics that source verification then corrected — the net result below is what the code actually does, with file:line citations.

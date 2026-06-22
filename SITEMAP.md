@@ -423,7 +423,7 @@ Diagrams, graphs, and spatial references.
 
 | Directory | Purpose |
 |-----------|---------|
-| `structs-mcp/` | Structs MCP server (Model Context Protocol tools) |
+| `structs-desktop/` | Structs desktop app for human players — wraps the web client and embeds an MCP server agents connect to (see [`TOOLS.md`](TOOLS.md)) |
 | `structs-webapp/` | Structs web application (PHP/Symfony) |
 
-These are separate codebases included as submodules/subtrees. See their own READMEs for details.
+These are separate codebases. See their own READMEs for details.

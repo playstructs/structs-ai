@@ -75,7 +75,6 @@ Activity category enum on `structs.planet_activity.category`.
 | `struct_block_ore_refine_start` | Refining PoW started |
 | `struct_health` | Struct health changed |
 | `player_consensus` | Player state changes (**including UGC `username` / `pfp` updates**) |
-| `player_meta` | **Legacy enum value** — retained in the type; GRASS now emits `player_consensus` for player UGC |
 
 ### Other notable enums
 
@@ -343,7 +342,7 @@ FROM sync_state.sync_cursor;
 
 ## `cache` Schema
 
-Read-only compatibility layer over `sync_state.raw_*`. The legacy event-sink schema was retired (2026-05-22); `cache` is now four views only.
+Read-only compatibility layer over `sync_state.raw_*`. `cache` consists of four views.
 
 | View | Source | Notes |
 |------|--------|-------|

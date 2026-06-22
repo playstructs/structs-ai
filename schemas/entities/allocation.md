@@ -57,4 +57,4 @@ Allocations link a source entity to a destination entity. Both source and destin
 
 **Database Reference**: `structs.allocation` table (columns: `id`, `allocation_type`, `source_id`, `destination_id`, `controller`)
 
-**Note**: `controller` is a PlayerId (e.g., `1-42`), not an address. The `locked` column has been removed.
+**Note**: `controller` is a PlayerId (e.g., `1-42`), not an address.
