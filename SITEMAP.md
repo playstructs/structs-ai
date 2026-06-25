@@ -158,6 +158,7 @@ How to read the board and maintain continuity.
 | [async-operations.md](awareness/async-operations.md) | Background PoW, pipeline pattern, job tracking |
 | [context-handoff.md](awareness/context-handoff.md) | Save state when context runs low |
 | [continuity.md](awareness/continuity.md) | Persist across sessions |
+| [scorecard.md](awareness/scorecard.md) | Self-evaluation rubric: grade judgment and process before/after a session |
 
 ---
 

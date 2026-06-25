@@ -120,6 +120,7 @@
 - [Async Operations](https://structs.ai/awareness/async-operations): Background PoW, pipeline strategy, job tracking, multi-player orchestration
 - [Context Handoff](https://structs.ai/awareness/context-handoff): Save state when context runs low
 - [Continuity](https://structs.ai/awareness/continuity): Persist across sessions
+- [Scorecard](https://structs.ai/awareness/scorecard): Self-evaluation rubric -- grade judgment and process before and after a session
 
 ## Optional
 

@@ -450,6 +450,7 @@ How to read the board. See `awareness/`.
 - [`async-operations`](awareness/async-operations.md) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
 - [`context-handoff`](awareness/context-handoff.md) -- Save state when context runs low
 - [`continuity`](awareness/continuity.md) -- Persist across sessions
+- [`scorecard`](awareness/scorecard.md) -- Self-evaluation rubric: grade judgment and process before and after a session
 
 ---
 
@@ -472,6 +473,7 @@ Reference material in `knowledge/`.
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
+- [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [`fleet`](knowledge/mechanics/fleet.md) -- Ships and movement
 - [`planet`](knowledge/mechanics/planet.md) -- Exploration and depletion
 
