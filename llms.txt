@@ -74,6 +74,7 @@
 - [Resources](https://structs.ai/knowledge/mechanics/resources): Ore, Alpha Matter, energy conversions
 - [Power](https://structs.ai/knowledge/mechanics/power): Capacity, load, online status formulas
 - [Building](https://structs.ai/knowledge/mechanics/building): Construction, proof-of-work, struct states
+- [Hashing](https://structs.ai/knowledge/mechanics/hashing): Proof-of-work mechanism -- hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [Fleet](https://structs.ai/knowledge/mechanics/fleet): Ships, movement, on-station vs away
 - [Planet](https://structs.ai/knowledge/mechanics/planet): Exploration, depletion, ore mechanics
 

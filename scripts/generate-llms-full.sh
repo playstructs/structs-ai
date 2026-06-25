@@ -25,6 +25,7 @@ CORE_FILES=(
   .cursor/skills/structs-combat/SKILL.md
 
   knowledge/mechanics/building.md
+  knowledge/mechanics/hashing.md
   knowledge/mechanics/combat.md
   knowledge/mechanics/resources.md
   knowledge/mechanics/power.md
@@ -91,6 +92,7 @@ FULL_FILES=(
   knowledge/mechanics/resources.md
   knowledge/mechanics/power.md
   knowledge/mechanics/building.md
+  knowledge/mechanics/hashing.md
   knowledge/mechanics/fleet.md
   knowledge/mechanics/planet.md
 

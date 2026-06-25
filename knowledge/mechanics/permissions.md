@@ -620,7 +620,7 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 |---------|---------------|-------------------|-------|
 | `StructBuildInitiate` | Owner (player) | `PermPlay` (1) | |
 | `StructBuildCancel` | Owner (player) | `PermPlay` (1) | |
-| `StructBuildComplete` | Struct | `PermHashAll` (15728640) | All 4 hash bits required |
+| `StructBuildComplete` | Owner (player) | `PermHashBuild` (1048576) | Only this single bit; ante also checks `PermHashBuild` on the signing address |
 | `StructActivate` | Owner (player) | `PermPlay` (1) | |
 | `StructDeactivate` | Owner (player) | `PermPlay` (1) | |
 | `StructStealthActivate` | Owner (player) | `PermPlay` (1) | |
@@ -629,11 +629,11 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `StructAttack` | Owner (player) | `PermPlay` (1) | |
 | `StructDefenseSet` | Owner (player) | `PermPlay` (1) | |
 | `StructDefenseClear` | Owner (player) | `PermPlay` (1) | |
-| `StructOreMinerComplete` | Struct | `PermHashAll` (15728640) | |
-| `StructOreRefineryComplete` | Struct | `PermHashAll` (15728640) | |
+| `StructOreMinerComplete` | Owner (player) | `PermHashMine` (2097152) | Only this single bit |
+| `StructOreRefineryComplete` | Owner (player) | `PermHashRefine` (4194304) | Only this single bit |
 | `StructGeneratorInfuse` | Calling player | `PermTokenInfuse` (32) | Self-check |
 
-`CanBePlayedBy` checks `PermPlay` on the **struct's owner** (player object), not the struct itself. `CanBeHashedBy` checks `PermHashAll` on the **struct** (struct object).
+`CanBePlayedBy` checks `PermPlay` on the **struct's owner** (player object), not the struct itself. Each proof-of-work completion checks its own single hash bit on the **owner** (player): `CanBuildHashedBy` → `PermHashBuild`, `CanMineHashedBy` → `PermHashMine`, `CanRefineHashedBy` → `PermHashRefine`, `CanRaidHashedBy` → `PermHashRaid`. None of them requires all four bits. The ante handler independently requires the same single bit on the signing address. See [hashing.md](hashing.md) for the full proof-of-work mechanism.
 
 ### Fleet / Planet Transactions
 
@@ -726,11 +726,11 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `PermProviderWithdraw` | 131072 | ProviderWithdrawBalance |
 | `PermProviderOpen` | 262144 | AgreementOpen (guildMarket only) |
 | `PermReactorGuildCreate` | 524288 | GuildCreate |
-| `PermHashBuild` | 1048576 | Part of PermHashAll |
-| `PermHashMine` | 2097152 | Part of PermHashAll |
-| `PermHashRefine` | 4194304 | Part of PermHashAll |
-| `PermHashRaid` | 8388608 | PlanetRaidComplete, part of PermHashAll |
-| `PermHashAll` (composite) | 15728640 | StructBuildComplete, StructOreMinerComplete, StructOreRefineryComplete |
+| `PermHashBuild` | 1048576 | StructBuildComplete; part of PermHashAll |
+| `PermHashMine` | 2097152 | StructOreMinerComplete; part of PermHashAll |
+| `PermHashRefine` | 4194304 | StructOreRefineryComplete; part of PermHashAll |
+| `PermHashRaid` | 8388608 | PlanetRaidComplete; part of PermHashAll |
+| `PermHashAll` (composite) | 15728640 | Composite convenience flag granting all four hash bits; no single message requires all four |
 | `PermGuildUGCUpdate` | 16777216 | Guild moderation path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp (checked on the target object owner's guild) |
 
 ---

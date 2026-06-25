@@ -82,6 +82,7 @@ Reference material about the game world.
 | [resources.md](knowledge/mechanics/resources.md) | Ore, Alpha Matter, energy, vulnerability windows |
 | [power.md](knowledge/mechanics/power.md) | Capacity, load, online status, power budget |
 | [building.md](knowledge/mechanics/building.md) | Construction, proof-of-work, difficulty decay |
+| [hashing.md](knowledge/mechanics/hashing.md) | Proof-of-work mechanism: hash types, universal input format, algorithm, difficulty decay, hash permissions |
 | [fleet.md](knowledge/mechanics/fleet.md) | Ships, movement, fleet states |
 | [planet.md](knowledge/mechanics/planet.md) | Exploration, depletion, shields |
 

@@ -41,7 +41,7 @@ isValid = HashBuildAndCheckDifficulty(hashInput, proof, age, BuildDifficulty)
 
 Difficulty is age-based: older builds require less work.
 
-**Open hashing**: Hashing is open by default for all proof-of-work operations (build, mine, refine, raid). Any valid proof is accepted regardless of submitter.
+**Permission-gated hashing**: Completing a proof is *not* permissionless. Each proof-of-work operation (build, mine, refine, raid) requires its matching `hash_*` permission bit, checked both at the ante layer (on the signing address) and at the handler layer (on the object's owner). Owners always qualify because their primary address holds `PermAll`; a delegate must be granted the relevant `hash_*` bit to submit proofs on your behalf. For the full mechanism — all four hash types, the universal input format, the algorithm, difficulty decay, and the permission model — see [hashing.md](hashing.md).
 
 ### The -D Flag
 
@@ -224,6 +224,7 @@ See [struct-types.md](../entities/struct-types.md) for the full table with `poss
 
 ## See Also
 
+- [hashing.md](hashing.md) — Canonical proof-of-work reference: all four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon

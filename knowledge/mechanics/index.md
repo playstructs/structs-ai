@@ -11,5 +11,6 @@ title: Mechanics
 - [Resources](resources) -- Ore, Alpha Matter, energy conversions
 - [Power](power) -- Capacity, load, online status formulas
 - [Building](building) -- Construction, proof-of-work, struct states
+- [Hashing](hashing) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [Fleet](fleet) -- Ships, movement, on-station vs away
 - [Planet](planet) -- Exploration, depletion, ore mechanics

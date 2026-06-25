@@ -300,6 +300,8 @@ allocatableCapacity = Capacity - Load
 
 Age-based proof-of-work difficulty for struct building using dynamic difficulty.
 
+> The difficulty formula below is shared by all four proof-of-work types (build, mine, refine, raid). For the full mechanism — the universal input format, the SHA-256 / leading-hex-zero algorithm, raid hashing, and the hash permission model — see [knowledge/mechanics/hashing.md](../knowledge/mechanics/hashing.md).
+
 ```
 age = currentBlockHeight - blockStart
 if age <= 1 then

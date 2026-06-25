@@ -349,6 +349,7 @@ See [resources.md](../knowledge/mechanics/resources.md) for the full ore vulnera
 - [Game Loop](game-loop.md) — The standard loop this extends
 - [Context Handoff](context-handoff.md) — Persisting job state across sessions
 - [Continuity](continuity.md) — Memory file management
+- [Hashing](../knowledge/mechanics/hashing.md) — Canonical proof-of-work reference: hash types, input format, algorithm, difficulty decay, hash permissions
 - [Building Mechanics](../knowledge/mechanics/building.md) — PoW formula, difficulty table
 - [Resources](../knowledge/mechanics/resources.md) — Ore vulnerability window
 - [Tempo](../playbooks/meta/tempo.md) — Strategic timing
