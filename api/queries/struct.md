@@ -3,7 +3,7 @@
 **Version**: 1.0.0
 **Category**: Query
 **Entity**: Struct
-**Base URL**: `http://localhost:1317`
+**Base URL**: local devnet `http://localhost:1317`; public testnet `https://public.testnet.structs.network` (HTTPS, no port — there is no `:1317` on the public host)
 **Base Path**: `/structs`
 
 ---

@@ -9,7 +9,7 @@
 
 ### Consensus Network API
 - **Local**: `http://localhost:1317`
-- **Public testnet (SSL)**: `https://public.testnet.structs.network`
+- **Public testnet (SSL)**: `https://public.testnet.structs.network` (standard HTTPS, **no port** — `http://...:1317` is local-devnet only and is dead on the public host)
 - **Base Path**: `/structs`
 - **Local Tendermint RPC**: `http://localhost:26657`
 - **Public Tendermint RPC (SSL)**: `https://public.testnet.structs.network:26657`
@@ -106,6 +106,7 @@ GET /api/struct/{struct_id}
 ```
 GET /structs/struct_type/{id}
 ```
+> Note: the `struct_type` LCD query can return gRPC `code 12` ("Not Implemented") on the deployed testnet build. Fall back to the CLI (`structsd query structs struct-type-all`) or the Guild Stack PostgreSQL mirror.
 
 **Get Struct Type with Cosmetics (Webapp)**:
 ```

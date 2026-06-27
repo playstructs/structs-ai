@@ -305,6 +305,20 @@
 - **Endpoint**: `/structs/address/{address}`
 - **List Endpoint**: `/structs/address`
 
+**Fields** (flat response — `playerId` is top-level camelCase, not nested under an `Address` wrapper):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| address | string | The blockchain address |
+| playerId | string | Owning player entity ID (e.g. `1-11`) |
+| permissions | string | `uint64` permission bitmask, serialized as a string |
+
+```json
+{ "address": "structs1...", "playerId": "1-11", "permissions": "1" }
+```
+
+(Verified in `proto/structs/structs/query.proto` `QueryAddressResponse`.)
+
 **Relationships**:
 
 | Relationship | Target Entities |

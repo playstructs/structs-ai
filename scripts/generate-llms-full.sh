@@ -140,6 +140,9 @@ FULL_FILES=(
   examples/transcripts/01-zero-to-mining.md
   examples/transcripts/02-raid-go-no-go.md
 
+  # API
+  api/integration-notes.md
+
   # Reference
   reference/local-devnet.md
 )

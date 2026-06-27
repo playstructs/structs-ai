@@ -347,6 +347,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - **create-player.mjs fails** — Check that `--guild-api` and `--reactor-api` URLs are correct and reachable. Verify the guild supports programmatic signup (`services.guild_api` exists). If providing a `--mnemonic`, verify it is a valid 24-word BIP39 mnemonic.
 - **Guild API returns HTML or 404** — The URL is wrong or you are not using the script. The signup endpoint (`/auth/signup`) is **POST only**. Always use `create-player.mjs` which handles the POST, signing, and polling automatically.
 - **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.
+- **Signup returns `resource_already_exists`** — This is **idempotent success, not an error**. The address has already joined the guild. `create-player.mjs` detects this and falls through to polling for the existing player; if you call the signup endpoint directly, treat `{resource_already_exists}` the same way (adopt the existing player via `structsd query structs address [your-address]`).
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.

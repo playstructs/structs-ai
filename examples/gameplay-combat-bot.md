@@ -127,31 +127,39 @@ Expected response (victory):
     "counterAttack": {
       "note": "One counter-attack per struct-attack invocation (not per shot). Counter fires before block resolution. Counter fires even on evaded shots."
     },
-    "shotDetails": [
+    "eventAttackShotDetail": [
       {
-        "event": "EventAttackShotDetail",
-        "projectileIndex": 0,
         "targetStructId": "5-3",
+        "targetStructType": 3,
         "targetPlayerId": "1-22",
         "evaded": false,
         "blocked": false,
-        "damageDealt": 50
+        "blockedByStructId": "",
+        "damageDealt": 2,
+        "damage": 2,
+        "targetDestroyed": false,
+        "targetCountered": false,
+        "targetCounteredDamage": 0
       },
       {
-        "event": "EventAttackShotDetail",
-        "projectileIndex": 1,
         "targetStructId": "5-3",
+        "targetStructType": 3,
         "targetPlayerId": "1-22",
         "evaded": true,
         "blocked": false,
-        "damageDealt": 0
+        "blockedByStructId": "",
+        "damageDealt": 0,
+        "damage": 0,
+        "targetDestroyed": false,
+        "targetCountered": false,
+        "targetCounteredDamage": 0
       }
     ]
   }
 }
 ```
 
-Combat resolution order: counter-attack → evasion check → block check → damage. Each projectile produces its own `EventAttackShotDetail` row with `targetPlayerId` at the shot level.
+Combat resolution order: counter-attack → evasion check → block check → damage. The live `struct_attack` event nests per-projectile rows under `eventAttackShotDetail[]` (this is the actual field name — not `shotDetails`), with the attacker context flat at the top of `detail`. `targetPlayerId` is at the shot level. See [api/integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema) for the full field list.
 
 ### Step 5: Secure Captured Planet
 

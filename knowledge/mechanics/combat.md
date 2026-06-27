@@ -18,12 +18,14 @@
 
 Combat in Structs revolves around four ambits. Each struct operates in one ambit, and each weapon can only target specific ambits. This creates a strategic mesh where fleet composition and positioning determine what you can hit and what can hit you.
 
-| Ambit | Bit Value |
-|-------|-----------|
+| Ambit | Reach Bit Value |
+|-------|-----------------|
 | Water | 2 |
 | Land | 4 |
 | Air | 8 |
 | Space | 16 |
+
+**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ### Weapon Target Matrix
 
@@ -121,6 +123,8 @@ else health = health - damage
 **Armour-piercing**: A weapon flagged armour-piercing negates the target's damage reduction during volley resolution. The Battleship's primary is armour-piercing — it deals full damage to Tanks and to power generators (which otherwise reduce incoming damage by 1). Each shot's piercing is reported on `EventAttackShotDetail.armourPiercing`.
 
 **Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. Guaranteed shots apply only to the Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
+
+> **Querying note**: `primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots` are `omitempty` in the chain's JSON output. Because the value is 0 for every struct type except the Starfighter secondary, the field is **omitted entirely** from most `struct_type` query responses. A payload with no guaranteed-shots key means the value is 0, not that the field was removed from the chain. (Verified present in current `structsd` source.)
 
 **Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
 
@@ -249,6 +253,8 @@ After **all targets** are resolved:
 ### Per-Projectile Events
 
 Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Run, the attack event contains 3 separate shot detail entries with per-projectile hit/miss breakdowns. `targetPlayerId` is on `EventAttackShotDetail` (not `EventAttackDetail`).
+
+In the live `struct_attack` event `detail`, the attacker context is **flat** at the top and the per-shot rows are a **nested array** `eventAttackShotDetail[]`. See [api/integration-notes.md — struct_attack event detail schema](../../api/integration-notes.md#struct_attack-event-detail-schema) for the exact field layout integrators receive.
 
 **Key implications**:
 - Evasion is per-target (entire volley evaded), while shot accuracy is per-projectile

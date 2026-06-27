@@ -161,7 +161,7 @@ The age that drives difficulty is measured from a clock specific to each operati
 
 | Type | Clock field | Starts / resets when |
 |------|-------------|----------------------|
-| Build | `blockStartBuild` | Set when the struct is created (build initiated). One-shot per struct. |
+| Build | `blockStartBuild` | Set when the struct is created (build initiated). One-shot per struct. **The hash input uses `blockStartBuild`, NOT the current block height** — anchoring on the current block produces an invalid proof. |
 | Mine | `blockStartOreMine` | Set when the miner goes online; cleared when offline; **reset after each successful mine** so the next cycle starts fresh. |
 | Refine | `blockStartOreRefine` | Same pattern as mining: set on online, cleared offline, reset after each successful refine. |
 | Raid | `blockStartRaid` | Set when the defending Command Ship becomes raid-vulnerable. **`0` means the planet is not raidable** — a raid proof is rejected outright until the clock is armed (this prevents a trivial difficulty collapse). |
@@ -305,4 +305,5 @@ For verification against the chain and client implementations.
 - [resources.md](resources.md) — Ore vulnerability window driven by the refine clock
 - [permissions.md](permissions.md) — Full 25-bit permission model and handler reference
 - [schemas/formulas.md](../../schemas/formulas.md) — Difficulty formulas alongside other game math
+- [api/integration-notes.md](../../api/integration-notes.md) — Live data-shape gotchas for integrators (endpoints, event detail, field-name traps)
 - [conventions](../../.cursor/skills/conventions.md) — Proof-of-work policy and the `-D 3` default

@@ -391,7 +391,15 @@ async function main() {
     signupBody = await signupResponse.text();
   }
 
-  if (!signupResponse.ok) {
+  // Signup is idempotent: re-running for an address that already joined returns
+  // `resource_already_exists`. Treat that as success and fall through to polling
+  // so we adopt the existing player rather than failing.
+  const signupBodyText = typeof signupBody === "string"
+    ? signupBody
+    : JSON.stringify(signupBody);
+  const alreadyExists = /resource_already_exists/i.test(signupBodyText);
+
+  if (!signupResponse.ok && !alreadyExists) {
     fail({
       error: `Guild API returned ${signupResponse.status}`,
       mnemonic: generated ? mnemonic : undefined,
@@ -401,6 +409,10 @@ async function main() {
       signup_response: signupBody,
       hint: "If you got HTML back, you may be hitting the wrong URL or the guild does not support programmatic signup"
     });
+  }
+
+  if (alreadyExists) {
+    process.stderr.write("Signup reported resource_already_exists — address already joined; polling for the existing player.\n");
   }
 
   // Step 5: Poll for player creation

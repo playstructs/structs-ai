@@ -717,8 +717,8 @@ asyncio.run(main())
     "baseUrl": "https://testnet.structs.network"
   },
   "consensus": {
-    "rpcURL": "https://rpc.testnet.structs.network:26657",
-    "apiURL": "https://api.testnet.structs.network:1317"
+    "rpcURL": "https://public.testnet.structs.network:26657",
+    "apiURL": "https://public.testnet.structs.network"
   },
   "streaming": {
     "natsURL": "nats://testnet.structs.network:4222",

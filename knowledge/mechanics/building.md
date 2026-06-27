@@ -88,6 +88,8 @@ At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is 
 
 ## Charge Accumulation
 
+> **Charge is NOT a pool you spend from.** It is `currentBlock - lastActionBlock`, recomputed every block. A per-action "cost" is a **minimum threshold** the bar must reach — not an amount subtracted from a balance. Any charge-consuming action resets the bar to **0**. You cannot bank charge, and you cannot burst several expensive actions back-to-back. A UI that shows "Charge: N" is showing the current `currentBlock - lastActionBlock`, not a wallet you can save up. Do one action, then wait for the bar to refill (~1/block). Reading it as a stockpile is how players lose engagements.
+
 Charge is a **per-player** resource — a single shared bar, not a per-struct value. It is the number of blocks since the player's last charge-consuming action:
 
 ```
@@ -207,7 +209,9 @@ Command Ship must be built in fleet (locationType = 2), not on planet. Power req
 
 ## Ambit Encoding
 
-Struct types have a `possibleAmbit` bit-flag field that encodes which ambits the struct can operate in:
+There are **two distinct ambit numbering schemes**. Mixing them up is a common error that produces an `invalid int32` failure on build.
+
+**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields:
 
 | Ambit | Bit Value |
 |-------|-----------|
@@ -216,9 +220,29 @@ Struct types have a `possibleAmbit` bit-flag field that encodes which ambits the
 | Land | 4 |
 | Water | 2 |
 
-Values are combined. For example: 6 = land + water, 30 = space + air + land + water. When initiating a build, the `[operating-ambit]` argument must be a valid ambit for that struct type.
+Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
 
-See [struct-types.md](../entities/struct-types.md) for the full table with `possibleAmbit` per type.
+**2. Ambit enum** — used by transaction messages and a struct's stored `operatingAmbit`:
+
+| Ambit | Enum |
+|-------|------|
+| none | 0 |
+| water | 1 |
+| land | 2 |
+| air | 3 |
+| space | 4 |
+| local | 5 |
+
+**When initiating a build (or moving), the `[operating-ambit]` argument is the ENUM, not the bitmask.** The CLI accepts the lowercase name — `space`, `air`, `land`, `water` (mapping to enum 4/3/2/1). Do **not** pass the bitmask value (e.g. `16` for space); passing a bitmask number where the enum is expected fails with `invalid int32` or targets the wrong ambit. The bitmask (2/4/8/16) is only for interpreting `possibleAmbit` and weapon-reach masks.
+
+```
+# Correct — enum name:
+structsd tx structs struct-build-initiate TX_FLAGS -- 1-11 2 space 0
+# Wrong — bitmask number (16) where the enum is expected:
+structsd tx structs struct-build-initiate TX_FLAGS -- 1-11 2 16 0
+```
+
+See [struct-types.md](../entities/struct-types.md) for the full table with `possibleAmbit` per type, and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ---
 

@@ -197,6 +197,7 @@ Endpoint specifications and streaming protocols.
 | [error-codes.md](api/error-codes.md) | Error code reference |
 | [rate-limits.md](api/rate-limits.md) | Rate limiting behavior |
 | [cosmetic-mods.md](api/cosmetic-mods.md) | Cosmetic mod API |
+| [integration-notes.md](api/integration-notes.md) | Live data-shape & endpoint gotchas for integrators |
 
 ### Queries (`api/queries/`)
 

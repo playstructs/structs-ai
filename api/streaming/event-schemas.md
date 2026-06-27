@@ -18,6 +18,8 @@ All GRASS events share a common base structure.
 | id | string | Yes | Entity identifier |
 | updated_at | string (date-time) | Yes | ISO 8601 timestamp of update |
 
+> **`detail` has two representations depending on transport.** Over **NATS/GRASS** the frame is parsed once (`message.json()`), so `detail` arrives as an **already-parsed object** — access `detail.*` directly. Over the **Guild API `planet-activity` REST feed** the same `detail` comes from a PostgreSQL column as a **JSON-encoded string** — you must `JSON.parse(row.detail)` first. Code that consumes both transports must branch on the source. See [api/integration-notes.md — Event detail has two representations](../integration-notes.md#event-detail-has-two-representations).
+
 ---
 
 ## Event Definitions
@@ -142,6 +144,47 @@ Extends [BaseEvent](#base-event). Category: `planet_activity`
 Extends [BaseEvent](#base-event). Category: `fleet_arrive`
 
 **Data Fields**: Fleet arrival data object.
+
+### StructAttackEvent
+
+Extends [BaseEvent](#base-event). Category: `struct_attack`
+
+The `detail` payload has the **attacker context flat at the top** and the **per-projectile outcomes nested** in `eventAttackShotDetail[]` (one entry per shot). Field keys are camelCase (unlike most other struct events).
+
+**Top-level (attacker) fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| attackerStructId | string | Attacking struct ID |
+| attackerStructType | integer | Attacker struct type ID |
+| attackerStructOperatingAmbit | integer | Attacker ambit (enum: water=1…space=4) |
+| weaponSystem | integer | 0 = primary, 1 = secondary |
+| weaponControl | integer | Weapon control value |
+| recoilDamage | integer | Recoil damage amount |
+| recoilDamageToAttacker | boolean | Whether recoil hit the attacker |
+| planetaryDefenseCannonDamage | integer | PDC damage contribution |
+| attackerPlayerId | string | Attacking player ID |
+| targetPlayerId | string | Defending player ID |
+| eventAttackShotDetail | array | Per-projectile shot outcomes (see below) |
+
+**`eventAttackShotDetail[]` (per-projectile) fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| targetStructId | string | Struct hit by this shot |
+| targetStructType | integer | Target struct type ID |
+| evaded | boolean | Shot evaded |
+| evadedCause | integer | Evasion cause code |
+| blocked | boolean | Shot absorbed by a defender |
+| blockedByStructId | string | Defender struct that blocked (empty if none) |
+| damageDealt | integer | Final damage applied |
+| damage | integer | Pre-reduction damage |
+| damageReduction | integer | Damage reduced by armor/effects |
+| targetDestroyed | boolean | Target reached 0 HP |
+| targetCountered | boolean | Target fired a counter |
+| targetCounteredDamage | integer | Counter damage dealt back |
+
+> `attackerHealthBefore`, `targetHealthBefore`, and `targetHealthAfter` are **runtime-enriched** fields present on the live activity feed (used for animation) and are not part of the canonical protobuf type; they may arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
 
 ### StructStatusEvent
 

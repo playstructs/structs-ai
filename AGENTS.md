@@ -157,6 +157,7 @@ For deep technical details, the original documentation remains available:
 
 - `schemas/` -- JSON schemas and data structure definitions
 - `api/` -- API specifications (endpoints, queries, transactions, streaming)
+- [`api/integration-notes.md`](api/integration-notes.md) -- Live data-shape & endpoint gotchas for integrators/MCP builders (string numerics, dual event-detail encoding, `struct_attack` schema, where HP/status live, address shape, field-name traps, ambit enum vs bitmask, proxy-signup idempotency, auth scope)
 - `protocols/` -- Communication protocols (query, action, error handling, auth)
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)

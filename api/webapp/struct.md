@@ -21,6 +21,8 @@
 
 Per-struct attributes and defender relationships live in [`struct-attribute.md`](struct-attribute.md) and [`struct-defender.md`](struct-defender.md).
 
+> **`health` and numeric `status` are only on the bespoke endpoints.** The catalog `list/*` endpoints return **base struct columns only** (no `health`, no `status`) — they read `structs.struct` with no joins. The bespoke endpoints (`/api/struct/player/{id}`, `/api/struct/{id}`) `LEFT JOIN struct_attribute` to add `health` and the numeric `status` bitmask. If you need HP, built-state, or status from a list, either call a bespoke endpoint per struct or read the chain entity (`GET /structs/struct/{id}` → `structAttributes.health`, `.isBuilt`, `.blockStartBuild`, `.status`). See [api/integration-notes.md — Where struct HP and status live](../integration-notes.md#where-struct-hp-and-status-live).
+
 ---
 
 ## Endpoint Details
@@ -198,6 +200,34 @@ Catalog list of every struct on the chain, paginated.
 |------|------|----------|--------|-------------|
 | `page` | integer | Yes | `\d+` | Page number, 1-indexed |
 
+#### Response
+
+The catalog list returns **base columns only** — `id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at`. **No `health`, no `status`, no `defending_struct_ids`** (verified in webapp `TableReadManager::structListAll`). The same column set applies to the `owner` and `location` list variants.
+
+```json
+{
+  "success": true,
+  "errors": {},
+  "data": [
+    {
+      "id": "5-1",
+      "index": 1,
+      "type": 14,
+      "creator": "structs1...",
+      "owner": "1-11",
+      "location_type": "planet",
+      "location_id": "2-1",
+      "operating_ambit": "space",
+      "slot": 0,
+      "is_destroyed": false,
+      "destroyed_block": null,
+      "created_at": "...",
+      "updated_at": "..."
+    }
+  ]
+}
+```
+
 ---
 
 ### GET `/api/struct/list/owner/{owner}/page/{page}`
@@ -272,4 +302,4 @@ Struct type responses include cheatsheet fields (verified via `SELECT * FROM str
 
 **See**: `reviews/webapp-review-findings.md` for code review verification
 
-The `/api/struct/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke struct endpoints also use the `{ "success", "errors", "data" }` envelope. See `protocols/webapp-api-protocol.md`.
+The `/api/struct/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). These catalog rows carry only the base struct columns (no `health`/`status`/`defending_struct_ids`); use a bespoke endpoint or the chain entity for those. Bespoke struct endpoints also use the `{ "success", "errors", "data" }` envelope. See `protocols/webapp-api-protocol.md`.

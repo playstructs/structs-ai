@@ -3,7 +3,7 @@
 **Version**: 1.0.0
 **Category**: Query
 **Entity**: Address
-**Base URL**: `http://localhost:1317`
+**Base URL**: local devnet `http://localhost:1317`; public testnet `https://public.testnet.structs.network` (HTTPS, no port — there is no `:1317` on the public host)
 **Base Path**: `/structs`
 
 ---
@@ -36,6 +36,18 @@ Returns address information for a specific blockchain address.
 
 - **Content-Type**: `application/json`
 - **Schema**: `schemas/entities.md#Address`
+
+The response is a **flat** object with `playerId` at the top level (camelCase) — not nested under an `Address` wrapper. `permissions` is a `uint64` and is serialized as a **string** in proto JSON:
+
+```json
+{
+  "address": "structs1...",
+  "playerId": "1-11",
+  "permissions": "1"
+}
+```
+
+(Verified in `proto/structs/structs/query.proto` `QueryAddressResponse`.) A common polling bug is looking for the player id under a nested `Address` key; it is top-level `playerId`.
 
 ---
 
