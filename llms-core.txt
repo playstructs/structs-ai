@@ -434,6 +434,7 @@ High-level thinking in `playbooks/`.
 - [`tempo`](playbooks/meta/tempo.md) -- Initiative and timing
 - [`economy-of-force`](playbooks/meta/economy-of-force.md) -- Resource allocation across priorities
 - [`reading-opponents`](playbooks/meta/reading-opponents.md) -- Identifying opponent playstyle
+- [`team-operations`](playbooks/meta/team-operations.md) -- Running multiple players as one force: per-player charge/build limits, focus fire, substation-fed power, proxy onboarding
 
 ---
 
@@ -504,6 +505,7 @@ For deep technical details, the original documentation remains available:
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)
 - `reference/` -- Quick reference guides and indexes
+- [`reference/glossary.md`](reference/glossary.md) -- Lexical index: look up any term (ambit enum vs bitmask, charge, shieldsVulnerable, stub, counter vs block, …) and jump to its canonical page
 
 ---
 
@@ -1432,7 +1434,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later).
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 5. **The instant mining lands, refine** (~34h to D=3, difficulty 28,000). Ore is now stealable; this is the priority.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
@@ -1585,7 +1587,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, activate 2, defen
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
 
-**Initiate early, compute later** — the age clock starts at initiation. Batch-initiate, then compute in the background. **One compute at a time per key** (two concurrent computes on the same key collide on sequence numbers — one fails silently). Different keys run in parallel.
+**Initiate early, compute later** — the age clock starts at initiation, and difficulty decays from 64 (fresh, impossible) to 1 (aged, instant). Batch-initiate, then compute in the background once it has decayed. **One compute at a time per key** (two concurrent computes on the same key collide on sequence numbers — one fails silently). Different keys run in parallel. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 
 ## Manage existing structs
 
@@ -1995,7 +1997,7 @@ structsd tx structs struct-defense-set TX_FLAGS -- [defender-struct-id] [protect
 structsd tx structs struct-defense-clear TX_FLAGS -- [defender-struct-id]
 ```
 
-Defenders must be in the **same ambit as the protected struct** to block (1 charge each; stagger ~6 s on one key). Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
+**Any** struct can be assigned as a defender (1 charge each; stagger ~6 s on one key) as long as it is **built, online, and co-located** with the protected struct — ambit is **not** required to *assign*. Ambit decides what the defender can do: **same-ambit** is required only to **block** (intercept a hit), while a **cross-ambit** defender still **counters** whenever its weapon can reach the attacker. Spread defenders across ambits for counter coverage; keep same-ambit defenders where you need real interception. Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
 
 ## Tactical reference
 
@@ -2037,8 +2039,9 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 - **Counters are ambit-gated, blocks are ambit-matched.** A defender counters whenever its weapon can reach the **attacker's** ambit (regardless of what it's defending); it can only **block** when it shares the **target's** ambit. Consequence: attacking land structs from air/water/space (an ambit the defenders can't reach) takes **zero counter damage** — the single biggest combat lever. Pick your attacking ambit to dodge counters.
 - Each struct counters at most **once per `struct-attack` invocation** (not per target/shot). Defender counter fires before block and even on evaded shots; target counter fires after all shots (destroyed targets can't counter).
 - Block only fires on non-evaded shots and only from a defender in the **target's** ambit.
+- **Counters are a backstop, not a damage plan** — counter values are small (typically 1; Command Ship 2) and a cross-ambit attacker takes none at all. Win with active `struct-attack` volleys from a safe ambit, not by baiting counters.
 - **Single-target**: every weapon has `primaryWeaponTargets = 1` (one struct per volley) — no multi-target weapon exists. The comma-list in `struct-attack` doesn't make a single-target weapon spread.
-- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions.
+- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions. Because the bar is **per-player**, the way to land many hits at once is **parallel**: coordinate multiple accounts to focus-fire one target — N players land N attacks per charge cycle. See [team-operations](https://structs.ai/playbooks/meta/team-operations).
 - **Planetary defenses (attacking a planet)**: the **Jamming Satellite** runs a low-orbit ballistic interceptor network that can **evade your air/space attacks against the planet's land/water structs** (`evadedByPlanetaryDefenses`) — hit those land/water structs from land/water instead, or expect 0s from the air/space. Guided weapons that miss come from the target's unit-level `signalJamming`, not the satellite. The PDC and the interceptor network are the planetary defenses that affect combat.
 - PDC auto-fires after all targets resolve (it does not counter); multiple players' PDCs stack.
 - A successful raid seizes **all** of the defender's `storedOre` and nothing else — there is no player-elimination outcome (see raid section). Destroyed structs are gone forever but can be rebuilt (full PoW). Losing your Command Ship disables the whole fleet until you build a new one — protect it above all, and never let your raiding CMD ship die while away (`attackerDefeated`).
@@ -2281,6 +2284,11 @@ Read `status` as flags, not an enum: the Online bit (`status & 4`) is what gates
 5. Available slots (correct type: space/air/land/water)
 6. Per-player build limits (most planet structs and the Command Ship are 1 per player; Orbital Shield Generator, Ore Bunker, and fleet structs are unlimited)
 
+Both the power-capacity check (4) and the build-limit check (6) reject with the **same** error string — `cannot handle new load requirements (required: X, available: Y)` (error key `capacity_exceeded`). Read the magnitude of the numbers to tell which gate you hit:
+
+- **Tiny, often-equal integers** (e.g. `required: 1, available: 1`) — the **per-player build limit**: you already own the maximum of that struct type. `required` is the type's build limit, `available` is how many you already have. Most planet structs and the Command Ship cap at 1; only the Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. Build the struct on a different player, or accept the cap.
+- **Large values** (hundreds of thousands to millions) — the **power-capacity** check, in milliwatts: `required` is the struct's `BuildDraw`, `available` is your remaining capacity (`capacity + capacitySecondary − load − structsLoad`). Free capacity by adding generation or deactivating structs (see [power.md](power.md)).
+
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
 
 ---
@@ -2300,16 +2308,18 @@ Command Ship must be built in fleet (locationType = 2), not on planet. Power req
 
 There are **two distinct ambit numbering schemes**. Mixing them up is a common error that produces an `invalid int32` failure on build.
 
-**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields:
+**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields (each bit is `1 << enum`):
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
 
 **2. Ambit enum** — used by transaction messages and a struct's stored `operatingAmbit`:
 
@@ -2505,6 +2515,17 @@ age_blocks   = 10 ^ ( (64 - D) * log10(range) / 63 )
 time_seconds = age_blocks * 6
 ```
 
+### Worked example: fresh vs aged anchor
+
+The same operation is impossible or instant depending only on how old its clock is. This is why timing dominates PoW.
+
+- **Fresh anchor (`age <= 1`)**: difficulty is pinned to **64**. The proof is rejected — you cannot complete on or near the block you initiated. A brand-new build sits here.
+- **Aged anchor**: difficulty falls to **1** once the clock reaches `range` blocks old, and stays there. For a Command Ship build (`range = 200`), `age = 200` blocks (~20 min) gives `difficulty = 64 - floor(log10(200)/log10(200)*63) = 64 - 63 = 1`. For a mine (`range = 14,000`), difficulty hits 1 at `age = 14,000` blocks (~23 hr). A struct you initiated and left untouched for tens of thousands of blocks is at difficulty 1 — the nonce is found in a handful of attempts (milliseconds).
+
+So an old, abandoned anchor is a *cheaper* proof than a fresh one: initiate the moment you can, then come back later when the difficulty has decayed. A raid keyed to the target planet's `blockStartRaid` works the same way — the longer that planet has been raid-vulnerable, the cheaper the raid proof.
+
+Because the mine and refine clocks **reset after every successful completion** (see the per-type clock below), back-to-back mining of the same extractor re-enters the full decay each cycle. Repeat-mining is therefore naturally paced — you re-wait the decay every time, not just once.
+
 ---
 
 ## The Per-Type Clock (`blockStart`)
@@ -2686,12 +2707,16 @@ Combat in Structs revolves around four ambits. Each struct operates in one ambit
 
 | Ambit | Reach Bit Value |
 |-------|-----------------|
+| none | 1 |
 | Water | 2 |
 | Land | 4 |
 | Air | 8 |
 | Space | 16 |
+| local | 32 |
 
-**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's "current ambit" flag (its weapon reaches whatever ambit it currently occupies).
+
+**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** (`bit = 1 << enum`) used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ### Weapon Target Matrix
 
@@ -2833,6 +2858,15 @@ Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Reco
 
 If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding structs.
 
+### Assigning Defenders (`struct-defense-set`)
+
+**Any** struct can be assigned to defend another, regardless of ambit. Assignment checks only that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
+
+- A **same-ambit** defender can **block** (soak a hit meant for the protected struct) and can counter.
+- A **cross-ambit** defender cannot block, but still **counters** whenever its weapon reach includes the attacker's ambit.
+
+So assigning a water Submersible to defend a land struct is valid and useful: it will counter air/space-reachable attackers even though it can never block for the land struct. Spread defenders across ambits to widen counter coverage, and keep same-ambit defenders where you need actual damage interception. There is no per-ambit cap on how many structs can defend (see [Edge Cases](#edge-cases)).
+
 ### Blocking
 
 ```
@@ -2859,8 +2893,12 @@ Counter-attacks are **ambit-independent from the defended target**. A space-base
 
 | Scenario | Damage |
 |----------|--------|
-| Same ambit as attacker | `counterAttackDamage` (full) |
-| Different ambit from attacker | `counterAttackDamage / 2` |
+| Same ambit as attacker | the defender type's `counterAttackSameAmbit` value |
+| Different ambit from attacker | the defender type's `counterAttack` value |
+
+Counter damage comes from two per-type fields, not a flat number: `counterAttackSameAmbit` (when the counter-attacker shares the attacker's ambit) and `counterAttack` (when it does not). Most hulls are `1 / 1`; the Command Ship is `2 / 2`; the Destroyer is `1 / 2` (cross / same). See [struct-types.md — Defensive Properties](../entities/struct-types.md) for the per-type values.
+
+**Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
 
 **Requirements** (all must be true):
 1. Weapon must be counterable (`GetWeaponCounterable` returns true)
@@ -3037,6 +3075,7 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 - [resources.md](resources.md) — Ore vs Alpha Matter security
 - [power.md](power.md) — Power requirements for combat
 - [fleet.md](fleet.md) — Fleet status for raids
+- [building.md — Status field (numeric)](building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask (e.g. `35` = destroyed)
 - `schemas/formulas.md` — Verified formula definitions
 - `reference/action-quick-reference.md` — Combat action endpoints
 - `protocols/action-protocol.md` — Transaction flow
@@ -3490,22 +3529,24 @@ The Command Ship can attack into any ambit but must first move there via `struct
 
 ## Ambit Bit-Flag Encoding
 
-The `possibleAmbit` field is a bit-flag integer encoding which ambits a struct can operate in:
+The `possibleAmbit` field (and the weapon-reach fields `primaryWeaponAmbits` / `secondaryWeaponAmbits`) is a bit-flag integer encoding which ambits apply. Each bit is `1 << enum`:
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Values are combined. For example:
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Values are combined. For example:
 - `6` = Land (4) + Water (2) — most planet structs
 - `8` = Air only — air fleet units
 - `16` = Space only — space fleet units, orbital planet structs
 - `30` = Space (16) + Air (8) + Land (4) + Water (2) — Command Ship only
 
-When initiating a build, the `[operating-ambit]` argument must be one of the valid ambits for that struct type.
+This **reach bitmask** is a different scale from the **ambit enum** (none=0, water=1, land=2, air=3, space=4, local=5) used by transaction messages and a struct's stored `operatingAmbit`. When initiating a build or moving, pass the enum (the CLI accepts the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](../mechanics/building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ---
 
@@ -3563,6 +3604,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 - [entity-relationships.md](entity-relationships.md) — Struct ownership, location
 - [power.md](../mechanics/power.md) — BuildDraw, PassiveDraw, capacity
 - [building.md](../mechanics/building.md) — Build process, proof-of-work, -D flag
+- [building.md — Status field (numeric)](../mechanics/building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask
 - [resources.md](../mechanics/resources.md) — Conversion rates, ore flow
 - [combat.md](../mechanics/combat.md) — Combat struct roles
 - [valuation.md](../economy/valuation.md) — Struct valuation

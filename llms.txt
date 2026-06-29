@@ -108,6 +108,7 @@
 - [Tempo](https://structs.ai/playbooks/meta/tempo): Initiative and timing
 - [Economy of Force](https://structs.ai/playbooks/meta/economy-of-force): Resource allocation across priorities
 - [Reading Opponents](https://structs.ai/playbooks/meta/reading-opponents): Identifying opponent playstyle
+- [Team Operations](https://structs.ai/playbooks/meta/team-operations): Coordinating multiple players — per-player charge/build limits, focus fire, substation-fed power, proxy onboarding
 
 ## Awareness
 
@@ -128,12 +129,15 @@
 - [API Queries by Entity](https://structs.ai/api/endpoints-by-entity): Entity-specific query endpoints
 - [Webapp API Index](https://structs.ai/api/webapp/README): Per-entity webapp endpoints (catalog reads, settings, stats)
 - [Integration Notes](https://structs.ai/api/integration-notes): Live data-shape & endpoint gotchas (string numerics, event detail, field-name traps, auth scope)
-- [Streaming Events](https://structs.ai/api/streaming/event-types): Real-time event types
+- [Streaming Events](https://structs.ai/api/streaming/event-types): Real-time event type catalog (grass categories, struct_attack stubbing)
+- [Streaming Event Schemas](https://structs.ai/api/streaming/event-schemas): JSON payload schemas for GRASS events
+- [Troubleshooting](https://structs.ai/troubleshooting/common-issues): Common build/exploration/transaction failures and fixes
 - [Schema Entities](https://structs.ai/schemas/entities): JSON schema definitions
 - [Schema Formats](https://structs.ai/schemas/formats): ID format specifications
 - [Schema Formulas](https://structs.ai/schemas/formulas): Game math formulas
 - [Database Schema](https://structs.ai/schemas/database-schema): PostgreSQL schema
 - [Error Codes](https://structs.ai/api/error-codes): Error code catalog
+- [Glossary](https://structs.ai/reference/glossary): Lexical index of key terms with definitions and canonical-page links (disambiguates ambit enum vs bitmask, block vs counter, multi-shot vs multi-target, struct_attack stub, etc.)
 - [Action Reference](https://structs.ai/reference/action-quick-reference): Quick action lookup
 - [Endpoint Index](https://structs.ai/reference/endpoint-index): Full endpoint index
 - [API Quick Reference](https://structs.ai/reference/api-quick-reference): SSL chain endpoints + catalog read shortcuts

@@ -111,6 +111,8 @@ Struct **health** and the numeric **status bitmask** are NOT on the base struct 
 
 The catalog list endpoints return only base columns: `id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at` (verified in webapp `TableReadManager::structListAll/ByOwner/ByLocation`). To get HP, built-state, or the build clock you must use a bespoke endpoint or the chain entity, where `structAttributes` exposes `health`, `isBuilt`, `blockStartBuild`, and `status`.
 
+The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row.
+
 See [api/webapp/struct.md](webapp/struct.md) for full response shapes.
 
 ---
@@ -151,6 +153,19 @@ When you build or move, pass the **enum** (the CLI accepts the lowercase name `s
 ## Charge is not a pool
 
 `charge = currentBlock - lastActionBlock`, per-player, and **any** charge-consuming action resets it to **0**. The per-action "cost" is a *minimum threshold*, not a balance you draw down or bank. You cannot stockpile charge to burst several expensive actions; idling past your next action's cost gains nothing. Plan combat as single actions spaced ~1 block per charge apart. A dashboard "Charge: N" is the current `currentBlock - lastActionBlock`, not a wallet. See [building.md](../knowledge/mechanics/building.md#charge-accumulation).
+
+---
+
+## `capacity_exceeded` covers two different build checks
+
+`struct-build-initiate` raises one error string — `cannot handle new load requirements (required: X, available: Y)` (structured error key `capacity_exceeded`) — for **two** unrelated gates. The numbers tell them apart:
+
+| `required` / `available` look like | Gate | Meaning |
+|------------------------------------|------|---------|
+| Tiny integers, often equal (e.g. `1 / 1`) | **Per-player build limit** | `required` is the struct type's build limit, `available` is how many you already own. Most planet structs and the Command Ship cap at 1; only Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. |
+| Large values (hundreds of thousands to millions) | **Power capacity** (milliwatts) | `required` is the struct's `BuildDraw`, `available` is remaining capacity `(capacity + capacitySecondary) - (load + structsLoad)`. |
+
+Do not assume the error is always about power — a `1/1` is the build-count limit, not a power shortage. Verified in `x/structs/keeper/msg_server_struct_build_initiate.go` (build-count and `CanSupportLoadAddition` checks) and `x/structs/types/errors_structured.go` (`capacity_exceeded`). See [building.md](../knowledge/mechanics/building.md#build-validation-order).
 
 ---
 

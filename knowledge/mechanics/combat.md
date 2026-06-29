@@ -20,12 +20,16 @@ Combat in Structs revolves around four ambits. Each struct operates in one ambit
 
 | Ambit | Reach Bit Value |
 |-------|-----------------|
+| none | 1 |
 | Water | 2 |
 | Land | 4 |
 | Air | 8 |
 | Space | 16 |
+| local | 32 |
 
-**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's "current ambit" flag (its weapon reaches whatever ambit it currently occupies).
+
+**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** (`bit = 1 << enum`) used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ### Weapon Target Matrix
 
@@ -167,6 +171,15 @@ Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Reco
 
 If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding structs.
 
+### Assigning Defenders (`struct-defense-set`)
+
+**Any** struct can be assigned to defend another, regardless of ambit. Assignment checks only that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
+
+- A **same-ambit** defender can **block** (soak a hit meant for the protected struct) and can counter.
+- A **cross-ambit** defender cannot block, but still **counters** whenever its weapon reach includes the attacker's ambit.
+
+So assigning a water Submersible to defend a land struct is valid and useful: it will counter air/space-reachable attackers even though it can never block for the land struct. Spread defenders across ambits to widen counter coverage, and keep same-ambit defenders where you need actual damage interception. There is no per-ambit cap on how many structs can defend (see [Edge Cases](#edge-cases)).
+
 ### Blocking
 
 ```
@@ -193,8 +206,12 @@ Counter-attacks are **ambit-independent from the defended target**. A space-base
 
 | Scenario | Damage |
 |----------|--------|
-| Same ambit as attacker | `counterAttackDamage` (full) |
-| Different ambit from attacker | `counterAttackDamage / 2` |
+| Same ambit as attacker | the defender type's `counterAttackSameAmbit` value |
+| Different ambit from attacker | the defender type's `counterAttack` value |
+
+Counter damage comes from two per-type fields, not a flat number: `counterAttackSameAmbit` (when the counter-attacker shares the attacker's ambit) and `counterAttack` (when it does not). Most hulls are `1 / 1`; the Command Ship is `2 / 2`; the Destroyer is `1 / 2` (cross / same). See [struct-types.md — Defensive Properties](../entities/struct-types.md) for the per-type values.
+
+**Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
 
 **Requirements** (all must be true):
 1. Weapon must be counterable (`GetWeaponCounterable` returns true)
@@ -371,6 +388,7 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 - [resources.md](resources.md) — Ore vs Alpha Matter security
 - [power.md](power.md) — Power requirements for combat
 - [fleet.md](fleet.md) — Fleet status for raids
+- [building.md — Status field (numeric)](building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask (e.g. `35` = destroyed)
 - `schemas/formulas.md` — Verified formula definitions
 - `reference/action-quick-reference.md` — Combat action endpoints
 - `protocols/action-protocol.md` — Transaction flow

@@ -87,7 +87,7 @@ structsd tx structs struct-defense-set TX_FLAGS -- [defender-struct-id] [protect
 structsd tx structs struct-defense-clear TX_FLAGS -- [defender-struct-id]
 ```
 
-Defenders must be in the **same ambit as the protected struct** to block (1 charge each; stagger ~6 s on one key). Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
+**Any** struct can be assigned as a defender (1 charge each; stagger ~6 s on one key) as long as it is **built, online, and co-located** with the protected struct — ambit is **not** required to *assign*. Ambit decides what the defender can do: **same-ambit** is required only to **block** (intercept a hit), while a **cross-ambit** defender still **counters** whenever its weapon can reach the attacker. Spread defenders across ambits for counter coverage; keep same-ambit defenders where you need real interception. Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
 
 ## Tactical reference
 
@@ -129,8 +129,9 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 - **Counters are ambit-gated, blocks are ambit-matched.** A defender counters whenever its weapon can reach the **attacker's** ambit (regardless of what it's defending); it can only **block** when it shares the **target's** ambit. Consequence: attacking land structs from air/water/space (an ambit the defenders can't reach) takes **zero counter damage** — the single biggest combat lever. Pick your attacking ambit to dodge counters.
 - Each struct counters at most **once per `struct-attack` invocation** (not per target/shot). Defender counter fires before block and even on evaded shots; target counter fires after all shots (destroyed targets can't counter).
 - Block only fires on non-evaded shots and only from a defender in the **target's** ambit.
+- **Counters are a backstop, not a damage plan** — counter values are small (typically 1; Command Ship 2) and a cross-ambit attacker takes none at all. Win with active `struct-attack` volleys from a safe ambit, not by baiting counters.
 - **Single-target**: every weapon has `primaryWeaponTargets = 1` (one struct per volley) — no multi-target weapon exists. The comma-list in `struct-attack` doesn't make a single-target weapon spread.
-- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions.
+- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions. Because the bar is **per-player**, the way to land many hits at once is **parallel**: coordinate multiple accounts to focus-fire one target — N players land N attacks per charge cycle. See [team-operations](https://structs.ai/playbooks/meta/team-operations).
 - **Planetary defenses (attacking a planet)**: the **Jamming Satellite** runs a low-orbit ballistic interceptor network that can **evade your air/space attacks against the planet's land/water structs** (`evadedByPlanetaryDefenses`) — hit those land/water structs from land/water instead, or expect 0s from the air/space. Guided weapons that miss come from the target's unit-level `signalJamming`, not the satellite. The PDC and the interceptor network are the planetary defenses that affect combat.
 - PDC auto-fires after all targets resolve (it does not counter); multiple players' PDCs stack.
 - A successful raid seizes **all** of the defender's `storedOre` and nothing else — there is no player-elimination outcome (see raid section). Destroyed structs are gone forever but can be rebuilt (full PoW). Losing your Command Ship disables the whole fleet until you build a new one — protect it above all, and never let your raiding CMD ship die while away (`attackerDefeated`).

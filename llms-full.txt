@@ -255,6 +255,7 @@ High-level thinking in `playbooks/`.
 - [`tempo`](playbooks/meta/tempo.md) -- Initiative and timing
 - [`economy-of-force`](playbooks/meta/economy-of-force.md) -- Resource allocation across priorities
 - [`reading-opponents`](playbooks/meta/reading-opponents.md) -- Identifying opponent playstyle
+- [`team-operations`](playbooks/meta/team-operations.md) -- Running multiple players as one force: per-player charge/build limits, focus fire, substation-fed power, proxy onboarding
 
 ---
 
@@ -325,6 +326,7 @@ For deep technical details, the original documentation remains available:
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)
 - `reference/` -- Quick reference guides and indexes
+- [`reference/glossary.md`](reference/glossary.md) -- Lexical index: look up any term (ambit enum vs bitmask, charge, shieldsVulnerable, stub, counter vs block, …) and jump to its canonical page
 
 ---
 
@@ -2683,7 +2685,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later).
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 5. **The instant mining lands, refine** (~34h to D=3, difficulty 28,000). Ore is now stealable; this is the priority.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
@@ -2836,7 +2838,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, activate 2, defen
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
 
-**Initiate early, compute later** — the age clock starts at initiation. Batch-initiate, then compute in the background. **One compute at a time per key** (two concurrent computes on the same key collide on sequence numbers — one fails silently). Different keys run in parallel.
+**Initiate early, compute later** — the age clock starts at initiation, and difficulty decays from 64 (fresh, impossible) to 1 (aged, instant). Batch-initiate, then compute in the background once it has decayed. **One compute at a time per key** (two concurrent computes on the same key collide on sequence numbers — one fails silently). Different keys run in parallel. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 
 ## Manage existing structs
 
@@ -3246,7 +3248,7 @@ structsd tx structs struct-defense-set TX_FLAGS -- [defender-struct-id] [protect
 structsd tx structs struct-defense-clear TX_FLAGS -- [defender-struct-id]
 ```
 
-Defenders must be in the **same ambit as the protected struct** to block (1 charge each; stagger ~6 s on one key). Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
+**Any** struct can be assigned as a defender (1 charge each; stagger ~6 s on one key) as long as it is **built, online, and co-located** with the protected struct — ambit is **not** required to *assign*. Ambit decides what the defender can do: **same-ambit** is required only to **block** (intercept a hit), while a **cross-ambit** defender still **counters** whenever its weapon can reach the attacker. Spread defenders across ambits for counter coverage; keep same-ambit defenders where you need real interception. Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
 
 ## Tactical reference
 
@@ -3288,8 +3290,9 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 - **Counters are ambit-gated, blocks are ambit-matched.** A defender counters whenever its weapon can reach the **attacker's** ambit (regardless of what it's defending); it can only **block** when it shares the **target's** ambit. Consequence: attacking land structs from air/water/space (an ambit the defenders can't reach) takes **zero counter damage** — the single biggest combat lever. Pick your attacking ambit to dodge counters.
 - Each struct counters at most **once per `struct-attack` invocation** (not per target/shot). Defender counter fires before block and even on evaded shots; target counter fires after all shots (destroyed targets can't counter).
 - Block only fires on non-evaded shots and only from a defender in the **target's** ambit.
+- **Counters are a backstop, not a damage plan** — counter values are small (typically 1; Command Ship 2) and a cross-ambit attacker takes none at all. Win with active `struct-attack` volleys from a safe ambit, not by baiting counters.
 - **Single-target**: every weapon has `primaryWeaponTargets = 1` (one struct per volley) — no multi-target weapon exists. The comma-list in `struct-attack` doesn't make a single-target weapon spread.
-- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions.
+- **No charge banking**: any action resets your shared charge bar to 0 and it refills ~1/block — you cannot stockpile for a multi-attack burst. Plan combat as spaced single actions. Because the bar is **per-player**, the way to land many hits at once is **parallel**: coordinate multiple accounts to focus-fire one target — N players land N attacks per charge cycle. See [team-operations](https://structs.ai/playbooks/meta/team-operations).
 - **Planetary defenses (attacking a planet)**: the **Jamming Satellite** runs a low-orbit ballistic interceptor network that can **evade your air/space attacks against the planet's land/water structs** (`evadedByPlanetaryDefenses`) — hit those land/water structs from land/water instead, or expect 0s from the air/space. Guided weapons that miss come from the target's unit-level `signalJamming`, not the satellite. The PDC and the interceptor network are the planetary defenses that affect combat.
 - PDC auto-fires after all targets resolve (it does not counter); multiple players' PDCs stack.
 - A successful raid seizes **all** of the defender's `storedOre` and nothing else — there is no player-elimination outcome (see raid section). Destroyed structs are gone forever but can be rebuilt (full PoW). Losing your Command Ship disables the whole fleet until you build a new one — protect it above all, and never let your raiding CMD ship die while away (`attackerDefeated`).
@@ -3930,10 +3933,15 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 
 | Event | Description | React By |
 |-------|-------------|----------|
-| `raid_status` | Raid lifecycle on planet — status values include `shieldsVulnerable` (defender Command Ship is offline/destroyed, raid can now complete), `ongoing`, and completed | Bring Command Ship online to re-raise shields; activate defenses, alert |
-| `planet_activity` | Activity log including `struct_health` changes | Track combat damage |
+| `raid_status` | Raid lifecycle on planet — status values include `shieldsVulnerable` (defender's shields down, raid can now complete), `ongoing`, and completed | Restore shields (Command Ship online, fleet on station); activate defenses, alert |
+| `shield_change` | Planetary shield value changed (`planetary_shield` / `planetary_shield_old` in `detail`) | Recompute raid feasibility against the target |
+| `block_raid_start` | The planet's raid vulnerability clock (`blockStartRaid`) armed | Note the raid window opened (yours: defend; theirs: a raid may be incoming) |
+| `struct_health` | A struct's HP changed (`health` / `health_old`) | Track combat damage live |
+| `struct_status` | A struct went online / offline / destroyed | Rebuild, reallocate power |
 | `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
 | `fleet_depart` | Fleet left planet | Update threat assessment |
+
+All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{id}`. `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
 
 ### Struct Events
 
@@ -3954,6 +3962,8 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | Event | Description | React By |
 |-------|-------------|----------|
 | `player_consensus` | Player state updated (including `username`/`pfp` on `structs.player` after chain UGC) | Update intel |
+| `player_address` | An address was added to / changed on a player | Track multi-address / delegate setup |
+| `player_address_pending` | A pending address registration appeared (awaiting confirmation) | Watch for registration completion |
 
 ### Guild Events
 
@@ -4021,10 +4031,17 @@ Track attribute changes on any game object (players, structs, planets).
 | `power` | Power level changed | Monitor energy infrastructure |
 | `proxyNonce` | Proxy nonce changed | Detect proxy activity |
 | `structsLoad` | Structs load changed | Assess fleet strength changes |
+| `allocationPointerStart` / `allocationPointerEnd` | Energy allocation range pointers changed | Track allocation/substation routing |
+| `ready` | Object readiness flag changed | Track object availability |
+| `checkpointBlock` | Checkpoint block updated | Track grid bookkeeping |
+
+Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}` — not `grass_category` values.
 
 ### Combat Event Payloads
 
-`struct_attack` events include detailed shot-by-shot resolution. Example payload (observed on planet subject):
+> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `struct_attack` row's full `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead: `{ "category": "struct_attack", "stub": true, ... }` with **no `detail`**. So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the row's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+
+`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject):
 
 ```json
 {
@@ -5137,12 +5154,16 @@ Combat in Structs revolves around four ambits. Each struct operates in one ambit
 
 | Ambit | Reach Bit Value |
 |-------|-----------------|
+| none | 1 |
 | Water | 2 |
 | Land | 4 |
 | Air | 8 |
 | Space | 16 |
+| local | 32 |
 
-**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's "current ambit" flag (its weapon reaches whatever ambit it currently occupies).
+
+**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** (`bit = 1 << enum`) used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ### Weapon Target Matrix
 
@@ -5284,6 +5305,15 @@ Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Reco
 
 If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding structs.
 
+### Assigning Defenders (`struct-defense-set`)
+
+**Any** struct can be assigned to defend another, regardless of ambit. Assignment checks only that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
+
+- A **same-ambit** defender can **block** (soak a hit meant for the protected struct) and can counter.
+- A **cross-ambit** defender cannot block, but still **counters** whenever its weapon reach includes the attacker's ambit.
+
+So assigning a water Submersible to defend a land struct is valid and useful: it will counter air/space-reachable attackers even though it can never block for the land struct. Spread defenders across ambits to widen counter coverage, and keep same-ambit defenders where you need actual damage interception. There is no per-ambit cap on how many structs can defend (see [Edge Cases](#edge-cases)).
+
 ### Blocking
 
 ```
@@ -5310,8 +5340,12 @@ Counter-attacks are **ambit-independent from the defended target**. A space-base
 
 | Scenario | Damage |
 |----------|--------|
-| Same ambit as attacker | `counterAttackDamage` (full) |
-| Different ambit from attacker | `counterAttackDamage / 2` |
+| Same ambit as attacker | the defender type's `counterAttackSameAmbit` value |
+| Different ambit from attacker | the defender type's `counterAttack` value |
+
+Counter damage comes from two per-type fields, not a flat number: `counterAttackSameAmbit` (when the counter-attacker shares the attacker's ambit) and `counterAttack` (when it does not). Most hulls are `1 / 1`; the Command Ship is `2 / 2`; the Destroyer is `1 / 2` (cross / same). See [struct-types.md — Defensive Properties](../entities/struct-types.md) for the per-type values.
+
+**Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
 
 **Requirements** (all must be true):
 1. Weapon must be counterable (`GetWeaponCounterable` returns true)
@@ -5488,6 +5522,7 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 - [resources.md](resources.md) — Ore vs Alpha Matter security
 - [power.md](power.md) — Power requirements for combat
 - [fleet.md](fleet.md) — Fleet status for raids
+- [building.md — Status field (numeric)](building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask (e.g. `35` = destroyed)
 - `schemas/formulas.md` — Verified formula definitions
 - `reference/action-quick-reference.md` — Combat action endpoints
 - `protocols/action-protocol.md` — Transaction flow
@@ -7297,6 +7332,11 @@ Read `status` as flags, not an enum: the Online bit (`status & 4`) is what gates
 5. Available slots (correct type: space/air/land/water)
 6. Per-player build limits (most planet structs and the Command Ship are 1 per player; Orbital Shield Generator, Ore Bunker, and fleet structs are unlimited)
 
+Both the power-capacity check (4) and the build-limit check (6) reject with the **same** error string — `cannot handle new load requirements (required: X, available: Y)` (error key `capacity_exceeded`). Read the magnitude of the numbers to tell which gate you hit:
+
+- **Tiny, often-equal integers** (e.g. `required: 1, available: 1`) — the **per-player build limit**: you already own the maximum of that struct type. `required` is the type's build limit, `available` is how many you already have. Most planet structs and the Command Ship cap at 1; only the Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. Build the struct on a different player, or accept the cap.
+- **Large values** (hundreds of thousands to millions) — the **power-capacity** check, in milliwatts: `required` is the struct's `BuildDraw`, `available` is your remaining capacity (`capacity + capacitySecondary − load − structsLoad`). Free capacity by adding generation or deactivating structs (see [power.md](power.md)).
+
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
 
 ---
@@ -7316,16 +7356,18 @@ Command Ship must be built in fleet (locationType = 2), not on planet. Power req
 
 There are **two distinct ambit numbering schemes**. Mixing them up is a common error that produces an `invalid int32` failure on build.
 
-**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields:
+**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields (each bit is `1 << enum`):
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
 
 **2. Ambit enum** — used by transaction messages and a struct's stored `operatingAmbit`:
 
@@ -7520,6 +7562,17 @@ To compute for any range and target D:
 age_blocks   = 10 ^ ( (64 - D) * log10(range) / 63 )
 time_seconds = age_blocks * 6
 ```
+
+### Worked example: fresh vs aged anchor
+
+The same operation is impossible or instant depending only on how old its clock is. This is why timing dominates PoW.
+
+- **Fresh anchor (`age <= 1`)**: difficulty is pinned to **64**. The proof is rejected — you cannot complete on or near the block you initiated. A brand-new build sits here.
+- **Aged anchor**: difficulty falls to **1** once the clock reaches `range` blocks old, and stays there. For a Command Ship build (`range = 200`), `age = 200` blocks (~20 min) gives `difficulty = 64 - floor(log10(200)/log10(200)*63) = 64 - 63 = 1`. For a mine (`range = 14,000`), difficulty hits 1 at `age = 14,000` blocks (~23 hr). A struct you initiated and left untouched for tens of thousands of blocks is at difficulty 1 — the nonce is found in a handful of attempts (milliseconds).
+
+So an old, abandoned anchor is a *cheaper* proof than a fresh one: initiate the moment you can, then come back later when the difficulty has decayed. A raid keyed to the target planet's `blockStartRaid` works the same way — the longer that planet has been raid-vulnerable, the cheaper the raid proof.
+
+Because the mine and refine clocks **reset after every successful completion** (see the per-type clock below), back-to-back mining of the same extractor re-enters the full decay each cycle. Repeat-mining is therefore naturally paced — you re-wait the decay every time, not just once.
 
 ---
 
@@ -8446,22 +8499,24 @@ The Command Ship can attack into any ambit but must first move there via `struct
 
 ## Ambit Bit-Flag Encoding
 
-The `possibleAmbit` field is a bit-flag integer encoding which ambits a struct can operate in:
+The `possibleAmbit` field (and the weapon-reach fields `primaryWeaponAmbits` / `secondaryWeaponAmbits`) is a bit-flag integer encoding which ambits apply. Each bit is `1 << enum`:
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Values are combined. For example:
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Values are combined. For example:
 - `6` = Land (4) + Water (2) — most planet structs
 - `8` = Air only — air fleet units
 - `16` = Space only — space fleet units, orbital planet structs
 - `30` = Space (16) + Air (8) + Land (4) + Water (2) — Command Ship only
 
-When initiating a build, the `[operating-ambit]` argument must be one of the valid ambits for that struct type.
+This **reach bitmask** is a different scale from the **ambit enum** (none=0, water=1, land=2, air=3, space=4, local=5) used by transaction messages and a struct's stored `operatingAmbit`. When initiating a build or moving, pass the enum (the CLI accepts the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](../mechanics/building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ---
 
@@ -8519,6 +8574,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 - [entity-relationships.md](entity-relationships.md) — Struct ownership, location
 - [power.md](../mechanics/power.md) — BuildDraw, PassiveDraw, capacity
 - [building.md](../mechanics/building.md) — Build process, proof-of-work, -D flag
+- [building.md — Status field (numeric)](../mechanics/building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask
 - [resources.md](../mechanics/resources.md) — Conversion rates, ore flow
 - [combat.md](../mechanics/combat.md) — Combat struct roles
 - [valuation.md](../economy/valuation.md) — Struct valuation
@@ -10659,6 +10715,106 @@ Once identified, refer to [Counter-Strategies](counter-strategies.md) for the sp
 </document>
 
 <document>
+<source>playbooks/meta/team-operations.md</source>
+# Team Operations
+
+**Topic**: Running multiple players (accounts) as one coordinated force
+**Principle**: Most per-player limits are not limits across players. Two accounts are not twice the work — they are twice the charge, twice the build slots, and a power-and-fire multiplier you cannot buy with a single account.
+
+---
+
+## Why run more than one player
+
+Many of the game's hardest ceilings are **per-player**, and the chain rewards splitting work across accounts:
+
+- **Charge is per-player.** A single player has one shared charge bar and can only act about once per charge cycle. Five players have five bars — five actions in the same window. This is the only way to "alpha-strike": you cannot bank charge on one account, but you *can* fire from many. See [building.md — Charge Accumulation](../../knowledge/mechanics/building.md#charge-accumulation).
+- **Build limits are per-player.** Most planet structs and the Command Ship cap at 1 *per player*. A team fields one Ore Extractor, one Refinery, one PDC, one Jamming Satellite **each** — multiplying production and defense on a shared front.
+- **Sequencing is per-account.** One account can only land one transaction per ~6-second block (sequence numbers). Different accounts transact **in parallel** with no contention. See [conventions](../../.cursor/skills/conventions.md).
+- **Proof-of-work is per-object.** Independent accounts grind their own builds/mines/refines/raids simultaneously — true parallel expeditions.
+
+The cost is coordination and key hygiene. This playbook is how to get the multiplier without losing control (or your keys).
+
+---
+
+## Setting up a team
+
+### Keys and accounts
+
+Each player needs its own signing key. Derive them deterministically so you can recover the whole team from one seed:
+
+- Use HD derivation (`structsd keys add worker-2 --recover` / account-index paths) so every account traces back to a single mnemonic you back up **once**.
+- Name keys by role, not by guesswork (`core`, `power`, `striker-1`, `striker-2`). Future-you reads logs faster.
+- Record which key owns which player in [TOOLS.md](../../TOOLS.md). An untracked key is a lost player.
+
+### Onboarding the team (proxy signup)
+
+Bring each account onto the chain via the guild proxy flow (`MsgGuildMembershipJoinProxy`): sign `GUILD{id}ADDRESS{addr}NONCE0`, POST to the guild, poll `/structs/address/{addr}` for the player id. The flow is **idempotent** — re-running for an address that already joined returns `resource_already_exists`, which you **treat as success** (adopt the existing player), not a failure. So a team-onboarding loop can be safely retried. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md) and [integration-notes — Proxy signup](../../api/integration-notes.md#proxy-signup-is-idempotent).
+
+### Permissions and delegation
+
+You do **not** need to expose every key's full authority to coordinate them. Grant a low-trust worker key only the bits it needs:
+
+- A **hash worker** needs only the relevant `hash_*` bit to grind proofs on another player's objects — not transfer or play rights.
+- A **defense watcher** needs only defense-set permission on the structs it guards.
+
+This lets one orchestrator drive many players while keeping each grant minimal. See [structs-permissions](../../.cursor/skills/structs-permissions/SKILL.md) for the full delegation recipes.
+
+---
+
+## Power sharing: substation-fed players
+
+A team does not need every account to generate its own power. Concentrate generation and **distribute capacity**:
+
+- One or two **power players** build the expensive generators (Continental Power Plant, World Engine) and run substations.
+- **Striker / miner players** carry little or no generation; they receive capacity through substation **allocations** and connections, spending their build slots on fleet and extractors instead.
+- This specializes accounts: power is centralized (efficient, fewer huge generators), while the front line stays light and numerous.
+
+Watch the shared dependency: if the power player goes offline (load > capacity), every fed player can drop with it. Budget headroom and monitor the generator account first. See [structs-energy](../../.cursor/skills/structs-energy/SKILL.md) for substations, allocations, and capacity budgeting.
+
+---
+
+## Coordinated combat
+
+### Focus fire (the charge multiplier)
+
+The decisive team tactic: **concentrate many accounts' attacks on one target in the same window.** Because each player has its own charge bar, N strikers land N attacks per cycle on a single struct — collapsing an enemy Command Ship or generator far faster than any solo account, which is rate-limited to one attack per charge cycle.
+
+- Pick the target together (usually the enemy Command Ship to open `shieldsVulnerable`, or a generator to force them offline).
+- Fire from accounts in **counter-free ambits** where possible — attacking from an ambit the defenders can't reach takes zero counter damage (see [combat.md — Counter-Attack](../../knowledge/mechanics/combat.md#counter-attack)).
+- Match weapon control to the target's defense across the team: send **unguided** hulls at Signal-Jamming targets, **guided** at Defensive-Maneuver targets.
+- Each account fires on its own sequence — no waiting on a shared bar.
+
+### Defensive coverage
+
+Spread defenders across accounts and ambits. Any built, online struct can defend a teammate's struct if co-located; cross-ambit defenders still **counter** even when they can't **block**. A team can blanket a key struct (a shared Command Ship, a refinery during its ore window) with counter coverage from every ambit at once. See [combat.md — Assigning Defenders](../../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set).
+
+### Raids as a team
+
+When raiding, remember the raid is per-fleet and the **`attackerDefeated`** rule punishes a lost Command Ship while away. In a team raid, the striker fleets soften the defense and the raiding account completes the proof — but each raiding Command Ship must stay protected, or that fleet is defeated and sent home empty. Never send all Command Ships away at once: a fleet that leaves station strips its **own** planet's shields until it returns.
+
+---
+
+## Orchestration and safety
+
+- **One transaction per account per block.** Drive accounts concurrently, but never fire two transactions from the *same* key in the same block (`account sequence mismatch`). Stagger per key, parallel across keys.
+- **Log every account's jobs** to `memory/jobs/` with the key name in the filename, so a background mine on `striker-2` is never confused with one on `core`.
+- **Key hygiene scales with team size.** More keys = more exposure. Back up the single seed, keep worker keys minimally permissioned, and never paste a key into shared logs. See [SAFETY.md](../../SAFETY.md).
+- **One orchestrator, clear roles.** Decide per account whether it is power, production, or strike, and keep it in that lane. Drift turns a coordinated force back into N uncoordinated players.
+
+---
+
+## See Also
+
+- [structs-permissions](../../.cursor/skills/structs-permissions/SKILL.md) — delegation, multi-address, minimal-permission workers
+- [structs-energy](../../.cursor/skills/structs-energy/SKILL.md) — substations, allocations, capacity sharing
+- [structs-combat](../../.cursor/skills/structs-combat/SKILL.md) — counters, focus fire, raid doctrine
+- [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md) — proxy signup for each account
+- [building.md — Charge Accumulation](../../knowledge/mechanics/building.md#charge-accumulation) — why the per-player bar makes parallelism the only burst
+- [tempo.md](tempo.md) — initiative and timing, which a team wins by default
+
+</document>
+
+<document>
 <source>awareness/state-assessment.md</source>
 # State Assessment
 
@@ -12139,6 +12295,7 @@ These are teaching aids, not scripts to replay blindly. IDs, balances, and block
 |------------|--------------|
 | [01 — Zero to mining](01-zero-to-mining.md) | Onboarding, async build pipeline, refine-on-complete, memory hygiene |
 | [02 — Raid go/no-go](02-raid-go-no-go.md) | Scouting, the shield-vulnerability gate, target economics, disciplined no-go |
+| [03 — Combat and raid](03-combat-and-raid.md) | Counter-free attacking ambits, weapon-control vs defense, charge pacing, numeric status, stubbed stream, completing a raid safely |
 
 Each transcript is graded against the [agent scorecard](../../awareness/scorecard.md).
 
@@ -12368,6 +12525,140 @@ nohup structsd tx structs struct-ore-raid-compute -D 3 --from ferro --gas auto -
 </document>
 
 <document>
+<source>examples/transcripts/03-combat-and-raid.md</source>
+---
+title: "Transcript 03 — Combat and Raid"
+---
+
+# Transcript 03 — Combat and Raid
+
+**Goal**: Clear a vulnerable planet's defenders and complete a raid, applying the combat levers that actually decide the fight.
+**Skills**: [structs-intel](../../.cursor/skills/structs-intel/SKILL.md), [structs-combat](../../.cursor/skills/structs-combat/SKILL.md), [structs-streaming](../../.cursor/skills/structs-streaming/SKILL.md).
+**Why it's "golden"**: the agent picks **attacking ambits that take zero counter damage**, matches **weapon control to enemy defense** (unguided vs Signal Jamming), respects the **per-player charge bar**, reads the **numeric struct status** to confirm kills, knows the live `struct_attack` payload is **stubbed** (so it watches effect events instead), and completes the raid while keeping its **own Command Ship safe** from `attackerDefeated`.
+
+This builds on [Transcript 02 — Raid Go/No-Go](02-raid-go-no-go.md): there the agent decided *whether* to raid. Here it executes one against an **offline** defender — the only reliably winnable case, because an offline owner cannot rebuild a downed Command Ship to re-raise shields.
+
+---
+
+**Agent:** A watch alert says owner `1-260`'s Command Ship dropped offline. Their planet `2-90` looked ore-rich. Scout before committing anything.
+
+```bash
+scripts/scout.sh 2-90
+```
+
+```
+== Raid scout: planet 2-90 (Halide) ==
+  owner                  1-260
+  stealable ore          1240
+  command ship           present=yes status=offline
+  fleet                  onStation (away=no)
+  shields vulnerable     yes
+  defenders on planet     PDC (19), 2x Tank (9, land), Cruiser (11, water)
+  verdict: GO (verify) — shields vulnerable, ore present — confirm you out-survive the defense
+```
+
+> The gate passes: their Command Ship is **offline**, so shields are vulnerable and — crucially — they **cannot rebuild it at the buzzer**. The clock (`blockStartRaid`) is already running. The risk is the defense whittling my fleet during the raid window. I don't need to destroy every defender, but I want to remove the ones that will hurt me, cheaply.
+
+**Agent:** Map the defenders to my fleet before throwing a punch. My fleet `9-318`: a Battleship (space, **unguided** armour-piercing primary on land/water), a Stealth Bomber (air → land/water), and a Pursuit Fighter (air → air). Their defenders:
+
+- **2× Tank** — land, **armour** (damage-reduction 1). They counter only what reaches their weapon's ambit (Tanks hit **land** only).
+- **Cruiser** — water, **Signal Jamming** (evades **guided** weapons 66%).
+- **PDC** — auto-fires at me after the volley resolves; I can't dodge it by ambit, only out-pace it.
+
+> Two levers decide this:
+> 1. **Counters are ambit-gated.** A Tank's weapon reaches land only, so if I hit it from **air**, it cannot counter — zero return damage. My Stealth Bomber (air) hits land. Free hits on the Tanks.
+> 2. **Weapon control vs defense.** Their Cruiser has Signal Jamming, which eats **guided** shots. My Battleship primary is **unguided** — jamming does nothing to it. I never send a guided weapon at that Cruiser.
+
+**Agent:** Strike the Tanks from the air first — armour reduces my 2-damage hits to 1, but I take **no counter** because they can't reach air. Tanks are 3 HP, so 3 hits each. I space the attacks: each primary costs charge from my **one shared per-player bar**, so I let it refill (~1/block) between shots rather than firing blind and failing on `insufficient charge`.
+
+```bash
+# Stealth Bomber (air) -> Tank #1 (land). Single target: the comma-list would NOT
+# spread a single-target weapon, so I name one target per attack.
+structsd tx structs struct-attack --from ferro --gas auto --gas-adjustment 1.5 -- 5-602 5-410 0
+# wait ~one charge cycle, verify, repeat
+```
+
+> Attacking breaks my Stealth Bomber's stealth (firing reveals it) — expected; I'm committed to the engagement now. I confirm each hit by the **effect**, not by assuming the broadcast worked.
+
+**Agent:** While I fight, I watch the planet subject on GRASS. Note: I do **not** rely on the `struct_attack` payload for the blow-by-blow — large combat detail is **stubbed** off the live stream. I read the **effect** events that always arrive in full.
+
+```bash
+node - <<'JS'
+import { connect } from "nats.ws";
+const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
+for await (const m of nc.subscribe("structs.planet.2-90")) {
+  const e = JSON.parse(new TextDecoder().decode(m.data));
+  if (e.stub) { console.log("(stubbed", e.category + " — pull planet_activity for detail)"); continue; }
+  if (["struct_health","struct_status","raid_status","shield_change"].includes(e.category))
+    console.log(e.category, JSON.stringify(e.detail ?? e));
+}
+JS
+```
+
+```
+(stubbed struct_attack — pull planet_activity for detail)
+struct_health {"struct_id":"5-410","health":2,"health_old":3}
+(stubbed struct_attack — pull planet_activity for detail)
+struct_health {"struct_id":"5-410","health":1,"health_old":2}
+(stubbed struct_attack — pull planet_activity for detail)
+struct_status {"struct_id":"5-410","status":35}
+```
+
+> There it is: the `struct_attack` rows come through **stubbed** (no shot detail), but `struct_health` tracks the Tank down 3→2→1, and finally `struct_status` reports **`35`** — that's `Materialized(1) + Built(2) + Destroyed(32)`, i.e. **destroyed**. If I needed the per-shot log (who countered, evasion causes) I'd pull the Guild API `planet-activity` row by `seq`; for combat tracking the effect events are enough. Tank #1 down, and I took zero counter damage doing it.
+
+**Agent:** Repeat on Tank #2 from the air. Then the Cruiser (water, Signal Jamming) — I use the Battleship's **unguided** armour-piercing primary, which jamming can't evade and which ignores any reduction. The Battleship lives in space and reaches water, so the Cruiser (water weapon) *can* counter it; I accept that small return (counter values are tiny — a backstop, not a threat) because the unguided choice guarantees my damage lands.
+
+```bash
+structsd tx structs struct-attack --from ferro --gas auto --gas-adjustment 1.5 -- 5-601 5-412 0
+```
+
+> I leave the **PDC** alone — it's 6 HP and only auto-fires once per volley; out-pacing it costs less than the charge to kill it. I've removed the units that would chip my fleet across a multi-block raid.
+
+**Agent:** Defenders handled. Now complete the raid. The clock has been aging since their Command Ship went offline, so the proof is cheap at `-D 3`. I move my fleet to the target (it's now `away` — which means **my own** planet's shields are down until it returns, so I refined my home ore before starting), verify on-station-at-target, then run the compute in the background.
+
+```bash
+structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9-318 2-90
+structsd query structs fleet 9-318 -o json | jq '{status, locationId}'
+
+nohup structsd tx structs planet-raid-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 9-318 \
+  > memory/jobs/raid-9-318.log 2>&1 & echo $! > memory/jobs/raid-9-318.pid
+```
+
+> **Guard my own Command Ship.** `trigger_raid_defeat_by_destruction` lives on the Command Ship: if **my** CMD is destroyed while away, my fleet is defeated (`attackerDefeated`) and sent home empty. My CMD has defenders assigned across ambits for counter coverage and is not exposed alone. Their owner is offline, so there's no live counter-raid — but I keep `watch-defense` running in case they wake up.
+
+**Agent:** Verify the outcome — broadcast is not success.
+
+```bash
+structsd query structs planet 2-90 -o json | jq '{raid_status, seized_ore}'
+```
+
+```
+{ "raid_status": "raidSuccessful", "seized_ore": 1240 }
+```
+
+> `raidSuccessful`, 1240 ore seized — all of their `storedOre` (a raid takes everything, never a share). Now the ore is in **my** hands and stealable, so I move home and refine it immediately. Note what the raid did and did **not** do: it took the ore. It did **not** destroy the player or their structs — there is no player-elimination outcome.
+
+```bash
+structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9-318 [home-location]
+nohup structsd tx structs struct-ore-refine-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- [refinery-id] \
+  > memory/jobs/refine-postraid.log 2>&1 &
+```
+
+---
+
+## What made this good
+
+- **Picked counter-free ambits.** Hitting the land Tanks from the **air** drew **zero** counter damage — the single biggest combat lever (counters are gated by whether the defender's weapon reaches the *attacker's* ambit).
+- **Matched weapon control to defense.** Used an **unguided** weapon against the Signal-Jamming Cruiser; never wasted a guided shot into 66% evasion.
+- **Respected the shared charge bar.** Spaced single-target attacks ~one charge cycle apart instead of firing into `insufficient charge` (charge cannot be banked or burst).
+- **Read the numeric status.** `35` = destroyed (`1+2+32`), confirmed from the effect stream — not guessed.
+- **Knew the stream's limits.** Treated `struct_attack` as **stubbed** and tracked combat via `struct_health` / `struct_status`, pulling `planet_activity` only if per-shot detail were needed.
+- **Targeted an offline defender** — the only reliably winnable raid, because they can't rebuild a downed Command Ship — and **protected its own Command Ship** from `attackerDefeated`.
+- **Verified, then secured the loot**: confirmed `raidSuccessful`, moved home, and refined the seized ore before it could be raided back.
+
+</document>
+
+<document>
 <source>api/integration-notes.md</source>
 # Integration Notes: Live Data Shapes & Gotchas
 
@@ -12482,6 +12773,8 @@ Struct **health** and the numeric **status bitmask** are NOT on the base struct 
 
 The catalog list endpoints return only base columns: `id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at` (verified in webapp `TableReadManager::structListAll/ByOwner/ByLocation`). To get HP, built-state, or the build clock you must use a bespoke endpoint or the chain entity, where `structAttributes` exposes `health`, `isBuilt`, `blockStartBuild`, and `status`.
 
+The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row.
+
 See [api/webapp/struct.md](webapp/struct.md) for full response shapes.
 
 ---
@@ -12525,6 +12818,19 @@ When you build or move, pass the **enum** (the CLI accepts the lowercase name `s
 
 ---
 
+## `capacity_exceeded` covers two different build checks
+
+`struct-build-initiate` raises one error string — `cannot handle new load requirements (required: X, available: Y)` (structured error key `capacity_exceeded`) — for **two** unrelated gates. The numbers tell them apart:
+
+| `required` / `available` look like | Gate | Meaning |
+|------------------------------------|------|---------|
+| Tiny integers, often equal (e.g. `1 / 1`) | **Per-player build limit** | `required` is the struct type's build limit, `available` is how many you already own. Most planet structs and the Command Ship cap at 1; only Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. |
+| Large values (hundreds of thousands to millions) | **Power capacity** (milliwatts) | `required` is the struct's `BuildDraw`, `available` is remaining capacity `(capacity + capacitySecondary) - (load + structsLoad)`. |
+
+Do not assume the error is always about power — a `1/1` is the build-count limit, not a power shortage. Verified in `x/structs/keeper/msg_server_struct_build_initiate.go` (build-count and `CanSupportLoadAddition` checks) and `x/structs/types/errors_structured.go` (`capacity_exceeded`). See [building.md](../knowledge/mechanics/building.md#build-validation-order).
+
+---
+
 ## Proxy signup is idempotent
 
 The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` → `POST /api/auth/signup` → guild fronts `MsgGuildMembershipJoinProxy` → poll `/structs/address/{addr}` for the player id) is safe to re-run. Re-running for an address that already joined returns `{resource_already_exists}`. **Treat this as success** (adopt the existing player) rather than a hard failure. See [structs-onboarding](../.cursor/skills/structs-onboarding/SKILL.md).
@@ -12555,6 +12861,953 @@ Almost everything under `/api/` requires an authenticated session (the `PlayerAu
 - [api/streaming/event-schemas.md](streaming/event-schemas.md) — Event catalog
 - [reference/api-quick-reference.md](../reference/api-quick-reference.md) — Endpoint quick lookup
 - [protocols/webapp-api-protocol.md](../protocols/webapp-api-protocol.md) — Envelope and pagination conventions
+
+</document>
+
+<document>
+<source>api/streaming/event-types.md</source>
+# GRASS Event Types
+
+**Version**: 1.0.0
+**Last Updated**: 2026-01-16
+**Description**: Complete catalog of GRASS event types and categories
+
+---
+
+## Event Categories
+
+### Consensus Events
+
+| Event Name | Description | Subject Pattern | Schema |
+|------------|-------------|-----------------|--------|
+| block | Block updates | `structs.block.*` | `event-schemas.md#BlockEvent` |
+
+### Guild Events
+
+| Event Name | Description | Subject Pattern | Schema |
+|------------|-------------|-----------------|--------|
+| guild_consensus | Guild consensus data updates | `structs.guild.*` | `event-schemas.md#GuildConsensusEvent` |
+| guild_meta | Guild metadata updates | `structs.guild.*` | `event-schemas.md#GuildMetaEvent` |
+| guild_membership | Guild membership changes | `structs.guild.*` | `event-schemas.md#GuildMembershipEvent` |
+| guild_rank_permission | Guild rank permissions set or revoked | `structs.guild.*` | `event-schemas.md#EventGuildRankPermission` |
+
+### Planet Events
+
+These are `planet_activity` rows; they arrive on the **planet subject** `structs.planet.{planet_id}`.
+
+| Event Name | Description | Subject Pattern | Schema |
+|------------|-------------|-----------------|--------|
+| raid_status | Raid status changes | `structs.planet.*` | `event-schemas.md#PlanetRaidStatusEvent` |
+| shield_change | Planetary shield value changed (`planetary_shield` / `planetary_shield_old`) | `structs.planet.*` | -- |
+| block_raid_start | Raid vulnerability clock (`blockStartRaid`) armed | `structs.planet.*` | -- |
+| planet_activity | Generic planet activity wrapper from the `planet_activity` table | `structs.planet.*` | `event-schemas.md#PlanetActivityEvent` |
+| fleet_arrive | Fleet arrival | `structs.planet.*` | `event-schemas.md#FleetArriveEvent` |
+| fleet_depart | Fleet departure | `structs.planet.*` | -- |
+
+> `fleet_advance` exists in the category enum but is **not emitted** by the current indexer — fleet movement surfaces as `fleet_depart` then `fleet_arrive`. Do not wait on `fleet_advance`.
+
+### Struct Events
+
+These are `planet_activity` rows and arrive on the **planet subject** `structs.planet.{planet_id}` (not the struct subject). See [struct_attack stubbing](#struct_attack-payload-stubbing) below.
+
+| Event Name | Description | Subject Pattern | Schema |
+|------------|-------------|-----------------|--------|
+| struct_attack | Struct attack (per-shot `detail`; **stubbed when large** — see below) | `structs.planet.*` | -- |
+| struct_health | Struct HP changed (`health` / `health_old`) | `structs.planet.*` | -- |
+| struct_defense_remove | Defense structure removed | `structs.planet.*` | -- |
+| struct_defense_add | Defense structure added | `structs.planet.*` | -- |
+| struct_defender_clear | Defense relationships cleared from a struct | `structs.planet.*` | -- |
+| struct_status | Struct status changes (online / offline / destroyed) | `structs.planet.*` | `event-schemas.md#StructStatusEvent` |
+| struct_move | Struct movement | `structs.planet.*` | -- |
+| struct_block_build_start | Build operation started | `structs.planet.*` | -- |
+| struct_block_ore_mine_start | Mining operation started | `structs.planet.*` | -- |
+| struct_block_ore_refine_start | Refining operation started | `structs.planet.*` | -- |
+
+#### struct_attack payload stubbing
+
+`struct_attack` is published live, but the NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes, the stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. Detect combat from the effect events (`struct_health`, `struct_status`, `shield_change`, `raid_status`), then pull the full shot detail from the Guild API `planet-activity` feed keyed by `seq`/`planet_id`. Small attacks ship `detail` inline.
+
+### Player Events
+
+| Event Name | Description | Subject Pattern | Schema |
+|------------|-------------|-----------------|--------|
+| player_consensus | Player state updates, including UGC `username`/`pfp` on `structs.player` | `structs.player.*` | `event-schemas.md#PlayerConsensusEvent` |
+| player_address | Address added to / changed on a player | `structs.player.*` | -- |
+| player_address_pending | Pending address registration appeared | `structs.player.*` | -- |
+
+### Address Events
+
+| Event Name | Description | Subject Pattern |
+|------------|-------------|-----------------|
+| address_register | Address registration events | `structs.address.register.*` |
+
+### UGC Moderation Events (Cosmos chain events, not GRASS)
+
+`ugc_moderated` is emitted as a regular Cosmos `sdk.Event` by the keeper (not by the GRASS DB-trigger pipeline) whenever a UGC name/pfp update is performed by an actor who is not the target object's owner. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`), not via NATS.
+
+| Event Name | Description | Source | Schema |
+|------------|-------------|--------|--------|
+| ugc_moderated | A guild moderator overwrote another player's name/pfp, or the name/pfp of a planet/substation owned by a guild-mate | Cosmos chain event (`sdk.Event`, type `ugc_moderated`) | `event-schemas.md#UGCModeratedEvent` |
+
+The chain only emits this event when `actor_player_id != target_owner_player_id`. Self-service updates (a player renaming themselves, a guild owner renaming their own guild) are silent.
+
+The corresponding `player_consensus` GRASS events fire when sync-state commits UGC updates to `structs.player`. `guild_meta` fires for off-chain guild config on `structs.guild_meta`. Chain UGC on `structs.guild`, `structs.planet`, and `structs.substation` surface through chain events and `planet_activity`.
+
+---
+
+## Subject Patterns
+
+| Entity | Pattern | Specific Format | Example |
+|--------|---------|-----------------|---------|
+| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
+| Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
+| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.3-1` |
+| Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
+| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.7-1` |
+| Address | `structs.address.register.*` | `structs.address.register.{code}` | `structs.address.register.ABC123` |
+| Global | `structs.global` | `structs.global` | `structs.global` |
+
+---
+
+## Related Documentation
+
+- `api/streaming/event-schemas.md` - Event schema definitions
+- `api/streaming/subscription-patterns.md` - Subscription patterns
+- `protocols/streaming.md` - Streaming protocol
+- `api/streaming/README.md` - Streaming overview
+
+</document>
+
+<document>
+<source>api/streaming/event-schemas.md</source>
+# GRASS Event Schemas
+
+**Version**: 1.1.0
+**Category**: streaming
+
+Complete catalog of GRASS event payload schemas for AI agents.
+
+---
+
+## Base Event
+
+All GRASS events share a common base structure.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| subject | string | Yes | NATS subject for this event. Pattern: `^structs\..+$` |
+| category | string | Yes | Event category (see `event-types.yaml`) |
+| id | string | Yes | Entity identifier |
+| updated_at | string (date-time) | Yes | ISO 8601 timestamp of update |
+
+> **`detail` has two representations depending on transport.** Over **NATS/GRASS** the frame is parsed once (`message.json()`), so `detail` arrives as an **already-parsed object** — access `detail.*` directly. Over the **Guild API `planet-activity` REST feed** the same `detail` comes from a PostgreSQL column as a **JSON-encoded string** — you must `JSON.parse(row.detail)` first. Code that consumes both transports must branch on the source. See [api/integration-notes.md — Event detail has two representations](../integration-notes.md#event-detail-has-two-representations).
+
+---
+
+## Event Definitions
+
+### PlayerConsensusEvent
+
+Extends [BaseEvent](#base-event). Category: `player_consensus`
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Player ID |
+| guildId | string | Guild ID |
+| primaryAddress | string | Player primary address |
+| username | string | Player display name (on `structs.player`; from chain UGC) |
+| pfp | string | Profile picture URI (on `structs.player`; from chain UGC) |
+
+Fires when sync-state commits an insert or update to `structs.player`, including UGC changes from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy.
+
+### GuildConsensusEvent
+
+Extends [BaseEvent](#base-event). Category: `guild_consensus`
+
+**Data Fields**: Guild consensus data object.
+
+### GuildMetaEvent
+
+Extends [BaseEvent](#base-event). Category: `guild_meta`
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Guild ID |
+| description | string | Guild description (off-chain config on `structs.guild_meta`) |
+| tag | string | Short guild tag |
+| logo | string | Logo URI |
+| services | object | Guild API / GRASS / webapp endpoint map |
+
+Chain UGC `name` and `pfp` live on `structs.guild` and surface via `guild_consensus` / chain events — not through `guild_meta`.
+
+### UGCModeratedEvent (Cosmos chain event)
+
+**Not** delivered through GRASS. This is a typed Cosmos `sdk.Event` of type `ugc_moderated` emitted by the chain keeper. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`).
+
+Fires only when the actor of a UGC update is **not** the target object's owner (i.e. moderation overrides only — self-service updates are silent).
+
+**Attributes**:
+
+| Attribute | Description |
+|-----------|-------------|
+| `actor_player_id` | Player ID of the moderator |
+| `actor_address` | Signing address that authored the tx |
+| `target_object_id` | Player / planet / substation / guild ID being moderated |
+| `target_owner_player_id` | Owner player ID at the time of the update |
+| `field` | `name` or `pfp` |
+| `old_value` | Field value before the update |
+| `new_value` | Field value after the update |
+
+See `knowledge/mechanics/ugc-moderation.md` for the full philosophy and validation rules.
+
+### GuildMembershipEvent
+
+Extends [BaseEvent](#base-event). Category: `guild_membership`
+
+**Data Fields**: Guild membership change data object.
+
+### EventGuildRankPermission
+
+Extends [BaseEvent](#base-event). Category: `guild_rank_permission`
+
+Fires when guild rank permissions are set or revoked on an object.
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| guildRankPermissionRecord | object | Guild rank permission record |
+| guildRankPermissionRecord.objectId | string | Object the permission applies to |
+| guildRankPermissionRecord.guildId | string | Guild ID |
+| guildRankPermissionRecord.permissions | integer | Permission bitmask (single bit, decomposed) |
+| guildRankPermissionRecord.rank | integer | Worst-allowed rank for this permission bit (0 = revoked) |
+
+```json
+{
+  "guildRankPermissionRecord": {
+    "objectId": "6-1",
+    "guildId": "0-1",
+    "permissions": 4,
+    "rank": 3
+  }
+}
+```
+
+### PlanetRaidStatusEvent
+
+Extends [BaseEvent](#base-event). Category: `raid_status`
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | string | Raid outcome. One of: `victory` (attacker won), `defeat` (attacker lost), `attackerRetreated` (attacker retreated from raid) |
+| attackerId | string | Attacker player ID |
+| planetId | string | Target planet ID |
+
+### PlanetActivityEvent
+
+Extends [BaseEvent](#base-event). Category: `planet_activity`
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| planetId | string | Planet ID associated with this activity |
+| details | object | Activity details (JSONB from `planet_activity` table) |
+| details.struct_health | object | Struct health information (additional properties allowed) |
+
+### FleetArriveEvent
+
+Extends [BaseEvent](#base-event). Category: `fleet_arrive`
+
+**Data Fields**: Fleet arrival data object.
+
+### StructAttackEvent
+
+Extends [BaseEvent](#base-event). Category: `struct_attack`
+
+The `detail` payload has the **attacker context flat at the top** and the **per-projectile outcomes nested** in `eventAttackShotDetail[]` (one entry per shot). Field keys are camelCase (unlike most other struct events).
+
+**Top-level (attacker) fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| attackerStructId | string | Attacking struct ID |
+| attackerStructType | integer | Attacker struct type ID |
+| attackerStructOperatingAmbit | integer | Attacker ambit (enum: water=1…space=4) |
+| weaponSystem | integer | 0 = primary, 1 = secondary |
+| weaponControl | integer | Weapon control value |
+| recoilDamage | integer | Recoil damage amount |
+| recoilDamageToAttacker | boolean | Whether recoil hit the attacker |
+| planetaryDefenseCannonDamage | integer | PDC damage contribution |
+| attackerPlayerId | string | Attacking player ID |
+| targetPlayerId | string | Defending player ID |
+| eventAttackShotDetail | array | Per-projectile shot outcomes (see below) |
+
+**`eventAttackShotDetail[]` (per-projectile) fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| targetStructId | string | Struct hit by this shot |
+| targetStructType | integer | Target struct type ID |
+| evaded | boolean | Shot evaded |
+| evadedCause | integer | Evasion cause code |
+| blocked | boolean | Shot absorbed by a defender |
+| blockedByStructId | string | Defender struct that blocked (empty if none) |
+| damageDealt | integer | Final damage applied |
+| damage | integer | Pre-reduction damage |
+| damageReduction | integer | Damage reduced by armor/effects |
+| targetDestroyed | boolean | Target reached 0 HP |
+| targetCountered | boolean | Target fired a counter |
+| targetCounteredDamage | integer | Counter damage dealt back |
+
+> `attackerHealthBefore`, `targetHealthBefore`, and `targetHealthAfter` are **runtime-enriched** fields present on the live activity feed (used for animation) and are not part of the canonical protobuf type; they may arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
+
+> **Stubbing on the live stream.** The NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's full `detail` exceeds 7995 bytes (typical of multi-shot, multi-defender fights), the realtime stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. The full `eventAttackShotDetail[]` is then only available by pulling the Guild API `planet-activity` row (keyed by `seq`/`planet_id`). Detect combat from the effect events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`); use the pull for per-shot detail. Small attacks ship `detail` inline.
+
+### StructStatusEvent
+
+Extends [BaseEvent](#base-event). Category: `struct_status`
+
+**Data Fields**: Struct status change data object.
+
+### BlockEvent
+
+Extends [BaseEvent](#base-event). Category: `block`
+
+**Data Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| height | integer | Block height |
+| hash | string | Block hash |
+
+---
+
+## Event Categories
+
+All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{id}`.
+
+| Category Group | Event Types |
+|----------------|-------------|
+| consensus | `block` |
+| guild | `guild_consensus`, `guild_meta`, `guild_membership` |
+| planet | `raid_status`, `shield_change`, `block_raid_start`, `fleet_arrive`, `fleet_depart`, `planet_activity` |
+| struct | `struct_attack`, `struct_health`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
+| player | `player_consensus`, `player_address`, `player_address_pending` |
+| grid (`structs.grid.{object}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
+| inventory (`structs.inventory.{denom}…`) | ledger actions: `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed` |
+| address | `address_register` |
+
+> Not emitted by the current indexer (present in the enum/older docs only): `fleet_advance` and `player_meta`. Do not subscribe expecting them.
+
+---
+
+## Related Documentation
+
+- [Event Types](event-types.yaml)
+- [Streaming Protocol](../../protocols/streaming.md)
+
+</document>
+
+<document>
+<source>troubleshooting/common-issues.md</source>
+# Common Issues
+
+**Version**: 1.0.0  
+**Category**: Troubleshooting  
+**Status**: Stable
+
+## Overview
+
+This document describes common issues AI agents encounter and how to resolve them. All issues are based on actual playtesting and validation failures.
+
+---
+
+## Issue Categories
+
+### Building Issues
+- [Building fails - Command Ship not online](#building-fails-command-ship-not-online)
+- [Building fails - Fleet not onStation](#building-fails-fleet-not-onstation)
+- [Building fails - Insufficient power](#building-fails-insufficient-power)
+- [Building fails - No available slots](#building-fails-no-available-slots)
+- [Building fails: cannot handle new load requirements](#building-fails-cannot-handle-new-load-requirements)
+
+### Exploration Issues
+- [Exploration fails - Current planet has ore](#exploration-fails-current-planet-has-ore)
+- [Exploration fails - Player not online](#exploration-fails-player-not-online)
+
+### Transaction Issues
+- [Transaction broadcasts but action doesn't happen](#transaction-broadcasts-but-action-doesnt-happen)
+- [Transaction status unclear](#transaction-status-unclear)
+
+### Resource Issues
+- [Insufficient power capacity](#insufficient-power-capacity)
+- [Resource balances unavailable](#resource-balances-unavailable)
+
+---
+
+## Building Issues
+
+### Building fails - Command Ship not online
+
+**Symptom**: Transaction broadcasts but struct not created
+
+**Cause**: Command Ship not built or not online
+
+**Diagnosis**:
+1. Query fleet for Command Ship struct
+2. Check Command Ship status
+3. If status != 'online', Command Ship not ready
+
+**Solution**:
+1. Build Command Ship in fleet (if not built)
+2. Complete Command Ship build (proof-of-work)
+3. Activate Command Ship
+4. Verify Command Ship status = 'online'
+5. Retry building
+
+**Reference**: `dependencies/command-ship.md`
+
+---
+
+### Building fails - Fleet not onStation
+
+**Symptom**: Transaction broadcasts but struct not created
+
+**Cause**: Fleet is away (not onStation)
+
+**Diagnosis**:
+1. Query fleet status
+2. Check if fleet.status == 'onStation'
+3. If not, fleet is away
+
+**Solution**:
+1. Move fleet back to planet
+2. Verify fleet.status == 'onStation'
+3. Retry building
+
+**Reference**: `dependencies/building.md`
+
+---
+
+### Building fails - Insufficient power
+
+**Symptom**: Transaction broadcasts but struct not created
+
+**Cause**: Insufficient power capacity
+
+**Diagnosis**:
+1. Query player power capacity
+2. Calculate available power: `(capacity + capacitySecondary) - (load + structsLoad)`
+3. Check struct power requirements: `buildPower + passivePower`
+4. If available < required, insufficient power
+
+**Solution**:
+1. Increase power capacity (build power structs)
+2. Reduce current load (deactivate structs)
+3. Verify available power >= required
+4. Retry building
+
+**Reference**: `dependencies/building.md`
+
+---
+
+### Building fails - No available slots
+
+**Symptom**: Transaction broadcasts but struct not created
+
+**Cause**: No available slots on planet for struct type
+
+**Diagnosis**:
+1. Query planet slot counts
+2. Query existing structs on planet
+3. Calculate available slots: `planetSlots[slotType] - existingStructsInAmbit`
+4. If available <= 0, no slots
+
+**Solution**:
+1. Choose different planet
+2. Remove existing struct (if possible)
+3. Verify available slots > 0
+4. Retry building
+
+**Reference**: `dependencies/building.md`
+
+---
+
+### Building fails: cannot handle new load requirements
+
+**Symptom**: Build initiate rejects with `cannot handle new load requirements (required: X, available: Y)` (error key `capacity_exceeded`)
+
+**Cause**: One error string covers **two** different build-initiate checks. The magnitude of the numbers tells you which one fired.
+
+**Diagnosis**:
+1. If `required` and `available` are **tiny integers** (often equal, e.g. `1/1`), you hit the **per-player build limit** — you already own the maximum of that struct type (`required` = the type's limit, `available` = how many you already have).
+2. If the values are **large** (hundreds of thousands to millions), you hit the **power-capacity** check in milliwatts — `required` = the struct's `BuildDraw`, `available` = remaining capacity `(capacity + capacitySecondary) - (load + structsLoad)`.
+
+**Solution**:
+- Build limit: most planet structs and the Command Ship cap at 1 per player. Only Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. Build it on another player, or accept the cap.
+- Power capacity: add generation, deactivate structs, or connect a substation to raise capacity, then retry.
+
+**Reference**: [knowledge/mechanics/building.md](../knowledge/mechanics/building.md#build-validation-order), [knowledge/mechanics/power.md](../knowledge/mechanics/power.md)
+
+---
+
+## Exploration Issues
+
+### Exploration fails - Current planet has ore
+
+**Symptom**: Transaction broadcasts but planet ownership unchanged
+
+**Cause**: Current planet still has ore remaining
+
+**Diagnosis**:
+1. Query current planet attributes for ore amount
+2. Check if currentOre > 0
+3. If ore > 0, planet not complete
+
+**Solution**:
+1. Mine all ore from current planet
+2. Verify ore amount = 0
+3. Retry exploration
+
+**Reference**: `dependencies/exploration.md`
+
+---
+
+### Exploration fails - Player not online
+
+**Symptom**: Transaction broadcasts but planet ownership unchanged
+
+**Cause**: Player is halted (offline)
+
+**Diagnosis**:
+1. Query player status
+2. Check if player.online == true
+3. If not, player is halted
+
+**Solution**:
+1. Wait for player to come online
+2. Verify player.online == true
+3. Retry exploration
+
+**Reference**: `dependencies/exploration.md`
+
+---
+
+## Transaction Issues
+
+### Transaction broadcasts but action doesn't happen
+
+**Symptom**: Transaction status = 'broadcast' but action didn't occur
+
+**Cause**: Validation failed on-chain (requirements not met)
+
+**Diagnosis**:
+1. Query game state after broadcast
+2. Compare expected vs actual
+3. Identify missing requirement
+4. Check requirements list
+
+**Solution**:
+1. Identify missing requirement
+2. Fix requirement
+3. Retry action
+4. Verify success
+
+**Reference**: `validation/transaction-flow.md`
+
+---
+
+### Transaction status unclear
+
+**Symptom**: Not sure if transaction succeeded
+
+**Cause**: Not verifying game state after broadcast
+
+**Diagnosis**:
+1. Check transaction status
+2. If 'broadcast', validation may have failed
+3. Need to verify game state
+
+**Solution**:
+1. Always verify game state after broadcast
+2. Query relevant entities
+3. Compare expected vs actual
+4. If mismatch, check requirements
+
+**Reference**: `validation/verification.md`
+
+---
+
+## Resource Issues
+
+### Insufficient power capacity
+
+**Symptom**: Cannot build or operate structs
+
+**Cause**: Power consumption exceeds capacity
+
+**Diagnosis**:
+1. Query player power attributes
+2. Calculate: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`
+3. If available < 0, insufficient capacity
+
+**Solution**:
+1. Build power generation structs
+2. Reduce struct load (deactivate structs)
+3. Increase power capacity
+4. Verify available power > 0
+
+**Reference**: `tasks/resource-management.md`
+
+---
+
+### Resource balances unavailable
+
+**Symptom**: Cannot query resource balances
+
+**Cause**: Resource data not accessible or player account issue
+
+**Diagnosis**:
+1. Check resource system status
+2. Verify player account exists
+3. Check query endpoint
+
+**Solution**:
+1. Verify player account exists
+2. Check resource system status
+3. Try alternative query methods
+4. Contact support if persistent
+
+**Reference**: `schemas/entities.md#/entities/Player`
+
+---
+
+## General Troubleshooting Steps
+
+### Step 1: Identify the Issue
+
+1. What action were you trying to perform?
+2. What was the expected result?
+3. What actually happened?
+4. What's different?
+
+### Step 2: Check Requirements
+
+1. Review action requirements
+2. Check dependency chains
+3. Verify all requirements met
+4. Identify missing requirements
+
+### Step 3: Fix and Retry
+
+1. Fix missing requirements
+2. Verify fixes
+3. Retry action
+4. Verify success
+
+### Step 4: If Still Failing
+
+1. Review validation patterns
+2. Check common failures
+3. Review dependency chains
+4. Consult error codes
+
+---
+
+## Related Documentation
+
+- **Dependencies**: `../dependencies/` - Dependency chains
+- **Validation**: `../validation/` - Validation patterns
+- **Tasks**: `../tasks/` - Task workflows
+- **Error Codes**: `../schemas/errors.md` - Error code definitions
+
+---
+
+*Last Updated: January 1, 2026*
+
+
+</document>
+
+<document>
+<source>reference/glossary.md</source>
+# Glossary
+
+**Purpose**: A lexical index for the whole corpus. Look a term up here when you know *what it's called* but not *which page explains it*. Each entry gives a one-line definition and a link to the canonical page that owns the detail. Where two similar terms are easy to confuse, a **Disambiguation** note separates them.
+
+This page is a **finder, not a source of truth** — when a value or rule matters, follow the link and read the canonical page. Terms are alphabetical.
+
+---
+
+## Quick disambiguations (the traps)
+
+These pairs cause the most integration and tactical errors:
+
+- **Ambit enum (0–5) vs ambit reach bitmask (1/2/4/8/16/32)** — the message/`operatingAmbit` scale vs the `possibleAmbit`/weapon-reach scale. Conflating them throws `invalid int32`. See [Ambit enum](#ambit-enum) and [Ambit reach bitmask](#ambit-reach-bitmask).
+- **Block vs counter** — block needs the defender in the *target's* ambit; counter needs the defender's weapon to reach the *attacker's* ambit. See [Block](#block) and [Counter-attack](#counter-attack).
+- **Multi-shot vs multi-target** — multiple projectiles at one target vs hitting multiple targets. Every weapon is single-*target*. See [Multi-shot](#multi-shot) and [Multi-target](#multi-target).
+- **`capacity_exceeded`: build-limit vs power** — one error string, two causes, told apart by the number magnitude. See [capacity_exceeded](#capacity_exceeded).
+- **Charge as a threshold, not a balance** — actions need a minimum charge; they reset the bar to 0, they do not subtract. See [Charge](#charge).
+- **`struct_attack` stub vs full detail** — large combat payloads stream without their shot detail. See [Stub](#stub).
+- **Raid `attackerDefeated` vs defender loss** — `trigger_raid_defeat_by_destruction` defeats the *attacker*, not the defender. See [trigger_raid_defeat_by_destruction](#trigger_raid_defeat_by_destruction).
+
+---
+
+## A
+
+### Alpha Matter
+The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. → [resources.md](../knowledge/mechanics/resources.md)
+
+### Ambit
+One of four combat layers — **Water, Land, Air, Space** — plus two special values (`none`, `local`). A struct operates in one ambit; weapons reach specific ambits. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
+
+### Ambit enum
+The ambit numbering used by transaction messages and a struct's stored `operatingAmbit`: `none=0, water=1, land=2, air=3, space=4, local=5`. Pass this (or the CLI name `space|air|land|water`) when building or moving. → [building.md — Ambit Encoding](../knowledge/mechanics/building.md#ambit-encoding)
+
+### Ambit reach bitmask
+The ambit numbering used by `possibleAmbit` and weapon-reach fields, where `bit = 1 << enum`: `none=1, water=2, land=4, air=8, space=16, local=32`. Combined with OR (e.g. `6` = land+water). **Not** the enum. → [api/integration-notes.md — Ambit](../api/integration-notes.md#ambit-enum-vs-reach-bitmask)
+
+### Armour
+A unit defense (Tank, and the power generators) that reduces incoming damage by 1. Negated by armour-piercing weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+
+### Armour-piercing
+A weapon property (Battleship primary) that ignores the target's damage reduction. → [combat.md — Multi-Shot Damage](../knowledge/mechanics/combat.md#multi-shot-damage)
+
+### attackerDefeated
+A raid status: the raiding fleet's own Command Ship was destroyed while away, so the fleet is defeated and sent home. The result of [trigger_raid_defeat_by_destruction](#trigger_raid_defeat_by_destruction). → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
+
+### away
+A fleet state: the fleet (and its Command Ship) has left its home planet. While away, you cannot build/mine at home, **and your home planet's shields are vulnerable**. Required to raid. → [fleet.md](../knowledge/mechanics/fleet.md)
+
+## B
+
+### Block
+A defender soaking a hit meant for the struct it protects. Requires the defender be in the **target's** ambit, the weapon be blockable, and the defender pass a readiness check. Fires only on non-evaded shots, attempted every shot. → [combat.md — Blocking](../knowledge/mechanics/combat.md#blocking)
+
+### block_raid_start
+A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid`) is armed. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
+
+### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
+The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks reset after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — The Per-Type Clock](../knowledge/mechanics/hashing.md#the-per-type-clock-blockstart)
+
+### Build
+Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
+
+### BuildDraw / PassiveDraw
+A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw`), in watts. Both must fit your capacity. → [power.md](../knowledge/mechanics/power.md)
+
+### Build limit
+The per-player cap on how many of a struct type you can own. Most planet structs and the Command Ship are 1; Orbital Shield Generator, Ore Bunker, and fleet combat structs are unlimited. Exceeding it raises [capacity_exceeded](#capacity_exceeded). → [building.md — Struct Limits](../knowledge/mechanics/building.md#struct-limits-per-player)
+
+## C
+
+### capacity / capacitySecondary
+Your power capacity (primary plus secondary). Available power = `(capacity + capacitySecondary) − (load + structsLoad)`. → [power.md](../knowledge/mechanics/power.md)
+
+### capacity_exceeded
+The structured error key behind `cannot handle new load requirements (required: X, available: Y)`. **Two causes, told apart by magnitude**: tiny equal integers = build-limit hit; large values = power-capacity shortage (milliwatts). → [building.md — Build Validation Order](../knowledge/mechanics/building.md#build-validation-order), [troubleshooting](../troubleshooting/common-issues.md#building-fails-cannot-handle-new-load-requirements)
+
+### Charge
+A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
+
+### Command Ship
+The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
+
+### Counter-attack
+Return damage from a defender or the target, fired at most once per `struct-attack` invocation. Requires the counter-attacker's weapon to reach the **attacker's** ambit (ambit-independent of what it defends). Defenders take no counter damage. → [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack)
+
+## D
+
+### -D flag
+The difficulty target on `*-compute` commands: the CLI waits until difficulty decays to `D` before hashing. `-D 3` is the default — instant hash, zero CPU wasted. → [building.md — The -D Flag](../knowledge/mechanics/building.md#the--d-flag)
+
+### Defender
+A struct assigned via `struct-defense-set` to protect another. Any co-located, built, online struct can be assigned regardless of ambit; ambit only governs whether it blocks (same ambit) or merely counters (cross ambit). → [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set)
+
+### Defensive Maneuver
+A unit defense (High Altitude Interceptor) that evades **unguided** weapons 66% of the time. Beaten by guided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+
+### demilitarized
+A raid status: the planet has no defenders to resolve against. → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
+
+### Difficulty
+The proof-of-work target = number of leading hex zeros required. Decays with the operation's age from 64 (fresh, impossible) toward 1 (aged, instant). The D=8→D=9 jump is the "cliff". → [hashing.md — Difficulty and Decay](../knowledge/mechanics/hashing.md#difficulty-and-decay)
+
+## E
+
+### Evasion
+A per-target roll where the target's defense type may dodge an entire volley. Guided vs Signal Jamming, or unguided vs Defensive Maneuver, miss 66% of the time. Planetary interceptors can also evade. → [combat.md — Evasion](../knowledge/mechanics/combat.md#evasion)
+
+## F
+
+### Fleet
+Your mobile group of structs, including the Command Ship. States: `onStation` (home) or `away`. → [fleet.md](../knowledge/mechanics/fleet.md)
+
+### fleet_advance
+A category present in the enum but **not emitted** by the current indexer; fleet movement surfaces as `fleet_depart` then `fleet_arrive`. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
+
+## G
+
+### Generators (Field / Continental Power Plant / World Engine)
+Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage reduction 1). They raise capacity, not neighbours' HP. → [struct-types.md](../knowledge/entities/struct-types.md)
+
+### GRASS
+Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
+
+### Guaranteed shots
+The minimum auto-hit shots before the success-rate roll applies. Only the Starfighter Attack Run secondary has one (`= 1`); the field is `omitempty` so it's absent (=0) on every other type. → [combat.md — Multi-Shot Damage](../knowledge/mechanics/combat.md#multi-shot-damage)
+
+### Guided / Unguided
+A weapon's control type. Guided weapons are evaded by Signal Jamming (66%); unguided weapons are evaded by Defensive Maneuver (66%). → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+
+## H
+
+### Hash types
+The four proof-of-work operations: build, mine, refine, raid. Each shares one algorithm but keys off a different clock and difficulty range. → [hashing.md — The Four Hash Types](../knowledge/mechanics/hashing.md#the-four-hash-types)
+
+### HP (Health)
+A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struct_attribute`, not the base struct row. → [combat.md — Health Points](../knowledge/mechanics/combat.md#health-points), [integration-notes.md](../api/integration-notes.md#where-struct-hp-and-status-live)
+
+## I
+
+### Indirect Combat Module
+Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
+
+### Infusion
+Converting Alpha Matter into reactor/generator power capacity. → [structs-energy SKILL](../.cursor/skills/structs-energy/SKILL.md)
+
+## J
+
+### Jamming Satellite
+Planet struct (type 17, 1 per player, `noUnitDefenses`) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network). It does **not** zero guided weapons. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
+
+## L
+
+### Load
+Current power consumption. If `load > capacity`, the player/struct goes offline. → [power.md](../knowledge/mechanics/power.md)
+
+### local (ambit)
+Enum 5 / bitmask 32. The Command Ship's "current ambit" weapon flag — it attacks whatever ambit it currently occupies. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
+
+### Low-orbit ballistic interceptor network
+A planetary defense (from the Jamming Satellite) that evades an incoming attack when the **attacker is in air/space and the target struct is in land/water**, flagged `evadedByPlanetaryDefenses`. → [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
+
+## M
+
+### Materialized / Built / Online
+Struct lifecycle bits: Materialized (slot reserved, awaiting PoW) → Built (complete, offline) → Online (active). → [building.md — Struct State Machine](../knowledge/mechanics/building.md#struct-state-machine)
+
+### Multi-shot
+Multiple projectiles fired at **one** target in a single volley (`primaryWeaponShots`). Distinct from multi-target. → [combat.md — Targets per attack](../knowledge/mechanics/combat.md#targets-per-attack)
+
+### Multi-target
+Hitting more than one target per volley (`primaryWeaponTargets`). **No weapon does this** — every type is `targets = 1`. → [combat.md — Targets per attack](../knowledge/mechanics/combat.md#targets-per-attack)
+
+## N
+
+### NATS
+The messaging system GRASS rides on; agents subscribe over WebSocket. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
+
+### Nonce / Proof
+The two PoW fields on a `*-complete` message: `nonce` (the value found by brute force) and `proof` (the lowercase-hex SHA-256 digest that clears difficulty). → [hashing.md — Universal Input Format](../knowledge/mechanics/hashing.md#universal-input-format)
+
+## O
+
+### onStation
+A fleet state: the fleet is at its home planet, so the Command Ship defends it (shields up). → [fleet.md](../knowledge/mechanics/fleet.md)
+
+### Ore (storedOre / remainingOre)
+`storedOre` is mined, stealable ore held by a player (the only raid loot). `remainingOre` is unmined ore on the planet. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
+
+## P
+
+### PassiveDraw
+See [BuildDraw / PassiveDraw](#builddraw--passivedraw).
+
+### planet_activity
+The PostgreSQL table whose inserts fire the GRASS stream; the source of full `struct_attack` shot detail when the live payload is [stubbed](#stub). → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [database-schema.md](../schemas/database-schema.md)
+
+### Planetary Defense Cannon (PDC)
+Planet struct (type 19, 1 per player) that auto-fires at any attacker of planetary structs after all targets resolve. Multiple players' PDCs stack. → [combat.md — Planetary Defense Cannon](../knowledge/mechanics/combat.md#planetary-defense-cannon)
+
+### Planetary shield
+A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW. Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
+
+### Proof-of-work (PoW)
+The SHA-256 puzzle that finalizes build/mine/refine/raid. Difficulty decays with age. → [hashing.md](../knowledge/mechanics/hashing.md)
+
+### Proxy signup
+Guild-fronted player creation (`MsgGuildMembershipJoinProxy`): sign a payload, POST to the guild, poll for your player id. Idempotent — a repeat returns `resource_already_exists` (treat as success). → [integration-notes.md — Proxy signup](../api/integration-notes.md#proxy-signup-is-idempotent)
+
+## R
+
+### Raid
+`planet-raid-complete` — a proof-of-work assault that seizes **all** of a vulnerable defender's `storedOre`. Does not destroy the player or their structs. → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
+
+### Raid statuses
+The `RaidStatus_*` lifecycle: `initiated` → `shieldsVulnerable` → (`raidSuccessful` | `attackerRetreated` | `attackerDefeated` | `ongoing` | `demilitarized`). → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
+
+### Recoil damage
+Self-damage the attacker takes after firing, applied only if it survives the whole sequence (including counters). → [combat.md — Recoil Damage](../knowledge/mechanics/combat.md#recoil-damage)
+
+## S
+
+### shieldsVulnerable
+The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate. → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+
+### shield_change
+A GRASS category fired when a planet's shield value changes. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
+
+### Signal Jamming
+A unit defense (Battleship, Pursuit Fighter, Cruiser) that evades **guided** weapons 66% of the time. This — not the Jamming Satellite — is why guided weapons miss repeatedly. Beaten by unguided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+
+### Stealth Mode
+A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting only; same-ambit structs can still hit. Attacking breaks stealth. → [combat.md — Stealth](../knowledge/mechanics/combat.md#stealth)
+
+### Status (numeric)
+A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1, Built 2, Online 4, Stored 8, Hidden 16, Destroyed 32, Locked 64. E.g. `7` = online, `35` = destroyed. → [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric)
+
+### Stub
+The `{ "stub": true }` envelope the GRASS stream sends in place of a `struct_attack` (or other large) payload that exceeds ~7995 bytes. Pull the full shot detail from `planet_activity`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+
+### struct_attack
+The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` — unless [stubbed](#stub). → [integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema)
+
+### struct_health
+The GRASS effect category for an HP change; always streams in full (use it to detect combat when `struct_attack` is stubbed). → [api/streaming/event-types.md](../api/streaming/event-types.md#struct-events)
+
+### StructSweepDelay
+The ~5-block window after destruction where a slot may still reference the dead struct ID. `destroyed_block` records the exact height. → [building.md — Struct State Machine](../knowledge/mechanics/building.md#struct-state-machine)
+
+### Substation
+Infrastructure that routes power capacity (via allocations/connections) between players and structs. → [structs-energy SKILL](../.cursor/skills/structs-energy/SKILL.md)
+
+## T
+
+### trigger_raid_defeat_by_destruction
+A Command Ship property: when a Command Ship is destroyed **while away from home**, its fleet is defeated (`attackerDefeated`) and sent home. It defeats the **attacking** fleet — not the defender. → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
+
+## U
+
+### Unguided
+See [Guided / Unguided](#guided--unguided).
+
+---
+
+## See Also
+
+- [SITEMAP.md](../SITEMAP.md) — full file map of the repository
+- [reference/gameplay-index.md](gameplay-index.md) — gameplay documentation index
+- [reference/action-quick-reference.md](action-quick-reference.md) — every game action at a glance
+- [knowledge/mechanics/combat.md](../knowledge/mechanics/combat.md) — the densest source of glossary terms
+- [knowledge/mechanics/hashing.md](../knowledge/mechanics/hashing.md) — proof-of-work canonical reference
+- [api/integration-notes.md](../api/integration-notes.md) — data-shape gotchas for integrators
 
 </document>
 

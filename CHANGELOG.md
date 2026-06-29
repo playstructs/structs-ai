@@ -5,6 +5,33 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-06-29
+
+Documentation improvements driven by agent field notes, **verified against the `structsd`, `structs-grass`, and `structs-pg` sources**. This pass closes content gaps the field notes surfaced, reconciles the streaming catalog to the actual Postgres triggers, and adds discoverability and learning aids (a concept glossary, a worked combat/raid transcript, and a multi-account playbook).
+
+### Added (verified against source)
+
+- **`capacity_exceeded` covers two build checks** — `struct-build-initiate` raises the same `cannot handle new load requirements (required: X, available: Y)` string for both the **per-player build-count limit** and the **power-capacity** check (`x/structs/keeper/msg_server_struct_build_initiate.go`, `x/structs/types/errors_structured.go`). Tiny equal integers = build limit; large values = milliwatt capacity. Documented in [`building.md`](knowledge/mechanics/building.md#build-validation-order), [`troubleshooting/common-issues.md`](troubleshooting/common-issues.md), [`api/integration-notes.md`](api/integration-notes.md).
+- **Fresh-vs-aged PoW worked example** — difficulty runs 64 (fresh, impossible) → 1 once a clock reaches `range` blocks old, so an old anchor is a cheaper proof than a fresh one. Added to [`hashing.md`](knowledge/mechanics/hashing.md#worked-example-fresh-vs-aged-anchor); cross-linked from [`structs-production`](.cursor/skills/structs-production/SKILL.md) and [`structs-building`](.cursor/skills/structs-building/SKILL.md), with the mine/refine clock reset reaffirmed.
+- **Defender assignment vs block vs counter** — any built, online, co-located struct can be assigned to defend regardless of ambit; same-ambit is required only to **block**, while a cross-ambit defender still **counters** (`struct_cache.go` `ResolveDefenders`). Added [Assigning Defenders](knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set) to [`combat.md`](knowledge/mechanics/combat.md) and clarified the [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) defense procedure.
+- **Counter damage is two per-type fields, not a flat value** — same-ambit uses `counterAttackSameAmbit`, cross-ambit uses `counterAttack` (`genesis_struct_type.go`; e.g. CMD 2/2, Destroyer 1/2). Replaced the "÷2" framing in [`combat.md`](knowledge/mechanics/combat.md#counter-attack) and added the "counters are a backstop" note to combat docs.
+- **Parallel-charge focus fire** — because charge is per-player, the only way to land many hits in one window is many accounts. Added to [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) and the new team playbook.
+- **Six-value ambit tables** — reach bitmask now shows `none=1 … local=32` (`bit = 1 << enum`) alongside the enum (0–5) consistently in [`building.md`](knowledge/mechanics/building.md#ambit-encoding), [`combat.md`](knowledge/mechanics/combat.md#ambit-targeting), and [`struct-types.md`](knowledge/entities/struct-types.md), each cross-linked to [`integration-notes`](api/integration-notes.md#ambit-enum-vs-reach-bitmask).
+- **Canonical numeric-status pointer** — HP/status references in [`struct-types.md`](knowledge/entities/struct-types.md), [`combat.md`](knowledge/mechanics/combat.md), and [`integration-notes.md`](api/integration-notes.md) now point to the single decoder table in [`building.md`](knowledge/mechanics/building.md#status-field-numeric) (`status & 4` online, `status & 32` destroyed; `35` = destroyed).
+
+### Changed — streaming catalog reconciled to the `grass` triggers
+
+- **`struct_attack` is streamed but stubbed** — the Postgres NOTIFY payload is capped (~7995 bytes); large combat `detail` is replaced by a `{ "stub": true }` envelope with no shot log (`structs-pg/deploy/trigger-grass-planet-activity.sql`). Detect combat from effect events (`struct_health`, `struct_status`, `shield_change`, `raid_status`) and pull `planet_activity` for shot detail. Documented in [`structs-streaming`](.cursor/skills/structs-streaming/SKILL.md), [`api/streaming/event-types.md`](api/streaming/event-types.md), [`api/streaming/event-schemas.md`](api/streaming/event-schemas.md), [`schemas/database-schema.md`](schemas/database-schema.md).
+- **Added emitted categories** — `shield_change` and `block_raid_start` (`structs-pg` migration `type-grass-category-20260612-add-raid-shield-categories.sql`), plus `struct_health`, `player_address`, `player_address_pending`, and the grid/inventory category lists. Flagged `fleet_advance` and `player_meta` as **defined but not emitted**.
+
+### Added — discoverability & learning aids
+
+- **Concept glossary** — [`reference/glossary.md`](reference/glossary.md): ~70 terms with one-line definitions, disambiguation of the common traps (ambit enum vs bitmask, block vs counter, multi-shot vs multi-target, `capacity_exceeded`, stub, `attackerDefeated`), and a canonical-page link each. Linked from [`AGENTS.md`](AGENTS.md), [`SITEMAP.md`](SITEMAP.md), [`llms.txt`](llms.txt) and added to the bundles.
+- **Drift guard for the glossary** — [`scripts/check-drift.sh`](scripts/check-drift.sh) now validates (filesystem-only) that every glossary link target file exists and every `#anchor` resolves to a heading, so the glossary cannot silently rot.
+- **Worked combat/raid transcript** — [`examples/transcripts/03-combat-and-raid.md`](examples/transcripts/03-combat-and-raid.md): counter-free attacking ambits, weapon-control vs defense, charge pacing, numeric status, the stubbed stream, and completing a raid without losing the attacker's Command Ship.
+- **Team-operations playbook** — [`playbooks/meta/team-operations.md`](playbooks/meta/team-operations.md): multi-account play, per-player charge/build-limit multipliers, focus fire, substation-fed power, idempotent proxy onboarding, minimal-permission workers.
+- **Bundle coverage** — added `event-types.md`, `event-schemas.md`, `common-issues.md`, `glossary.md`, the new transcript, and the team playbook to [`scripts/generate-llms-full.sh`](scripts/generate-llms-full.sh); linked the streaming catalogs and troubleshooting from [`llms.txt`](llms.txt). Regenerated `llms-full.txt` / `llms-core.txt`.
+
 ## [1.15.0] - 2026-06-22
 
 Documentation rolled forward to **structsd v0.19.1** (tag `v0.19.1`), with the toolchain refocused on [`structs-desktop`](https://github.com/playstructs/structs-desktop) and its embedded MCP server.

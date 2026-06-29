@@ -122,6 +122,7 @@ FULL_FILES=(
   playbooks/meta/tempo.md
   playbooks/meta/economy-of-force.md
   playbooks/meta/reading-opponents.md
+  playbooks/meta/team-operations.md
 
   # Awareness
   awareness/state-assessment.md
@@ -139,11 +140,18 @@ FULL_FILES=(
   examples/transcripts/README.md
   examples/transcripts/01-zero-to-mining.md
   examples/transcripts/02-raid-go-no-go.md
+  examples/transcripts/03-combat-and-raid.md
 
   # API
   api/integration-notes.md
+  api/streaming/event-types.md
+  api/streaming/event-schemas.md
+
+  # Troubleshooting
+  troubleshooting/common-issues.md
 
   # Reference
+  reference/glossary.md
   reference/local-devnet.md
 )
 

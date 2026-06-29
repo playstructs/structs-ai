@@ -186,6 +186,8 @@ The `detail` payload has the **attacker context flat at the top** and the **per-
 
 > `attackerHealthBefore`, `targetHealthBefore`, and `targetHealthAfter` are **runtime-enriched** fields present on the live activity feed (used for animation) and are not part of the canonical protobuf type; they may arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
 
+> **Stubbing on the live stream.** The NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's full `detail` exceeds 7995 bytes (typical of multi-shot, multi-defender fights), the realtime stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. The full `eventAttackShotDetail[]` is then only available by pulling the Guild API `planet-activity` row (keyed by `seq`/`planet_id`). Detect combat from the effect events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`); use the pull for per-shot detail. Small attacks ship `detail` inline.
+
 ### StructStatusEvent
 
 Extends [BaseEvent](#base-event). Category: `struct_status`
@@ -207,13 +209,20 @@ Extends [BaseEvent](#base-event). Category: `block`
 
 ## Event Categories
 
+All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{id}`.
+
 | Category Group | Event Types |
 |----------------|-------------|
 | consensus | `block` |
-| guild | `guild_consensus`, `guild_meta`, `guild_membership`, `guild_rank_permission` |
-| planet | `raid_status`, `fleet_arrive`, `fleet_advance`, `fleet_depart`, `planet_activity` |
-| struct | `struct_attack`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
-| player | `player_consensus` |
+| guild | `guild_consensus`, `guild_meta`, `guild_membership` |
+| planet | `raid_status`, `shield_change`, `block_raid_start`, `fleet_arrive`, `fleet_depart`, `planet_activity` |
+| struct | `struct_attack`, `struct_health`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
+| player | `player_consensus`, `player_address`, `player_address_pending` |
+| grid (`structs.grid.{object}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
+| inventory (`structs.inventory.{denom}…`) | ledger actions: `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed` |
+| address | `address_register` |
+
+> Not emitted by the current indexer (present in the enum/older docs only): `fleet_advance` and `player_meta`. Do not subscribe expecting them.
 
 ---
 

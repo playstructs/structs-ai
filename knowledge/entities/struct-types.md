@@ -146,22 +146,24 @@ The Command Ship can attack into any ambit but must first move there via `struct
 
 ## Ambit Bit-Flag Encoding
 
-The `possibleAmbit` field is a bit-flag integer encoding which ambits a struct can operate in:
+The `possibleAmbit` field (and the weapon-reach fields `primaryWeaponAmbits` / `secondaryWeaponAmbits`) is a bit-flag integer encoding which ambits apply. Each bit is `1 << enum`:
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Values are combined. For example:
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Values are combined. For example:
 - `6` = Land (4) + Water (2) — most planet structs
 - `8` = Air only — air fleet units
 - `16` = Space only — space fleet units, orbital planet structs
 - `30` = Space (16) + Air (8) + Land (4) + Water (2) — Command Ship only
 
-When initiating a build, the `[operating-ambit]` argument must be one of the valid ambits for that struct type.
+This **reach bitmask** is a different scale from the **ambit enum** (none=0, water=1, land=2, air=3, space=4, local=5) used by transaction messages and a struct's stored `operatingAmbit`. When initiating a build or moving, pass the enum (the CLI accepts the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](../mechanics/building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
 
 ---
 
@@ -219,6 +221,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 - [entity-relationships.md](entity-relationships.md) — Struct ownership, location
 - [power.md](../mechanics/power.md) — BuildDraw, PassiveDraw, capacity
 - [building.md](../mechanics/building.md) — Build process, proof-of-work, -D flag
+- [building.md — Status field (numeric)](../mechanics/building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask
 - [resources.md](../mechanics/resources.md) — Conversion rates, ore flow
 - [combat.md](../mechanics/combat.md) — Combat struct roles
 - [valuation.md](../economy/valuation.md) — Struct valuation

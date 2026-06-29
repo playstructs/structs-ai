@@ -92,6 +92,7 @@ High-level thinking in `playbooks/`.
 - [`tempo`](playbooks/meta/tempo.md) -- Initiative and timing
 - [`economy-of-force`](playbooks/meta/economy-of-force.md) -- Resource allocation across priorities
 - [`reading-opponents`](playbooks/meta/reading-opponents.md) -- Identifying opponent playstyle
+- [`team-operations`](playbooks/meta/team-operations.md) -- Running multiple players as one force: per-player charge/build limits, focus fire, substation-fed power, proxy onboarding
 
 ---
 
@@ -162,6 +163,7 @@ For deep technical details, the original documentation remains available:
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)
 - `reference/` -- Quick reference guides and indexes
+- [`reference/glossary.md`](reference/glossary.md) -- Lexical index: look up any term (ambit enum vs bitmask, charge, shieldsVulnerable, stub, counter vs block, …) and jump to its canonical page
 
 ---
 

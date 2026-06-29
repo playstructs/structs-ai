@@ -140,6 +140,7 @@ Strategic thinking and tactical guides.
 | [tempo.md](playbooks/meta/tempo.md) | Initiative, timing, parallelism |
 | [economy-of-force.md](playbooks/meta/economy-of-force.md) | Resource allocation across priorities |
 | [reading-opponents.md](playbooks/meta/reading-opponents.md) | Identifying opponent playstyle |
+| [team-operations.md](playbooks/meta/team-operations.md) | Running multiple players as one coordinated force |
 
 ---
 
@@ -360,6 +361,7 @@ Quick-lookup indexes.
 
 | File | Topic |
 |------|-------|
+| [glossary.md](reference/glossary.md) | Lexical index — every key term with a definition and a link to its canonical page |
 | [action-quick-reference.md](reference/action-quick-reference.md) | All game actions at a glance |
 | [action-index.md](reference/action-index.md) | Action index |
 | [api-quick-reference.md](reference/api-quick-reference.md) | API endpoint quick lookup |

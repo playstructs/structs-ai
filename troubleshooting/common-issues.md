@@ -17,6 +17,7 @@ This document describes common issues AI agents encounter and how to resolve the
 - [Building fails - Fleet not onStation](#building-fails-fleet-not-onstation)
 - [Building fails - Insufficient power](#building-fails-insufficient-power)
 - [Building fails - No available slots](#building-fails-no-available-slots)
+- [Building fails: cannot handle new load requirements](#building-fails-cannot-handle-new-load-requirements)
 
 ### Exploration Issues
 - [Exploration fails - Current planet has ore](#exploration-fails-current-planet-has-ore)
@@ -117,6 +118,24 @@ This document describes common issues AI agents encounter and how to resolve the
 4. Retry building
 
 **Reference**: `dependencies/building.md`
+
+---
+
+### Building fails: cannot handle new load requirements
+
+**Symptom**: Build initiate rejects with `cannot handle new load requirements (required: X, available: Y)` (error key `capacity_exceeded`)
+
+**Cause**: One error string covers **two** different build-initiate checks. The magnitude of the numbers tells you which one fired.
+
+**Diagnosis**:
+1. If `required` and `available` are **tiny integers** (often equal, e.g. `1/1`), you hit the **per-player build limit** — you already own the maximum of that struct type (`required` = the type's limit, `available` = how many you already have).
+2. If the values are **large** (hundreds of thousands to millions), you hit the **power-capacity** check in milliwatts — `required` = the struct's `BuildDraw`, `available` = remaining capacity `(capacity + capacitySecondary) - (load + structsLoad)`.
+
+**Solution**:
+- Build limit: most planet structs and the Command Ship cap at 1 per player. Only Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. Build it on another player, or accept the cap.
+- Power capacity: add generation, deactivate structs, or connect a substation to raise capacity, then retry.
+
+**Reference**: [knowledge/mechanics/building.md](../knowledge/mechanics/building.md#build-validation-order), [knowledge/mechanics/power.md](../knowledge/mechanics/power.md)
 
 ---
 

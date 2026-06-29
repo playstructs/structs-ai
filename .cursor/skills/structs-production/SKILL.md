@@ -52,7 +52,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later).
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 5. **The instant mining lands, refine** (~34h to D=3, difficulty 28,000). Ore is now stealable; this is the priority.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.

@@ -153,6 +153,17 @@ age_blocks   = 10 ^ ( (64 - D) * log10(range) / 63 )
 time_seconds = age_blocks * 6
 ```
 
+### Worked example: fresh vs aged anchor
+
+The same operation is impossible or instant depending only on how old its clock is. This is why timing dominates PoW.
+
+- **Fresh anchor (`age <= 1`)**: difficulty is pinned to **64**. The proof is rejected — you cannot complete on or near the block you initiated. A brand-new build sits here.
+- **Aged anchor**: difficulty falls to **1** once the clock reaches `range` blocks old, and stays there. For a Command Ship build (`range = 200`), `age = 200` blocks (~20 min) gives `difficulty = 64 - floor(log10(200)/log10(200)*63) = 64 - 63 = 1`. For a mine (`range = 14,000`), difficulty hits 1 at `age = 14,000` blocks (~23 hr). A struct you initiated and left untouched for tens of thousands of blocks is at difficulty 1 — the nonce is found in a handful of attempts (milliseconds).
+
+So an old, abandoned anchor is a *cheaper* proof than a fresh one: initiate the moment you can, then come back later when the difficulty has decayed. A raid keyed to the target planet's `blockStartRaid` works the same way — the longer that planet has been raid-vulnerable, the cheaper the raid proof.
+
+Because the mine and refine clocks **reset after every successful completion** (see the per-type clock below), back-to-back mining of the same extractor re-enters the full decay each cycle. Repeat-mining is therefore naturally paced — you re-wait the decay every time, not just once.
+
 ---
 
 ## The Per-Type Clock (`blockStart`)

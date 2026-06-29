@@ -57,15 +57,17 @@ Activity category enum on `structs.planet_activity.category`.
 
 | Value | Notes |
 |-------|-------|
-| `block` | New block committed |
+| `block` | New block committed (emitted as a consensus heartbeat on subject `consensus`) |
 | `guild_consensus` | Guild state changes |
 | `guild_meta` | Off-chain guild metadata updates |
 | `guild_membership` | Membership changes |
 | `raid_status` | Raid initiated / completed / failed |
+| `shield_change` | Planetary shield value changed (`planetary_shield` / `planetary_shield_old`) |
+| `block_raid_start` | Raid vulnerability clock (`blockStartRaid`) armed |
 | `fleet_arrive` | Fleet arrived at planet |
-| `fleet_advance` | Fleet movement in progress |
+| `fleet_advance` | **Defined but not emitted** — movement surfaces as `fleet_depart` + `fleet_arrive` |
 | `fleet_depart` | Fleet departed |
-| `struct_attack` | Combat attack |
+| `struct_attack` | Combat attack (per-shot `detail`; **stubbed when the payload exceeds ~7995 bytes** — `stub:true`, no `detail`, pull `planet_activity` for shot detail) |
 | `struct_defense_add` | Defense assignment added |
 | `struct_defense_remove` | Defense assignment removed |
 | `struct_status` | Struct status change (online / offline / destroyed) |
@@ -73,8 +75,12 @@ Activity category enum on `structs.planet_activity.category`.
 | `struct_block_build_start` | Build PoW started |
 | `struct_block_ore_mine_start` | Mining PoW started |
 | `struct_block_ore_refine_start` | Refining PoW started |
-| `struct_health` | Struct health changed |
+| `struct_health` | Struct health changed (`health` / `health_old`) |
 | `player_consensus` | Player state changes (**including UGC `username` / `pfp` updates**) |
+| `player_address` | Address added to / changed on a player |
+| `player_address_pending` | Pending address registration |
+
+Every `planet_activity` INSERT fires `pg_notify('grass', …)` on subject `structs.planet.{planet_id}`, so these categories reach the live NATS stream. The `struct_attack` stub guard (and the same guard on `player_consensus` / `guild_consensus` / `guild_meta`) replaces an over-8000-byte payload with a `{ "stub": true }` envelope. Grid attribute changes (`structs.grid.{object}`) and ledger actions (`structs.inventory.…`) stream on their own subjects with their own category values.
 
 ### Other notable enums
 

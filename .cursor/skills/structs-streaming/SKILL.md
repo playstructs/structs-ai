@@ -99,10 +99,15 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 
 | Event | Description | React By |
 |-------|-------------|----------|
-| `raid_status` | Raid lifecycle on planet — status values include `shieldsVulnerable` (defender Command Ship is offline/destroyed, raid can now complete), `ongoing`, and completed | Bring Command Ship online to re-raise shields; activate defenses, alert |
-| `planet_activity` | Activity log including `struct_health` changes | Track combat damage |
+| `raid_status` | Raid lifecycle on planet — status values include `shieldsVulnerable` (defender's shields down, raid can now complete), `ongoing`, and completed | Restore shields (Command Ship online, fleet on station); activate defenses, alert |
+| `shield_change` | Planetary shield value changed (`planetary_shield` / `planetary_shield_old` in `detail`) | Recompute raid feasibility against the target |
+| `block_raid_start` | The planet's raid vulnerability clock (`blockStartRaid`) armed | Note the raid window opened (yours: defend; theirs: a raid may be incoming) |
+| `struct_health` | A struct's HP changed (`health` / `health_old`) | Track combat damage live |
+| `struct_status` | A struct went online / offline / destroyed | Rebuild, reallocate power |
 | `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
 | `fleet_depart` | Fleet left planet | Update threat assessment |
+
+All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{id}`. `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
 
 ### Struct Events
 
@@ -123,6 +128,8 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | Event | Description | React By |
 |-------|-------------|----------|
 | `player_consensus` | Player state updated (including `username`/`pfp` on `structs.player` after chain UGC) | Update intel |
+| `player_address` | An address was added to / changed on a player | Track multi-address / delegate setup |
+| `player_address_pending` | A pending address registration appeared (awaiting confirmation) | Watch for registration completion |
 
 ### Guild Events
 
@@ -190,10 +197,17 @@ Track attribute changes on any game object (players, structs, planets).
 | `power` | Power level changed | Monitor energy infrastructure |
 | `proxyNonce` | Proxy nonce changed | Detect proxy activity |
 | `structsLoad` | Structs load changed | Assess fleet strength changes |
+| `allocationPointerStart` / `allocationPointerEnd` | Energy allocation range pointers changed | Track allocation/substation routing |
+| `ready` | Object readiness flag changed | Track object availability |
+| `checkpointBlock` | Checkpoint block updated | Track grid bookkeeping |
+
+Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}` — not `grass_category` values.
 
 ### Combat Event Payloads
 
-`struct_attack` events include detailed shot-by-shot resolution. Example payload (observed on planet subject):
+> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `struct_attack` row's full `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead: `{ "category": "struct_attack", "stub": true, ... }` with **no `detail`**. So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the row's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+
+`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject):
 
 ```json
 {

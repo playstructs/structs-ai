@@ -192,6 +192,11 @@ Read `status` as flags, not an enum: the Online bit (`status & 4`) is what gates
 5. Available slots (correct type: space/air/land/water)
 6. Per-player build limits (most planet structs and the Command Ship are 1 per player; Orbital Shield Generator, Ore Bunker, and fleet structs are unlimited)
 
+Both the power-capacity check (4) and the build-limit check (6) reject with the **same** error string — `cannot handle new load requirements (required: X, available: Y)` (error key `capacity_exceeded`). Read the magnitude of the numbers to tell which gate you hit:
+
+- **Tiny, often-equal integers** (e.g. `required: 1, available: 1`) — the **per-player build limit**: you already own the maximum of that struct type. `required` is the type's build limit, `available` is how many you already have. Most planet structs and the Command Ship cap at 1; only the Orbital Shield Generator, Ore Bunker, and fleet combat structs stack. Build the struct on a different player, or accept the cap.
+- **Large values** (hundreds of thousands to millions) — the **power-capacity** check, in milliwatts: `required` is the struct's `BuildDraw`, `available` is your remaining capacity (`capacity + capacitySecondary − load − structsLoad`). Free capacity by adding generation or deactivating structs (see [power.md](power.md)).
+
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
 
 ---
@@ -211,16 +216,18 @@ Command Ship must be built in fleet (locationType = 2), not on planet. Power req
 
 There are **two distinct ambit numbering schemes**. Mixing them up is a common error that produces an `invalid int32` failure on build.
 
-**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields:
+**1. Reach bitmask** — used by `StructType.possibleAmbit` and the weapon-reach fields (each bit is `1 << enum`):
 
 | Ambit | Bit Value |
 |-------|-----------|
-| Space | 16 |
-| Air | 8 |
-| Land | 4 |
+| none | 1 |
 | Water | 2 |
+| Land | 4 |
+| Air | 8 |
+| Space | 16 |
+| local | 32 |
 
-Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
+The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's current-ambit flag. Bitmask values are combined. For example: `6` = land + water, `30` = space + air + land + water. This is how you read a struct type's `possibleAmbit` to learn where it can be built.
 
 **2. Ambit enum** — used by transaction messages and a struct's stored `operatingAmbit`:
 
