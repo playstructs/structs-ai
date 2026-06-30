@@ -72,7 +72,8 @@
 - [Transactions](https://structs.ai/knowledge/mechanics/transactions): Free vs paid messages, ante handler routing, gas mechanics
 - [UGC Moderation](https://structs.ai/knowledge/mechanics/ugc-moderation): Decentralized name/pfp moderation philosophy, validation rules, audit events
 - [Resources](https://structs.ai/knowledge/mechanics/resources): Ore, Alpha Matter, energy conversions
-- [Power](https://structs.ai/knowledge/mechanics/power): Capacity, load, online status formulas
+- [Energy](https://structs.ai/knowledge/mechanics/energy): Canonical energy system -- units, online equation, infusion 96/4 split, substation connectionCapacity dilution, allocations, GridCascade brownout
+- [Power](https://structs.ai/knowledge/mechanics/power): Capacity, load, online status quick formula card
 - [Building](https://structs.ai/knowledge/mechanics/building): Construction, proof-of-work, struct states
 - [Hashing](https://structs.ai/knowledge/mechanics/hashing): Proof-of-work mechanism -- hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [Fleet](https://structs.ai/knowledge/mechanics/fleet): Ships, movement, on-station vs away

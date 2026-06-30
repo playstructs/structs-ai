@@ -80,7 +80,8 @@ Reference material about the game world.
 | [transactions.md](knowledge/mechanics/transactions.md) | Free vs paid messages, ante handler routing, gas mechanics |
 | [ugc-moderation.md](knowledge/mechanics/ugc-moderation.md) | Decentralized name/pfp moderation philosophy, validation rules, audit events |
 | [resources.md](knowledge/mechanics/resources.md) | Ore, Alpha Matter, energy, vulnerability windows |
-| [power.md](knowledge/mechanics/power.md) | Capacity, load, online status, power budget |
+| [energy.md](knowledge/mechanics/energy.md) | Canonical energy system: units, online equation, infusion 96/4 split, substation connectionCapacity dilution, allocations, GridCascade brownout |
+| [power.md](knowledge/mechanics/power.md) | Capacity, load, online status quick formula card |
 | [building.md](knowledge/mechanics/building.md) | Construction, proof-of-work, difficulty decay |
 | [hashing.md](knowledge/mechanics/hashing.md) | Proof-of-work mechanism: hash types, universal input format, algorithm, difficulty decay, hash permissions |
 | [fleet.md](knowledge/mechanics/fleet.md) | Ships, movement, fleet states |

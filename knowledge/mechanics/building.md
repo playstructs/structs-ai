@@ -112,6 +112,8 @@ Action costs (the charge the player's bar must hold to act):
 
 At ~6 sec/block, a 5-charge action needs ~30 seconds of accumulation since the player's last action. Because the bar is shared, rapid sequences (activating several structs, or repeated attacks) are gated by it — space the actions out, or they fail with `"required charge X but player had Y"`.
 
+**Build cadence**: a build costs **8** charge and, like every action, resets the bar to 0. With the bar refilling at ~1/block, you can initiate **at most one build roughly every 8 blocks (~48 s)**. A second build attempted too soon fails with `required charge 8, only had 6` (or similar). This single fact governs how fast a base or fleet can be built out — batch-initiate paced ~48 s apart, then compute the proofs later.
+
 **Charge cannot be banked or burst.** Because `charge = CurrentBlockHeight - LastActionBlock`, every charge-consuming action resets the bar to **0** — you do not draw a cost off a running balance, the whole bar zeroes and refills linearly from there. There is no way to stockpile charge for an "alpha strike" of several expensive attacks in one block; idling longer than your next action's cost gains you nothing extra. Plan combat as a sequence of single actions spaced ~1 block/charge apart, not a saved-up burst.
 
 ---
@@ -208,7 +210,20 @@ Both the power-capacity check (4) and the build-limit check (6) reject with the 
 | Planet | On station | Online |
 | Fleet | N/A | Online |
 
-Command Ship must be built in fleet (locationType = 2), not on planet. Power requirement: 50,000 W.
+Command Ship must be built in fleet (locationType = 2), not on planet. Power requirement: 50 W.
+
+---
+
+## Slots
+
+Every planet and every fleet has **4 slots per ambit** — 4 each for space, air, land, and water (16 per location). Fleet-category structs (Command Ship + combat units, IDs 1-13) occupy **fleet** slots; planet-category structs (IDs 14-22) occupy **planet** slots, in an ambit allowed by the type's `possibleAmbit`.
+
+- A build **reserves its slot immediately** at `struct-build-initiate` — even while the struct is still materializing (before its proof-of-work completes). The slot stays occupied for the whole build.
+- A struct's position is exposed as `location_type` (planet/fleet), `operating_ambit`, and `slot` (0-3).
+- Slot counts are **fixed at 4 per ambit**. Ore-storage capacity (Ore Bunker) and power capacity (generators) scale separately — they do **not** add build slots.
+- After destruction a slot can still read occupied for a few blocks (see **StructSweepDelay** above).
+
+Building into a full ambit fails with `struct slot unavailable` / `struct slot already occupied`. Verify free slots before initiating (it's check 5 in the validation order below).
 
 ---
 

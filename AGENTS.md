@@ -130,7 +130,8 @@ Reference material in `knowledge/`.
 - [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
 - [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
-- [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
+- [`energy`](knowledge/mechanics/energy.md) -- Canonical energy system: units, infusion split, substation dilution, allocations, brownout
+- [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status (quick card)
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
 - [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [`fleet`](knowledge/mechanics/fleet.md) -- Ships and movement

@@ -28,6 +28,7 @@ CORE_FILES=(
   knowledge/mechanics/hashing.md
   knowledge/mechanics/combat.md
   knowledge/mechanics/resources.md
+  knowledge/mechanics/energy.md
   knowledge/mechanics/power.md
   knowledge/entities/struct-types.md
 
@@ -90,6 +91,7 @@ FULL_FILES=(
   knowledge/mechanics/transactions.md
   knowledge/mechanics/ugc-moderation.md
   knowledge/mechanics/resources.md
+  knowledge/mechanics/energy.md
   knowledge/mechanics/power.md
   knowledge/mechanics/building.md
   knowledge/mechanics/hashing.md

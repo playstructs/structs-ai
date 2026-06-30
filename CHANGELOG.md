@@ -5,6 +5,29 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-06-30
+
+Energy/power overhaul driven by an agent field report, **verified against the `structsd` v0.19.1 keeper source** (`x/structs/...`) and live `structstestnet` reads. Adds a canonical Energy page, fixes a 1000× unit-label error, and documents grid mechanics, build slots/limits, and energy data shapes that had no home in the docs.
+
+### Added — canonical Energy page
+
+- **New [`energy.md`](knowledge/mechanics/energy.md)** consolidates the whole energy system: the milliwatt unit convention, the online equation and its four quantities (`capacity`/`capacitySecondary`/`load`/`structsLoad`), the per-message offline behavior, infusion mechanics, substation dilution, allocations, and the brownout cascade. [`power.md`](knowledge/mechanics/power.md) is slimmed to a quick formula card that defers to it. Registered in [`AGENTS.md`](AGENTS.md), [`llms.txt`](llms.txt), [`SITEMAP.md`](SITEMAP.md), [`sitemap.xml`](sitemap.xml), and the bundles.
+- **Infusion splits 96/4** — `Infusion.GetPowerDistribution()` + `ReactorFuelToEnergyConversion = 1` (`x/structs/types/infusion.go`, `types/keys.go`): 1 ualpha → 1 mW, split so the infuser keeps `1 − commission` (default 4%, `reactor_hooks.go`) on their **own** capacity and the reactor keeps the commission. **Infusing a reactor does not power a substation** — an allocation must route capacity in. Documented in [`energy.md`](knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) and the [`structs-energy`](.cursor/skills/structs-energy/SKILL.md) skill.
+- **`connectionCapacity` dilutes** — `UpdateSubstationConnectionCapacity` (`x/structs/keeper/grid_context.go`): each connected player receives `(capacity − load) / connectionCount`, recomputed on every connect/disconnect, so each new connection shrinks everyone's share. The real guild capacity-planning rule. Added to [`energy.md`](knowledge/mechanics/energy.md#substations-connectioncapacity-dilutes) and the skill.
+- **Open allocation-permission model** — `substation-allocation-connect` checks `PermAllocationConnection` only on the caller's **own allocation** (`msg_server_substation_allocation_connect.go` → `CanBeConnectedBy`); no destination-substation veto, no guild membership. Anyone can contribute capacity to any substation (diluted by `1/connectionCount`). Documented with the dilution caveat.
+- **`GridCascade` brownout** — when `load` exceeds `capacity`, the keeper destroys that object's outgoing allocations in creation order until load fits, cascading downstream (`grid_context.go`). Added to [`energy.md`](knowledge/mechanics/energy.md#brownout-gridcascade-destroys-allocations) and the skill.
+
+### Changed — unit labels and build mechanics
+
+- **Fixed a 1000× unit-label error** — the chain stores power in **milliwatts**; the [`struct-types.md`](knowledge/entities/struct-types.md) draw table and [`power.md`](knowledge/mechanics/power.md) example/onboarding tables mislabeled watt values as `kW`. Relabeled to **W** (e.g. Command Ship `50 W`, not `50 kW`) and the unit anchored once in [`energy.md`](knowledge/mechanics/energy.md#units).
+- **Per-player build `Limit` column** — added to the [`struct-types.md`](knowledge/entities/struct-types.md#complete-struct-type-table) main table from genesis `BuildLimit` (`x/structs/types/genesis_struct_type.go`): Command Ship, Ore Extractor, Ore Refinery, Jamming Satellite, PDC, Field Generator, Continental Power Plant, World Engine = 1; all fleet combat structs, Orbital Shield Generator, and Ore Bunker = unlimited. (`buildLimit: 0` = unlimited.)
+- **Build slots and charge cadence** — [`building.md`](knowledge/mechanics/building.md#slots) gains a Slots section (**4 per ambit** on both planet and fleet, `PlanetStartingSlots = 4`; slot reserved at initiate; counts fixed) and a build-cadence note (build costs 8 charge and resets the bar, so ~one build per ~8 blocks).
+
+### Added — integration data shapes
+
+- **Energy/grid data shapes** in [`integration-notes.md`](api/integration-notes.md) — power fields live under a `gridAttributes` sub-object (LCD numerics are JSON strings/milliwatts), `guild` carries `primaryReactorId`/`entrySubstationId`, and verified message shapes for `MsgReactorInfuse` (single `Coin` amount), `MsgAllocationCreate` (no `destinationId`), and `MsgSubstationAllocationConnect` (substation goes in `destinationId`) from `proto/structs/structs/tx.proto`.
+- **Glossary** — [`reference/glossary.md`](reference/glossary.md) adds Allocation, `connectionCapacity`, `GridCascade`, Reactor, `structsLoad`, and Slots, and repoints the energy entries (capacity, load, infusion, substation, BuildDraw) to [`energy.md`](knowledge/mechanics/energy.md).
+
 ## [1.16.0] - 2026-06-29
 
 Documentation improvements driven by agent field notes, **verified against the `structsd`, `structs-grass`, and `structs-pg` sources**. This pass closes content gaps the field notes surfaced, reconciles the streaming catalog to the actual Postgres triggers, and adds discoverability and learning aids (a concept glossary, a worked combat/raid transcript, and a multi-account playbook).

@@ -472,7 +472,8 @@ Reference material in `knowledge/`.
 - [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
 - [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events
 - [`resources`](knowledge/mechanics/resources.md) -- Ore, Alpha Matter, energy
-- [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status
+- [`energy`](knowledge/mechanics/energy.md) -- Canonical energy system: units, infusion split, substation dilution, allocations, brownout
+- [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status (quick card)
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
 - [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [`fleet`](knowledge/mechanics/fleet.md) -- Ships and movement
@@ -1804,6 +1805,8 @@ Have Alpha Matter?
 
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
+> **Infusing a reactor powers *you*, not the guild substation.** Infusion adds ~96% (at 4% commission) to **your own** `capacity` and the commission to the reactor — it does **not** raise any substation's capacity or other members' `capacitySecondary`. To feed the shared guild pool, someone must route capacity in with an **allocation** (below). See [energy.md — infusion](https://structs.ai/knowledge/mechanics/energy#creating-capacity-infusion-splits-964).
+
 **Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
 ### "Am I about to go offline?"
@@ -1859,6 +1862,12 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
 5. Migrate players: `substation-player-migrate -- [src-sub] [dest-sub] [player-id,...]`.
 
+**Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
+
+- **A substation dilutes evenly.** Each connected player gets `connectionCapacity = (capacity − load) / connectionCount`, recomputed on every connect/disconnect. Every new player connection shrinks everyone's share — plan the pool against `connectionCount`, not a fixed per-member figure.
+- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `1/connectionCount`, so it's community behavior, not self-growth.
+- **Over-committing triggers a brownout.** If an object's `load` exceeds its `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. Leave headroom.
+
 ## Offline recovery (emergency)
 
 1. **Free power now** — `struct-deactivate` non-essential structs until `load + structsLoad ≤ capacity + capacitySecondary`. Keep the **Command Ship online** if at all possible (offline CMD ship makes your planet raidable).
@@ -1899,7 +1908,8 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 ## See also
 
-- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online formulas
+- [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) — full energy system: units, infusion split, substation dilution, allocations, brownout
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online quick formula card
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha → energy conversion rates
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) — infusion strategy
 - [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — selling energy, buying via agreement, the flywheel; [structs-building](https://structs.ai/skills/structs-building/SKILL) — power pre-check
@@ -2204,6 +2214,8 @@ Action costs (the charge the player's bar must hold to act):
 
 At ~6 sec/block, a 5-charge action needs ~30 seconds of accumulation since the player's last action. Because the bar is shared, rapid sequences (activating several structs, or repeated attacks) are gated by it — space the actions out, or they fail with `"required charge X but player had Y"`.
 
+**Build cadence**: a build costs **8** charge and, like every action, resets the bar to 0. With the bar refilling at ~1/block, you can initiate **at most one build roughly every 8 blocks (~48 s)**. A second build attempted too soon fails with `required charge 8, only had 6` (or similar). This single fact governs how fast a base or fleet can be built out — batch-initiate paced ~48 s apart, then compute the proofs later.
+
 **Charge cannot be banked or burst.** Because `charge = CurrentBlockHeight - LastActionBlock`, every charge-consuming action resets the bar to **0** — you do not draw a cost off a running balance, the whole bar zeroes and refills linearly from there. There is no way to stockpile charge for an "alpha strike" of several expensive attacks in one block; idling longer than your next action's cost gains you nothing extra. Plan combat as a sequence of single actions spaced ~1 block/charge apart, not a saved-up burst.
 
 ---
@@ -2300,7 +2312,20 @@ Both the power-capacity check (4) and the build-limit check (6) reject with the 
 | Planet | On station | Online |
 | Fleet | N/A | Online |
 
-Command Ship must be built in fleet (locationType = 2), not on planet. Power requirement: 50,000 W.
+Command Ship must be built in fleet (locationType = 2), not on planet. Power requirement: 50 W.
+
+---
+
+## Slots
+
+Every planet and every fleet has **4 slots per ambit** — 4 each for space, air, land, and water (16 per location). Fleet-category structs (Command Ship + combat units, IDs 1-13) occupy **fleet** slots; planet-category structs (IDs 14-22) occupy **planet** slots, in an ambit allowed by the type's `possibleAmbit`.
+
+- A build **reserves its slot immediately** at `struct-build-initiate` — even while the struct is still materializing (before its proof-of-work completes). The slot stays occupied for the whole build.
+- A struct's position is exposed as `location_type` (planet/fleet), `operating_ambit`, and `slot` (0-3).
+- Slot counts are **fixed at 4 per ambit**. Ore-storage capacity (Ore Bunker) and power capacity (generators) scale separately — they do **not** add build slots.
+- After destruction a slot can still read occupied for a few blocks (see **StructSweepDelay** above).
+
+Building into a full ambit fails with `struct slot unavailable` / `struct slot already occupied`. Verify free slots before initiating (it's check 5 in the validation order below).
 
 ---
 
@@ -3203,179 +3228,234 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 </document>
 
 <document>
-<source>knowledge/mechanics/power.md</source>
-# Power Mechanics
+<source>knowledge/mechanics/energy.md</source>
+# Energy Mechanics
 
-**Purpose**: AI-readable reference for Structs power system. Capacity, load, online status, struct requirements.
-
----
-
-## Critical Concepts
-
-**Energy is per-block and ephemeral.** Energy produced in a block that is not consumed in that same block is permanently lost. There is no "energy balance" — only total capacity (personal generation + substation-provided) and total load (energy allocated out + struct consumption). Idle capacity is waste, not safety margin. Guild substations should aim for full utilization.
-
-**Transaction fees come from energy, not Alpha.** Players never need a separate token balance to submit transactions. TX fees pull from the player's connected power source. This means any player connected to a substation with capacity can transact. Validators earn from all transactions through energy connected to their reactor.
+**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
 
 ---
 
-## Core Formulas
+## Units
 
-### Capacity
+The chain stores power as integers in **milliwatts (mW)**. Convert to the units people speak in:
 
-```
-totalCapacity = capacity + capacitySecondary
-```
+| Spoken unit | Milliwatts (chain integer) |
+|-------------|----------------------------|
+| 1 watt (W) | 1,000 |
+| 1 kilowatt (kW) | 1,000,000 |
 
-| Term | Source |
-|------|--------|
-| capacity | Personal generation — energy the player produces via their own infusions (reactor or generator). Only this capacity can be used to create allocations. |
-| capacitySecondary | Substation-provided — energy received from the player's connected substation. Matches the substation's `connectionCapacity`. |
+Two anchors fix the scale:
 
-### Load
+- **Player base draw** is `PlayerPassiveDraw = 25000` (chain) = **25 W**.
+- **Infusion conversion** is `ReactorFuelToEnergyConversion = 1`, so **1 ualpha infused = 1 mW** of capacity, and **1 gram of Alpha (1,000,000 ualpha) = 1,000,000 mW = 1 kW**.
 
-```
-totalLoad = load + structsLoad
-```
+When a doc shows a struct drawing "50 W", the chain value is `50000`. All power values below are stated in W/kW; multiply by 1,000 for the raw chain integer.
 
-| Term | Source |
-|------|--------|
-| load | Energy allocated out — total power the player has routed to others via allocations they created. |
-| structsLoad | Sum of all online struct PassiveDraw — energy consumed by the player's active structs. |
-
-### Available Power
-
-```
-availablePower = (capacity + capacitySecondary) - (load + structsLoad)
-```
-
-### Online Status
-
-```
-playerOnline = (load + structsLoad) <= (capacity + capacitySecondary)
-```
-
-If offline: player halted, cannot perform actions.
+> **Energy is per-block and ephemeral.** Power is generated each block and consumed in that same block — there is no stored "energy balance," only instantaneous capacity vs. load. Idle capacity is waste, not savings.
 
 ---
 
-## Player Passive Draw
+## The online equation
+
+A player (and each of their structs) is online only while load fits within capacity:
 
 ```
-playerPassiveDraw = 25,000 milliwatts (25 watts)
+online  ⇔  (load + structsLoad) ≤ (capacity + capacitySecondary)
 ```
 
-Base consumption when player is online.
+Four quantities drive everything:
+
+| Quantity | Meaning |
+|----------|---------|
+| `capacity` | Your **own** generation, from your infusions. The **only** capacity you can allocate **out** to others. |
+| `capacitySecondary` | Power received **from a substation you're connected to** — exactly that substation's `connectionCapacity`. **Cannot** be re-allocated out. |
+| `load` | Power you've allocated **out** (as an allocation source). |
+| `structsLoad` | `PlayerPassiveDraw` (25 W) + the sum of `passiveDraw` of your **online** structs. |
+
+Available power is `(capacity + capacitySecondary) − (load + structsLoad)`; allocatable power (what you can route out) is only `capacity − load`.
+
+> **Going offline is not a transaction freeze.** Online status is checked **per message** — an offline player's build/attack/mine messages reject — but **recovery actions are not gated**. You can always `struct-deactivate` a struct or infuse more capacity to climb back out. (Verified: `IsOnline()` in `x/structs/keeper/player_cache.go`.)
 
 ---
 
-## Struct Power Requirements
+## Creating capacity: infusion splits 96/4
 
-Each struct has:
-
-| Requirement | When Applied |
-|-------------|--------------|
-| BuildDraw | During building |
-| PassiveDraw | When struct is online |
-
-**Total for new struct**: `buildPower + passivePower` must be available.
-
-### Example Struct Requirements
-
-| Struct | Build | Passive | Total |
-|--------|-------|---------|-------|
-| Ore Extractor | 500,000 W | 500,000 W | 1,000,000 W |
-| Planetary Defense Cannon | 600,000 W | 600,000 W | 1,200,000 W |
-| Ore Bunker | 200,000 W | 200,000 W | 400,000 W |
-
----
-
-## Allocatable Capacity
+Infusing Alpha into a reactor converts fuel to capacity at ratio 1, then splits it by the reactor's **commission** (default **4%**):
 
 ```
-allocatableCapacity = capacity - load
+infusionPower    = ratio(1) × fuel          # fuel = the ualpha you stake
+commissionPower  = commission × infusionPower   → the REACTOR's capacity
+playerPower       = infusionPower − commissionPower  → YOUR personal capacity
 ```
 
-Only the player's personal `capacity` (from infusions) counts here — `capacitySecondary` (substation-provided) cannot be allocated out. `load` is the amount already allocated, so the remainder is what's available to create new allocations from.
+So at the default 4% commission, **you keep 96%** of what you infuse (added directly to your own `capacity`), and the reactor keeps 4%. Example: infuse 3,000,000 ualpha at 4% → 3,000,000 mW (3 kW) total; the reactor gains 120,000 mW (0.12 kW), you gain **2,880,000 mW (2.88 kW)**. Your capacity rises automatically — no substation or allocation setup needed for your own use, which makes reactor infusion the simplest path to more power. (Reversible: `reactor-defuse` returns the Alpha after a cooldown.)
+
+> **Infusing a reactor does NOT power a substation.** Infusion changes only the **reactor** (commission) and the **infuser** (the 96%). It does **not** raise any substation's capacity, and therefore does **not** raise `connectionCapacity` for other connected players. "Everyone infuse the guild reactor to power the guild" is **false** on its own — someone must also route capacity into the guild substation via an **allocation** (below).
 
 ---
 
-## Power States
+## Substations: `connectionCapacity` dilutes
 
-| Entity | Online When |
-|--------|-------------|
-| Player | availablePower > 0 |
-| Struct | availablePower >= struct.passiveDraw |
-
-**False positive**: A player connected to a substation pool may show `capacity=0` while structs are still online and drawing power. This happens because the substation handles capacity distribution. Check `structsLoad > 0` as the real indicator that structs are functional — not `capacity > 0`.
-
----
-
-## New Player Power Budget
-
-New players typically start with zero personal `capacity` (no infusions yet) and rely entirely on `capacitySecondary` from their guild's substation connection. The available capacity depends on what the guild allocates. Here is the load budget for the standard onboarding build order:
-
-| Item | Build Draw | Passive Draw | Cumulative Load |
-|------|------------|--------------|-----------------|
-| Player (base) | — | 25 kW | 25 kW |
-| Command Ship (build) | 50 kW | — | 75 kW |
-| Command Ship (online) | — | 50 kW | 75 kW |
-| Ore Extractor (build) | 500 kW | — | 575 kW |
-| Ore Extractor (online) | — | 500 kW | 575 kW |
-| Ore Refinery (build) | 500 kW | — | 1,075 kW |
-| Ore Refinery (online) | — | 500 kW | 1,075 kW |
-
-Build draw is temporary (only during construction) and releases when the build completes. The worst-case load during onboarding is ~1,075 kW with all three structs online plus a build in progress.
-
-**Minimum viable capacity**: ~575 kW to have player + Command Ship + Ore Extractor online. If the guild substation provides less, prioritize activating Command Ship first, then build one struct at a time.
-
-If total load ever exceeds total capacity, the player goes **offline** and cannot perform any actions until load is reduced (deactivate structs) or capacity is increased.
-
----
-
-## Increasing Capacity
-
-Three methods to increase a player's available capacity:
-
-| Method | How | Rate | Risk | Reversible |
-|--------|-----|------|------|------------|
-| Reactor infusion | `reactor-infuse [your-addr] [reactor-addr] [amount-ualpha]` | 1g ≈ 1 kW (minus commission) | Low | Yes (defuse with cooldown) |
-| Generator infusion | `struct-generator-infuse [struct-id] [amount-ualpha]` | 1g = 2-10 kW depending on type | High (raidable) | **No** |
-| Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Medium (ongoing cost) | Yes (close agreement) |
-
-### Reactor Commission
-
-When infusing Alpha Matter into a reactor, the generated power is split between the player and the reactor based on the reactor's **commission rate**:
+A substation is a shared pool. The capacity each connected player receives is the pool divided **evenly** across all connections:
 
 ```
-playerCapacityGain = power * (1 - commission)
-reactorCapacityGain = power * commission
+connectionCapacity = (substation.capacity − substation.load) / connectionCount
+                     (connectionCount defaults to 1; result is 0 if capacity ≤ load)
 ```
 
-The player's capacity increases **automatically** — no allocation or substation setup needed. This makes reactor infusion the simplest path to more capacity.
+It is **recomputed on every connect, disconnect, and any capacity/load change**, so **each new connection dilutes everyone's share**. Example: a substation with `1,512,960,000` capacity (chain) and `220` connections gives each connected player `6,877,090` (≈ 6,877 W) of `capacitySecondary`. (Verified: `UpdateSubstationConnectionCapacity` in `x/structs/keeper/grid_context.go`.)
 
-Example: 3,000,000 ualpha infused into a reactor with 4% commission generates 3,000,000 mW. The reactor keeps 120,000 mW (4%), the player receives 2,880,000 mW (96%) added directly to their capacity.
-
-### Allocation Sources
-
-Allocations can be created from Reactors, Players, and Substations. Allocations can only be **connected to** Substations.
-
-For full energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+This is the real capacity-planning rule for guilds: the per-member figure is **derived, not configured**, and it shrinks as the guild onboards more members. Plan the pool against `connectionCount`, not a fixed per-player number.
 
 ---
 
-## Automation (Defence Contractor Pattern)
+## Allocations
 
-The shared energy system and flexible permission model were designed for AI automation. A secondary agent can be granted scoped permissions to manage power on behalf of a player — monitoring substations, adjusting allocations, and reacting to power events via GRASS streaming. See the [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) "Automation Patterns" section for implementation details.
+An **allocation** moves capacity from a source to a destination.
+
+- **Source** can be a player, reactor, struct, or substation. Substation-to-substation **chaining is legal** (one substation can feed another).
+- **`SetPower`** adds the allocation's power to the **destination's** `capacity` and to the **source's** `load`.
+
+| Type | Value | Behavior |
+|------|-------|----------|
+| `static` | 0 | Fixed power. |
+| `dynamic` | 1 | Updatable power. |
+| `automated` | 2 | **One per source.** Auto-resizes to the source's **full** capacity. |
+| `provider-agreement` | — | System-managed (created by energy agreements). |
+
+(Verified: `AllocationCache` type predicates and `SetPower` in `x/structs/keeper/allocation_cache.go`.)
+
+### Connecting an allocation needs no permission from the substation owner
+
+`substation-allocation-connect` checks **only** `PermAllocationConnection` on the **caller's own allocation** — there is **no** check on the destination substation, **no** guild-owner veto, and **no** guild-membership requirement. (Verified: `SubstationAllocationConnect` → `allocation.CanBeConnectedBy(callingPlayer)` in `x/structs/keeper/msg_server_substation_allocation_connect.go`; the substation is passed as `destinationId`.)
+
+Two consequences:
+
+1. **Anyone can contribute capacity to any substation** — an open shared pool by design.
+2. **Contributions are diluted by `1/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
+
+---
+
+## Brownout: `GridCascade` destroys allocations
+
+When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it **destroys that object's outgoing allocations in creation order** until `load ≤ capacity`. Because destroying an allocation removes capacity from its destination, the effect **cascades downstream** — a substation that loses a feed can knock its own outgoing allocations (and the players behind them) offline. Over-committing capacity is therefore a real, anticipatable hazard. (Verified: `GridCascade` in `x/structs/keeper/grid_context.go`.)
+
+---
+
+## Increasing your own capacity
+
+| Method | How | Rate | Reversible | Risk |
+|--------|-----|------|------------|------|
+| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low |
+| Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
+| Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
+
+Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) for the full workflows and offline-recovery procedure.
+
+Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Limit` are in [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
 
 ---
 
 ## See Also
 
+- [power.md](power.md) — Quick formula card (online equation, the four quantities)
+- [struct-types.md](../entities/struct-types.md) — Per-struct draws and build limits
+- [building.md](building.md) — Build power requirements, charge, slots
+- [resources.md](resources.md) — Alpha → energy conversion
+- [energy-market.md](../economy/energy-market.md) — Agreements, providers, pricing
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
+
+</document>
+
+<document>
+<source>knowledge/mechanics/power.md</source>
+# Power (Quick Reference)
+
+**Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+
+---
+
+## Units
+
+The chain stores power in **milliwatts**: 1 W = 1,000 chain units, 1 kW = 1,000,000. Player base draw is `25000` = **25 W**; **1 ualpha infused = 1 mW**, so **1 gram of Alpha = 1 kW**. See [energy.md — Units](energy.md#units).
+
+---
+
+## Core formulas
+
+```
+online         = (load + structsLoad) <= (capacity + capacitySecondary)
+availablePower = (capacity + capacitySecondary) - (load + structsLoad)
+allocatable    = capacity - load
+```
+
+| Term | Meaning |
+|------|---------|
+| `capacity` | Your own generation (infusions). The only capacity you can allocate **out**. |
+| `capacitySecondary` | Received from a substation you're connected to (its `connectionCapacity`). Not re-allocatable. |
+| `load` | Power you've allocated out. |
+| `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
+
+If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings.
+
+---
+
+## Struct power requirements
+
+Each struct needs `BuildDraw` while building **and** `PassiveDraw` once online (both must fit available capacity). Examples (watts):
+
+| Struct | Build | Passive | Total while building |
+|--------|-------|---------|----------------------|
+| Ore Extractor | 500 W | 500 W | 1,000 W |
+| Planetary Defense Cannon | 600 W | 600 W | 1,200 W |
+| Ore Bunker | 750 W | 750 W | 1,500 W |
+
+Build draw is temporary and releases when the build completes. Full per-struct draws and build limits: [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
+
+---
+
+## New player power budget
+
+New players usually start with zero personal `capacity` and rely on `capacitySecondary` from their guild substation. Cumulative load through the standard onboarding build order:
+
+| Item | Build Draw | Passive Draw | Cumulative Load |
+|------|------------|--------------|-----------------|
+| Player (base) | — | 25 W | 25 W |
+| Command Ship (build) | 50 W | — | 75 W |
+| Command Ship (online) | — | 50 W | 75 W |
+| Ore Extractor (build) | 500 W | — | 575 W |
+| Ore Extractor (online) | — | 500 W | 575 W |
+| Ore Refinery (build) | 500 W | — | 1,075 W |
+| Ore Refinery (online) | — | 500 W | 1,075 W |
+
+Worst-case load during onboarding is ~1,075 W (all three structs online plus a build in progress). **Minimum viable capacity**: ~575 W for player + Command Ship + Ore Extractor online. If the guild substation provides less, activate the Command Ship first, then build one struct at a time.
+
+---
+
+## Power states
+
+| Entity | Online When |
+|--------|-------------|
+| Player | `availablePower ≥ 0` |
+| Struct | available capacity `≥ struct.passiveDraw` |
+
+**False positive**: a player on a substation pool can show `capacity = 0` while structs run fine — the substation supplies `capacitySecondary`. Use `structsLoad > 0` as the real "functioning" signal, not `capacity > 0`.
+
+---
+
+## Increasing capacity
+
+Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/gram but irreversible and raidable), or buying via an agreement. Rates, the 96/4 split, and substation distribution are in [energy.md](energy.md#increasing-your-own-capacity).
+
+---
+
+## See Also
+
+- [energy.md](energy.md) — Full energy system: units, infusion split, substations, allocations, brownout
 - [building.md](building.md) — Build power requirements
-- [resources.md](resources.md) — Energy production from Alpha Matter
-- `systems/power-system.md` — Full power system documentation
-- `schemas/formulas.md` — Power capacity formulas
-- `schemas/entities.md` — Player capacity/load fields
+- [struct-types.md](../entities/struct-types.md) — Per-struct BuildDraw/PassiveDraw, limits
+- [resources.md](resources.md) — Energy from Alpha Matter
+- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
 
 </document>
 
@@ -3389,32 +3469,32 @@ The shared energy system and flexible permission model were designed for AI auto
 
 ## Complete Struct Type Table
 
-All 22 struct types, verified from the database. Draw values are in kW (multiply by 1,000 for in-game watts).
+All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable).
 
-| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Max HP | Possible Ambit | Ambits |
-|----|------|----------|-------|------------|------------|--------------|--------|----------------|--------|
-| 1 | Command Ship | fleet | Command Ship | 200 | 50 kW | 50 kW | 6 | 30 | space, air, land, water |
-| 2 | Battleship | fleet | Battleship | 765 | 135 kW | 135 kW | 3 | 16 | space |
-| 3 | Starfighter | fleet | Starfighter | 250 | 100 kW | 100 kW | 3 | 16 | space |
-| 4 | Frigate | fleet | Frigate | 450 | 75 kW | 75 kW | 3 | 16 | space |
-| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 kW | 60 kW | 3 | 8 | air |
-| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 kW | 125 kW | 3 | 8 | air |
-| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 kW | 125 kW | 3 | 8 | air |
-| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 kW | 75 kW | 3 | 4 | land |
-| 9 | Tank | fleet | Tank | 220 | 75 kW | 75 kW | 3 | 4 | land |
-| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 kW | 75 kW | 3 | 4 | land |
-| 11 | Cruiser | fleet | Cruiser | 515 | 110 kW | 110 kW | 3 | 2 | water |
-| 12 | Destroyer | fleet | Destroyer | 600 | 100 kW | 100 kW | 3 | 2 | water |
-| 13 | Submersible | fleet | Submersible | 455 | 125 kW | 125 kW | 3 | 2 | water |
-| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 kW | 500 kW | 6 | 6 | land, water |
-| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 kW | 500 kW | 6 | 6 | land, water |
-| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 kW | 200 kW | 6 | 16 | space |
-| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 kW | 600 kW | 6 | 16 | space |
-| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 kW | 750 kW | 6 | 4 | land |
-| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 kW | 600 kW | 6 | 6 | land, water |
-| 20 | Field Generator | planet | Field Generator | 700 | 500 kW | 500 kW | 8 | 6 | land, water |
-| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 kW | 10,000 kW | 10 | 6 | land, water |
-| 22 | World Engine | planet | World Engine | 5,000 | 100,000 kW | 100,000 kW | 10 | 6 | land, water |
+| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
+|----|------|----------|-------|------------|------------|--------------|-------|--------|----------------|--------|
+| 1 | Command Ship | fleet | Command Ship | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
+| 2 | Battleship | fleet | Battleship | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
+| 3 | Starfighter | fleet | Starfighter | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
+| 4 | Frigate | fleet | Frigate | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
+| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
+| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 9 | Tank | fleet | Tank | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 11 | Cruiser | fleet | Cruiser | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
+| 12 | Destroyer | fleet | Destroyer | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
+| 13 | Submersible | fleet | Submersible | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
+| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
+| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
+| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
+| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
+| 20 | Field Generator | planet | Field Generator | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
+| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
+| 22 | World Engine | planet | World Engine | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
 
 ### Special Properties
 

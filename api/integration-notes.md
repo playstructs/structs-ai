@@ -191,6 +191,27 @@ Almost everything under `/api/` requires an authenticated session (the `PlayerAu
 
 ---
 
+## Energy and grid data shapes
+
+Power/grid integrations trip on where the numbers live and how the messages are shaped.
+
+- **Power fields live in a `gridAttributes` sub-object**, not the entity wrapper. For `player`, `substation`, and `reactor` LCD entities, `capacity`, `capacitySecondary`, `load`, `structsLoad`, `connectionCapacity`, and `connectionCount` are under `gridAttributes`. Top-level wrapper fields are the non-grid ones — reactor `defaultCommission` and `validator`, and `owner` on `Reactor`/`Substation`/`Guild`.
+- **LCD numerics are JSON strings** (`"1512960000"`), including everything in `gridAttributes`. Parse before doing math — a unit is **milliwatts** (see [energy.md — Units](../knowledge/mechanics/energy.md#units)).
+- **`guild` entity carries the power entry points**: `primaryReactorId` (field 9) and `entrySubstationId` (field 10) — start here to resolve a player's power infrastructure. Verified in `proto/structs/structs/guild.proto`.
+- **Build-state is LCD-only.** The Guild API struct list exposes `location_type`, `operating_ambit`, `slot`, `is_destroyed`, `type`/`type_name` but **not** `isBuilt`/`blockStartBuild` — read the chain `struct` entity (`structAttributes`) for those (see "Where struct HP and status live" above).
+
+Message field shapes (verified in `proto/structs/structs/tx.proto`):
+
+| Message | Fields | Gotcha |
+|---------|--------|--------|
+| `MsgReactorInfuse` | `creator`, `delegatorAddress`, `validatorAddress`, `amount` | `amount` is a **single** `Coin` (not a list); infusing is a delegation to the reactor's **validator** address. |
+| `MsgAllocationCreate` | `creator`, `controller`, `sourceObjectId`, `allocationType`, `power` | **No** `destinationId` — the destination is set later via connect. |
+| `MsgSubstationAllocationConnect` | `creator`, `allocationId`, `destinationId` | The substation id goes in **`destinationId`** — there is no `substationId` field. |
+
+See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind these shapes.
+
+---
+
 ## See Also
 
 - [hashing.md](../knowledge/mechanics/hashing.md) — Proof-of-work input format and which block to anchor on

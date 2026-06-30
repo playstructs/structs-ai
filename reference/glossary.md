@@ -22,6 +22,9 @@ These pairs cause the most integration and tactical errors:
 
 ## A
 
+### Allocation
+A routing of power capacity from a source (player, reactor, struct, or substation) to a destination, adding to the destination's `capacity` and the source's `load`. Types: `static` (fixed), `dynamic` (updatable), `automated` (one per source, auto-resizes to the source's full capacity), `provider-agreement` (system). Connecting one to a substation needs permission only on **your own** allocation. → [energy.md — Allocations](../knowledge/mechanics/energy.md#allocations)
+
 ### Alpha Matter
 The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. → [resources.md](../knowledge/mechanics/resources.md)
 
@@ -61,7 +64,7 @@ The per-operation clocks that drive proof-of-work difficulty. Build's clock is o
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
 
 ### BuildDraw / PassiveDraw
-A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw`), in watts. Both must fit your capacity. → [power.md](../knowledge/mechanics/power.md)
+A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw`). Stated in watts; the chain stores milliwatts (×1,000). Both must fit your capacity. → [energy.md](../knowledge/mechanics/energy.md), [struct-types.md](../knowledge/entities/struct-types.md#complete-struct-type-table)
 
 ### Build limit
 The per-player cap on how many of a struct type you can own. Most planet structs and the Command Ship are 1; Orbital Shield Generator, Ore Bunker, and fleet combat structs are unlimited. Exceeding it raises [capacity_exceeded](#capacity_exceeded). → [building.md — Struct Limits](../knowledge/mechanics/building.md#struct-limits-per-player)
@@ -69,7 +72,7 @@ The per-player cap on how many of a struct type you can own. Most planet structs
 ## C
 
 ### capacity / capacitySecondary
-Your power capacity (primary plus secondary). Available power = `(capacity + capacitySecondary) − (load + structsLoad)`. → [power.md](../knowledge/mechanics/power.md)
+Your power capacity: `capacity` is your own generation (the only part you can allocate out); `capacitySecondary` is what a connected substation supplies (its `connectionCapacity`, not re-allocatable). Available power = `(capacity + capacitySecondary) − (load + structsLoad)`. → [energy.md — The online equation](../knowledge/mechanics/energy.md#the-online-equation)
 
 ### capacity_exceeded
 The structured error key behind `cannot handle new load requirements (required: X, available: Y)`. **Two causes, told apart by magnitude**: tiny equal integers = build-limit hit; large values = power-capacity shortage (milliwatts). → [building.md — Build Validation Order](../knowledge/mechanics/building.md#build-validation-order), [troubleshooting](../troubleshooting/common-issues.md#building-fails-cannot-handle-new-load-requirements)
@@ -79,6 +82,9 @@ A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "c
 
 ### Command Ship
 The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
+
+### connectionCapacity
+The per-connection share a substation gives each connected player (its `capacitySecondary`): `(capacity − load) / connectionCount` (count defaults to 1; 0 if capacity ≤ load). Recomputed on every connect/disconnect — each new connection **dilutes** everyone's share. → [energy.md — Substations](../knowledge/mechanics/energy.md#substations-connectioncapacity-dilutes)
 
 ### Counter-attack
 Return damage from a defender or the target, fired at most once per `struct-attack` invocation. Requires the counter-attacker's weapon to reach the **attacker's** ambit (ambit-independent of what it defends). Defenders take no counter damage. → [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack)
@@ -121,6 +127,9 @@ Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage re
 ### GRASS
 Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
 
+### GridCascade
+The brownout cascade: when an object's `load` exceeds its `capacity`, the keeper destroys that object's outgoing allocations in creation order until load fits — cascading downstream and knocking dependents offline. → [energy.md — Brownout](../knowledge/mechanics/energy.md#brownout-gridcascade-destroys-allocations)
+
 ### Guaranteed shots
 The minimum auto-hit shots before the success-rate roll applies. Only the Starfighter Attack Run secondary has one (`= 1`); the field is `omitempty` so it's absent (=0) on every other type. → [combat.md — Multi-Shot Damage](../knowledge/mechanics/combat.md#multi-shot-damage)
 
@@ -141,7 +150,7 @@ A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struc
 Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
 
 ### Infusion
-Converting Alpha Matter into reactor/generator power capacity. → [structs-energy SKILL](../.cursor/skills/structs-energy/SKILL.md)
+Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram = 1 kW). A reactor infusion splits ~96/4: the infuser keeps `1 − commission` (default 4%) on their **own** capacity, the reactor keeps the commission. It does **not** raise any substation's capacity. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ## J
 
@@ -151,7 +160,7 @@ Planet struct (type 17, 1 per player, `noUnitDefenses`) that provides the planet
 ## L
 
 ### Load
-Current power consumption. If `load > capacity`, the player/struct goes offline. → [power.md](../knowledge/mechanics/power.md)
+Power you've allocated **out** to others (distinct from `structsLoad`, the draw of your own structs). Online requires `load + structsLoad ≤ capacity + capacitySecondary`. → [energy.md — The online equation](../knowledge/mechanics/energy.md#the-online-equation)
 
 ### local (ambit)
 Enum 5 / bitmask 32. The Command Ship's "current ambit" weapon flag — it attacks whatever ambit it currently occupies. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
@@ -214,6 +223,9 @@ Guild-fronted player creation (`MsgGuildMembershipJoinProxy`): sign a payload, P
 ### Raid statuses
 The `RaidStatus_*` lifecycle: `initiated` → `shieldsVulnerable` → (`raidSuccessful` | `attackerRetreated` | `attackerDefeated` | `ongoing` | `demilitarized`). → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
 
+### Reactor
+A chain energy source — Alpha staked into a validator. Infusing it grants the infuser ~96% of the power as personal `capacity` and keeps the commission (default 4%) as the reactor's. Reversible via `reactor-defuse` (cooldown). → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
+
 ### Recoil damage
 Self-damage the attacker takes after firing, applied only if it survives the whole sequence (including counters). → [combat.md — Recoil Damage](../knowledge/mechanics/combat.md#recoil-damage)
 
@@ -227,6 +239,9 @@ A GRASS category fired when a planet's shield value changes. → [api/streaming/
 
 ### Signal Jamming
 A unit defense (Battleship, Pursuit Fighter, Cruiser) that evades **guided** weapons 66% of the time. This — not the Jamming Satellite — is why guided weapons miss repeatedly. Beaten by unguided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+
+### Slots
+Build positions: **4 per ambit** (space/air/land/water) on **both** the planet and the fleet. A build reserves its slot immediately at initiate; counts are fixed (ore/power capacity scale separately). Fleet-category structs use fleet slots, planet-category use planet slots. → [building.md — Slots](../knowledge/mechanics/building.md#slots)
 
 ### Stealth Mode
 A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting only; same-ambit structs can still hit. Attacking breaks stealth. → [combat.md — Stealth](../knowledge/mechanics/combat.md#stealth)
@@ -243,11 +258,14 @@ The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` �
 ### struct_health
 The GRASS effect category for an HP change; always streams in full (use it to detect combat when `struct_attack` is stubbed). → [api/streaming/event-types.md](../api/streaming/event-types.md#struct-events)
 
+### structsLoad
+The power drawn by a player's own online structs: `PlayerPassiveDraw` (25 W) + the sum of each online struct's `passiveDraw`. Distinct from `load` (power allocated out). A non-zero `structsLoad` — not `capacity > 0` — is the real "this player is functioning" signal. → [energy.md — The online equation](../knowledge/mechanics/energy.md#the-online-equation)
+
 ### StructSweepDelay
 The ~5-block window after destruction where a slot may still reference the dead struct ID. `destroyed_block` records the exact height. → [building.md — Struct State Machine](../knowledge/mechanics/building.md#struct-state-machine)
 
 ### Substation
-Infrastructure that routes power capacity (via allocations/connections) between players and structs. → [structs-energy SKILL](../.cursor/skills/structs-energy/SKILL.md)
+Infrastructure that pools power capacity and shares it evenly across connected players (each gets `connectionCapacity`). Fed by allocations; capacity dilutes as connections grow. → [energy.md — Substations](../knowledge/mechanics/energy.md#substations-connectioncapacity-dilutes)
 
 ## T
 

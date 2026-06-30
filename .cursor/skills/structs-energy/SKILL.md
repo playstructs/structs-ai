@@ -33,6 +33,8 @@ Have Alpha Matter?
 
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
+> **Infusing a reactor powers *you*, not the guild substation.** Infusion adds ~96% (at 4% commission) to **your own** `capacity` and the commission to the reactor — it does **not** raise any substation's capacity or other members' `capacitySecondary`. To feed the shared guild pool, someone must route capacity in with an **allocation** (below). See [energy.md — infusion](https://structs.ai/knowledge/mechanics/energy#creating-capacity-infusion-splits-964).
+
 **Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
 ### "Am I about to go offline?"
@@ -88,6 +90,12 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
 5. Migrate players: `substation-player-migrate -- [src-sub] [dest-sub] [player-id,...]`.
 
+**Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
+
+- **A substation dilutes evenly.** Each connected player gets `connectionCapacity = (capacity − load) / connectionCount`, recomputed on every connect/disconnect. Every new player connection shrinks everyone's share — plan the pool against `connectionCount`, not a fixed per-member figure.
+- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `1/connectionCount`, so it's community behavior, not self-growth.
+- **Over-committing triggers a brownout.** If an object's `load` exceeds its `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. Leave headroom.
+
 ## Offline recovery (emergency)
 
 1. **Free power now** — `struct-deactivate` non-essential structs until `load + structsLoad ≤ capacity + capacitySecondary`. Keep the **Command Ship online** if at all possible (offline CMD ship makes your planet raidable).
@@ -128,7 +136,8 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 ## See also
 
-- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online formulas
+- [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) — full energy system: units, infusion split, substation dilution, allocations, brownout
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online quick formula card
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha → energy conversion rates
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) — infusion strategy
 - [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — selling energy, buying via agreement, the flywheel; [structs-building](https://structs.ai/skills/structs-building/SKILL) — power pre-check
