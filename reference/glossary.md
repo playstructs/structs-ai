@@ -127,6 +127,9 @@ Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage re
 ### GRASS
 Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
 
+### GRASS subject
+The NATS subject a GRASS event is published on. Grid and planet subjects end with the owning `player_id` (`structs.grid.{object_type}.{object_id}.{player_id}`, `structs.planet.{planet_id}.{player_id}`; `noPlayer` when unresolved) and their payloads carry a `player_id` field. NATS `*` matches one token and `>` matches the rest, so match a planet with `structs.planet.{id}.*`, not `structs.planet.*`. → [subscription-patterns.md](../api/streaming/subscription-patterns.md)
+
 ### GridCascade
 The brownout cascade: when an object's `load` exceeds its `capacity`, the keeper destroys that object's outgoing allocations in creation order until load fits — cascading downstream and knocking dependents offline. → [energy.md — Brownout](../knowledge/mechanics/energy.md#brownout-gridcascade-destroys-allocations)
 
@@ -250,7 +253,7 @@ A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting o
 A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1, Built 2, Online 4, Stored 8, Hidden 16, Destroyed 32, Locked 64. E.g. `7` = online, `35` = destroyed. → [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric)
 
 ### Stub
-The `{ "stub": true }` envelope the GRASS stream sends in place of a `struct_attack` (or other large) payload that exceeds ~7995 bytes. Pull the full shot detail from `planet_activity`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
 
 ### struct_attack
 The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` — unless [stubbed](#stub). → [integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema)

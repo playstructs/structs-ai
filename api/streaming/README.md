@@ -88,12 +88,15 @@ Follow these patterns for reliable event subscriptions.
 
 ## Subject Patterns
 
-**Player Events**: `structs.player.*`  
+**Player Events**: `structs.player.>` (specific: `structs.player.{guild_id}.{player_id}`)  
 **Guild Events**: `structs.guild.*`  
-**Planet Events**: `structs.planet.*`  
+**Planet Events**: `structs.planet.>` (specific: `structs.planet.{planet_id}.{player_id}`, e.g. `structs.planet.3-1.*`)  
 **Struct Events**: `structs.struct.*`  
 **Fleet Events**: `structs.fleet.*`  
+**Grid Attributes**: `structs.grid.>` (specific: `structs.grid.{object_type}.{object_id}.{player_id}`)  
 **Global Events**: `structs.global`
+
+> Grid and planet subjects end with the owning `player_id` (added 2026-07-07; `noPlayer` when unresolved) and carry a `player_id` payload field. NATS `*` matches one token and `>` the rest, so a bare `structs.planet.*` no longer matches.
 
 **See**: `event-types.yaml` for complete subject pattern catalog
 

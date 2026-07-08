@@ -3909,7 +3909,7 @@ for await (const msg of sub) {
 }
 ```
 
-Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
+Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1.1-11`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
 
 **Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
 
@@ -3921,19 +3921,21 @@ Subscribe to subjects matching the entities you care about:
 
 | Entity | Wildcard | Specific | Example |
 |--------|----------|----------|---------|
-| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
-| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.2-1` |
+| Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
+| Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.2-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
 | Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
-| Grid | `structs.grid.*` | `structs.grid.{object_id}` | Attribute changes (ore, power, load, etc.) |
+| Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | Attribute changes (ore, power, load, etc.) |
 | Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
-Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
+**Grid and planet subjects end with the owning `player_id`** (added 2026-07-07): grid is `structs.grid.{object_type}.{object_id}.{player_id}` and planet is `structs.planet.{planet_id}.{player_id}`. When the owner can't be resolved the segment is the literal `noPlayer`. This lets you filter by owner from the subject alone — but mind the NATS wildcard rule: **`*` matches exactly one token, `>` matches one or more trailing tokens.** So `structs.planet.*` no longer matches (that's only two tokens); use `structs.planet.{planet_id}.*` for one planet (any owner) or `structs.planet.>` for all. The player subject (`structs.player.{guild_id}.{player_id}`) is likewise three tokens — use `structs.player.>`, not `structs.player.*`.
+
+Use wildcards to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
 
 ---
 
@@ -3951,11 +3953,11 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
-All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{id}`. `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
+All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
 
 ### Struct Events
 
-**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{id}`) rather than the struct subject. Subscribe to both if you need complete coverage.
+**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{planet_id}.{player_id}`, i.e. subscribe `structs.planet.{planet_id}.*`) rather than the struct subject. Subscribe to both if you need complete coverage.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -4023,9 +4025,9 @@ Track token movements — Alpha Matter, guild tokens, ore, etc.
 
 ### Grid Events
 
-Subject: `structs.grid.{object_id}`
+Subject: `structs.grid.{object_type}.{object_id}.{player_id}`
 
-Track attribute changes on any game object (players, structs, planets).
+Track attribute changes on any game object (players, structs, planets). Every grid payload also carries a top-level `player_id` field (the resolved owner, or `noPlayer`).
 
 | Category | Description | React By |
 |----------|-------------|----------|
@@ -4045,17 +4047,18 @@ Track attribute changes on any game object (players, structs, planets).
 | `ready` | Object readiness flag changed | Track object availability |
 | `checkpointBlock` | Checkpoint block updated | Track grid bookkeeping |
 
-Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}` — not `grass_category` values.
+Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}.{player_id}` — not `grass_category` values. For an `object_type` of `player` the owner is the object itself, so the subject reads `structs.grid.player.{id}.{id}`.
 
 ### Combat Event Payloads
 
-> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `struct_attack` row's full `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead: `{ "category": "struct_attack", "stub": true, ... }` with **no `detail`**. So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the row's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `planet_activity` row's full payload (e.g. a `struct_attack` `detail` with its `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead. The stub keeps the routing/identity fields and drops the heavy `detail`: `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": "...", "player_id": "...", "seq": ..., "category": "struct_attack", "time": "...", "stub": "true" }` (note `stub` is the string `"true"`). So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the stub's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
 
-`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject):
+`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject; the full planet payload also carries `subject` and `player_id` alongside the row fields):
 
 ```json
 {
   "category": "struct_attack",
+  "player_id": "1-11",
   "attackingStructId": "5-100",
   "targetStructId": "5-200",
   "weaponSystem": "primary",
@@ -4132,7 +4135,8 @@ import { connect } from "nats.ws";
 
 const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 
-const sub = nc.subscribe("structs.planet.2-1");
+// Subjects end with the owner player_id, so match any owner with a trailing *
+const sub = nc.subscribe("structs.planet.2-1.*");
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
   console.log(JSON.stringify(event));
@@ -4152,7 +4156,7 @@ import asyncio, json, nats
 
 async def main():
     nc = await nats.connect("ws://crew.oh.energy:1443")
-    sub = await nc.subscribe("structs.planet.2-1")
+    sub = await nc.subscribe("structs.planet.2-1.*")  # trailing * = any owner player_id
     async for msg in sub.messages:
         event = json.loads(msg.data.decode())
         print(json.dumps(event))
@@ -4169,7 +4173,7 @@ import { connect } from "nats.ws";
 
 const PLANET_ID = process.argv[2]; // e.g. "2-1"
 const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
-const sub = nc.subscribe(`structs.planet.${PLANET_ID}`);
+const sub = nc.subscribe(`structs.planet.${PLANET_ID}.*`); // trailing * = any owner player_id
 
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
@@ -4238,7 +4242,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### For Ongoing Monitoring
 
-1. Subscribe to your planet(s): `structs.planet.{id}` — raid alerts, fleet arrivals
+1. Subscribe to your planet(s): `structs.planet.{id}.*` — raid alerts, fleet arrivals (trailing `*` matches any owner `player_id`)
 2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
 3. Subscribe to global: `structs.global` — block tick for game loop timing
 4. Log events to [memory/](https://structs.ai/memory) for cross-session awareness
@@ -4286,7 +4290,7 @@ This creates a continuous mine-refine loop that runs unattended. Ore is never le
 ### Example: Defend-on-Raid-Detected
 
 ```
-Subscribe to: structs.planet.{planet-id}
+Subscribe to: structs.planet.{planet-id}.*
 On event: planet_raid_start
   → Activate stealth on vulnerable structs
   → Set defenders on high-value structs
@@ -8479,6 +8483,8 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 | 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 | 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 
+> The `generating_rate` values above (2/5/10) are the raw chain rate. In the Guild Stack DB this raw value is stored as `generating_rate_p`, and a `generating_rate` column is exposed as `generating_rate_p * 1000` — read `generating_rate_p` when you want the per-gram rate quoted here. See [integration-notes.md](../../api/integration-notes.md#struct_type-db-field-shapes).
+
 Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP.
 
 ### Planetary Shield Contributions
@@ -8516,7 +8522,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Destroyer | 5 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
 | Submersible | 5 | guided | Space, Water | — | Stealth (2 charge to activate) |
 
-All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. Armour-piercing is exposed on the struct type as explicit booleans (`primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`; chain v0.18.0), so read the flag rather than inferring from class. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
 
 **Single-target**: every fleet weapon has `primaryWeaponTargets = 1` (and `secondaryWeaponTargets = 1` on the Battleship, Starfighter, and Cruiser) — one struct hit per volley. `struct-attack` accepts a comma list of target IDs, but a `targets = 1` weapon engages only one of them. This is distinct from multi-*shot* (`primaryWeaponShots`), which is multiple projectiles at a single target. See [combat.md](../mechanics/combat.md#targets-per-attack).
 
@@ -9168,6 +9174,8 @@ Defense assignments.
 
 `structs.grid` is a **key-value store** for resource attributes. This is the most common source of query errors.
 
+> **GRASS publishing**: grid changes fire `structs.GRID_NOTIFY()`, which `pg_notify`s each change on subject `structs.grid.{object_type}.{object_id}.{player_id}` with a top-level `player_id` field (owner resolved via `player_object`, falling back to `planet.owner`; `noPlayer` when unresolved; for `object_type='player'` the owner is the object itself). The owner segment/field was added 2026-07-07.
+
 | Column | Type | Notes |
 |--------|------|-------|
 | `object_id` | varchar | Player/planet/struct/etc ID |
@@ -9266,6 +9274,8 @@ ORDER BY seq ASC;
 ```
 
 The `detail` column for `struct_attack` includes `attackerStructId`, `targetStructId`, and `eventAttackShotDetail` with per-shot damage breakdowns.
+
+**GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](../../.cursor/skills/structs-streaming/SKILL.md).
 
 ---
 
@@ -12792,6 +12802,8 @@ The same activity event reaches you in two different encodings depending on the 
 
 Verified: GRASS frames are parsed once via `message.json()` in webapp `src/js/framework/GrassManager.js`, and listeners access `messageData.detail.*` as an object. The REST `planet-activity` rows come straight from a PostgreSQL `detail` column and arrive as a JSON string. An integrator consuming **both** must branch on the source.
 
+> **GRASS grid/planet subjects carry the owner `player_id`** (added 2026-07-07). Subjects are `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.planet.{planet_id}.{player_id}` (literal `noPlayer` when the owner can't be resolved), and every such payload includes a top-level `player_id` field — so you can filter by owner from the subject without parsing. Because NATS `*` matches exactly one token, subscribe with the trailing wildcard: `structs.planet.{planet_id}.*` (one planet) or `structs.planet.>` / `structs.grid.>` (all). A bare `structs.planet.*` matches nothing now. Verified in structs-pg `deploy/trigger-grass-planet-activity-20260707-add-owner-player-id.sql` and `deploy/trigger-grass-grid-20260707-add-owner-player-id.sql`; the webapp listener matches the suffixed subjects in `src/js/framework/GrassManager.js`.
+
 There is also a **field-casing split** inside `detail`: most struct events use snake_case keys (`struct_id`, `defender_struct_id`), but `struct_attack` uses camelCase (see next section).
 
 ---
@@ -12954,6 +12966,19 @@ See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind 
 
 ---
 
+## `struct_type` DB field shapes
+
+Two `struct_type` shape changes in the Guild Stack (structs-pg) that tools read:
+
+- **`generating_rate` is a formatted column.** The raw chain value now lives in **`generating_rate_p`**, and `generating_rate` is a generated column equal to `generating_rate_p * 1000` (same `_p`/formatted split as the grid `value_p`/`value` pair). For the raw per-gram rate the gameplay docs quote (Field Generator 2, Continental Power Plant 5, World Engine 10), read `generating_rate_p`; `generating_rate` is the scaled representation. Verified in structs-pg `deploy/table-struct-type-20260602-add-generating-rate-precision.sql`.
+- **Armour-piercing is explicit booleans.** `struct_type` exposes `primary_weapon_armour_piercing` and `secondary_weapon_armour_piercing` (chain `StructType.primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`, structsd v0.18.0) — read these rather than inferring from the struct class. Only the Battleship sets them today. Verified in structs-pg `deploy/table-struct-type-20260612-add-armour-piercing.sql`. See [combat.md](../knowledge/mechanics/combat.md).
+
+## Player UGC: PFP is a first-class attribute
+
+Profile pictures are a moderated player UGC attribute alongside `username`, and the pending-player signup flow now threads pfp render hints too. `PLAYER_PENDING_JOIN_PROXY` builds the signed `guild-membership-join-proxy` `ugc` argument from up to three keys: `player-name` (from `username`), `player-pfp` (from `pfp`), and `player-pfp-client-render-attributes` (from the `pfp_client_render_attributes` column — the column was renamed from `pfp_cr_attributes`, and the ugc key was lengthened from the short `player-pfp-cr-attributes` form to match). Committed `username`/`pfp` surface on `structs.player` via GRASS `player_consensus`. Verified in structs-pg `deploy/trigger-player-pending-20260612-pfp-cr-attributes-inclusion.sql`, `…-20260617-rename-pfp-cr-attributes.sql`, `…-20260617-ugc-key-long-name.sql`. The `pfpClientRenderAttributes` field is self-service (not guild-moderatable); moderation of `name`/`pfp` follows the `ugc_moderated` path — see [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
+
+---
+
 ## See Also
 
 - [hashing.md](../knowledge/mechanics/hashing.md) — Proof-of-work input format and which block to anchor on
@@ -12969,8 +12994,8 @@ See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind 
 <source>api/streaming/event-types.md</source>
 # GRASS Event Types
 
-**Version**: 1.0.0
-**Last Updated**: 2026-01-16
+**Version**: 1.1.0
+**Last Updated**: 2026-07-07
 **Description**: Complete catalog of GRASS event types and categories
 
 ---
@@ -12994,47 +13019,47 @@ See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind 
 
 ### Planet Events
 
-These are `planet_activity` rows; they arrive on the **planet subject** `structs.planet.{planet_id}`.
+These are `planet_activity` rows; they arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; subscribe with `structs.planet.{planet_id}.*`). Every payload also carries a top-level `player_id` (or `noPlayer` when unresolved).
 
 | Event Name | Description | Subject Pattern | Schema |
 |------------|-------------|-----------------|--------|
-| raid_status | Raid status changes | `structs.planet.*` | `event-schemas.md#PlanetRaidStatusEvent` |
-| shield_change | Planetary shield value changed (`planetary_shield` / `planetary_shield_old`) | `structs.planet.*` | -- |
-| block_raid_start | Raid vulnerability clock (`blockStartRaid`) armed | `structs.planet.*` | -- |
-| planet_activity | Generic planet activity wrapper from the `planet_activity` table | `structs.planet.*` | `event-schemas.md#PlanetActivityEvent` |
-| fleet_arrive | Fleet arrival | `structs.planet.*` | `event-schemas.md#FleetArriveEvent` |
-| fleet_depart | Fleet departure | `structs.planet.*` | -- |
+| raid_status | Raid status changes | `structs.planet.*.*` | `event-schemas.md#PlanetRaidStatusEvent` |
+| shield_change | Planetary shield value changed (`planetary_shield` / `planetary_shield_old`) | `structs.planet.*.*` | -- |
+| block_raid_start | Raid vulnerability clock (`blockStartRaid`) armed | `structs.planet.*.*` | -- |
+| planet_activity | Generic planet activity wrapper from the `planet_activity` table | `structs.planet.*.*` | `event-schemas.md#PlanetActivityEvent` |
+| fleet_arrive | Fleet arrival | `structs.planet.*.*` | `event-schemas.md#FleetArriveEvent` |
+| fleet_depart | Fleet departure | `structs.planet.*.*` | -- |
 
 > `fleet_advance` exists in the category enum but is **not emitted** by the current indexer — fleet movement surfaces as `fleet_depart` then `fleet_arrive`. Do not wait on `fleet_advance`.
 
 ### Struct Events
 
-These are `planet_activity` rows and arrive on the **planet subject** `structs.planet.{planet_id}` (not the struct subject). See [struct_attack stubbing](#struct_attack-payload-stubbing) below.
+These are `planet_activity` rows and arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (not the struct subject; subscribe `structs.planet.{planet_id}.*`). See [struct_attack stubbing](#struct_attack-payload-stubbing) below.
 
 | Event Name | Description | Subject Pattern | Schema |
 |------------|-------------|-----------------|--------|
-| struct_attack | Struct attack (per-shot `detail`; **stubbed when large** — see below) | `structs.planet.*` | -- |
-| struct_health | Struct HP changed (`health` / `health_old`) | `structs.planet.*` | -- |
-| struct_defense_remove | Defense structure removed | `structs.planet.*` | -- |
-| struct_defense_add | Defense structure added | `structs.planet.*` | -- |
-| struct_defender_clear | Defense relationships cleared from a struct | `structs.planet.*` | -- |
-| struct_status | Struct status changes (online / offline / destroyed) | `structs.planet.*` | `event-schemas.md#StructStatusEvent` |
-| struct_move | Struct movement | `structs.planet.*` | -- |
-| struct_block_build_start | Build operation started | `structs.planet.*` | -- |
-| struct_block_ore_mine_start | Mining operation started | `structs.planet.*` | -- |
-| struct_block_ore_refine_start | Refining operation started | `structs.planet.*` | -- |
+| struct_attack | Struct attack (per-shot `detail`; **stubbed when large** — see below) | `structs.planet.*.*` | -- |
+| struct_health | Struct HP changed (`health` / `health_old`) | `structs.planet.*.*` | -- |
+| struct_defense_remove | Defense structure removed | `structs.planet.*.*` | -- |
+| struct_defense_add | Defense structure added | `structs.planet.*.*` | -- |
+| struct_defender_clear | Defense relationships cleared from a struct | `structs.planet.*.*` | -- |
+| struct_status | Struct status changes (online / offline / destroyed) | `structs.planet.*.*` | `event-schemas.md#StructStatusEvent` |
+| struct_move | Struct movement | `structs.planet.*.*` | -- |
+| struct_block_build_start | Build operation started | `structs.planet.*.*` | -- |
+| struct_block_ore_mine_start | Mining operation started | `structs.planet.*.*` | -- |
+| struct_block_ore_refine_start | Refining operation started | `structs.planet.*.*` | -- |
 
 #### struct_attack payload stubbing
 
-`struct_attack` is published live, but the NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes, the stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. Detect combat from the effect events (`struct_health`, `struct_status`, `shield_change`, `raid_status`), then pull the full shot detail from the Guild API `planet-activity` feed keyed by `seq`/`planet_id`. Small attacks ship `detail` inline.
+`struct_attack` is published live, but the NATS NOTIFY payload is capped at ~8000 bytes. When a `planet_activity` row's payload exceeds 7995 bytes, the stream sends a **stub** — `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": ..., "player_id": ..., "seq": ..., "category": "struct_attack", "time": ..., "stub": "true" }` with **no `detail`** (note `stub` is the string `"true"`). Detect combat from the effect events (`struct_health`, `struct_status`, `shield_change`, `raid_status`), then pull the full shot detail from the Guild API `planet-activity` feed keyed by `seq`/`planet_id`. Small attacks ship `detail` inline.
 
 ### Player Events
 
 | Event Name | Description | Subject Pattern | Schema |
 |------------|-------------|-----------------|--------|
-| player_consensus | Player state updates, including UGC `username`/`pfp` on `structs.player` | `structs.player.*` | `event-schemas.md#PlayerConsensusEvent` |
-| player_address | Address added to / changed on a player | `structs.player.*` | -- |
-| player_address_pending | Pending address registration appeared | `structs.player.*` | -- |
+| player_consensus | Player state updates, including UGC `username`/`pfp` on `structs.player` | `structs.player.>` | `event-schemas.md#PlayerConsensusEvent` |
+| player_address | Address added to / changed on a player | `structs.player.>` | -- |
+| player_address_pending | Pending address registration appeared | `structs.player.>` | -- |
 
 ### Address Events
 
@@ -13060,13 +13085,16 @@ The corresponding `player_consensus` GRASS events fire when sync-state commits U
 
 | Entity | Pattern | Specific Format | Example |
 |--------|---------|-----------------|---------|
-| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
+| Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
-| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.3-1` |
+| Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.3-1.1-11` |
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.7-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | `structs.address.register.ABC123` |
+| Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | `structs.grid.struct.5-1.1-11` |
 | Global | `structs.global` | `structs.global` | `structs.global` |
+
+> **NATS wildcard rule**: `*` matches exactly one token; `>` matches one or more trailing tokens. Since grid and planet subjects now end with the owner `player_id`, `structs.planet.*` (two tokens) no longer matches — use `structs.planet.{planet_id}.*` for one planet or `structs.planet.>` for all. The player subject is three tokens (`structs.player.{guild_id}.{player_id}`), so use `structs.player.>`. Payloads for grid/planet events also carry a top-level `player_id` (or `noPlayer`).
 
 ---
 
@@ -13083,7 +13111,7 @@ The corresponding `player_consensus` GRASS events fire when sync-state commits U
 <source>api/streaming/event-schemas.md</source>
 # GRASS Event Schemas
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Category**: streaming
 
 Complete catalog of GRASS event payload schemas for AI agents.
@@ -13100,6 +13128,8 @@ All GRASS events share a common base structure.
 | category | string | Yes | Event category (see `event-types.yaml`) |
 | id | string | Yes | Entity identifier |
 | updated_at | string (date-time) | Yes | ISO 8601 timestamp of update |
+
+> **Grid and planet events carry the owner `player_id`** (added 2026-07-07). Their subjects append it — `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.planet.{planet_id}.{player_id}` — and their payloads include a top-level `player_id` string field (the literal `noPlayer` when the owner can't be resolved). This holds for full and stubbed planet payloads. Subscribe with a trailing `*`/`>` (see [subscription-patterns.md](subscription-patterns.md)).
 
 > **`detail` has two representations depending on transport.** Over **NATS/GRASS** the frame is parsed once (`message.json()`), so `detail` arrives as an **already-parsed object** — access `detail.*` directly. Over the **Guild API `planet-activity` REST feed** the same `detail` comes from a PostgreSQL column as a **JSON-encoded string** — you must `JSON.parse(row.detail)` first. Code that consumes both transports must branch on the source. See [api/integration-notes.md — Event detail has two representations](../integration-notes.md#event-detail-has-two-representations).
 
@@ -13292,7 +13322,7 @@ Extends [BaseEvent](#base-event). Category: `block`
 
 ## Event Categories
 
-All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{id}`.
+All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{planet_id}.{player_id}` (subscribe `structs.planet.{planet_id}.*`).
 
 | Category Group | Event Types |
 |----------------|-------------|
@@ -13301,7 +13331,7 @@ All `planet`/`struct` categories below are `planet_activity` rows delivered on `
 | planet | `raid_status`, `shield_change`, `block_raid_start`, `fleet_arrive`, `fleet_depart`, `planet_activity` |
 | struct | `struct_attack`, `struct_health`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
 | player | `player_consensus`, `player_address`, `player_address_pending` |
-| grid (`structs.grid.{object}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
+| grid (`structs.grid.{object_type}.{object_id}.{player_id}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
 | inventory (`structs.inventory.{denom}…`) | ledger actions: `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed` |
 | address | `address_register` |
 
@@ -13767,6 +13797,9 @@ Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage re
 ### GRASS
 Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
 
+### GRASS subject
+The NATS subject a GRASS event is published on. Grid and planet subjects end with the owning `player_id` (`structs.grid.{object_type}.{object_id}.{player_id}`, `structs.planet.{planet_id}.{player_id}`; `noPlayer` when unresolved) and their payloads carry a `player_id` field. NATS `*` matches one token and `>` matches the rest, so match a planet with `structs.planet.{id}.*`, not `structs.planet.*`. → [subscription-patterns.md](../api/streaming/subscription-patterns.md)
+
 ### GridCascade
 The brownout cascade: when an object's `load` exceeds its `capacity`, the keeper destroys that object's outgoing allocations in creation order until load fits — cascading downstream and knocking dependents offline. → [energy.md — Brownout](../knowledge/mechanics/energy.md#brownout-gridcascade-destroys-allocations)
 
@@ -13890,7 +13923,7 @@ A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting o
 A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1, Built 2, Online 4, Stored 8, Hidden 16, Destroyed 32, Locked 64. E.g. `7` = online, `35` = destroyed. → [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric)
 
 ### Stub
-The `{ "stub": true }` envelope the GRASS stream sends in place of a `struct_attack` (or other large) payload that exceeds ~7995 bytes. Pull the full shot detail from `planet_activity`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
 
 ### struct_attack
 The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` — unless [stubbed](#stub). → [integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema)

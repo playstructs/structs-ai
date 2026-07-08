@@ -1,7 +1,7 @@
 # Subscription Patterns
 
-**Version**: 1.0.0
-**Last Updated**: 2025-01-XX
+**Version**: 1.1.0
+**Last Updated**: 2026-07-07
 **Description**: Subscription patterns for GRASS/NATS streaming
 
 ---
@@ -17,9 +17,11 @@
 
 ## Patterns
 
+> **Subjects carry the owner `player_id`, and NATS `*` matches exactly one token.** Grid and planet subjects end with the owning player id (`structs.grid.{object_type}.{object_id}.{player_id}`, `structs.planet.{planet_id}.{player_id}`; `noPlayer` when unresolved) as of 2026-07-07. The player subject is `structs.player.{guild_id}.{player_id}`. Match a variable trailing segment with a per-token `*` or the multi-token `>` — e.g. `structs.planet.3-1.*` (one planet, any owner), `structs.planet.>` (all planets), `structs.player.>` (all players). A bare `structs.planet.*` no longer matches anything.
+
 ### Subscribe to Player Updates
 
-- **Subject**: `structs.player.*`
+- **Subject**: `structs.player.>`
 - **Example subject**: `structs.player.0-1.1-11`
 - **Wildcard**: Yes
 
@@ -33,7 +35,7 @@
 // Subscribe:
 {
   "action": "subscribe",
-  "subject": "structs.player.*"
+  "subject": "structs.player.>"
 }
 
 // Received message:
@@ -74,9 +76,9 @@
 
 ### Subscribe to Planet Updates
 
-- **Subject**: `structs.planet.*`
-- **Example subject**: `structs.planet.3-1`
-- **Wildcard**: Yes
+- **Subject**: `structs.planet.3-1.*` (one planet, any owner) or `structs.planet.>` (all)
+- **Example subject**: `structs.planet.3-1.1-11`
+- **Wildcard**: Yes — note the trailing `player_id` segment
 
 **Events**:
 
@@ -86,10 +88,10 @@
 | fleet_arrive | `event-schemas.md#FleetArriveEvent` |
 
 ```json
-// Subscribe:
+// Subscribe (trailing * matches the owner player_id segment):
 {
   "action": "subscribe",
-  "subject": "structs.planet.3-1"
+  "subject": "structs.planet.3-1.*"
 }
 ```
 
@@ -102,7 +104,7 @@ Subscribe to multiple entity types on a single connection.
 | Subject | Description |
 |---------|-------------|
 | `structs.player.0-1.1-11` | Specific player |
-| `structs.planet.3-1` | Specific planet |
+| `structs.planet.3-1.*` | Specific planet (any owner) |
 | `structs.guild.0-1` | Specific guild |
 
 ```json
@@ -114,7 +116,7 @@ Subscribe to multiple entity types on a single connection.
   },
   {
     "action": "subscribe",
-    "subject": "structs.planet.3-1"
+    "subject": "structs.planet.3-1.*"
   },
   {
     "action": "subscribe",
@@ -147,8 +149,9 @@ Subscribe to multiple entity types on a single connection.
 
 | Practice | Description | Recommendation |
 |----------|-------------|----------------|
-| Use wildcards for discovery | Start with wildcard subscriptions to discover available events | `structs.player.*` |
+| Use wildcards for discovery | Start with wildcard subscriptions to discover available events | `structs.player.>` |
 | Narrow to specific subjects | Once you know what you need, subscribe to specific subjects | `structs.player.0-1.1-11` |
+| Mind the token count | `*` matches one token, `>` matches the rest; grid/planet subjects end in `player_id` | `structs.planet.3-1.*`, not `structs.planet.3-1` |
 | Limit subscriptions | Limit active subscriptions to avoid overwhelming your client | Maximum 10-20 concurrent subscriptions per connection |
 | Implement reconnection | Implement automatic reconnection with exponential backoff | See reconnection config below |
 | Validate messages | Validate all incoming messages against schemas | Use JSON Schema validation for all event payloads |

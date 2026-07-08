@@ -291,14 +291,16 @@ GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix}&e
 
 **Subject Patterns**
 
-- **Player Events**: `structs.player.*`
+- **Player Events**: `structs.player.>` (specific: `structs.player.{guild_id}.{player_id}`)
 - **Guild Events**: `structs.guild.*`
-- **Planet Events**: `structs.planet.*`
+- **Planet Events**: `structs.planet.>` (specific: `structs.planet.{planet_id}.{player_id}`, e.g. `structs.planet.3-1.*`)
 - **Struct Events**: `structs.struct.*`
 - **Fleet Events**: `structs.fleet.*`
-- **Grid Attributes**: `structs.grid.*`
+- **Grid Attributes**: `structs.grid.>` (specific: `structs.grid.{object_type}.{object_id}.{player_id}`)
 - **Inventory**: `structs.inventory.>`
 - **Global Events**: `structs.global`
+
+> Grid and planet subjects end with the owning `player_id` (added 2026-07-07; `noPlayer` when unresolved), and their payloads carry a `player_id` field. NATS `*` matches one token, `>` the rest — a bare `structs.planet.*` no longer matches.
 
 ### Tendermint WebSocket — chain events
 
@@ -384,7 +386,7 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 
 ### Monitor Planet Shield
 1. `GET /api/planet/{planet_id}` (initial load)
-2. Subscribe to `structs.planet.{id}` (streaming)
+2. Subscribe to `structs.planet.{id}.*` (streaming)
 
 **Pattern**: Hybrid (Query + Streaming)  
 **See**: `examples/workflows/monitor-planet-shield.md`

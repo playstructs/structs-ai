@@ -46,6 +46,8 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 | 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 | 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 
+> The `generating_rate` values above (2/5/10) are the raw chain rate. In the Guild Stack DB this raw value is stored as `generating_rate_p`, and a `generating_rate` column is exposed as `generating_rate_p * 1000` — read `generating_rate_p` when you want the per-gram rate quoted here. See [integration-notes.md](../../api/integration-notes.md#struct_type-db-field-shapes).
+
 Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP.
 
 ### Planetary Shield Contributions
@@ -83,7 +85,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Destroyer | 5 | guided | Air, Water | — | Enhanced counter-attack (2 dmg same-ambit) |
 | Submersible | 5 | guided | Space, Water | — | Stealth (2 charge to activate) |
 
-All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
+All primary weapons are blockable and counterable. **Armour-piercing** weapons (Battleship primary) negate the target's damage reduction during volley resolution. Armour-piercing is exposed on the struct type as explicit booleans (`primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`; chain v0.18.0), so read the flag rather than inferring from class. See [combat.md](../mechanics/combat.md) for full targeting and defense mechanics.
 
 **Single-target**: every fleet weapon has `primaryWeaponTargets = 1` (and `secondaryWeaponTargets = 1` on the Battleship, Starfighter, and Cruiser) — one struct hit per volley. `struct-attack` accepts a comma list of target IDs, but a `targets = 1` weapon engages only one of them. This is distinct from multi-*shot* (`primaryWeaponShots`), which is multiple projectiles at a single target. See [combat.md](../mechanics/combat.md#targets-per-attack).
 

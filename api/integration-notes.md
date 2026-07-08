@@ -50,6 +50,8 @@ The same activity event reaches you in two different encodings depending on the 
 
 Verified: GRASS frames are parsed once via `message.json()` in webapp `src/js/framework/GrassManager.js`, and listeners access `messageData.detail.*` as an object. The REST `planet-activity` rows come straight from a PostgreSQL `detail` column and arrive as a JSON string. An integrator consuming **both** must branch on the source.
 
+> **GRASS grid/planet subjects carry the owner `player_id`** (added 2026-07-07). Subjects are `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.planet.{planet_id}.{player_id}` (literal `noPlayer` when the owner can't be resolved), and every such payload includes a top-level `player_id` field — so you can filter by owner from the subject without parsing. Because NATS `*` matches exactly one token, subscribe with the trailing wildcard: `structs.planet.{planet_id}.*` (one planet) or `structs.planet.>` / `structs.grid.>` (all). A bare `structs.planet.*` matches nothing now. Verified in structs-pg `deploy/trigger-grass-planet-activity-20260707-add-owner-player-id.sql` and `deploy/trigger-grass-grid-20260707-add-owner-player-id.sql`; the webapp listener matches the suffixed subjects in `src/js/framework/GrassManager.js`.
+
 There is also a **field-casing split** inside `detail`: most struct events use snake_case keys (`struct_id`, `defender_struct_id`), but `struct_attack` uses camelCase (see next section).
 
 ---
@@ -209,6 +211,19 @@ Message field shapes (verified in `proto/structs/structs/tx.proto`):
 | `MsgSubstationAllocationConnect` | `creator`, `allocationId`, `destinationId` | The substation id goes in **`destinationId`** — there is no `substationId` field. |
 
 See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind these shapes.
+
+---
+
+## `struct_type` DB field shapes
+
+Two `struct_type` shape changes in the Guild Stack (structs-pg) that tools read:
+
+- **`generating_rate` is a formatted column.** The raw chain value now lives in **`generating_rate_p`**, and `generating_rate` is a generated column equal to `generating_rate_p * 1000` (same `_p`/formatted split as the grid `value_p`/`value` pair). For the raw per-gram rate the gameplay docs quote (Field Generator 2, Continental Power Plant 5, World Engine 10), read `generating_rate_p`; `generating_rate` is the scaled representation. Verified in structs-pg `deploy/table-struct-type-20260602-add-generating-rate-precision.sql`.
+- **Armour-piercing is explicit booleans.** `struct_type` exposes `primary_weapon_armour_piercing` and `secondary_weapon_armour_piercing` (chain `StructType.primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`, structsd v0.18.0) — read these rather than inferring from the struct class. Only the Battleship sets them today. Verified in structs-pg `deploy/table-struct-type-20260612-add-armour-piercing.sql`. See [combat.md](../knowledge/mechanics/combat.md).
+
+## Player UGC: PFP is a first-class attribute
+
+Profile pictures are a moderated player UGC attribute alongside `username`, and the pending-player signup flow now threads pfp render hints too. `PLAYER_PENDING_JOIN_PROXY` builds the signed `guild-membership-join-proxy` `ugc` argument from up to three keys: `player-name` (from `username`), `player-pfp` (from `pfp`), and `player-pfp-client-render-attributes` (from the `pfp_client_render_attributes` column — the column was renamed from `pfp_cr_attributes`, and the ugc key was lengthened from the short `player-pfp-cr-attributes` form to match). Committed `username`/`pfp` surface on `structs.player` via GRASS `player_consensus`. Verified in structs-pg `deploy/trigger-player-pending-20260612-pfp-cr-attributes-inclusion.sql`, `…-20260617-rename-pfp-cr-attributes.sql`, `…-20260617-ugc-key-long-name.sql`. The `pfpClientRenderAttributes` field is self-service (not guild-moderatable); moderation of `name`/`pfp` follows the `ugc_moderated` path — see [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
 
 ---
 

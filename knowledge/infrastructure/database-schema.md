@@ -162,6 +162,8 @@ Defense assignments.
 
 `structs.grid` is a **key-value store** for resource attributes. This is the most common source of query errors.
 
+> **GRASS publishing**: grid changes fire `structs.GRID_NOTIFY()`, which `pg_notify`s each change on subject `structs.grid.{object_type}.{object_id}.{player_id}` with a top-level `player_id` field (owner resolved via `player_object`, falling back to `planet.owner`; `noPlayer` when unresolved; for `object_type='player'` the owner is the object itself). The owner segment/field was added 2026-07-07.
+
 | Column | Type | Notes |
 |--------|------|-------|
 | `object_id` | varchar | Player/planet/struct/etc ID |
@@ -260,6 +262,8 @@ ORDER BY seq ASC;
 ```
 
 The `detail` column for `struct_attack` includes `attackerStructId`, `targetStructId`, and `eventAttackShotDetail` with per-shot damage breakdowns.
+
+**GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](../../.cursor/skills/structs-streaming/SKILL.md).
 
 ---
 

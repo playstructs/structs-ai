@@ -1,6 +1,6 @@
 # GRASS Event Schemas
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Category**: streaming
 
 Complete catalog of GRASS event payload schemas for AI agents.
@@ -17,6 +17,8 @@ All GRASS events share a common base structure.
 | category | string | Yes | Event category (see `event-types.yaml`) |
 | id | string | Yes | Entity identifier |
 | updated_at | string (date-time) | Yes | ISO 8601 timestamp of update |
+
+> **Grid and planet events carry the owner `player_id`** (added 2026-07-07). Their subjects append it — `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.planet.{planet_id}.{player_id}` — and their payloads include a top-level `player_id` string field (the literal `noPlayer` when the owner can't be resolved). This holds for full and stubbed planet payloads. Subscribe with a trailing `*`/`>` (see [subscription-patterns.md](subscription-patterns.md)).
 
 > **`detail` has two representations depending on transport.** Over **NATS/GRASS** the frame is parsed once (`message.json()`), so `detail` arrives as an **already-parsed object** — access `detail.*` directly. Over the **Guild API `planet-activity` REST feed** the same `detail` comes from a PostgreSQL column as a **JSON-encoded string** — you must `JSON.parse(row.detail)` first. Code that consumes both transports must branch on the source. See [api/integration-notes.md — Event detail has two representations](../integration-notes.md#event-detail-has-two-representations).
 
@@ -209,7 +211,7 @@ Extends [BaseEvent](#base-event). Category: `block`
 
 ## Event Categories
 
-All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{id}`.
+All `planet`/`struct` categories below are `planet_activity` rows delivered on `structs.planet.{planet_id}.{player_id}` (subscribe `structs.planet.{planet_id}.*`).
 
 | Category Group | Event Types |
 |----------------|-------------|
@@ -218,7 +220,7 @@ All `planet`/`struct` categories below are `planet_activity` rows delivered on `
 | planet | `raid_status`, `shield_change`, `block_raid_start`, `fleet_arrive`, `fleet_depart`, `planet_activity` |
 | struct | `struct_attack`, `struct_health`, `struct_defense_remove`, `struct_defense_add`, `struct_defender_clear`, `struct_status`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start` |
 | player | `player_consensus`, `player_address`, `player_address_pending` |
-| grid (`structs.grid.{object}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
+| grid (`structs.grid.{object_type}.{object_id}.{player_id}`) | attribute names: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock` |
 | inventory (`structs.inventory.{denom}…`) | ledger actions: `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed` |
 | address | `address_register` |
 

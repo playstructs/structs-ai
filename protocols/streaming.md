@@ -95,23 +95,30 @@ Block height is tracked in `sync_state.sync_cursor` and `structs.current_block` 
 
 **Examples**:
 - `structs.player.0-1.1-11` - Player 1-11 in guild 0-1 updates (guild-scoped)
-- `structs.planet.2-1` - Planet 2-1 updates
+- `structs.planet.2-1.1-11` - Planet 2-1 updates (owner player 1-11)
 - `structs.guild.0-1` - Guild 0-1 updates
 - `structs.struct.5-1` - Struct 5-1 updates
 - `structs.fleet.9-1` - Fleet 9-1 updates
 - `structs.global` - Global game state updates
 
+> **Grid and planet subjects end with the owning `player_id`** (added 2026-07-07): `structs.grid.{objectType}.{objectId}.{playerId}` and `structs.planet.{planetId}.{playerId}` (the literal `noPlayer` when unresolved), and the payloads include a `player_id` field. NATS `*` matches exactly one token and `>` matches the rest — so subscribe with `structs.planet.{planetId}.*` (one planet) or `structs.planet.>` (all); a bare `structs.planet.*` no longer matches. The player subject is likewise three tokens, so use `structs.player.>`.
+
 ### Available Subjects
 
 **Player Subjects**:
-- `structs.player.*` - All player updates (wildcard)
+- `structs.player.>` - All player updates (wildcard; the subject is three tokens)
 - `structs.player.{guildId}.{playerId}` - Specific player updates (guild-scoped, uses entity-id format)
 - Example: `structs.player.0-1.1-11` - Player 1-11 in guild 0-1
 
 **Planet Subjects**:
-- `structs.planet.*` - All planet updates (wildcard)
-- `structs.planet.{planetId}` - Specific planet updates (uses entity-id format)
-- Example: `structs.planet.2-1` - Planet 2-1 (type 2, index 1)
+- `structs.planet.>` - All planet updates (wildcard)
+- `structs.planet.{planetId}.{playerId}` - Specific planet updates (owner-suffixed; subscribe `structs.planet.{planetId}.*`)
+- Example: `structs.planet.2-1.1-11` - Planet 2-1 owned by player 1-11
+
+**Grid Subjects**:
+- `structs.grid.>` - All grid attribute changes (wildcard)
+- `structs.grid.{objectType}.{objectId}.{playerId}` - Specific object's attribute changes (owner-suffixed)
+- Example: `structs.grid.struct.5-1.1-11` - Struct 5-1 (owner 1-11) attribute changes
 
 **Guild Subjects**:
 - `structs.guild.*` - All guild updates (wildcard)
@@ -480,8 +487,8 @@ asyncio.run(connect_to_grass())
 {
   "pattern": "wildcard",
   "subscription": {
-    "subject": "structs.player.*",
-    "description": "Monitor all players"
+    "subject": "structs.player.>",
+    "description": "Monitor all players (the player subject is three tokens, so use > not *)"
   }
 }
 ```

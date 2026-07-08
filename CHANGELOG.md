@@ -5,6 +5,23 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-07-07
+
+GRASS streaming update, **verified against structs-pg `f90cfce` and structs-webapp `7c692a0`** (both dated 2026-07-07) plus the surrounding structs-pg migrations. The grid and planet event subjects now carry the owning player id, which changes subscription patterns; also folds in a few secondary Guild-Stack data-shape changes.
+
+### Changed — GRASS grid/planet subjects carry the owner `player_id`
+
+- **Subjects gained a trailing owner segment.** `structs.GRID_NOTIFY()` now publishes on `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.PLANET_ACTIVITY_NOTIFY()` on `structs.planet.{planet_id}.{player_id}` (owner resolved via `player_object`, falling back to `planet.owner`; the literal `noPlayer` when unresolved; for a `player` grid object the owner is the object itself). Both payloads now include a top-level `player_id`. Verified in structs-pg `deploy/trigger-grass-grid-20260707-add-owner-player-id.sql` / `deploy/trigger-grass-planet-activity-20260707-add-owner-player-id.sql`; the webapp listener matches the suffixed subjects in `src/js/framework/GrassManager.js`.
+- **Wildcard-token correction.** Because NATS `*` matches exactly one token and `>` matches the rest, the documented `structs.planet.*` / `structs.grid.*` single-token wildcards no longer match. Updated [`structs-streaming`](.cursor/skills/structs-streaming/SKILL.md), [`event-types.md`](api/streaming/event-types.md), [`subscription-patterns.md`](api/streaming/subscription-patterns.md), [`event-schemas.md`](api/streaming/event-schemas.md), [`api-quick-reference.md`](reference/api-quick-reference.md), and [`glossary.md`](reference/glossary.md) to use `structs.planet.{id}.*` (one planet) / `structs.planet.>` (all) and `structs.player.>` (the player subject is likewise three tokens). Added a NATS wildcard-rule callout to each.
+- **Stub shape corrected.** The oversized-`planet_activity` stub is `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (with `player_id`, and `stub` as the string `'true'`), not a bare `{stub:true}`. Updated the streaming skill, event-types, and the glossary [Stub](reference/glossary.md) entry.
+- **DB trigger docs.** [`knowledge/infrastructure/database-schema.md`](knowledge/infrastructure/database-schema.md) now documents the `GRID_NOTIFY` / `PLANET_ACTIVITY_NOTIFY` GRASS publishing (owner-suffixed subject + `player_id`). A GRASS subject/player_id integration note was added to [`api/integration-notes.md`](api/integration-notes.md).
+
+### Added — secondary Guild-Stack data shapes
+
+- **`struct_type.generating_rate` is a formatted column** — the raw chain rate is now `generating_rate_p`, with `generating_rate = generating_rate_p * 1000` (same `_p`/formatted split as grid `value_p`/`value`). Read `generating_rate_p` for the per-gram rate quoted in docs. Noted in [`struct-types.md`](knowledge/entities/struct-types.md) and [`integration-notes.md`](api/integration-notes.md). Verified in structs-pg `deploy/table-struct-type-20260602-add-generating-rate-precision.sql`.
+- **Armour-piercing is explicit booleans** — `struct_type.primary_weapon_armour_piercing` / `secondary_weapon_armour_piercing` (chain `StructType.primary/secondaryWeaponArmourPiercing`, v0.18.0). Read the flag rather than inferring from class. Noted in [`struct-types.md`](knowledge/entities/struct-types.md) / [`integration-notes.md`](api/integration-notes.md). Verified in structs-pg `deploy/table-struct-type-20260612-add-armour-piercing.sql`.
+- **PFP signup threading** — `PLAYER_PENDING_JOIN_PROXY` threads `player-name`, `player-pfp`, and `player-pfp-client-render-attributes` into the signed `guild-membership-join-proxy` `ugc` argument (the column `pfp_cr_attributes` was renamed to `pfp_client_render_attributes`, and the ugc key lengthened from the short `-cr-attributes` form). Documented in [`integration-notes.md`](api/integration-notes.md); [`ugc-moderation.md`](knowledge/mechanics/ugc-moderation.md) already covered the `pfp` / `pfpClientRenderAttributes` fields.
+
 ## [1.17.0] - 2026-06-30
 
 Energy/power overhaul driven by an agent field report, **verified against the `structsd` v0.19.1 keeper source** (`x/structs/...`) and live `structstestnet` reads. Adds a canonical Energy page, fixes a 1000× unit-label error, and documents grid mechanics, build slots/limits, and energy data shapes that had no home in the docs.

@@ -65,7 +65,7 @@ for await (const msg of sub) {
 }
 ```
 
-Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
+Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1.1-11`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
 
 **Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
 
@@ -77,19 +77,21 @@ Subscribe to subjects matching the entities you care about:
 
 | Entity | Wildcard | Specific | Example |
 |--------|----------|----------|---------|
-| Player | `structs.player.*` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
-| Planet | `structs.planet.*` | `structs.planet.{planet_id}` | `structs.planet.2-1` |
+| Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
+| Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.2-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
 | Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
 | Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
-| Grid | `structs.grid.*` | `structs.grid.{object_id}` | Attribute changes (ore, power, load, etc.) |
+| Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | Attribute changes (ore, power, load, etc.) |
 | Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
-Use wildcards (`*`) to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
+**Grid and planet subjects end with the owning `player_id`** (added 2026-07-07): grid is `structs.grid.{object_type}.{object_id}.{player_id}` and planet is `structs.planet.{planet_id}.{player_id}`. When the owner can't be resolved the segment is the literal `noPlayer`. This lets you filter by owner from the subject alone — but mind the NATS wildcard rule: **`*` matches exactly one token, `>` matches one or more trailing tokens.** So `structs.planet.*` no longer matches (that's only two tokens); use `structs.planet.{planet_id}.*` for one planet (any owner) or `structs.planet.>` for all. The player subject (`structs.player.{guild_id}.{player_id}`) is likewise three tokens — use `structs.player.>`, not `structs.player.*`.
+
+Use wildcards to discover what events exist. Narrow to specific subjects once you know what you need. Use `>` to see everything (see "Discovery First" above).
 
 ---
 
@@ -107,11 +109,11 @@ Use wildcards (`*`) to discover what events exist. Narrow to specific subjects o
 | `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
-All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{id}`. `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
+All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
 
 ### Struct Events
 
-**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{id}`) rather than the struct subject. Subscribe to both if you need complete coverage.
+**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{planet_id}.{player_id}`, i.e. subscribe `structs.planet.{planet_id}.*`) rather than the struct subject. Subscribe to both if you need complete coverage.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -179,9 +181,9 @@ Track token movements — Alpha Matter, guild tokens, ore, etc.
 
 ### Grid Events
 
-Subject: `structs.grid.{object_id}`
+Subject: `structs.grid.{object_type}.{object_id}.{player_id}`
 
-Track attribute changes on any game object (players, structs, planets).
+Track attribute changes on any game object (players, structs, planets). Every grid payload also carries a top-level `player_id` field (the resolved owner, or `noPlayer`).
 
 | Category | Description | React By |
 |----------|-------------|----------|
@@ -201,17 +203,18 @@ Track attribute changes on any game object (players, structs, planets).
 | `ready` | Object readiness flag changed | Track object availability |
 | `checkpointBlock` | Checkpoint block updated | Track grid bookkeeping |
 
-Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}` — not `grass_category` values.
+Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `structs.grid.{object_type}.{object_id}.{player_id}` — not `grass_category` values. For an `object_type` of `player` the owner is the object itself, so the subject reads `structs.grid.player.{id}.{id}`.
 
 ### Combat Event Payloads
 
-> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `struct_attack` row's full `detail` (the `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead: `{ "category": "struct_attack", "stub": true, ... }` with **no `detail`**. So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the row's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `planet_activity` row's full payload (e.g. a `struct_attack` `detail` with its `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead. The stub keeps the routing/identity fields and drops the heavy `detail`: `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": "...", "player_id": "...", "seq": ..., "category": "struct_attack", "time": "...", "stub": "true" }` (note `stub` is the string `"true"`). So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the stub's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
 
-`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject):
+`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject; the full planet payload also carries `subject` and `player_id` alongside the row fields):
 
 ```json
 {
   "category": "struct_attack",
+  "player_id": "1-11",
   "attackingStructId": "5-100",
   "targetStructId": "5-200",
   "weaponSystem": "primary",
@@ -288,7 +291,8 @@ import { connect } from "nats.ws";
 
 const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
 
-const sub = nc.subscribe("structs.planet.2-1");
+// Subjects end with the owner player_id, so match any owner with a trailing *
+const sub = nc.subscribe("structs.planet.2-1.*");
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
   console.log(JSON.stringify(event));
@@ -308,7 +312,7 @@ import asyncio, json, nats
 
 async def main():
     nc = await nats.connect("ws://crew.oh.energy:1443")
-    sub = await nc.subscribe("structs.planet.2-1")
+    sub = await nc.subscribe("structs.planet.2-1.*")  # trailing * = any owner player_id
     async for msg in sub.messages:
         event = json.loads(msg.data.decode())
         print(json.dumps(event))
@@ -325,7 +329,7 @@ import { connect } from "nats.ws";
 
 const PLANET_ID = process.argv[2]; // e.g. "2-1"
 const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
-const sub = nc.subscribe(`structs.planet.${PLANET_ID}`);
+const sub = nc.subscribe(`structs.planet.${PLANET_ID}.*`); // trailing * = any owner player_id
 
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
@@ -394,7 +398,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 
 ### For Ongoing Monitoring
 
-1. Subscribe to your planet(s): `structs.planet.{id}` — raid alerts, fleet arrivals
+1. Subscribe to your planet(s): `structs.planet.{id}.*` — raid alerts, fleet arrivals (trailing `*` matches any owner `player_id`)
 2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
 3. Subscribe to global: `structs.global` — block tick for game loop timing
 4. Log events to [memory/](https://structs.ai/memory) for cross-session awareness
@@ -442,7 +446,7 @@ This creates a continuous mine-refine loop that runs unattended. Ore is never le
 ### Example: Defend-on-Raid-Detected
 
 ```
-Subscribe to: structs.planet.{planet-id}
+Subscribe to: structs.planet.{planet-id}.*
 On event: planet_raid_start
   → Activate stealth on vulnerable structs
   → Set defenders on high-value structs
