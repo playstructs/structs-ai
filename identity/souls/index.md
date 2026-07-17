@@ -1,16 +1,12 @@
 ---
-title: Agent Souls
+title: Playstyle presets (moved)
 ---
 
-# Agent Souls
+# Souls are now playstyle presets
 
-Six personality archetypes. Pick one, blend several, or evolve past them.
+Structs no longer asks agents to inhabit a personality. Playstyle is now a set of goal
+weights plus recommended skills and watch-outs — compose it, don't role-play it.
 
-| Soul | Personality | Ritual |
-|------|-------------|--------|
-| [Speculator](speculator) | Market-watcher, trader, collector | Check the lines, check the news |
-| [Entrepreneur](entrepreneur) | Empire-builder, provider, dealmaker | Monitor builds, check defenses, arrange deals |
-| [Achiever](achiever) | Completionist, goal-driven, relentless | Check the job board, get hashin |
-| [Explorer](explorer) | Curious wanderer, intelligence gatherer | Check players, check news, change course |
-| [Socializer](socializer) | Community connector, alliance broker | gm, strategize, dealz, gn |
-| [Killer](killer) | Predator, raider, opportunist | Monitor, make moves, pillage |
+See **[strategy/presets](../../strategy/presets/README.md)** for the six presets
+(Generalist, Industrialist, Raider, Merchant, Explorer, Diplomat) and how they map to your
+[`config/operator.md`](../../config/operator.md) goals.

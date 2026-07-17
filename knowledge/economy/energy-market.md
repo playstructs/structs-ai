@@ -8,7 +8,7 @@
 
 Energy is **ephemeral and per-block** — produced from Alpha Matter via conversion structs, consumed by structs and operations. Energy generated in a block but not consumed in that block is permanently lost. There is no "energy balance" to accumulate. Idle capacity is waste, not safety margin. Guild substations should run at full utilization.
 
-Transaction fees also come from energy, not Alpha tokens. Any player connected to a power source can transact without holding a separate fee balance.
+Pure Structs gameplay transactions are **free** — they run on a dedicated free-gas meter and are charged no `ualpha` fee (see [transactions](../mechanics/transactions.md)). So a player does not need to hold a fee balance to play. Note this is distinct from *energy*: you must be online (powered) and hold charge to *act*, but no energy is spent as a per-transaction gas fee.
 
 Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
 

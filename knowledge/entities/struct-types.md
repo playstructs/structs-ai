@@ -2,6 +2,13 @@
 
 **Purpose**: AI-readable reference for all buildable Structs. Stats, costs, power requirements, strategic role, and when to build. Struct types use **integer IDs** (not `type-index` format); query via `GET /structs/struct_type/{id}`.
 
+> **Source-of-truth for the numbers:** the raw stat table is generated from the pinned chain
+> source into [`generated/struct-types.md`](../../generated/struct-types.md) (provenance:
+> `structsd v0.20.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
+> strategic context; if the two ever disagree, the generated catalog wins. CLI command names
+> are catalogued separately in [`generated/commands.md`](../../generated/commands.md) (these
+> are CLI names, distinct from proto message names).
+
 ---
 
 ## Complete Struct Type Table

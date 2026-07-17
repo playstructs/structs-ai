@@ -26,6 +26,10 @@ Thumbs.db
 # Secrets
 .env
 
+# Local operator profile + detected environment (personal, not tracked)
+config/operator.md
+config/environment.json
+
 # Temporary files
 *.tmp
 *.log

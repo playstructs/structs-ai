@@ -1,0 +1,7 @@
+# Pinned Structs release for truth checks and generated catalogs.
+# Source of truth: .references/structsd @ v0.20.0 (a976768); installed structsd
+# reports v0.20.0. Regenerate command snapshot + catalogs after bumping:
+#   scripts/ci/snapshot-commands.sh && scripts/gen-catalogs.py
+# Command-name TRUTH is additionally gated by the version-independent
+# deprecated-token blocklist (scripts/ci/deprecated-tokens.txt).
+v0.20.0

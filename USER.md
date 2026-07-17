@@ -1,5 +1,8 @@
-# User / Commander
+# User (OpenClaw compatibility stub)
 
-OpenClaw expects this file. For Structs, the human operator profile lives in [COMMANDER.md](COMMANDER.md).
+OpenClaw expects this file. For Structs, the human operator profile lives in
+**[`config/operator.md`](config/operator.md)** — copy it from
+[`config/operator.example.md`](config/operator.example.md) and fill it in.
 
-Fill in COMMANDER.md with your preferences: how to address you, deployment context, and any constraints. The agent reads COMMANDER.md at session start.
+Your agent reads `config/operator.md` at session start for your goals, autonomy, and
+standing orders. See [`START.md`](START.md) to begin.

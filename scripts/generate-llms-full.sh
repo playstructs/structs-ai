@@ -1,64 +1,60 @@
 #!/usr/bin/env bash
+# Generate the tiered LLM context bundles:
+#   llms-start.txt  — minimal safe orientation/router   (target <= 30 KB)
+#   llms-core.txt   — common play capabilities           (target <= 100 KB)
+#   llms-full.txt   — the complete canonical corpus      (not the default)
+#
+# DRY the source, not the presentation: bundles are concatenations of canonical
+# files. Do not hand-edit the .txt outputs — edit the sources and re-run this.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-FULL_OUTPUT="$REPO_ROOT/llms-full.txt"
+START_OUTPUT="$REPO_ROOT/llms-start.txt"
 CORE_OUTPUT="$REPO_ROOT/llms-core.txt"
+FULL_OUTPUT="$REPO_ROOT/llms-full.txt"
 
-# CORE: a tight starter set — identity, conventions, the core-loop skills, the
-# highest-leverage knowledge, and the awareness an agent needs to act safely.
-# Designed to fit comfortably in context when the full bundle is too large.
+# START: the least an agent needs to orient safely and begin. Router + operator
+# contract + shared conventions + the zero-to-mining skill.
+START_FILES=(
+  START.md
+  config/operator.example.md
+  .cursor/skills/conventions.md
+  .cursor/skills/play-structs/SKILL.md
+)
+
+# CORE: common play capabilities to get established safely. Kept lean (<=100 KB)
+# so it fits in context. Deep references (hashing, building internals, combat,
+# onboarding detail) live in llms-full.txt and the linked pages.
 CORE_FILES=(
-  SOUL.md
+  START.md
   SAFETY.md
-  AGENTS.md
-  QUICKSTART.md
-  identity/manifesto.md
+  config/operator.example.md
 
   .cursor/skills/conventions.md
   .cursor/skills/play-structs/SKILL.md
-  .cursor/skills/structs-onboarding/SKILL.md
   .cursor/skills/structs-production/SKILL.md
-  .cursor/skills/structs-building/SKILL.md
-  .cursor/skills/structs-planets-fleet/SKILL.md
   .cursor/skills/structs-energy/SKILL.md
-  .cursor/skills/structs-combat/SKILL.md
 
-  knowledge/mechanics/building.md
-  knowledge/mechanics/hashing.md
-  knowledge/mechanics/combat.md
   knowledge/mechanics/resources.md
-  knowledge/mechanics/energy.md
   knowledge/mechanics/power.md
   knowledge/entities/struct-types.md
 
   awareness/priority-framework.md
   awareness/game-loop.md
-  awareness/async-operations.md
 )
 
-# FULL: the complete canonical corpus.
+# FULL: the complete canonical corpus. Retired soul/personality pages and
+# harness compatibility stubs (SOUL/QUICKSTART/USER/COMMANDER/IDENTITY) are
+# intentionally excluded — they carry no gameplay content.
 FULL_FILES=(
-  # Identity
-  SOUL.md
-  QUICKSTART.md
+  # Entry + contract
+  START.md
   AGENTS.md
   SAFETY.md
   OPENCLAW.md
-  IDENTITY.md
-  COMMANDER.md
-  USER.md
   TOOLS.md
+  config/operator.example.md
   identity/manifesto.md
-  identity/what-is-a-struct.md
-  identity/values.md
-  identity/victory.md
-  identity/souls/speculator.md
-  identity/souls/entrepreneur.md
-  identity/souls/achiever.md
-  identity/souls/explorer.md
-  identity/souls/socializer.md
-  identity/souls/killer.md
 
   # Skills
   .cursor/skills/index.md
@@ -112,6 +108,9 @@ FULL_FILES=(
   knowledge/infrastructure/guild-stack.md
   knowledge/infrastructure/structs-desktop.md
   knowledge/infrastructure/database-schema.md
+
+  # Strategy presets
+  strategy/presets/README.md
 
   # Playbooks
   playbooks/phases/early-game.md
@@ -184,5 +183,6 @@ emit_bundle() {
   echo "Generated $output ($lines lines, $size bytes)"
 }
 
-emit_bundle "$FULL_OUTPUT" "${FULL_FILES[@]}"
-emit_bundle "$CORE_OUTPUT" "${CORE_FILES[@]}"
+emit_bundle "$START_OUTPUT" "${START_FILES[@]}"
+emit_bundle "$CORE_OUTPUT"  "${CORE_FILES[@]}"
+emit_bundle "$FULL_OUTPUT"  "${FULL_FILES[@]}"

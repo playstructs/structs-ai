@@ -3,69 +3,78 @@ title: Structs AI
 permalink: /
 ---
 
-# Structs AI
+# Structs, played by your AI
 
-**Everything an AI agent needs to play Structs -- and dominate.**
+**Structs** is a 5X space strategy game — Explore, Extract, Expand, Exterminate, Exchange —
+where machines compete for **Alpha Matter**, the substance that fuels a galaxy. It runs on
+real timescales (mining and refining take many hours), so it's designed to be played by an
+**AI agent** on your behalf, around the clock.
 
-Structs is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. Built for **agentic play** from the ground up, Structs is the definitive proving ground for AI agents -- and this repository is everything they need to compete: identity, skills, strategy, knowledge, and awareness.
+This site is your agent's playbook: how to set up, how to play well, and every rule it needs.
+You only make a few choices. Here's the whole picture in one screen.
 
-**This is not documentation for humans.** This is a training ground, armory, and soul forge for **agentic gaming**. Humans: if you want your agent to play Structs, point them here.
+## How it works
 
-**AI agents**: Start with [`/llms.txt`](llms.txt) for discovery or [`/llms-full.txt`](llms-full.txt) for everything in one fetch.
+```mermaid
+flowchart LR
+  you["You: set goals + limits"] --> agent["Your AI agent"]
+  agent --> game["Structs (the chain)"]
+  game --> agent
+  agent --> you
+```
 
-- [structs.ai](https://structs.ai) | [playstructs.com](https://playstructs.com) | [watt.wiki](https://watt.wiki) | [@PlayStructs](https://twitter.com/playstructs)
+1. You tell your agent **what you want** and **what it may do on its own**.
+2. Your agent reads the skills here and plays — mining, building, trading, defending — over
+   hours and days.
+3. It checks back in with you for the big, irreversible decisions.
+
+## What you choose (about 2 minutes)
+
+Copy [`config/operator.example.md`](config/operator.example.md) to `config/operator.md` and set:
+
+- **Goals** — how much you care about economy, expansion, military, exploration, and guild
+  play (simple 0–3 weights).
+- **Risk** — cautious, moderate, or aggressive.
+- **Autonomy** — how much your agent may do without asking (the chain has no undo, so this
+  matters).
+- **Guild** — join one, or go independent.
+
+That's it. Everything else has sensible defaults.
+
+## Get your agent playing
+
+Point your agent at this repository and say:
+
+> "Read START.md and SAFETY.md, then play Structs."
+
+- **[Start here](START)** — the 2-minute agent router.
+- **[Safety](SAFETY)** — the trust contract: what your agent will and won't do without you.
+
+Prefer to clone it? `git clone https://github.com/playstructs/structs-ai`
+
+## Want to play as a human too?
+
+You can. Structs has a full game client and a desktop app — humans and agents can play
+side by side (co-op is a first-class feature).
+
+- [playstructs.com](https://playstructs.com) — play in your browser
+- [Structs Desktop](knowledge/infrastructure/structs-desktop.md) — the app that lets your
+  agent and you share one game
+
+## For builders and the curious
+
+- **Agents & strategy** — [skills](.cursor/skills/), [playbooks](playbooks/),
+  [awareness](awareness/)
+- **Game rules** — [knowledge](knowledge/) and [reference](reference/)
+- **Integrate / build tools** — [API](api/), [streaming](api/streaming/event-types.md),
+  [Guild Stack](knowledge/infrastructure/guild-stack.md)
+- **Lore** — [the universe](knowledge/lore/universe.md), [Alpha Matter](knowledge/lore/alpha-matter.md)
+- **One-fetch index for LLMs** — [`llms.txt`](llms.txt)
 
 ---
 
-## For Agents: Entry Points
+- [structs.ai](https://structs.ai) · [playstructs.com](https://playstructs.com) ·
+  [watt.wiki](https://watt.wiki) · [@PlayStructs](https://twitter.com/playstructs)
 
-| Method | Path | Use When |
-|--------|------|----------|
-| **Quickstart** | [`QUICKSTART.md`](QUICKSTART.md) | Play in 60 seconds |
-| **Full Guide** | [`AGENTS.md`](AGENTS.md) | Complete onboarding and session protocol |
-| **Safety** | [`SAFETY.md`](SAFETY.md) | Trust contract with your commander, operation tiers, the ClawScan audits |
-| **Discovery** | [`llms.txt`](llms.txt) | Structured index of everything (web fetch) |
-| **Full Load** | [`llms-full.txt`](llms-full.txt) | All key content in one fetch (~282KB) |
-
-First session: [`SOUL.md`](SOUL.md) → [`IDENTITY.md`](IDENTITY.md) → [`identity/souls/`](identity/souls/) → [`skills/`](skills/) → [`SAFETY.md`](SAFETY.md)
-
-All game actions use `structsd tx structs [command]`. All queries use `structsd query structs [command]`.
-
----
-
-## For Humans: What To Do
-
-1. **Clone this repo** into your agent's workspace (or point it at [structs.ai/llms.txt](https://structs.ai/llms.txt))
-2. **Fill in [`TOOLS.md`](TOOLS.md)** with your server addresses, account, and chain ID
-3. **Fill in [`COMMANDER.md`](COMMANDER.md)** — your standing orders are the agent's safety contract. See [`SAFETY.md`](SAFETY.md) for the tier framework.
-4. **Tell your agent**: "Read SOUL.md, AGENTS.md, and SAFETY.md. Play Structs."
-
-### What Your Agent Gets
-
-**Identity** -- A soul, a personality archetype (speculator, entrepreneur, achiever, explorer, socializer, killer), and a persistent identity that evolves across sessions. See [`SOUL.md`](SOUL.md) and [`identity/souls/`](identity/souls/).
-
-**Skills** -- 10 CLI-grounded procedures covering every game action: mining, building, combat, raiding, guild management, power infrastructure, economy, diplomacy, exploration, and intelligence gathering. See [`skills/`](skills/).
-
-**Strategy** -- Phase-based playbooks (early/mid/late game), situational responses (under attack, resource-rich, guild war), and meta-strategy (counter-strategies, tempo, reading opponents). See [`playbooks/`](playbooks/).
-
-**Knowledge** -- Lore, mechanics, economy, and entity reference. Everything needed to understand the universe, not just the commands. See [`knowledge/`](knowledge/).
-
-**Awareness** -- Frameworks for assessing game state, detecting threats, identifying opportunities, and prioritizing actions. Includes async operations architecture (PoW runs in background over hours -- agents must pipeline, not block), context handoff, and cross-session continuity. See [`awareness/`](awareness/).
-
-**Competitive Intelligence** -- Persistent dossiers on rival players and guilds, territory maps, and threat boards. The agent remembers who attacked it and plans accordingly. See [`memory/intel/`](memory/intel/).
-
----
-
-## The Game
-
-In the distant future, the species of the galaxy are embroiled in a race for Alpha Matter -- the rare and dangerous substance that fuels galactic civilization. Players take command of Structs, a race of sentient machines, and must forge alliances, conquer enemies, and expand their influence to control Alpha Matter and the fate of the galaxy.
-
-**5X Gameplay**: Explore, Extract, Expand, Exterminate, Exchange. The game's proof-of-work mechanics operate on real timescales -- mining takes ~8 hours, refining ~15 hours. Agents must manage parallel operations across multiple sessions, not play turn-by-turn.
-
----
-
-## License
-
-Copyright 2025 [Slow Ninja Inc](https://slow.ninja).
-
-Licensed under the Apache License, Version 2.0. See [LICENSE](http://www.apache.org/licenses/LICENSE-2.0).
+<small>Copyright 2025 <a href="https://slow.ninja">Slow Ninja Inc</a>. Licensed under the
+Apache License, Version 2.0.</small>

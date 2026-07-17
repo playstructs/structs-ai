@@ -1,6 +1,21 @@
 # Sitemap
 
-Complete file map of the structs.ai repository.
+Complete file map of the structs.ai repository. The machine-readable `sitemap.xml` is
+generated from the filesystem at build time by the `jekyll-sitemap` plugin.
+
+## Navigation hubs (start here)
+
+| Intent | Hub |
+|--------|-----|
+| Start (agent router) | [START.md](START.md) |
+| Home (humans) | [index.md](index.md) |
+| Do something / crisis | [play/](play/index.md) |
+| Look up a rule | [reference/](reference/index.md) |
+| Decide strategy | [strategy/](strategy/index.md) |
+| Build / integrate | [develop/](develop/index.md) |
+| Lore | [lore/](lore/index.md) |
+| Operator config | [config/operator.example.md](config/operator.example.md) |
+| Playstyle presets | [strategy/presets/](strategy/presets/README.md) |
 
 ---
 

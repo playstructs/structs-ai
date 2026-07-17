@@ -89,12 +89,12 @@ The bearer token exists because any browser page can reach `localhost` — witho
 
 ## Resources
 
-The [structs-ai](https://github.com/playstructs/structs-ai) compendium (this documentation) is bundled as MCP resources, synced during the app's build. Agents read docs on demand under the `structs://` scheme, e.g.:
+The [structs-ai](https://github.com/playstructs/structs-ai) compendium (this documentation) is bundled as MCP resources, synced during the app's build. URIs are derived from the file tree (no hardcoded paths — see [`develop/structs-resources.md`](../../develop/structs-resources.md)). Agents read docs on demand under the `structs://` scheme, e.g.:
 
+- `structs://START.md`
+- `structs://play/index.md`
 - `structs://knowledge/mechanics/combat.md`
-- `structs://knowledge/mechanics/energy.md`
-- `structs://playbooks/phases/early-game.md`
-- `structs://QUICKSTART.md`
+- `structs://reference/index.md`
 
 ---
 

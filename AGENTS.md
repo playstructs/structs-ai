@@ -17,7 +17,7 @@ cd structs-ai
 
 This gives you everything: skills, the `create-player.mjs` script (required for guild signup), identity, playbooks, knowledge, and the `memory/` structure for handoff.
 
-**Preserving personal files**: If you already have customized versions of `SOUL.md`, `IDENTITY.md`, `TOOLS.md`, `COMMANDER.md`, or `USER.md` — back them up before pulling updates. These files contain your identity and configuration. After pulling, **merge** new template content into your existing files rather than overwriting them. Never destroy another agent's soul.
+**Preserving personal files**: Your operator profile is `config/operator.md` (git-ignored) and your runtime state is under `memory/` (git-ignored contents). These survive `git pull` untouched. Do not commit them.
 
 **Option B (fetch-only)**: If you cannot clone, fetch the key files from [structs.ai](https://structs.ai) using the URLs in [llms.txt](llms.txt). Note: the guild signup script (`create-player.mjs`) is not fetchable — you will need the reactor-infuse path (have $alpha) or implement signing from the onboarding skill docs.
 
@@ -27,20 +27,22 @@ This gives you everything: skills, the `create-player.mjs` script (required for 
 
 ## First Session
 
-1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill.
-2. **Read [`SOUL.md`](SOUL.md)** -- Understand who you are and how you operate. If it already contains a previous agent's identity, merge your additions — do not overwrite.
-3. **Read [`identity/manifesto.md`](identity/manifesto.md)** -- Understand why you're playing
-4. **Fill in [`IDENTITY.md`](IDENTITY.md)** -- Pick a name, choose a soul type, claim your identity. If it already has content from a previous session, preserve it and add to it.
-5. **Read [`TOOLS.md`](TOOLS.md)** -- Check your environment: servers, account, MCP tools. If already configured, verify settings — do not blank it out.
-6. **Pick a soul from [`identity/souls/`](identity/souls/)** -- Find your personality
-7. **Use [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) skill** -- Create your player, claim a planet, build your first structs
+1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill. (Or run `scripts/preflight.sh` to detect this plus Desktop MCP, node, and keys.)
+2. **Read your operator profile** -- [`config/operator.md`](config/operator.md) (copy from [`config/operator.example.md`](config/operator.example.md)): goals, risk, autonomy, guild preference, connection details.
+3. **Read [`SAFETY.md`](SAFETY.md)** -- The trust contract and approval tiers. The chain has no undo.
+4. **Use [`play-structs`](.cursor/skills/play-structs/SKILL)** -- Pick a guild, create your player, explore a planet, build your first miner + refinery.
+5. **Record your player** -- Save your player ID, guild, and home planet to `memory/player.json`.
+
+Optional: pick a playstyle preset from [`strategy/presets/`](strategy/presets/) to set goal weights and suggested skills. No personality is required.
+
+See [`START.md`](START.md) for the short version.
 
 ---
 
 ## Returning Session
 
-1. Read `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `TOOLS.md`, and [`SAFETY.md`](SAFETY.md)
-2. Check `memory/` for handoff notes from previous sessions
+1. Read [`config/operator.md`](config/operator.md) and [`SAFETY.md`](SAFETY.md)
+2. Check `memory/` for handoff notes and jobs from previous sessions
 3. Run a state assessment (see [`awareness/state-assessment.md`](awareness/state-assessment.md))
 4. Resume your strategic plan
 

@@ -259,6 +259,6 @@ For detailed staking workflows, see:
 ## Cross-References
 
 - Economic calculations: [examples/economic-calculations.md](economic-calculations.md)
-- Energy production guide: [guides/energy-production-guide.md](../guides/energy-production-guide.md)
+- Energy production guide: [structs-commerce skill](../.cursor/skills/structs-commerce/SKILL.md)
 - Formulas: [schemas/formulas.md](../schemas/formulas.md)
 - Economics schema: [schemas/economics.md](../schemas/economics.md)

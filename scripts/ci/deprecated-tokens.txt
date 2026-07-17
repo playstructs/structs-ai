@@ -1,0 +1,17 @@
+# Tokens that must never appear as CLI commands in agent-facing docs.
+# One token per line; blank lines and # comments ignored.
+# The lint fails (hard gate) if any of these appear (outside legacy/archive + this file).
+#
+# struct-ore-refinery-complete / -compute: WRONG CLI name. The proto message is
+#   MsgStructOreRefineryComplete but the CLI command is `struct-ore-refine-complete`
+#   (verified against structsd autocli: Use: "struct-ore-refine-complete ...").
+struct-ore-refinery-complete
+struct-ore-refinery-compute
+# struct-ore-miner-complete / -compute: WRONG CLI name. Proto message is
+#   MsgStructOreMinerComplete but the CLI command is `struct-ore-mine-complete`.
+struct-ore-miner-complete
+struct-ore-miner-compute
+# struct-ore-raid-compute / -complete: WRONG. Raiding is a planet action.
+#   Real commands: `planet-raid-compute` and `planet-raid-complete`.
+struct-ore-raid-compute
+struct-ore-raid-complete

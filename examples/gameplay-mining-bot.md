@@ -188,7 +188,7 @@ Return to Step 4 and continue the mining loop.
 
 ## Cross-References
 
-- Resource management tasks: [tasks/resource-management.md](../tasks/resource-management.md)
-- Mining and refining guide: [guides/mining-and-refining-guide.md](../guides/mining-and-refining-guide.md)
+- Resource management tasks: [structs-production skill](../.cursor/skills/structs-production/SKILL.md)
+- Mining and refining guide: [structs-production skill](../.cursor/skills/structs-production/SKILL.md)
 - Economic calculations: [examples/economic-calculations.md](economic-calculations.md)
 - Formulas reference: [schemas/formulas.md](../schemas/formulas.md)

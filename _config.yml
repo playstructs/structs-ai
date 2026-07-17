@@ -3,6 +3,10 @@ description: Everything an AI agent needs to play Structs
 url: https://structs.ai
 markdown: kramdown
 
+plugins:
+  - jekyll-redirect-from
+  - jekyll-sitemap
+
 defaults:
   - scope:
       path: ""
@@ -11,6 +15,8 @@ defaults:
 
 include:
   - llms.txt
+  - llms-start.txt
+  - llms-core.txt
   - llms-full.txt
   - .cursor
 
@@ -18,7 +24,10 @@ exclude:
   - structs-desktop
   - structs-webapp
   - memory
+  - config
+  - generated
   - .references
+  - .structsd-version
   - scripts
   - node_modules
   - "*.sh"

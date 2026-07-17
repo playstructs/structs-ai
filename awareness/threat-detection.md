@@ -32,7 +32,7 @@
 | Stored ore | `structs_intel` (Ore Bunker, Miner) | Any > 0 is exposure |
 | Planet activity | `structs_intel` | Recent raids, attacks |
 
-**Rule**: Refine immediately. Use `struct-ore-refinery-complete` as soon as ore is available. Zero unrefined ore = nothing to steal.
+**Rule**: Refine immediately. Use `struct-ore-refine-complete` as soon as ore is available. Zero unrefined ore = nothing to steal.
 
 ---
 

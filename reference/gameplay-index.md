@@ -52,10 +52,10 @@
 
 | ID | Name | File | Description |
 |----|------|------|-------------|
-| onboarding | Player Onboarding Task | [onboarding.md](../tasks/onboarding.md) | Complete workflow for new player onboarding - first 1-2 days |
-| building | Building Task | [building.md](../tasks/building.md) | Complete workflow for building structures on planets or in fleets |
-| exploration | Exploration Task | [exploration.md](../tasks/exploration.md) | Complete workflow for exploring and charting planets |
-| resource-management | Resource Management Task | [resource-management.md](../tasks/resource-management.md) | Complete workflow for managing resources (mining, refining, converting) |
+| onboarding | Player Onboarding Task | [onboarding.md](../.cursor/skills/structs-onboarding/SKILL.md) | Complete workflow for new player onboarding - first 1-2 days |
+| building | Building Task | [building.md](../.cursor/skills/structs-building/SKILL.md) | Complete workflow for building structures on planets or in fleets |
+| exploration | Exploration Task | [exploration.md](../.cursor/skills/structs-planets-fleet/SKILL.md) | Complete workflow for exploring and charting planets |
+| resource-management | Resource Management Task | [resource-management.md](../.cursor/skills/structs-production/SKILL.md) | Complete workflow for managing resources (mining, refining, converting) |
 
 ---
 
@@ -63,9 +63,9 @@
 
 | ID | Name | File | Description |
 |----|------|------|-------------|
-| get-player-and-planets | Get Player and Planets Workflow | [get-player-and-planets.md](../workflows/get-player-and-planets.md) | Multi-step workflow to get player information and all associated planets |
-| mine-refine-convert | Mine, Refine, Convert Workflow | [mine-refine-convert.md](../workflows/mine-refine-convert.md) | Complete workflow for mining ore, refining to Alpha Matter, and converting to Watts |
-| planet-setup | Planet Setup Workflow | [planet-setup.md](../workflows/planet-setup.md) | Complete workflow for setting up a new planet |
+| get-player-and-planets | Get Player and Planets Workflow | [get-player-and-planets.md](../examples/workflows/get-player-and-planets.md) | Multi-step workflow to get player information and all associated planets |
+| mine-refine-convert | Mine, Refine, Convert Workflow | [mine-refine-convert.md](../examples/workflows/mine-refine-convert.md) | Complete workflow for mining ore, refining to Alpha Matter, and converting to Watts |
+| planet-setup | Planet Setup Workflow | [planet-setup.md](../examples/workflows/planet-setup.md) | Complete workflow for setting up a new planet |
 
 ---
 

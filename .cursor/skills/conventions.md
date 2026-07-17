@@ -22,6 +22,26 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ---
 
+## Choosing your interface (capability-aware)
+
+Skills describe **what** to do; your environment decides **how**. Run `scripts/preflight.sh`
+once per session to detect what's available (it writes `config/environment.json`). Then:
+
+| Task | Best if available | Complete fallback |
+|------|-------------------|-------------------|
+| Read state / execute an action / hash | **Structs Desktop MCP** (`structs_action`, `structs_intel`, `structs_hash`) | `structsd` CLI (`tx`/`query`) |
+| Real-time threat/event response | **GRASS** / `structs_events` | poll with `structsd query` |
+| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](https://structs.ai/skills/structs-intel/SKILL) |
+| Build a tool / integrate | webapp/chain **API** | — |
+
+Rules of thumb: prefer **MCP** when it's connected (it adds preflight checks, GPU hashing,
+and a signing bridge that never exposes keys); otherwise use the **CLI** — every skill keeps
+a full CLI path. MCP `structs_policy`/`structs_doctrine` map to your operator autonomy in
+`config/operator.md`; they never widen autonomy beyond it. The
+CLI commands shown throughout the skills are always the ground-truth fallback.
+
+---
+
 ## The `--` entity-ID rule
 
 Entity IDs contain dashes (`3-1`, `4-5`, `2-117`). The CLI parser treats a leading dash as a flag prefix, so unprotected IDs cause parse errors. **Always place `--` after all flags and before positional ID arguments:**

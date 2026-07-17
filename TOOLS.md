@@ -1,6 +1,14 @@
 # Tools
 
-Environment-specific configuration. Skills are shared. This file is yours — fill it in during your first session.
+**Static reference for the interfaces available to play Structs** (Desktop MCP, `structsd`
+CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.
+
+> Your connection details (RPC, chain ID, key name, MCP URL) and preferences now live in
+> **[`config/operator.md`](config/operator.md)** (copy from
+> [`config/operator.example.md`](config/operator.example.md)). To detect what's actually
+> available in your environment, run **`scripts/preflight.sh`** — it writes a capability
+> profile to `config/environment.json`. This page is the catalog; that profile is the truth
+> for your machine.
 
 ---
 
@@ -193,7 +201,7 @@ Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/struc
 
 ### Resources
 
-This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://knowledge/mechanics/combat.md`, `structs://playbooks/phases/early-game.md`, `structs://QUICKSTART.md`).
+This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://START.md`, `structs://play/index.md`, `structs://knowledge/mechanics/combat.md`, `structs://reference/index.md`). URIs are derived from the file tree — see the [resource map](knowledge/infrastructure/structs-desktop.md) and [`develop/structs-resources.md`](develop/structs-resources.md).
 
 ### Signing, automation, and co-op
 
@@ -217,7 +225,7 @@ Common pitfalls when using `structsd` directly:
 | **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
 | **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
 | **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
-| **TX fees** | Players don't need Alpha tokens to pay gas fees | Fees come from energy (connected power source). Any player with substation capacity can transact |
+| **TX fees** | Players don't need Alpha tokens to pay gas fees | Pure Structs gameplay messages are free (dedicated free-gas meter, no `ualpha` fee) — see [transactions](knowledge/mechanics/transactions.md). Still pass `--gas auto`. Being online/powered gates *acting*; it is not a per-tx fee |
 | **Concurrent PoW** | Two `*-compute` jobs sharing the same signing key submit conflicting sequence numbers | Use one signing key per player; never run concurrent compute jobs on the same key |
 
 ---

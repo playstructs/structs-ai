@@ -198,4 +198,4 @@ Choose based on risk tolerance: Reactor for safety, Field Generator for balanced
 - Formulas schema: [schemas/formulas.md](../schemas/formulas.md)
 - Economics schema: [schemas/economics.md](../schemas/economics.md)
 - Trading schema: [schemas/trading.md](../schemas/trading.md)
-- Guild economics tasks: [tasks/guild-economics.md](../tasks/guild-economics.md)
+- Guild economics tasks: [structs-commerce skill](../.cursor/skills/structs-commerce/SKILL.md)

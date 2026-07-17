@@ -86,8 +86,8 @@ This guide provides a quick reference for all game actions available to AI agent
 ### Resource Actions
 
 **Mining**:
-- `struct-ore-miner-complete` - Complete ore mining (requires proof-of-work)
-- `struct-ore-refinery-complete` - Complete ore refining (requires proof-of-work)
+- `struct-ore-mine-complete` - Complete ore mining (requires proof-of-work)
+- `struct-ore-refine-complete` - Complete ore refining (requires proof-of-work)
 
 **Power**:
 - `reactor-infuse` - Infuse reactor with resources (produces energy). Also handles validation delegation
@@ -122,8 +122,8 @@ This guide provides a quick reference for all game actions available to AI agent
 - `agreement-open` - Open energy agreement
 
 **Mining/Refining**:
-- `struct-ore-miner-complete` - Complete ore mining (requires proof-of-work)
-- `struct-ore-refinery-complete` - Complete ore refining (requires proof-of-work)
+- `struct-ore-mine-complete` - Complete ore mining (requires proof-of-work)
+- `struct-ore-refine-complete` - Complete ore refining (requires proof-of-work)
 
 **Generators**:
 - `struct-generator-infuse` - Infuse generator with Alpha Matter (produces energy)
@@ -352,8 +352,8 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 **Examples**:
 - `struct-build-complete`
 - `planet-raid-complete`
-- `struct-ore-miner-complete`
-- `struct-ore-refinery-complete`
+- `struct-ore-mine-complete`
+- `struct-ore-refine-complete`
 
 **See**: `protocols/action-protocol.md#proof-of-work` for proof-of-work details
 
@@ -485,8 +485,8 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 - `planet-raid-complete`
 
 **Resource**:
-- `struct-ore-miner-complete`
-- `struct-ore-refinery-complete`
+- `struct-ore-mine-complete`
+- `struct-ore-refine-complete`
 - `reactor-infuse` (validation delegation)
 - `reactor-defuse` (validation undelegation)
 - `substation-create`
@@ -494,8 +494,8 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 **Economic**:
 - `provider-create`
 - `agreement-open`
-- `struct-ore-miner-complete`
-- `struct-ore-refinery-complete`
+- `struct-ore-mine-complete`
+- `struct-ore-refine-complete`
 - `struct-generator-infuse`
 
 **Exploration**:
@@ -524,14 +524,14 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 **Requires Proof-of-Work**:
 - `struct-build-complete`
 - `planet-raid-complete`
-- `struct-ore-miner-complete`
-- `struct-ore-refinery-complete`
+- `struct-ore-mine-complete`
+- `struct-ore-refine-complete`
 
 **Requires Charge**:
 - `struct-activate`
 - `struct-attack`
-- `struct-ore-miner-complete`
-- `struct-ore-refinery-complete`
+- `struct-ore-mine-complete`
+- `struct-ore-refine-complete`
 
 **Requires Command Ship**:
 - `fleet-move`

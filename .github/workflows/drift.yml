@@ -1,0 +1,39 @@
+name: Live-chain drift (scheduled)
+
+# Runs the game-constant drift check against a live node. Kept OFF the PR path
+# so ordinary CI never depends on node availability. Scheduled + manual only.
+on:
+  schedule:
+    - cron: "0 12 * * 1" # weekly, Mondays 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Constant drift vs live chain
+    runs-on: ubuntu-latest
+    # Never block anything on network/node availability.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run drift check (best effort)
+        run: |
+          if command -v structsd >/dev/null 2>&1; then
+            bash scripts/check-drift.sh || echo "drift check reported differences (non-blocking)"
+          else
+            echo "structsd not installed on runner; skipping live drift check."
+            echo "Run scripts/check-drift.sh where a structsd binary + RPC are available."
+          fi
+
+      - name: Regenerate source-derived catalogs (best effort)
+        run: |
+          if command -v structsd >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+            python3 scripts/gen-catalogs.py || true
+            bash scripts/ci/snapshot-commands.sh || true
+            git --no-pager diff --stat generated/ || true
+            echo "If generated/ changed, open a PR with the refreshed catalogs."
+          else
+            echo "structsd/python3 unavailable; skipping catalog regeneration."
+          fi

@@ -98,8 +98,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 | ID | Name | Message Type | Verified | Description |
 |----|------|-------------|----------|-------------|
-| struct-ore-miner-complete | Complete Ore Mining | `/structs.structs.MsgStructOreMinerComplete` | Yes | Complete ore mining operation (requires proof-of-work) |
-| struct-ore-refinery-complete | Complete Ore Refining | `/structs.structs.MsgStructOreRefineryComplete` | Yes | Complete ore refining operation (requires proof-of-work) |
+| struct-ore-mine-complete | Complete Ore Mining | `/structs.structs.MsgStructOreMinerComplete` | Yes | Complete ore mining operation (requires proof-of-work) |
+| struct-ore-refine-complete | Complete Ore Refining | `/structs.structs.MsgStructOreRefineryComplete` | Yes | Complete ore refining operation (requires proof-of-work) |
 | struct-generator-infuse | Infuse Generator with Alpha Matter | `/structs.structs.MsgStructGeneratorInfuse` | Yes | Infuse a generator struct with Alpha Matter to produce energy |
 | reactor-infuse | Infuse Reactor | `/structs.structs.MsgReactorInfuse` | Yes | Add Alpha Matter to reactor for energy production |
 | reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Remove Alpha Matter from reactor |
@@ -111,8 +111,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 **Details**:
 
-- **struct-ore-miner-complete**: Code: `x/structs/keeper/msg_server_struct_ore_miner_complete.go` | Proto: `proto/structs/structs/tx.proto:763-770` | Requires proof-of-work (difficulty: 14000), requires charge
-- **struct-ore-refinery-complete**: Code: `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` | Proto: `proto/structs/structs/tx.proto:777-784` | Requires proof-of-work (difficulty: 28000), requires charge
+- **struct-ore-mine-complete**: Code: `x/structs/keeper/msg_server_struct_ore_miner_complete.go` | Proto: `proto/structs/structs/tx.proto:763-770` | Requires proof-of-work (difficulty: 14000), requires charge
+- **struct-ore-refine-complete**: Code: `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` | Proto: `proto/structs/structs/tx.proto:777-784` | Requires proof-of-work (difficulty: 28000), requires charge
 - **struct-generator-infuse**: Code: `x/structs/keeper/msg_server_struct_generator_infuse.go` | Proto: `proto/structs/structs/tx.proto:120` | Generator rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g
 - **reactor-infuse**: Code: `x/structs/keeper/msg_server_reactor_infuse.go` | Proto: `proto/structs/structs/tx.proto:95` | Abstracts validation delegation; reactor staking managed at player level
 - **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `proto/structs/structs/tx.proto:96` | Abstracts validation undelegation; reactor staking managed at player level

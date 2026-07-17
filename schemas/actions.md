@@ -475,7 +475,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 
 ### MsgStructOreMinerComplete
 
-- **ID**: `struct-ore-miner-complete`
+- **ID**: `struct-ore-mine-complete`
 - **Name**: Complete Ore Mining
 - **Message Type**: `/structs.structs.MsgStructOreMinerComplete`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
@@ -514,7 +514,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 
 ### MsgStructOreRefineryComplete
 
-- **ID**: `struct-ore-refinery-complete`
+- **ID**: `struct-ore-refine-complete`
 - **Name**: Complete Ore Refining
 - **Message Type**: `/structs.structs.MsgStructOreRefineryComplete`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`

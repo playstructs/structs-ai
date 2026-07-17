@@ -73,7 +73,7 @@ structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9
 # verify on-station before committing PoW
 structsd query structs fleet 9-318 -o json | jq '{status, locationId}'
 
-nohup structsd tx structs struct-ore-raid-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 2-117 \
+nohup structsd tx structs planet-raid-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 2-117 \
   > memory/jobs/raid-2-117.log 2>&1 & echo $! > memory/jobs/raid-2-117.pid
 ```
 

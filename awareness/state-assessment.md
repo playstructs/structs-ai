@@ -33,7 +33,7 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 | Ore (unrefined) | `structs_intel` (Ore Bunker, Miner) | Stored ore = liability until refined |
 | Charge | `structs_intel` | Per-player charge bar (CurrentBlockHeight - lastActionBlock) gates attacking, activating, moving, building |
 
-**Ore rule**: Ore is stealable. Alpha Matter is not. Refine immediately via `struct-ore-refinery-complete`. Unrefined ore = raid target.
+**Ore rule**: Ore is stealable. Alpha Matter is not. Refine immediately via `struct-ore-refine-complete`. Unrefined ore = raid target.
 
 ---
 

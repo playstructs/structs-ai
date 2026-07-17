@@ -90,7 +90,7 @@ Do not counter-attack in the heat of the moment. Counter when:
 - Your fleet is ready and fueled
 - You have a clear objective (cripple economy, punish, deter)
 
-Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](meta/tempo.md).
+Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](../meta/tempo.md).
 
 ---
 

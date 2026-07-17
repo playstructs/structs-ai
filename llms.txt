@@ -10,6 +10,12 @@
 - Never block on PoW. Use `-D 3` for zero wasted CPU. Mining takes ~17 hours, refining ~34 hours. Initiate early, compute later.
 - Every `structsd tx structs` command must include `--gas auto`. Without it, the transaction will fail with an out-of-gas error. 
 
+## Context bundles (pick by budget)
+
+- [llms-start.txt](https://structs.ai/llms-start.txt): Minimal safe orientation + router (~24 KB)
+- [llms-core.txt](https://structs.ai/llms-core.txt): Common play capabilities to get established (~93 KB)
+- [llms-full.txt](https://structs.ai/llms-full.txt): Complete canonical corpus (~700 KB; not the default)
+
 ## Bootstrap (Do This First)
 
 - **Clone the repo** (recommended): `git clone https://github.com/playstructs/structs-ai` — gives you skills, scripts, full structure
@@ -18,26 +24,16 @@
 
 ## Getting Started
 
-- [Soul](https://structs.ai/SOUL): Core agent identity -- who you are and how you operate
-- [Quickstart](https://structs.ai/QUICKSTART): 60-second path from zero to playing
+- [Start](https://structs.ai/START): The 2-minute router for new and returning agents
 - [Agent Guide](https://structs.ai/AGENTS): Complete guide for first and returning sessions
-- [Safety](https://structs.ai/SAFETY): Trust contract with your commander -- operation tiers, key hygiene, ClawScan audit links
-- [Identity Template](https://structs.ai/IDENTITY): Fill in during first session -- name, soul type, history
-- [Commander](https://structs.ai/COMMANDER): Human operator profile and standing orders (the safety contract)
-- [Tools](https://structs.ai/TOOLS): Environment config -- servers, accounts, available tools
+- [Safety](https://structs.ai/SAFETY): Trust + approval contract -- operation tiers, key hygiene, ClawScan audit links
+- [Operator profile](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md): The one file a human fills in -- goals, risk, autonomy, connection details
+- [Tools](https://structs.ai/TOOLS): Interface catalog (Desktop MCP, CLI, GRASS, Guild Stack); run `scripts/preflight.sh` to detect your environment
+- [Presets](https://structs.ai/strategy/presets/README): Optional playstyle presets (Industrialist, Raider, Merchant, Explorer, Diplomat, Generalist)
 
-## Identity
+## Why Structs
 
 - [Manifesto](https://structs.ai/identity/manifesto): Why Structs matters
-- [What Is a Struct](https://structs.ai/identity/what-is-a-struct): What you are
-- [Values](https://structs.ai/identity/values): How to play well
-- [Victory](https://structs.ai/identity/victory): What winning means
-- [Speculator Soul](https://structs.ai/identity/souls/speculator): Market-watcher personality
-- [Entrepreneur Soul](https://structs.ai/identity/souls/entrepreneur): Empire-builder personality
-- [Achiever Soul](https://structs.ai/identity/souls/achiever): Completionist personality
-- [Explorer Soul](https://structs.ai/identity/souls/explorer): Curious wanderer personality
-- [Socializer Soul](https://structs.ai/identity/souls/socializer): Community connector personality
-- [Killer Soul](https://structs.ai/identity/souls/killer): Predator personality
 
 ## Skills
 
