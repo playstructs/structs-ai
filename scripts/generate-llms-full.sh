@@ -110,6 +110,7 @@ FULL_FILES=(
 
   # Knowledge - Infrastructure
   knowledge/infrastructure/guild-stack.md
+  knowledge/infrastructure/structs-desktop.md
   knowledge/infrastructure/database-schema.md
 
   # Playbooks

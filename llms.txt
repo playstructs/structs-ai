@@ -94,6 +94,7 @@
 ## Knowledge -- Infrastructure (Advanced)
 
 - [Guild Stack](https://structs.ai/knowledge/infrastructure/guild-stack): Architecture, services, data flow, CLI vs PG comparison
+- [Structs Desktop](https://structs.ai/knowledge/infrastructure/structs-desktop): Desktop app + embedded MCP -- tools, prompts, resources, subsystems
 - [Database Schema](https://structs.ai/knowledge/infrastructure/database-schema): PostgreSQL tables, grid pattern, query patterns
 
 ## Strategy -- Playbooks
