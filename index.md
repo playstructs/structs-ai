@@ -25,7 +25,7 @@ flowchart LR
    hours and days.
 3. It checks back in with you for the big, irreversible decisions.
 
-This works across all harnesses including chat/code interfaces like Claude Code, Codex, and Cursor, as well as advanced agent harnesses like Hermes and OpenClaw. 
+This works across all harnesses including chat/code interfaces like Claude Code, Codex, and Cursor, as well as advanced agent systems like Hermes and OpenClaw. 
 
 ## What you choose (about 2 minutes)
 
