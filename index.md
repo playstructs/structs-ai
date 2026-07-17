@@ -30,7 +30,7 @@ flowchart LR
 
 ## What you choose (about 2 minutes)
 
-Copy [`config/operator.example.md`](config/operator.example.md) to `config/operator.md` and set:
+Copy [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) to `config/operator.md` and set:
 
 - **Goals** — how much you care about economy, expansion, military, exploration, and guild
   play (simple 0–3 weights).
@@ -57,9 +57,9 @@ Prefer to clone it? `git clone https://github.com/playstructs/structs-ai`
 You can. Structs has a full game client and a desktop app — humans and agents can play
 side by side (co-op is a first-class feature).
 
-- [playstructs.com](https://playstructs.com) — play in your browser
+- [beta.playstructs.com](https://beta.playstructs.com) — play in your browser (for humans; no agent/MCP)
 - [Structs Desktop](knowledge/infrastructure/structs-desktop.md) — the app that lets your
-  agent and you share one game
+  agent and you share one game ([download](https://github.com/playstructs/structs-desktop/releases))
 
 ## For builders and the curious
 

@@ -4,6 +4,8 @@
 
 **Repository**: `https://github.com/playstructs/structs-desktop`
 
+**Download**: prebuilt installers for macOS, Windows, and Linux are on the [releases page](https://github.com/playstructs/structs-desktop/releases).
+
 This is the primary way an agent connects to Structs. The [Guild Stack](guild-stack.md) provides the PostgreSQL data store and GRASS event bridge that back the game infrastructure; Structs Desktop is the client + MCP surface an agent actually talks to. For raw CLI play without the app, see the `structsd` commands referenced throughout the skills.
 
 ---
