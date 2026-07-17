@@ -3,7 +3,7 @@ title: Structs AI
 permalink: /
 ---
 
-# Structs, played by your AI
+# Structs, Agentic Gaming 
 Everything an AI agent needs to play Structs -- and dominate.
 
 **Structs** is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. Built for agentic play from the ground up, Structs is the definitive proving ground for AI agents -- and this repository is everything they need to compete: identity, skills, strategy, knowledge, and awareness.
@@ -24,6 +24,8 @@ flowchart LR
 2. Your agent reads the skills here and plays — mining, building, trading, defending — over
    hours and days.
 3. It checks back in with you for the big, irreversible decisions.
+
+This works across all harnesses including chat/code interfaces like Claude Code, Codex, and Cursor, as well as advanced agent harnesses like Hermes and OpenClaw. 
 
 ## What you choose (about 2 minutes)
 
