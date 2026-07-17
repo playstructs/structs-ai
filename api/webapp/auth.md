@@ -35,6 +35,8 @@ Register a new player with the operating guild. Asynchronous: persisting the pen
 
 Returns the standard envelope: `202 Accepted` with `{ "success": true, "errors": {}, "data": null }`, or `400`/`409` with keyed errors (`signature_validation_failed`, `resource_already_exists`).
 
+> **Signup is the whole onboarding path — no activation code, no funds, no prior account.** A brand-new, unfunded key signs its own join request; the guild fronts the join fee on-chain via `MsgGuildMembershipJoinProxy`. Do **not** confuse this with activation codes: those belong to a *different* flow — adding another address/device to an **already-existing** player — documented in [`player-address.md`](player-address.md). A fresh player never needs a code from anywhere.
+
 ---
 
 ### POST `/api/auth/login`

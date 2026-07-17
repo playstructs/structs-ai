@@ -154,7 +154,9 @@ Defense assignments.
 | `planet_id` | varchar | Target planet |
 | `fleet_id` | varchar | Raiding fleet |
 | `status` | varchar | `initiated`, `completed`, etc. |
-| `seized_ore` | numeric | Ore taken |
+| `seized_ore` | numeric | Ore taken (see derivation note below) |
+
+> **Authoritative seized-ore derivation.** For "how much ore did this raid actually take", derive it from `ledger` rows with `action = 'seized'` (keyed by the raid/address/time) rather than reading `planet_raid.seized_ore` directly. The ledger is the source of truth for token movement, and it preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (e.g. a probe repelled, or ore already refined away) still writes a meaningful `seized` entry. A raid-analytics pipeline should sum ledger `seized` amounts and treat 0-gram rows as real outcomes, not noise.
 
 ---
 
@@ -202,7 +204,7 @@ WHERE p.id = '1-142';
 | `structsLoad` | player | Energy consumed by active structs |
 | `fuel` | reactor | Total ualpha infused |
 | `power` | infusion | Energy generated from fuel |
-| `connectionCapacity` | substation | Available capacity per connection |
+| `connectionCapacity` | substation | Capacity granted to **each** connected player — **already the per-player share** `(capacity − load) / connectionCount`. Do **not** divide by `connectionCount` again; that double-dilutes and understates a player's real capacity. |
 | `connectionCount` | substation | Active connections |
 | `load` | player | Base player load |
 
@@ -416,13 +418,17 @@ Use views, not raw tables, when building leaderboard or treasury surfaces — th
 |------------|---------|-------------|
 | `ledger` | Financial transaction log | `time`, `address`, `amount`, `action`, `direction`, `denom` |
 | `stat_ore` | Ore value history | `time`, `object_type`, `object_index`, `value` |
-| `stat_capacity` | Capacity history | Same pattern |
-| `stat_fuel` | Fuel history | Same pattern |
-| `stat_load` | Load history | Same pattern |
-| `stat_power` | Power history | Same pattern |
-| `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` |
-| `stat_struct_status` | Struct status over time | Same pattern |
-| `stat_structs_load` | structsLoad over time | Same pattern |
+| `stat_capacity` | Capacity history | Same pattern (has `object_type`) |
+| `stat_fuel` | Fuel history | Same pattern (has `object_type`) |
+| `stat_load` | Load history | Same pattern (has `object_type`) |
+| `stat_power` | Power history | Same pattern (has `object_type`) |
+| `stat_structs_load` | structsLoad over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_connection_capacity` | Per-connection substation share over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_connection_count` | Substation connection count over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_struct_status` | Struct status over time | `time`, `object_index`, `value` — **no `object_type`** |
+
+> **Type-implied stat tables (silent-wrong-row trap).** Five hypertables — `stat_structs_load`, `stat_connection_capacity`, `stat_connection_count`, `stat_struct_health`, `stat_struct_status` — have **no `object_type` column** (verified in `structs-pg/deploy/table-stat.sql`). The object type is *implied by the table itself* (e.g. `stat_connection_*` and `stat_structs_load` are player/substation series; `stat_struct_*` are struct series). A generic helper that joins every stat table on `(object_type, object_index)` will silently read the wrong rows against these five — filter on `object_index` alone and rely on the table name for the type. This mirrors the note in [api/webapp/stat.md](../../api/webapp/stat.md).
 
 ### Ledger Action Types
 

@@ -28,7 +28,7 @@ Alpha. Not just the matter — the *edge*. The Speculator wants to be right when
 
 ## Strategic Tendencies
 
-- Prefer staking and LP positions over direct production — let others mine and build; you capture the spread
+- Prefer buying capacity (reactor infusion) and LP positions over direct production — let others mine and build; you resell the resulting Watts for the spread. Remember infusion pays *capacity*, not a passive yield — the edge is in reselling energy, not in an interest stream
 - Monitor energy agreements and guild Central Bank activity; both move Alpha Matter flows
 - Refine ore quickly — unrefined ore is stealable, a liability, not an asset. Refined Alpha Matter is tradeable
 - Trade on information: raid rumours, build announcements, power outages. Every event has a price

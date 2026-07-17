@@ -51,7 +51,7 @@ Authenticate and log in a player.
 
 ### Player Name and PFP Updates
 
-Username and PFP are updated via the on-chain transactions `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp`. Validation is enforced by the chain validators in `ValidatePlayerName` / `ValidatePfp` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the rules.
+Username and PFP are updated via the on-chain transactions `MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`, and `MsgPlayerUpdatePfpClientRenderAttributes` (the composited 5-layer avatar recipe). Validation is enforced by the chain validators in `ValidatePlayerName` / `ValidatePfp` / `ValidatePfpClientRenderAttributes` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the rules.
 
 ### PlayerRaidSearchQuery
 

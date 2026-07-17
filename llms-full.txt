@@ -1723,6 +1723,8 @@ If the address already holds $alpha tokens, delegate to a reactor (validator). T
 
 Join a guild that supports programmatic signup. The bundled `create-player.mjs` script handles the entire flow: mnemonic generation, proxy message signing, guild API POST, and polling for player creation. It returns a single JSON object with everything you need.
 
+> **Guild signup needs no activation code and no funds.** A brand-new, unfunded key signs its own join request; the guild fronts the on-chain join fee (`MsgGuildMembershipJoinProxy`). This is the *complete* fresh-player path. **Activation codes are a different flow** — they only add another address/device to an already-existing player (see [`api/webapp/player-address.md`](https://structs.ai/api/webapp/player-address)). A new player never needs one.
+
 **1. Choose a guild**
 
 The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
@@ -1776,7 +1778,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
@@ -1812,6 +1814,8 @@ The script will:
 **Immediately save the `mnemonic`** to a secure location (`.env`, environment variable, or secret store). If you need the key in the local `structsd` keyring for later commands, recover it: `structsd keys add [key-name] --recover` and enter the mnemonic.
 
 **Important**: If the script was given no `--mnemonic`, it generated a fresh one. The mnemonic is only printed in this output — store it now or it is lost.
+
+**Running a multi-player fleet from one seed:** you can reuse a single mnemonic to create many fully independent players — pass the same `--mnemonic` while deriving each address at HD path `m/44'/118'/0'/0/N` (increment `N`) and run the signup once per index. Each index is its own player (own planet/fleet/inventory), all recoverable from the one seed; index `0` is conventionally the primary. The chain imposes no cap on players per seed. See [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations) for the coordination playbook.
 
 **Encoding warning**: Do NOT attempt to implement the guild signup signing manually. The guild API requires hex-encoded compressed secp256k1 pubkey (66 hex chars) and hex-encoded raw R||S signature (128 hex chars) — NOT base64, NOT Amino. The script handles this correctly. Agents who try to sign manually almost always fail because they use base64 encoding.
 
@@ -1979,6 +1983,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - **Guild API returns HTML or 404** — The URL is wrong or you are not using the script. The signup endpoint (`/auth/signup`) is **POST only**. Always use `create-player.mjs` which handles the POST, signing, and polling automatically.
 - **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.
 - **Signup returns `resource_already_exists`** — This is **idempotent success, not an error**. The address has already joined the guild. `create-player.mjs` detects this and falls through to polling for the existing player; if you call the signup endpoint directly, treat `{resource_already_exists}` the same way (adopt the existing player via `structsd query structs address [your-address]`).
+- **"address is not registered as a player"** — The signing key exists (and may even be funded) but has never been onboarded, so the ante handler rejects every `/structs.structs.*` game message (code 2010). Complete Step 2 (Path A or Path B) first; only plain bank sends work before registration. Confirm with `structsd query structs address [address]` returning a `playerId` other than `1-0`.
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.
@@ -2041,8 +2046,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
 ## Procedure
 
 1. **Check the planet** — `structsd query structs planet [planet-id]`. If `currentOre == 0`, the planet is spent → go to *Depletion* below. Otherwise continue.
-2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge).
-3. **Launch the mine** (background expedition, ~17h to D=3, difficulty 14,000).
+2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge). **Activation *is* the start of the mining cycle** — it stamps `blockStartOreMine`; there is no separate "begin mining" action. (Deactivating clears the clock and cancels the in-progress cycle.)
+3. **Compute the mine completion** (background expedition, ~17h to D=3, difficulty 14,000). This hashes against the clock activation already armed and submits the *completion* — it does not "start" anything.
 
    **Approval Block** — confirm before launch: extractor id is correct; planet `currentOre > 0`; `--from` is the owner key; you accept an auto-submitted completion ~17h out even if state shifts.
 
@@ -2051,8 +2056,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (initiate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
-5. **The instant mining lands, refine** (~34h to D=3, difficulty 28,000). Ore is now stealable; this is the priority.
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
+5. **Refine in parallel — don't wait for the mine.** A refinery can be activated with **0 ore**; ore mined (or received) mid-cycle counts at completion time. Activate and compute the refinery *alongside* the extractor rather than serially, and the pipeline completes faster (~34h to D=3, difficulty 28,000). Refined Alpha is secure; unrefined ore is stealable, so keep the refine cycle always running.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
 
@@ -2694,7 +2699,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 ## Verification
 
 - `structsd query structs fleet [id]` — location and `onStation`/`away`.
-- After a raid: `planet_raid` `seized_ore` shows what you took; your `storedOre` rose (refine it).
+- After a raid: your `storedOre` rose (refine it). For the exact grams seized, the **authoritative source is `ledger` rows with `action = 'seized'`**, not `planet_raid.seized_ore` — the ledger even records 0-gram seizures (a raid that reached the planet but took nothing, e.g. a repelled probe). See [database-schema.md — planet_raid](https://structs.ai/knowledge/infrastructure/database-schema).
 - After attacks: events include remaining-health values — use them to assess damage.
 - Broadcast ≠ success: a raid can land but resolve as `defeat`/`ongoing`. Query the raid status.
 
@@ -2721,7 +2726,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 <source>.cursor/skills/structs-commerce/SKILL.md</source>
 ---
 name: structs-commerce
-description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha for returns, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
+description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
 level: advanced
 domain: economy
 ---
@@ -2737,15 +2742,17 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time, `ualpha` denom s
 - You have surplus capacity and want revenue (run a provider).
 - You need capacity but have no Alpha (buy via agreement).
 - You're setting provider pricing / access policy.
-- You want to stake Alpha for returns, mint/redeem guild tokens, or transfer tokens.
+- You want to stake Alpha into a reactor for capacity, mint/redeem guild tokens, or transfer tokens.
 
 ## Decisions
 
 **Sell or hold?** Surplus capacity earns nothing idle. If you have headroom beyond your own structs, sell it. Price in **guild tokens** (`1uguild.0-N`) to create demand for your guild's currency, or in `ualpha` for direct value.
 
-**Buyer-side: shop before you commit.** An agreement is paid **upfront for the full duration** (`capacity × rate × duration`), and closing early can incur a penalty. Compare providers on `rateAmount`, `capacityMaximum`, `durationMaximum`, and penalties before opening.
+**Buyer-side: shop before you commit.** Opening an agreement **debits the entire cost in full, immediately, at open** — `rate × capacity × duration`, moved into the collateral pool (`x/structs/keeper/msg_server_agreement_open.go`). It is not metered per block. Closing early can incur a penalty. Compare providers on `rateAmount`, `capacityMaximum`, `durationMaximum`, and penalties before opening.
 
-**Reactor staking economics.** Infusing a reactor both raises your capacity *and* stakes behind a validator at a locked commission. Lower commission = more capacity to you; staking strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term.
+**The `rate_denom` trap.** The cost is charged in the **provider's** `rate_denom`, not in alpha. A provider that prices in a guild token (`uguild.0-N`) requires you to hold that token — a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`; read `rawLog` for the exact denom). Check the provider's `rateDenom` and acquire that denom (mint guild tokens / trade) *before* opening.
+
+**Reactor staking economics — you are buying *capacity*, not a yield.** Infusing a reactor stakes your Alpha behind a validator at a locked commission and, in return, credits **energy capacity** to you (`1 − commission` of the infused amount; the commission share becomes the reactor's own capacity). There is **no delegator reward stream, no APR, no passive income** — the payoff is the capacity itself. Income is *indirect*: you turn that capacity into revenue only by selling it as energy through a provider. Lower commission = more capacity to you; staking also strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term. See [energy — reactor infusion](https://structs.ai/knowledge/mechanics/energy) for the 96/4 split.
 
 **The energy flywheel (advanced default):** mine → refine → infuse guild reactor → automated allocation grows substation capacity → sell via provider for guild tokens → redeem/reinvest. Each turn compounds. Decisions live in [`knowledge/economy/valuation`](https://structs.ai/knowledge/economy/valuation), [`trading`](https://structs.ai/knowledge/economy/trading), and [`playbooks/phases/late-game`](https://structs.ai/playbooks/phases/late-game).
 
@@ -3046,7 +3053,7 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 2. **Grant / revoke / set on object** — `permission-grant-on-object -- [object-id] [player-id] [bits]` (additive); `permission-revoke-on-object -- ...`; `permission-set-on-object -- ...` (replaces the set — confirm you aren't dropping a bit you need).
 3. **Address-level** — `permission-grant-on-address|revoke-on-address|set-on-address -- [address] [bits]`.
 4. **Guild rank** — `permission-guild-rank-set -- [object-id] [guild-id] [permission] [rank]` / `permission-guild-rank-revoke -- [object-id] [guild-id] [permission]`.
-5. **Address management** — register a key: `address-register -- [address] [proof-pubkey] [proof-signature] [permissions]` (Tier 2, verify proof); revoke: `address-revoke -- [address]` (don't orphan your own `--from`); change primary: `player-update-primary-address -- [new-address]`.
+5. **Address management** — register a key: `address-register -- [address] [proof-pubkey] [proof-signature] [permissions]` (Tier 2, verify proof); revoke: `address-revoke -- [address]` (don't orphan your own `--from`); change primary: `player-update-primary-address -- [new-address]`. **Distinguish two patterns:** `address-register` (or a webapp activation code) adds another signing key to **one existing player** (shared identity, planet, inventory); deriving fresh addresses from one mnemonic at `m/44'/118'/0'/0/N` and running a separate guild signup for each creates **fully independent players** (separate identities) recoverable from a single seed — see [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations).
 
 ## Commands reference
 
@@ -4762,6 +4769,17 @@ Two planetary defenses are wired to structs and affect combat: the Planetary Def
 - **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade incoming _guided_ ordnance aimed at a planetary struct sitting on its own planet**. **Source and target ambit are irrelevant** — the only requirements are that the target is a planetary (non-fleet) struct on its owner's planet and the incoming weapon is guided. **Unguided ordnance carries no guidance to jam and passes through untouched.** On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage. Each additional interceptor on the planet compounds the evade chance.
 - **Two layers protect against guided fire.** The target struct's own **unit-level** `signalJamming` defense (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first; only if that does not evade does the planetary interceptor network get its separate chance. So guided attacks on a defended planet face both the per-struct field and, for planetary targets, the planetary interceptor. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
 
+> **Two different things are called "jamming" — don't conflate them.** Both defeat only **guided** ordnance (unguided passes through either), but they operate at different scopes:
+>
+> | | Unit `signalJamming` | Low-orbit ballistic interceptor network |
+> |---|---|---|
+> | **Provided by** | Being a Battleship, Pursuit Fighter, or Cruiser (per-unit trait) | The **Jamming Satellite** struct (type 17) on the planet |
+> | **Scope** | Protects **only the struct that has it** | Protects **all planetary structs** on that struct's owner's planet |
+> | **Effect** | 66% miss on incoming guided fire | Per-shot evade chance; stacks with each extra interceptor |
+> | **Ambit** | N/A (self) | Source and target ambit **irrelevant** |
+> | **Order** | Checked **first** | Checked **second**, only if the unit field didn't already evade |
+> | **Flag on evade** | normal weapon-control miss | `evadedByPlanetaryDefenses: true`, cause `lowOrbitBallisticInterceptorNetwork` |
+
 ---
 
 ## Attack Resolution Sequence
@@ -4822,6 +4840,8 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 ## Raid Phases and SHIELDS_VULNERABLE
 
+> **A raid cannot eliminate a player — the only prize is stored ore.** No matter how one-sided the outcome, a successful raid seizes the defender's **unrefined stored ore** and nothing more: it does not destroy the player, take their planet, capture structs, or touch refined Alpha Matter. Refined Alpha is untouchable; refine promptly and a raid can win you nothing. (This is the single most common combat misconception — treat raids as ore theft, not conquest.)
+
 A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
 
 The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
@@ -4845,7 +4865,7 @@ So a raider must catch the defender vulnerable *and* let the clock age before th
 
 Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a defender loses to a raid is all of their stored ore (`raidSuccessful`).
 
-**Raid status** also includes `seizedOre` -- the amount of ore stolen during the raid, tracked on the `planet_raid` record. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+**Raid status** also includes `seizedOre` -- a convenience figure for the ore stolen, surfaced on the `planet_raid` record. For an authoritative count, derive it from `ledger` rows with `action = 'seized'` (which also record 0-gram seizures). See `schemas/entities/planet.md` for the `planet_raid` table schema.
 
 ### What a raid does
 
@@ -5757,7 +5777,7 @@ Even when a transaction is free, the rest of the ante chain still runs:
 - **Message count cap** (`MsgCountDecorator`) -- caps the number of messages per tx.
 - **Signature verification** (standard SDK decorators) -- signatures are required even on free txs.
 - **Per-address CheckTx throttle** (`CheckTxThrottleDecorator`) -- rate limits how many txs a single address can cram into the mempool per block.
-- **`StructsDecorator`** -- looks up the player for the signing address, applies the static permission check from `PermissionMap` for messages that use it, enforces the per-player message cap, and short-circuits same-block `lastAction` collisions for `ChargeMessages`.
+- **`StructsDecorator`** -- looks up the player for the signing address, applies the static permission check from `PermissionMap` for messages that use it, enforces the per-player message cap, and short-circuits same-block `lastAction` collisions for `ChargeMessages`. **The signing address must already be registered as a player** — if it resolves to no player, the message is rejected at ante with `"address is not registered as a player"` (ante error code 2010, `app/ante/errors.go`). This gate covers **every** `/structs.structs.*` game message; a funded-but-unregistered key can pay fees yet still be rejected. Plain Cosmos bank sends (`cosmos.bank.v1beta1.MsgSend`) are **not** Structs messages and are exempt, which is how a fresh key can be funded before it becomes a player. Client UIs should pre-check registration (`GET /structs/address/{address}` → non-`1-0` `playerId`) before offering game actions.
 - **`ThrottleDecorator`** -- per-object throttles for proof-of-work messages, fleet move, planet explore, address register.
 - **Charge messages** (`StructActivate`, `StructAttack`, `StructBuildInitiate`, `StructDefenseClear/Set`, `StructMove`, `StructStealthActivate/Deactivate`) -- still require positive charge, so you cannot use the free path to side-step the once-per-block-per-object rules. `StructTrash` is not in this ante set but its handler still consumes charge (equal to the struct type's `buildCharge`) and resets the charge bar; `StructDeactivate` and `StructDeactivateBatch` cost no charge at all.
 
@@ -5956,7 +5976,23 @@ Validation (`ValidatePfpClientRenderAttributes` in `x/structs/types/ugc.go`):
 - The chain stores the **compacted** (whitespace-stripped) form, so padding the cap with whitespace does not help.
 - There is intentionally **no key/value schema** — contents stay flexible as the client render model evolves.
 
-Example acceptable value: `{"layers":["base","helm-3"],"palette":2}` (compacted on store). Rejected: `[1,2,3]` (array, not object), `"hello"` (scalar), a 600-byte object (over cap).
+Rejected: `[1,2,3]` (array, not object), `"hello"` (scalar), a 600-byte object (over cap).
+
+#### Official webapp client convention (the 5-layer avatar)
+
+The chain enforces no schema, but the official webapp uses a specific shape that roster UIs, guild directories, and dashboards should follow. The field is stored as a JSON **string** — integrators must `JSON.parse` it (consistent with the other "stringly" chain fields), and an empty string means the player never set one.
+
+The parsed object is five layer indices:
+
+```json
+{"head": 38, "neck": 5, "body": 47, "arms": 9, "background": 1}
+```
+
+- **Valid index ranges** (per the current official webapp asset set): `head` 1–87, `neck` 1–10, `body` 1–57, `arms` 1–34, `background` 1–6. These ranges are a **client convention, not chain-validated** — the chain accepts any well-formed JSON object, so renderers must clamp/guard out-of-range indices.
+- **Paint order** (back → front): `background`, `arms`, `body`, `neck`, `head`. The `head` layer paints last (on top).
+- **Asset path**: `/img/pfp/{part}/pfp_{part}_{index}.png` (verified in the webapp's `PfpViewerComponent`).
+
+The separate `pfp` string field is the plain profile-picture reference (a URI validated by `ValidatePfp`); `pfpClientRenderAttributes` is the composited-avatar recipe. A player may set either or both.
 
 ### Name uniqueness comparison
 
@@ -6422,6 +6458,8 @@ connectionCapacity = (substation.capacity − substation.load) / connectionCount
 ```
 
 It is **recomputed on every connect, disconnect, and any capacity/load change**, so **each new connection dilutes everyone's share**. Example: a substation with `1,512,960,000` capacity (chain) and `220` connections gives each connected player `6,877,090` (≈ 6,877 W) of `capacitySecondary`. (Verified: `UpdateSubstationConnectionCapacity` in `x/structs/keeper/grid_context.go`.)
+
+> **The stored `connectionCapacity` is already the per-player share — do not divide by `connectionCount` again.** The division above happens *inside* the chain when the value is written; what you read back (LCD `gridAttributes.connectionCapacity`, or the `connectionCapacity` grid row / `stat_connection_capacity`) is the amount a single connected player receives. Dividing it by `connectionCount` a second time double-dilutes and badly understates a player's real capacity.
 
 This is the real capacity-planning rule for guilds: the per-member figure is **derived, not configured**, and it shrinks as the guild onboards more members. Plan the pool against `connectionCount`, not a fixed per-player number.
 
@@ -7049,6 +7087,18 @@ Because mining and refining clocks reset every cycle, a long-running extractor/r
 
 ---
 
+## Mine/Refine Cycle Lifecycle
+
+The mine and refine clocks are not just a difficulty input — they define a cycle whose lifecycle is easy to get exactly backwards. The rules (from `x/structs/keeper/struct_cache.go`):
+
+- **Activation starts the first cycle.** Bringing a mining/refining struct online (`GoOnline` → `ResetBlockStartOreMine` / `ResetBlockStartOreRefine`) stamps the clock with the current block. **There is no separate "begin mining" or "begin refining" action** — activation *is* the start. The `*-compute` commands compute and submit the *completion*, not the start.
+- **Deactivating cancels the cycle.** Going offline (`GoOffline` → `ClearBlockStartOreMine` / `ClearBlockStartOreRefine`) clears the clock to `0`. Re-activating starts a fresh cycle from the current block.
+- **Cycles never expire.** There is no staleness or timeout check. An anchor thousands (or hundreds of thousands) of blocks old is still perfectly completable — and is *cheaper* to complete, because difficulty has fully decayed. An old `blockStartOreRefine` is **not** a wedged process; it is a finished-decaying, ready-to-complete one. Never "clean up" an aged mine/refine — completing it is the cheapest possible proof.
+- **Completion auto-restarts the cycle.** A successful `MsgStructOreMineComplete` / `MsgStructOreRefineComplete` resets the clock to the current block (`OreMinePlanet` / `OreRefine` → `ResetBlockStart...`). The next cycle begins immediately with no player action; the struct just re-enters the full decay.
+- **Ore is checked at completion, not at start.** `CanOreRefine` only requires stored ore at the moment of completion (`HasStoredOre`). You can activate a refinery with **0 ore**, mine (or receive) ore mid-cycle, and complete successfully. Practical consequence: start the refinery *alongside* the extractor rather than mine-then-refine serially — the pipeline completes faster.
+
+---
+
 ## Permissions Relating to Hashing
 
 **Hashing is *not* permissionless.** Completing a proof is gated at two independent layers, and each of the four types requires its **own** matching permission bit (not all four).
@@ -7453,6 +7503,8 @@ Reactors charge a **commission** on infusions. When a player infuses ualpha into
 
 This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
 
+> **Staking pays capacity, not a yield.** The return on infusing a reactor is the **energy capacity** credited above — there is no delegator reward stream, APR, or passive token income. Income is realized only *indirectly*, by selling that capacity as energy through a provider.
+
 For step-by-step energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
 
 ---
@@ -7506,8 +7558,10 @@ For energy commerce, use `automated` -- it scales with your capacity as you infu
 
 When a buyer opens an agreement (`agreement-open [provider-id] [capacity] [duration]`):
 
-1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1)
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1) — the **entire** amount is debited in full at open, not metered per block
 2. Payment goes to the provider's **collateral address** (on-chain escrow)
+
+> **`rate_denom` trap:** the debit is in the *provider's* denom, not alpha. If the provider prices in a guild token, a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`). Check the provider's `rateDenom` and acquire that denom before opening.
 3. System auto-creates a `provider-agreement` allocation -- energy flows to the buyer immediately
 4. Revenue **drips** from collateral to the provider's **earnings address** proportionally as blocks pass
 5. Provider can withdraw accumulated earnings at any time via `provider-withdraw-balance`
@@ -7793,6 +7847,7 @@ Valuation in Structs is contextual—assets derive value from ore, location, inf
 - **Ore vs. Alpha Matter**: Ore is stealable; Alpha Matter is not. Refine quickly.
 - **Energy ephemerality**: Energy cannot be stored; value is in capacity agreements and conversion efficiency.
 - **Guild tokens**: Value depends on collateral ratio; not guaranteed.
+- **Staking is not a yield instrument**: infusing a reactor buys energy *capacity* (minus commission), not a passive income stream or APR. Alpha staked into a reactor returns value only when the resulting capacity is sold as energy — model it as capital converted to a productive asset, not as interest-bearing.
 
 ---
 
@@ -8691,7 +8746,9 @@ Defense assignments.
 | `planet_id` | varchar | Target planet |
 | `fleet_id` | varchar | Raiding fleet |
 | `status` | varchar | `initiated`, `completed`, etc. |
-| `seized_ore` | numeric | Ore taken |
+| `seized_ore` | numeric | Ore taken (see derivation note below) |
+
+> **Authoritative seized-ore derivation.** For "how much ore did this raid actually take", derive it from `ledger` rows with `action = 'seized'` (keyed by the raid/address/time) rather than reading `planet_raid.seized_ore` directly. The ledger is the source of truth for token movement, and it preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (e.g. a probe repelled, or ore already refined away) still writes a meaningful `seized` entry. A raid-analytics pipeline should sum ledger `seized` amounts and treat 0-gram rows as real outcomes, not noise.
 
 ---
 
@@ -8739,7 +8796,7 @@ WHERE p.id = '1-142';
 | `structsLoad` | player | Energy consumed by active structs |
 | `fuel` | reactor | Total ualpha infused |
 | `power` | infusion | Energy generated from fuel |
-| `connectionCapacity` | substation | Available capacity per connection |
+| `connectionCapacity` | substation | Capacity granted to **each** connected player — **already the per-player share** `(capacity − load) / connectionCount`. Do **not** divide by `connectionCount` again; that double-dilutes and understates a player's real capacity. |
 | `connectionCount` | substation | Active connections |
 | `load` | player | Base player load |
 
@@ -8953,13 +9010,17 @@ Use views, not raw tables, when building leaderboard or treasury surfaces — th
 |------------|---------|-------------|
 | `ledger` | Financial transaction log | `time`, `address`, `amount`, `action`, `direction`, `denom` |
 | `stat_ore` | Ore value history | `time`, `object_type`, `object_index`, `value` |
-| `stat_capacity` | Capacity history | Same pattern |
-| `stat_fuel` | Fuel history | Same pattern |
-| `stat_load` | Load history | Same pattern |
-| `stat_power` | Power history | Same pattern |
-| `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` |
-| `stat_struct_status` | Struct status over time | Same pattern |
-| `stat_structs_load` | structsLoad over time | Same pattern |
+| `stat_capacity` | Capacity history | Same pattern (has `object_type`) |
+| `stat_fuel` | Fuel history | Same pattern (has `object_type`) |
+| `stat_load` | Load history | Same pattern (has `object_type`) |
+| `stat_power` | Power history | Same pattern (has `object_type`) |
+| `stat_structs_load` | structsLoad over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_connection_capacity` | Per-connection substation share over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_connection_count` | Substation connection count over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` — **no `object_type`** |
+| `stat_struct_status` | Struct status over time | `time`, `object_index`, `value` — **no `object_type`** |
+
+> **Type-implied stat tables (silent-wrong-row trap).** Five hypertables — `stat_structs_load`, `stat_connection_capacity`, `stat_connection_count`, `stat_struct_health`, `stat_struct_status` — have **no `object_type` column** (verified in `structs-pg/deploy/table-stat.sql`). The object type is *implied by the table itself* (e.g. `stat_connection_*` and `stat_structs_load` are player/substation series; `stat_struct_*` are struct series). A generic helper that joins every stat table on `(object_type, object_index)` will silently read the wrong rows against these five — filter on `object_index` alone and rely on the table name for the type. This mirrors the note in [api/webapp/stat.md](../../api/webapp/stat.md).
 
 ### Ledger Action Types
 
@@ -10444,6 +10505,8 @@ Each player needs its own signing key. Derive them deterministically so you can 
 - Use HD derivation (`structsd keys add worker-2 --recover` / account-index paths) so every account traces back to a single mnemonic you back up **once**.
 - Name keys by role, not by guesswork (`core`, `power`, `striker-1`, `striker-2`). Future-you reads logs faster.
 - Record which key owns which player in [TOOLS.md](../../TOOLS.md). An untracked key is a lost player.
+
+**One mnemonic → many independent players (supported pattern).** Derive addresses at the Cosmos HD path `m/44'/118'/0'/0/N` (increment the final index `N`) and run the ordinary guild signup for each index. Each yields a **fully independent** on-chain player — its own planet, fleet, and inventory — all recoverable from the single seed. Index `0` is conventionally the primary. The chain imposes no link or cap between addresses derived from one seed (a large fleet can run entirely this way). After each signup, poll `GET /structs/address/{address}` (shape `{address, playerId, permissions}`) until `playerId` is assigned. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md).
 
 ### Onboarding the team (proxy signup)
 
@@ -13337,7 +13400,7 @@ A defender soaking a hit meant for the struct it protects. Requires the defender
 A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid`) is armed. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
 
 ### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
-The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks reset after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — The Per-Type Clock](../knowledge/mechanics/hashing.md#the-per-type-clock-blockstart)
+The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks are set on activation, cleared on deactivate, **never expire**, and reset (auto-restart) after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — Cycle lifecycle](../knowledge/mechanics/hashing.md#minerefine-cycle-lifecycle)
 
 ### Build
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)

@@ -246,6 +246,17 @@ Two planetary defenses are wired to structs and affect combat: the Planetary Def
 - **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade incoming _guided_ ordnance aimed at a planetary struct sitting on its own planet**. **Source and target ambit are irrelevant** — the only requirements are that the target is a planetary (non-fleet) struct on its owner's planet and the incoming weapon is guided. **Unguided ordnance carries no guidance to jam and passes through untouched.** On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage. Each additional interceptor on the planet compounds the evade chance.
 - **Two layers protect against guided fire.** The target struct's own **unit-level** `signalJamming` defense (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first; only if that does not evade does the planetary interceptor network get its separate chance. So guided attacks on a defended planet face both the per-struct field and, for planetary targets, the planetary interceptor. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
 
+> **Two different things are called "jamming" — don't conflate them.** Both defeat only **guided** ordnance (unguided passes through either), but they operate at different scopes:
+>
+> | | Unit `signalJamming` | Low-orbit ballistic interceptor network |
+> |---|---|---|
+> | **Provided by** | Being a Battleship, Pursuit Fighter, or Cruiser (per-unit trait) | The **Jamming Satellite** struct (type 17) on the planet |
+> | **Scope** | Protects **only the struct that has it** | Protects **all planetary structs** on that struct's owner's planet |
+> | **Effect** | 66% miss on incoming guided fire | Per-shot evade chance; stacks with each extra interceptor |
+> | **Ambit** | N/A (self) | Source and target ambit **irrelevant** |
+> | **Order** | Checked **first** | Checked **second**, only if the unit field didn't already evade |
+> | **Flag on evade** | normal weapon-control miss | `evadedByPlanetaryDefenses: true`, cause `lowOrbitBallisticInterceptorNetwork` |
+
 ---
 
 ## Attack Resolution Sequence
@@ -306,6 +317,8 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 ## Raid Phases and SHIELDS_VULNERABLE
 
+> **A raid cannot eliminate a player — the only prize is stored ore.** No matter how one-sided the outcome, a successful raid seizes the defender's **unrefined stored ore** and nothing more: it does not destroy the player, take their planet, capture structs, or touch refined Alpha Matter. Refined Alpha is untouchable; refine promptly and a raid can win you nothing. (This is the single most common combat misconception — treat raids as ore theft, not conquest.)
+
 A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
 
 The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
@@ -329,7 +342,7 @@ So a raider must catch the defender vulnerable *and* let the clock age before th
 
 Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a defender loses to a raid is all of their stored ore (`raidSuccessful`).
 
-**Raid status** also includes `seizedOre` -- the amount of ore stolen during the raid, tracked on the `planet_raid` record. See `schemas/entities/planet.md` for the `planet_raid` table schema.
+**Raid status** also includes `seizedOre` -- a convenience figure for the ore stolen, surfaced on the `planet_raid` record. For an authoritative count, derive it from `ledger` rows with `action = 'seized'` (which also record 0-gram seizures). See `schemas/entities/planet.md` for the `planet_raid` table schema.
 
 ### What a raid does
 

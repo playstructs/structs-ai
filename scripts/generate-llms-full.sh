@@ -37,6 +37,8 @@ CORE_FILES=(
 
   knowledge/mechanics/resources.md
   knowledge/mechanics/power.md
+  knowledge/mechanics/energy.md
+  knowledge/mechanics/combat.md
   knowledge/entities/struct-types.md
 
   awareness/priority-framework.md

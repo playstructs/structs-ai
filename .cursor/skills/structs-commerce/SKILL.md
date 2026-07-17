@@ -1,6 +1,6 @@
 ---
 name: structs-commerce
-description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha for returns, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
+description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
 level: advanced
 domain: economy
 ---
@@ -16,15 +16,17 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time, `ualpha` denom s
 - You have surplus capacity and want revenue (run a provider).
 - You need capacity but have no Alpha (buy via agreement).
 - You're setting provider pricing / access policy.
-- You want to stake Alpha for returns, mint/redeem guild tokens, or transfer tokens.
+- You want to stake Alpha into a reactor for capacity, mint/redeem guild tokens, or transfer tokens.
 
 ## Decisions
 
 **Sell or hold?** Surplus capacity earns nothing idle. If you have headroom beyond your own structs, sell it. Price in **guild tokens** (`1uguild.0-N`) to create demand for your guild's currency, or in `ualpha` for direct value.
 
-**Buyer-side: shop before you commit.** An agreement is paid **upfront for the full duration** (`capacity × rate × duration`), and closing early can incur a penalty. Compare providers on `rateAmount`, `capacityMaximum`, `durationMaximum`, and penalties before opening.
+**Buyer-side: shop before you commit.** Opening an agreement **debits the entire cost in full, immediately, at open** — `rate × capacity × duration`, moved into the collateral pool (`x/structs/keeper/msg_server_agreement_open.go`). It is not metered per block. Closing early can incur a penalty. Compare providers on `rateAmount`, `capacityMaximum`, `durationMaximum`, and penalties before opening.
 
-**Reactor staking economics.** Infusing a reactor both raises your capacity *and* stakes behind a validator at a locked commission. Lower commission = more capacity to you; staking strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term.
+**The `rate_denom` trap.** The cost is charged in the **provider's** `rate_denom`, not in alpha. A provider that prices in a guild token (`uguild.0-N`) requires you to hold that token — a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`; read `rawLog` for the exact denom). Check the provider's `rateDenom` and acquire that denom (mint guild tokens / trade) *before* opening.
+
+**Reactor staking economics — you are buying *capacity*, not a yield.** Infusing a reactor stakes your Alpha behind a validator at a locked commission and, in return, credits **energy capacity** to you (`1 − commission` of the infused amount; the commission share becomes the reactor's own capacity). There is **no delegator reward stream, no APR, no passive income** — the payoff is the capacity itself. Income is *indirect*: you turn that capacity into revenue only by selling it as energy through a provider. Lower commission = more capacity to you; staking also strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term. See [energy — reactor infusion](https://structs.ai/knowledge/mechanics/energy) for the 96/4 split.
 
 **The energy flywheel (advanced default):** mine → refine → infuse guild reactor → automated allocation grows substation capacity → sell via provider for guild tokens → redeem/reinvest. Each turn compounds. Decisions live in [`knowledge/economy/valuation`](https://structs.ai/knowledge/economy/valuation), [`trading`](https://structs.ai/knowledge/economy/trading), and [`playbooks/phases/late-game`](https://structs.ai/playbooks/phases/late-game).
 

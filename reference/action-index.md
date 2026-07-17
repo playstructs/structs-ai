@@ -11,8 +11,8 @@
 
 | Metric | Count |
 |--------|-------|
-| Total Actions | 30 |
-| Verified | 30 |
+| Total Actions | 33 |
+| Verified | 33 |
 | Requires Proof-of-Work | 3 |
 | Requires Charge | 5 |
 | Requires Power | 1 |
@@ -29,6 +29,7 @@
 | fleet | 1 |
 | guild | 5 |
 | struct-management | 7 |
+| player-identity | 3 |
 
 ---
 
@@ -200,6 +201,24 @@ All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 ---
 
+## Player Identity Actions
+
+| ID | Name | Message Type | Verified | Description |
+|----|------|-------------|----------|-------------|
+| player-update-name | Update Player Name | `/structs.structs.MsgPlayerUpdateName` | Yes | Set/clear the player's UGC username |
+| player-update-pfp | Update Player PFP | `/structs.structs.MsgPlayerUpdatePfp` | Yes | Set/clear the player's profile-picture reference (URI) |
+| player-update-pfp-client-render-attributes | Update Player PFP Render Attributes | `/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes` | Yes | Set/clear the composited 5-layer avatar recipe (JSON object) |
+
+**Details**:
+
+- **player-update-name**: Code: `x/structs/keeper/msg_server_player_update_name.go` | Proto: `proto/structs/structs/tx.proto:645` | Validated by `ValidatePlayerName`; guild-moderatable via UGC permission
+- **player-update-pfp**: Code: `x/structs/keeper/msg_server_player_update_pfp.go` | Proto: `proto/structs/structs/tx.proto:653` | Validated by `ValidatePfp`; guild-moderatable via UGC permission
+- **player-update-pfp-client-render-attributes**: Code: `x/structs/keeper/msg_server_player_update_pfp_cr_attributes.go` | Proto: `proto/structs/structs/tx.proto:661` | Validated by `ValidatePfpClientRenderAttributes` (JSON object ≤512 bytes, compacted); owner-only / self-service (not guild-moderatable). Webapp convention: 5 layer indices `{head, neck, body, arms, background}` — see `knowledge/mechanics/ugc-moderation.md`.
+
+All player identity actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
+
+---
+
 ## Verification Notes
 
-All actions verified with code references against structsd v0.19.1. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`.
+All actions verified with code references against structsd v0.20.0. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`.

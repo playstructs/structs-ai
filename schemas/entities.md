@@ -416,7 +416,7 @@
 | nonce | integer | -- | -- | Nonce for randomness generation (increments with each use) |
 | username | string | -- | -- | Player display name (UGC; see `knowledge/mechanics/ugc-moderation.md`). Set via `MsgPlayerUpdateName`. |
 | pfp | string | -- | -- | Profile picture reference (opaque content id or allow-listed URL). Set via `MsgPlayerUpdatePfp`. |
-| pfpClientRenderAttributes | string | -- | -- | Optional render hints (compacted JSON object, ≤512 bytes) for a locally-rendered pfp. Owner-only; set via `MsgPlayerUpdatePfpClientRenderAttributes`. |
+| pfpClientRenderAttributes | string | -- | -- | Optional render hints (compacted JSON object, ≤512 bytes) for a locally-rendered pfp. `JSON.parse` to read; the webapp convention is 5 layer indices `{head, neck, body, arms, background}`. Owner-only; set via `MsgPlayerUpdatePfpClientRenderAttributes`. See `knowledge/mechanics/ugc-moderation.md#official-webapp-client-convention-the-5-layer-avatar`. |
 
 ### Planet Definition
 

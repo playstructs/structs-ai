@@ -74,6 +74,8 @@ connectionCapacity = (substation.capacity − substation.load) / connectionCount
 
 It is **recomputed on every connect, disconnect, and any capacity/load change**, so **each new connection dilutes everyone's share**. Example: a substation with `1,512,960,000` capacity (chain) and `220` connections gives each connected player `6,877,090` (≈ 6,877 W) of `capacitySecondary`. (Verified: `UpdateSubstationConnectionCapacity` in `x/structs/keeper/grid_context.go`.)
 
+> **The stored `connectionCapacity` is already the per-player share — do not divide by `connectionCount` again.** The division above happens *inside* the chain when the value is written; what you read back (LCD `gridAttributes.connectionCapacity`, or the `connectionCapacity` grid row / `stat_connection_capacity`) is the amount a single connected player receives. Dividing it by `connectionCount` a second time double-dilutes and badly understates a player's real capacity.
+
 This is the real capacity-planning rule for guilds: the per-member figure is **derived, not configured**, and it shrinks as the guild onboards more members. Plan the pool against `connectionCount`, not a fixed per-player number.
 
 ---

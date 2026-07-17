@@ -58,7 +58,7 @@ A defender soaking a hit meant for the struct it protects. Requires the defender
 A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid`) is armed. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
 
 ### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
-The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks reset after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — The Per-Type Clock](../knowledge/mechanics/hashing.md#the-per-type-clock-blockstart)
+The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks are set on activation, cleared on deactivate, **never expire**, and reset (auto-restart) after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — Cycle lifecycle](../knowledge/mechanics/hashing.md#minerefine-cycle-lifecycle)
 
 ### Build
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)

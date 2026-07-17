@@ -494,7 +494,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 | sufficientCharge | Charge >= structType.OreMiningCharge |
 | proofOfWork | HashBuildAndCheckDifficulty with OreMiningDifficulty (14000) |
 
-**Effects**: `StoredOreIncrement(1)` -- fixed 1 ore per operation.
+**Effects**: `StoredOreIncrement(1)` -- fixed 1 ore per operation. Also resets `blockStartOreMine` to the current block — the cycle **auto-restarts** and the next mine begins immediately with no further action (re-entering the full difficulty decay).
 
 ```json
 {
@@ -536,6 +536,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 **Effects**:
 - Alpha Matter created: `DepositRefinedAlpha()` -- mints 1,000,000 ualpha (1 gram)
 - Ore consumed: `StoredOreDecrement(1)`
+- Resets `blockStartOreRefine` to the current block — the cycle **auto-restarts**; the next refine begins immediately. Note `hasStoredOre` is only checked here at completion, so a refinery can be activated with 0 ore and complete once ore arrives mid-cycle.
 
 ```json
 {
@@ -603,6 +604,9 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 | playerOnline | true |
 | validProvider | true |
 | providerHasCapacity | true |
+| sufficientFunds | Buyer holds `rate × capacity × duration` in the provider's `rate_denom` |
+
+**Escrow effect** (`x/structs/keeper/msg_server_agreement_open.go`): the full cost `rate × capacity × duration` is debited **in full at open** (not metered per block) and moved to the provider's collateral pool; it then drips to the provider's earnings as blocks pass. The charge is denominated in the **provider's `rate_denom`**, not alpha — if the provider prices in a guild token, a buyer holding only `ualpha` is **rejected at broadcast** with an insufficient-funds error keyed `agreement_open` (surface `rawLog` for the missing denom). Acquire the correct denom before opening.
 
 ```json
 {
@@ -1182,8 +1186,8 @@ User-generated content (name and pfp) updates. All seven messages are part of th
 
 **Effects**:
 - Increments StructsLoad by PassiveDraw
-- Resets mining timer
-- Resets refining timer
+- Resets mining timer (`blockStartOreMine` = current block) — activation *starts* the mining cycle; there is no separate "begin mining" message
+- Resets refining timer (`blockStartOreRefine` = current block) — starts the refining cycle
 - Increments planetary defenses if on planet
 - Sets struct status to online
 
@@ -1224,7 +1228,7 @@ Deactivate does **not** require the player to be online and costs no charge — 
 
 **Effects**:
 - Decrements StructsLoad by PassiveDraw
-- Clears mining/refining timers
+- Clears mining/refining timers (`blockStart...` = 0) — deactivating **cancels** the in-progress mine/refine cycle; re-activating starts a fresh one
 - Decrements planetary defenses if on planet
 - Sets struct status to offline
 

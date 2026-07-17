@@ -69,6 +69,8 @@ Reactors charge a **commission** on infusions. When a player infuses ualpha into
 
 This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
 
+> **Staking pays capacity, not a yield.** The return on infusing a reactor is the **energy capacity** credited above — there is no delegator reward stream, APR, or passive token income. Income is realized only *indirectly*, by selling that capacity as energy through a provider.
+
 For step-by-step energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
 
 ---
@@ -122,8 +124,10 @@ For energy commerce, use `automated` -- it scales with your capacity as you infu
 
 When a buyer opens an agreement (`agreement-open [provider-id] [capacity] [duration]`):
 
-1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1)
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1) — the **entire** amount is debited in full at open, not metered per block
 2. Payment goes to the provider's **collateral address** (on-chain escrow)
+
+> **`rate_denom` trap:** the debit is in the *provider's* denom, not alpha. If the provider prices in a guild token, a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`). Check the provider's `rateDenom` and acquire that denom before opening.
 3. System auto-creates a `provider-agreement` allocation -- energy flows to the buyer immediately
 4. Revenue **drips** from collateral to the provider's **earnings address** proportionally as blocks pass
 5. Provider can withdraw accumulated earnings at any time via `provider-withdraw-balance`

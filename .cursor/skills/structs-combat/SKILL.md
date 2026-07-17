@@ -155,7 +155,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 ## Verification
 
 - `structsd query structs fleet [id]` — location and `onStation`/`away`.
-- After a raid: `planet_raid` `seized_ore` shows what you took; your `storedOre` rose (refine it).
+- After a raid: your `storedOre` rose (refine it). For the exact grams seized, the **authoritative source is `ledger` rows with `action = 'seized'`**, not `planet_raid.seized_ore` — the ledger even records 0-gram seizures (a raid that reached the planet but took nothing, e.g. a repelled probe). See [database-schema.md — planet_raid](https://structs.ai/knowledge/infrastructure/database-schema).
 - After attacks: events include remaining-health values — use them to assess damage.
 - Broadcast ≠ success: a raid can land but resolve as `defeat`/`ongoing`. Query the raid status.
 

@@ -181,6 +181,18 @@ Because mining and refining clocks reset every cycle, a long-running extractor/r
 
 ---
 
+## Mine/Refine Cycle Lifecycle
+
+The mine and refine clocks are not just a difficulty input — they define a cycle whose lifecycle is easy to get exactly backwards. The rules (from `x/structs/keeper/struct_cache.go`):
+
+- **Activation starts the first cycle.** Bringing a mining/refining struct online (`GoOnline` → `ResetBlockStartOreMine` / `ResetBlockStartOreRefine`) stamps the clock with the current block. **There is no separate "begin mining" or "begin refining" action** — activation *is* the start. The `*-compute` commands compute and submit the *completion*, not the start.
+- **Deactivating cancels the cycle.** Going offline (`GoOffline` → `ClearBlockStartOreMine` / `ClearBlockStartOreRefine`) clears the clock to `0`. Re-activating starts a fresh cycle from the current block.
+- **Cycles never expire.** There is no staleness or timeout check. An anchor thousands (or hundreds of thousands) of blocks old is still perfectly completable — and is *cheaper* to complete, because difficulty has fully decayed. An old `blockStartOreRefine` is **not** a wedged process; it is a finished-decaying, ready-to-complete one. Never "clean up" an aged mine/refine — completing it is the cheapest possible proof.
+- **Completion auto-restarts the cycle.** A successful `MsgStructOreMineComplete` / `MsgStructOreRefineComplete` resets the clock to the current block (`OreMinePlanet` / `OreRefine` → `ResetBlockStart...`). The next cycle begins immediately with no player action; the struct just re-enters the full decay.
+- **Ore is checked at completion, not at start.** `CanOreRefine` only requires stored ore at the moment of completion (`HasStoredOre`). You can activate a refinery with **0 ore**, mine (or receive) ore mid-cycle, and complete successfully. Practical consequence: start the refinery *alongside* the extractor rather than mine-then-refine serially — the pipeline completes faster.
+
+---
+
 ## Permissions Relating to Hashing
 
 **Hashing is *not* permissionless.** Completing a proof is gated at two independent layers, and each of the four types requires its **own** matching permission bit (not all four).

@@ -28,6 +28,8 @@ Each player needs its own signing key. Derive them deterministically so you can 
 - Name keys by role, not by guesswork (`core`, `power`, `striker-1`, `striker-2`). Future-you reads logs faster.
 - Record which key owns which player in [TOOLS.md](../../TOOLS.md). An untracked key is a lost player.
 
+**One mnemonic → many independent players (supported pattern).** Derive addresses at the Cosmos HD path `m/44'/118'/0'/0/N` (increment the final index `N`) and run the ordinary guild signup for each index. Each yields a **fully independent** on-chain player — its own planet, fleet, and inventory — all recoverable from the single seed. Index `0` is conventionally the primary. The chain imposes no link or cap between addresses derived from one seed (a large fleet can run entirely this way). After each signup, poll `GET /structs/address/{address}` (shape `{address, playerId, permissions}`) until `playerId` is assigned. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md).
+
 ### Onboarding the team (proxy signup)
 
 Bring each account onto the chain via the guild proxy flow (`MsgGuildMembershipJoinProxy`): sign `GUILD{id}ADDRESS{addr}NONCE0`, POST to the guild, poll `/structs/address/{addr}` for the player id. The flow is **idempotent** — re-running for an address that already joined returns `resource_already_exists`, which you **treat as success** (adopt the existing player), not a failure. So a team-onboarding loop can be safely retried. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md) and [integration-notes — Proxy signup](../../api/integration-notes.md#proxy-signup-is-idempotent).

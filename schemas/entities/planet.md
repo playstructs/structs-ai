@@ -74,7 +74,7 @@ Tracks active raid status per planet. Separate from the planet table.
 | updated_at | timestamptz | Last status change |
 | seized_ore | numeric | Ore seized during raid |
 
-`seized_ore` enables easier victory handling -- the amount of ore stolen is tracked directly on the raid record rather than requiring calculation from events.
+`seized_ore` offers a convenient at-a-glance figure on the raid record. For an **authoritative** count of ore stolen, derive it from `ledger` rows with `action = 'seized'` — the ledger is the source of truth for token movement and preserves 0-gram seizures (raids that reached the planet but took nothing). See [database-schema.md — planet_raid](../../knowledge/infrastructure/database-schema.md#structsplanet_raid).
 
 ## Relationships
 

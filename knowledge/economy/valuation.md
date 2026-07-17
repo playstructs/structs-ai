@@ -66,6 +66,7 @@ Valuation in Structs is contextual—assets derive value from ore, location, inf
 - **Ore vs. Alpha Matter**: Ore is stealable; Alpha Matter is not. Refine quickly.
 - **Energy ephemerality**: Energy cannot be stored; value is in capacity agreements and conversion efficiency.
 - **Guild tokens**: Value depends on collateral ratio; not guaranteed.
+- **Staking is not a yield instrument**: infusing a reactor buys energy *capacity* (minus commission), not a passive income stream or APR. Alpha staked into a reactor returns value only when the resulting capacity is sold as energy — model it as capital converted to a productive asset, not as interest-bearing.
 
 ---
 

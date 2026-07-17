@@ -22,6 +22,9 @@
 | planetId | string | entity-id | `^2-[0-9]+$` | No | Planet ID if player owns a planet, empty string if not. Format: `type-index` (e.g., `2-1` for planet type 2, index 1). Type 2 = Planet. |
 | fleetId | string | entity-id | `^9-[0-9]+$` | No | Fleet ID if player owns a fleet, empty string if not. Format: `type-index` (e.g., `9-11` for fleet type 9, index 11). Type 9 = Fleet. |
 | guildRank | uint64 | | | No | Player's rank within their guild. 1 = highest (guild creator), 101 = default on join, 0 = unset. Lower = more privileged. |
+| username | string | | | No | UGC display name, empty string if unset. Set via `MsgPlayerUpdateName`. See `knowledge/mechanics/ugc-moderation.md`. |
+| pfp | string | | | No | Profile-picture reference (opaque content id or allow-listed URI), empty string if unset. Set via `MsgPlayerUpdatePfp`. |
+| pfpClientRenderAttributes | string | | | No | Composited-avatar recipe: a JSON **string** (`JSON.parse` to read), empty string if unset. Webapp convention is 5 layer indices `{head, neck, body, arms, background}`. Set via `MsgPlayerUpdatePfpClientRenderAttributes`. See `knowledge/mechanics/ugc-moderation.md#official-webapp-client-convention-the-5-layer-avatar`. |
 
 ## Grid Attributes
 

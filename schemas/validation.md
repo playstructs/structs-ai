@@ -115,7 +115,7 @@ User-generated identity fields (player/guild/planet/substation names and pfps) a
 | max size | 512 **bytes** (`MaxPfpClientRenderAttributesBytes`), byte-denominated not rune count |
 | required shape | must decode as a JSON **object** (arrays, scalars, and malformed JSON are rejected) |
 | stored form | compacted (whitespace-stripped) JSON |
-| schema | none enforced — contents are free-form |
+| schema | none enforced on-chain — but the official webapp convention is 5 layer indices `{head, neck, body, arms, background}`; see `knowledge/mechanics/ugc-moderation.md#official-webapp-client-convention-the-5-layer-avatar`. Renderers must clamp out-of-range indices. |
 | permission | owner-only / self-service (does not route through `UGCPermissionCheck`; not guild-moderatable) |
 | validator (Go) | `types.ValidatePfpClientRenderAttributes` |
 

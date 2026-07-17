@@ -94,6 +94,8 @@ If the address already holds $alpha tokens, delegate to a reactor (validator). T
 
 Join a guild that supports programmatic signup. The bundled `create-player.mjs` script handles the entire flow: mnemonic generation, proxy message signing, guild API POST, and polling for player creation. It returns a single JSON object with everything you need.
 
+> **Guild signup needs no activation code and no funds.** A brand-new, unfunded key signs its own join request; the guild fronts the on-chain join fee (`MsgGuildMembershipJoinProxy`). This is the *complete* fresh-player path. **Activation codes are a different flow** — they only add another address/device to an already-existing player (see [`api/webapp/player-address.md`](https://structs.ai/api/webapp/player-address)). A new player never needs one.
+
 **1. Choose a guild**
 
 The commander may specify a guild via [TOOLS.md](https://structs.ai/TOOLS) or environment config. Otherwise, query available guilds from a reference node:
@@ -147,7 +149,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes, no schema) of client render hints. It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
@@ -183,6 +185,8 @@ The script will:
 **Immediately save the `mnemonic`** to a secure location (`.env`, environment variable, or secret store). If you need the key in the local `structsd` keyring for later commands, recover it: `structsd keys add [key-name] --recover` and enter the mnemonic.
 
 **Important**: If the script was given no `--mnemonic`, it generated a fresh one. The mnemonic is only printed in this output — store it now or it is lost.
+
+**Running a multi-player fleet from one seed:** you can reuse a single mnemonic to create many fully independent players — pass the same `--mnemonic` while deriving each address at HD path `m/44'/118'/0'/0/N` (increment `N`) and run the signup once per index. Each index is its own player (own planet/fleet/inventory), all recoverable from the one seed; index `0` is conventionally the primary. The chain imposes no cap on players per seed. See [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations) for the coordination playbook.
 
 **Encoding warning**: Do NOT attempt to implement the guild signup signing manually. The guild API requires hex-encoded compressed secp256k1 pubkey (66 hex chars) and hex-encoded raw R||S signature (128 hex chars) — NOT base64, NOT Amino. The script handles this correctly. Agents who try to sign manually almost always fail because they use base64 encoding.
 
@@ -350,6 +354,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - **Guild API returns HTML or 404** — The URL is wrong or you are not using the script. The signup endpoint (`/auth/signup`) is **POST only**. Always use `create-player.mjs` which handles the POST, signing, and polling automatically.
 - **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.
 - **Signup returns `resource_already_exists`** — This is **idempotent success, not an error**. The address has already joined the guild. `create-player.mjs` detects this and falls through to polling for the existing player; if you call the signup endpoint directly, treat `{resource_already_exists}` the same way (adopt the existing player via `structsd query structs address [your-address]`).
+- **"address is not registered as a player"** — The signing key exists (and may even be funded) but has never been onboarded, so the ante handler rejects every `/structs.structs.*` game message (code 2010). Complete Step 2 (Path A or Path B) first; only plain bank sends work before registration. Confirm with `structsd query structs address [address]` returning a `playerId` other than `1-0`.
 - **"insufficient resources"** — Check player Alpha Matter balance.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.

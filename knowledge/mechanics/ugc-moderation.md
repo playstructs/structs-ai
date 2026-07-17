@@ -168,7 +168,23 @@ Validation (`ValidatePfpClientRenderAttributes` in `x/structs/types/ugc.go`):
 - The chain stores the **compacted** (whitespace-stripped) form, so padding the cap with whitespace does not help.
 - There is intentionally **no key/value schema** — contents stay flexible as the client render model evolves.
 
-Example acceptable value: `{"layers":["base","helm-3"],"palette":2}` (compacted on store). Rejected: `[1,2,3]` (array, not object), `"hello"` (scalar), a 600-byte object (over cap).
+Rejected: `[1,2,3]` (array, not object), `"hello"` (scalar), a 600-byte object (over cap).
+
+#### Official webapp client convention (the 5-layer avatar)
+
+The chain enforces no schema, but the official webapp uses a specific shape that roster UIs, guild directories, and dashboards should follow. The field is stored as a JSON **string** — integrators must `JSON.parse` it (consistent with the other "stringly" chain fields), and an empty string means the player never set one.
+
+The parsed object is five layer indices:
+
+```json
+{"head": 38, "neck": 5, "body": 47, "arms": 9, "background": 1}
+```
+
+- **Valid index ranges** (per the current official webapp asset set): `head` 1–87, `neck` 1–10, `body` 1–57, `arms` 1–34, `background` 1–6. These ranges are a **client convention, not chain-validated** — the chain accepts any well-formed JSON object, so renderers must clamp/guard out-of-range indices.
+- **Paint order** (back → front): `background`, `arms`, `body`, `neck`, `head`. The `head` layer paints last (on top).
+- **Asset path**: `/img/pfp/{part}/pfp_{part}_{index}.png` (verified in the webapp's `PfpViewerComponent`).
+
+The separate `pfp` string field is the plain profile-picture reference (a URI validated by `ValidatePfp`); `pfpClientRenderAttributes` is the composited-avatar recipe. A player may set either or both.
 
 ### Name uniqueness comparison
 
