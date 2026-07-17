@@ -12,7 +12,6 @@
 | query | Read-only operations to query game state |
 | transaction | Write operations to perform actions |
 | webapp | Web Application API endpoints (PHP/Symfony) |
-| modding | Cosmetic mod management and integration endpoints |
 
 ## Query Patterns
 
@@ -182,17 +181,3 @@ Base URL: `http://localhost:8080` (local) or `http://crew.oh.energy` (public Orb
 | struct-defender | [webapp/struct-defender.md](../api/webapp/struct-defender.md) | `all`, `defending`, `protected` |
 | substation | [webapp/substation.md](../api/webapp/substation.md) | `all`, `owner` |
 
----
-
-## Modding API Endpoints
-
-Base URL: `http://localhost:8080`
-
-| ID | Method | Path | Entity | Schema | Protocol |
-|----|--------|------|--------|--------|----------|
-| cosmetic-mod-list | GET | `/api/cosmetic-mods` | CosmeticMod | [responses.md](../schemas/responses.md#cosmeticmodlistresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-1) |
-| cosmetic-mod-get | GET | `/api/cosmetic-mods/{modId}` | CosmeticMod | [responses.md](../schemas/responses.md#cosmeticmodresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-1) |
-| cosmetic-mod-install | POST | `/api/cosmetic-mods/install` | CosmeticMod | [responses.md](../schemas/responses.md#cosmeticmodinstallresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-3) |
-| cosmetic-mod-validate | POST | `/api/cosmetic-mods/validate` | CosmeticMod | [responses.md](../schemas/responses.md#cosmeticmodvalidateresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-3) |
-| cosmetic-struct-type | GET | `/api/cosmetic/struct-type/{structTypeId}` | StructType | [responses.md](../schemas/responses.md#structtypecosmeticresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-1) |
-| struct-type-with-cosmetics | GET | `/api/struct-type/{structTypeId}/full` | StructType | [responses.md](../schemas/responses.md#structtypefullresponse) | [cosmetic-mod-integration.md](../protocols/cosmetic-mod-integration.md#pattern-1) |

@@ -149,6 +149,7 @@ Reference material in `knowledge/`.
 
 ### Infrastructure (Advanced)
 - [`guild-stack`](knowledge/infrastructure/guild-stack.md) -- Guild Stack architecture, services, data flow
+- [`structs-desktop`](knowledge/infrastructure/structs-desktop.md) -- Desktop app + embedded MCP: tools, prompts, resources, subsystems
 - [`database-schema`](knowledge/infrastructure/database-schema.md) -- PostgreSQL tables, query patterns, grid gotcha
 
 ---
@@ -194,7 +195,7 @@ Auto-approved flags (only after commander approval; see [`SAFETY.md`](SAFETY.md)
 
 Full command list: `structsd tx structs --help` and `structsd query structs --help`
 
-If you're connected to the [`structs-desktop`](https://github.com/playstructs/structs-desktop) app, its embedded MCP server exposes these same game actions as tools (`structs_action`, `structs_query`, `structs_sequence`, and more). See [`TOOLS.md`](TOOLS.md) for the MCP interface and environment-specific configuration.
+If you're connected to the [`structs-desktop`](https://github.com/playstructs/structs-desktop) app, its embedded MCP server exposes these same game actions as tools (`structs_action`, `structs_intel`, `structs_sequence`, and more). See [`TOOLS.md`](TOOLS.md) for the MCP interface and environment-specific configuration.
 
 ---
 

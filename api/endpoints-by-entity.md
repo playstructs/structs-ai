@@ -113,10 +113,10 @@ Struct entity endpoints.
 |----|--------|------|------|-------------|
 | struct-by-id | GET | `/structs/struct/{id}` | Consensus | Get struct by ID |
 | webapp-struct-by-id | GET | `/api/struct/{struct_id}` | Webapp | Get struct by ID |
-| webapp-struct-by-planet | GET | `/api/struct/planet/{planet_id}` | Webapp | Get all structs on a planet |
+| webapp-struct-by-location | GET | `/api/struct/list/location/{location_id}/page/{page}` | Webapp | Get structs at a location (planet or fleet) |
+| webapp-struct-by-owner | GET | `/api/struct/list/owner/{owner}/page/{page}` | Webapp | Get structs by owner |
+| webapp-struct-by-player | GET | `/api/struct/player/{player_id}` | Webapp | Get a player's structs |
 | webapp-struct-types | GET | `/api/struct/type` | Webapp | Get all struct types |
-| cosmetic-struct-type | GET | `/api/cosmetic/struct-type/{structTypeId}` | Webapp | Get cosmetic data for struct type |
-| struct-type-with-cosmetics | GET | `/api/struct-type/{structTypeId}/full` | Webapp | Get struct type with cosmetic overrides merged |
 
 ### Dependencies
 

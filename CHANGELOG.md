@@ -5,6 +5,40 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-07-17
+
+Update for **structsd `v0.20.0`** (commit `a976768`), the latest **structs-webapp** (`0ece596`), and the **structs-desktop** embedded MCP (README at `ec79ab3`). Docs describe current reality; only this changelog records history.
+
+### Added — structsd v0.20.0 gameplay
+
+- **`struct-trash` action** — destroys a *built* struct; irreversible; consumes build charge (`8`) via its handler (distinct from `struct-build-cancel`, which only cancels an unfinished build). Added to [`action-index.md`](reference/action-index.md), [`action-quick-reference.md`](reference/action-quick-reference.md), [`schemas/actions.md`](schemas/actions.md), [`schemas/requests.md`](schemas/requests.md), the [`permissions.md`](knowledge/mechanics/permissions.md) handler table + `PermPlay` list, [`transactions.md`](knowledge/mechanics/transactions.md), [`building.md`](knowledge/mechanics/building.md), [`conventions.md`](.cursor/skills/conventions.md), the [`structs-building`](.cursor/skills/structs-building/SKILL.md) skill, and classified as a Tier-2 irreversible action in [`SAFETY.md`](SAFETY.md).
+- **Batch deactivate (`MsgStructDeactivateBatch`)** — deactivate up to 65 structs in one message, costs no charge. Added across the same action catalogs and permissions/charge tables.
+- **Allocation actions** — `allocation-create`/`allocation-update`/`allocation-delete`/`allocation-transfer` added to the action catalogs and request schema; `MsgAllocationUpdate` (no false `capacity_exceeded` on increase) noted in [`integration-notes.md`](api/integration-notes.md).
+
+### Changed — structsd v0.20.0 corrections
+
+- **`struct-deactivate` no longer requires the player online** (it is a recovery action, like reactor infuse); only `activate` requires online + charge + power. Reconciled in [`schemas/actions.md`](schemas/actions.md), [`action-quick-reference.md`](reference/action-quick-reference.md), and [`state-assessment.md`](awareness/state-assessment.md).
+- **Jamming Satellite interceptor logic** — the low-orbit ballistic interceptor network evades only *guided* ordnance regardless of ambit (unguided passes through); the "space-only ambit" framing was removed everywhere ([`combat.md`](knowledge/mechanics/combat.md), [`struct-types.md`](knowledge/entities/struct-types.md), [`planet.md`](knowledge/mechanics/planet.md), [`glossary.md`](reference/glossary.md), the [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) skill). Attack resolution reworded so all defender counters resolve *before* any block and a destroyed attacker deals no damage.
+
+### Added — structs-desktop MCP
+
+- **New [`structs-desktop.md`](knowledge/infrastructure/structs-desktop.md)** documents the embedded desktop MCP (`http://127.0.0.1:8420/mcp` + bearer token): 13 tools, 6 prompts, `structs://` compendium resources, and subsystems (GPU/CPU hashing, perception/simulator, policy engine, combat mode, virtual players, tx-signing bridge, agent-driven UI, notifications, guild config). [`TOOLS.md`](TOOLS.md) slimmed to a connect + tool-list pointer; the deprecated `structs_query`/`structs_ui` names replaced with `structs_intel`/`structs_board` across awareness docs; the stale port-3000 note in [`SAFETY.md`](SAFETY.md) corrected.
+
+### Removed — phantom cosmetic-mod subsystem
+
+- **Deleted the fabricated cosmetic/L-mod API** — it had no basis in the webapp source. Removed `api/cosmetic-mods.md`, the `schemas/cosmetic-*.md`, `protocols/cosmetic-mod-*.md`, `examples/cosmetic-mods/`, and the cosmetic error examples, plus every reference in `schemas/requests.md`/`responses.md`, `reference/endpoint-index.md`, `api/endpoints-by-entity.md`, `api/error-codes.md`, `patterns/caching.md`, `reference/api-quick-reference.md`, `SITEMAP.md`, and `sitemap.xml`. The real chain fields (`defaultCosmeticName`, `defaultCosmeticModelNumber`, `class`) are retained.
+
+### Changed — webapp API drift (all)
+
+- **Removed the phantom `/api/struct/planet/{planet_id}`** — the real surface is `/api/struct/list/location/{location_id}/page/{page}` and `/api/struct/player/{player_id}`. Repointed in [`struct.md`](api/webapp/struct.md), [`endpoints.md`](api/endpoints.md), [`endpoints-by-entity.md`](api/endpoints-by-entity.md), [`webapp-api-protocol.md`](protocols/webapp-api-protocol.md), and the planet-monitor workflow.
+- **`struct_type` columns** — documented `generating_rate`/`generating_rate_p` and `primary/secondary_weapon_armour_piercing` in [`struct.md`](api/webapp/struct.md).
+- **PFP fields** — added `pfp` / `pfp_client_render_attributes` to the player response ([`player.md`](api/webapp/player.md), [`responses.md`](schemas/responses.md)); flattened the stale nested `{player, guild, stats}` player shape to the real flat SQL-column object in `player.md`, `responses.md`, and `webapp-api-protocol.md`.
+- **New planet-activity categories** — `block_raid_start` and `shield_change` added to [`planet-activity.md`](api/webapp/planet-activity.md).
+- **`banned-word` is not paginated** — `/api/banned-word/all` (no `/page/{page}`) corrected in [`banned-word.md`](api/webapp/banned-word.md), [`webapp-api-protocol.md`](protocols/webapp-api-protocol.md), [`api-quick-reference.md`](reference/api-quick-reference.md), and [`endpoint-quick-lookup.md`](reference/endpoint-quick-lookup.md).
+- **Player last-action key** — the response key is `last_action_block_height` (LCD numeric string), corrected in [`endpoints.md`](api/endpoints.md), [`player.md`](api/webapp/player.md), and `BlockHeightResponse` in [`responses.md`](schemas/responses.md).
+- **Removed the phantom `/api/pfp` public route** and fixed the public-prefix list in [`integration-notes.md`](api/integration-notes.md) (public = `/api/auth/`, `/api/guild/this`, `/api/timestamp`, `/api/setting`).
+- **New endpoint docs** — [`work.md`](api/webapp/work.md) (`/api/work/*`), [`player-address.md`](api/webapp/player-address.md) (the 9 `/api/player-address/*` + 2 `/api/auth/player-address*` routes), and `/api/fleet/player/{player_id}` in [`fleet.md`](api/webapp/fleet.md). Registered in [`api/webapp/README.md`](api/webapp/README.md).
+
 ## [1.18.0] - 2026-07-07
 
 GRASS streaming update, **verified against structs-pg `f90cfce` and structs-webapp `7c692a0`** (both dated 2026-07-07) plus the surrounding structs-pg migrations. The grid and planet event subjects now carry the owning player id, which changes subscription patterns; also folds in a few secondary Guild-Stack data-shape changes.

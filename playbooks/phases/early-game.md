@@ -20,21 +20,21 @@ Follow this sequence in phases. **Initiate everything you can upfront** — the 
 
 ### Phase 1: Resource Pipeline (initiate immediately)
 
-1. **Command Ship** (type 1, space) — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. (~17 min to D=3, 50 kW)
+1. **Command Ship** (type 1, space) — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. (~17 min to D=3, 50 W)
 
-2. **Ore Extractor** (type 14, land) — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3, 500 kW)
+2. **Ore Extractor** (type 14, land) — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3, 500 W)
 
-3. **Ore Refinery** (type 15, land) — Initiate alongside the Extractor. Both planet builds age simultaneously. (~57 min to D=3, 500 kW)
+3. **Ore Refinery** (type 15, land) — Initiate alongside the Extractor. Both planet builds age simultaneously. (~57 min to D=3, 500 W)
 
 ### Phase 2: Defense (initiate as soon as Phase 1 is initiated)
 
 Protect your base before it produces anything worth stealing.
 
-4. **Orbital Shield Generator** (type 16, space) — Reduces incoming raid damage. (~58 min to D=3, 200 kW)
+4. **Orbital Shield Generator** (type 16, space) — Reduces incoming raid damage. (~58 min to D=3, 200 W)
 
-5. **Jamming Satellite** (type 17, space) — Disrupts enemy targeting. (~3.7 hr to D=3, 600 kW)
+5. **Jamming Satellite** (type 17, space) — Disrupts enemy targeting. (~3.7 hr to D=3, 600 W)
 
-6. **Planetary Defense Cannon** (type 19, land) — Active defense against raiders. 1 per player limit. (~3.7 hr to D=3, 600 kW)
+6. **Planetary Defense Cannon** (type 19, land) — Active defense against raiders. 1 per player limit. (~3.7 hr to D=3, 600 W)
 
 ### Phase 3: Fleet (initiate while Phase 2 ages)
 
@@ -42,20 +42,20 @@ Build one of every fleet type. This gives coverage across all four ambits and ma
 
 | Ambit | Struct | Type ID | D=3 Wait | Draw |
 |-------|--------|---------|----------|------|
-| Space | Battleship | 2 | ~1 hr | 135 kW |
-| Space | Starfighter | 3 | ~21 min | 100 kW |
-| Space | Frigate | 4 | ~37 min | 75 kW |
-| Air | Pursuit Fighter | 5 | ~18 min | 60 kW |
-| Air | Stealth Bomber | 6 | ~37 min | 125 kW |
-| Air | High Altitude Interceptor | 7 | ~38 min | 125 kW |
-| Land | Mobile Artillery | 8 | ~25 min | 75 kW |
-| Land | Tank | 9 | ~19 min | 75 kW |
-| Land | SAM Launcher | 10 | ~37 min | 75 kW |
-| Water | Cruiser | 11 | ~42 min | 110 kW |
-| Water | Destroyer | 12 | ~49 min | 100 kW |
-| Water | Submersible | 13 | ~37 min | 125 kW |
+| Space | Battleship | 2 | ~1 hr | 135 W |
+| Space | Starfighter | 3 | ~21 min | 100 W |
+| Space | Frigate | 4 | ~37 min | 75 W |
+| Air | Pursuit Fighter | 5 | ~18 min | 60 W |
+| Air | Stealth Bomber | 6 | ~37 min | 125 W |
+| Air | High Altitude Interceptor | 7 | ~38 min | 125 W |
+| Land | Mobile Artillery | 8 | ~25 min | 75 W |
+| Land | Tank | 9 | ~19 min | 75 W |
+| Land | SAM Launcher | 10 | ~37 min | 75 W |
+| Water | Cruiser | 11 | ~42 min | 110 W |
+| Water | Destroyer | 12 | ~49 min | 100 W |
+| Water | Submersible | 13 | ~37 min | 125 W |
 
-All fleet builds complete within ~1 hour. Total fleet draw: 1,230 kW.
+All fleet builds complete within ~1 hour. Total fleet draw: 1,230 W.
 
 **As soon as fleet structs are online, assign defenders to your Command Ship immediately.** Use `struct-defense-set [defender-id] [command-ship-id]` for each defender. An undefended Command Ship can be destroyed in just a few attacks — and without it, your fleet is inoperable until you rebuild one. Prioritize at least one defender per ambit.
 
@@ -69,7 +69,7 @@ All fleet builds complete within ~1 hour. Total fleet draw: 1,230 kW.
 
 ### Total Power Budget
 
-All early-game structs activated require ~3,630 kW. Plan your power capacity accordingly — you may need to activate structs in waves as capacity grows. Prioritize: resource structs first, then defense, then fleet.
+All early-game structs activated require ~3,630 W. Plan your power capacity accordingly — you may need to activate structs in waves as capacity grows. Prioritize: resource structs first, then defense, then fleet.
 
 ---
 

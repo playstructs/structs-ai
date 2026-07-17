@@ -60,7 +60,7 @@
 | getPlayerOreStats | webapp-player-ore-stats | GET | `/api/player/{player_id}/ore/stats` | `http://localhost:8080/api/player/{player_id}/ore/stats` |
 | getTimestamp | webapp-timestamp | GET | `/api/timestamp` | `http://localhost:8080/api/timestamp` |
 | getSettings | webapp-setting-all | GET | `/api/setting` | `http://localhost:8080/api/setting` |
-| getBannedWords | webapp-banned-word-all | GET | `/api/banned-word/all/page/{page}` | `http://localhost:8080/api/banned-word/all/page/1` |
+| getBannedWords | webapp-banned-word-all | GET | `/api/banned-word/all` | `http://localhost:8080/api/banned-word/all` |
 | getStatRange | webapp-stat-range-by-object | GET | `/api/stat/{metric}/object/{object_key}/range/page/{page}?start_time=&end_time=` | `http://localhost:8080/api/stat/power/object/1-11/range/page/1?start_time=...&end_time=...` |
 
 ### Catalog read shortcuts

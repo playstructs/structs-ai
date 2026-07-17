@@ -12,13 +12,13 @@
 |----------|---------|
 | construction | MsgStructBuild, MsgStructBuildInitiate, MsgStructBuildComplete |
 | combat | MsgStructAttack, MsgPlanetRaidComplete |
-| resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
+| resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgAllocationCreate, MsgAllocationUpdate, MsgAllocationDelete, MsgAllocationTransfer, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
 | economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse |
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
 | guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
 | ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgPlayerUpdatePfpClientRenderAttributes, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
-| struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
+| struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructDeactivateBatch, MsgStructTrash, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
 ## Common Requirements
 
@@ -1216,9 +1216,11 @@ User-generated content (name and pfp) updates. All seven messages are part of th
 
 | Requirement | Details |
 |-------------|---------|
+| permission | Caller holds `PermPlay` on the struct (owner passes automatically) |
 | structBuilt | true |
 | structOnline | true |
-| ownerOffline | Owner must be offline (halted) |
+
+Deactivate does **not** require the player to be online and costs no charge — it is a recovery action, so an overloaded (offline) player can always deactivate structs to get back under capacity.
 
 **Effects**:
 - Decrements StructsLoad by PassiveDraw
@@ -1232,6 +1234,79 @@ User-generated content (name and pfp) updates. All seven messages are part of th
     "messages": [
       {
         "@type": "/structs.structs.MsgStructDeactivate",
+        "creator": "structs1...",
+        "structId": "1-1"
+      }
+    ]
+  }
+}
+```
+
+### MsgStructDeactivateBatch
+
+- **ID**: `struct-deactivate-batch`
+- **Name**: Deactivate Structs (batch)
+- **Message Type**: `/structs.structs.MsgStructDeactivateBatch`
+- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+- **Description**: Deactivate multiple structs (up to 65) in a single transaction
+- **Verified**: true
+- **Code Reference**: `x/structs/keeper/msg_server_struct_deactivate_batch.go`
+- **Proto Reference**: `proto/structs/structs/tx.proto:776-781`
+
+**Required Fields**: `creator`, `structId` (a **list** of struct IDs)
+
+| Requirement | Details |
+|-------------|---------|
+| batchSize | 1..=65 (`MaxStructDeactivateBatchSize`); empty or duplicate IDs are rejected |
+| perStruct | Each struct must pass the same checks as `MsgStructDeactivate` (`PermPlay`, built, online) |
+
+The batch is validated in full before any struct is deactivated — if any struct is ineligible the whole transaction fails and nothing changes. Same effects as `MsgStructDeactivate`, applied to each struct. No charge cost, no player-online requirement.
+
+```json
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgStructDeactivateBatch",
+        "creator": "structs1...",
+        "structId": ["1-1", "1-2", "1-3"]
+      }
+    ]
+  }
+}
+```
+
+### MsgStructTrash
+
+- **ID**: `struct-trash`
+- **Name**: Trash Struct
+- **Message Type**: `/structs.structs.MsgStructTrash`
+- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+- **Description**: Permanently destroy a built struct you own. **Irreversible.**
+- **Verified**: true
+- **Code Reference**: `x/structs/keeper/msg_server_struct_trash.go`
+- **Proto Reference**: `proto/structs/structs/tx.proto:817-822`
+
+**Required Fields**: `creator`, `structId`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | Caller holds `PermPlay` on the struct (owner passes automatically) |
+| structNotDestroyed | The struct must not already be destroyed |
+| sufficientCharge | Owner charge >= structType.BuildCharge (trashing costs the same charge as building) |
+
+**Effects**:
+- Destroys the struct (frees its slot; same effect path as combat destruction)
+- Resets the owner's charge bar (`Discharge`)
+
+Use this to reclaim a slot occupied by an unwanted **built** struct. To abort an **unfinished** build instead, use `MsgStructBuildCancel`.
+
+```json
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgStructTrash",
         "creator": "structs1...",
         "structId": "1-1"
       }

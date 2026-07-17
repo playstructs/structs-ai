@@ -453,11 +453,11 @@ Response schema: `schemas/responses.md#WebappPlayerResponse`
 Response schema: `schemas/responses.md#BlockHeightResponse`
 
 ```json
-// Example response (envelope):
+// Example response (envelope; data is a single row, val is an LCD numeric string):
 {
   "success": true,
   "errors": {},
-  "data": { "height": 12345 }
+  "data": { "last_action_block_height": "12345" }
 }
 ```
 
@@ -602,7 +602,9 @@ Login body: `{address, signature, pubkey, guild_id, unix_timestamp}`; signed mes
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/struct/planet/{planet_id}` | Get structs on planet |
+| GET | `/api/struct/player/{player_id}` | Get a player's structs |
+| GET | `/api/struct/list/location/{location_id}/page/{page}` | Get structs at a location (planet or fleet) |
+| GET | `/api/struct/list/owner/{owner}/page/{page}` | Get structs by owner |
 | GET | `/api/struct/type` | Get struct types |
 | GET | `/api/struct/{struct_id}` | Get struct by ID |
 

@@ -187,7 +187,6 @@ Caching stores API responses locally to avoid redundant requests:
 ```json
 {
   "keys": {
-    "structTypeWithCosmetics": "struct-type-{id}-{language}-{guildId}",
     "playerWithGuild": "player-{id}-guild-{guildId}"
   }
 }
@@ -317,8 +316,7 @@ Caching stores API responses locally to avoid redundant requests:
 {
   "staticData": {
     "structTypes": 3600,
-    "gameConstants": 7200,
-    "structTypeCosmetics": 1800
+    "gameConstants": 7200
   }
 }
 ```

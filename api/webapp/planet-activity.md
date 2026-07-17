@@ -9,7 +9,7 @@
 
 ## Overview
 
-Per-planet activity log — raids, attacks, builds, defender changes, struct health updates, etc. Categories include `raid_status`, `struct_attack`, `struct_health`, `fleet_arrive`, `fleet_depart`, and others; see `.cursor/skills/structs-streaming/SKILL.md` for the GRASS-side category names. Use this REST surface for historical browsing; use GRASS for real-time reaction.
+Per-planet activity log — raids, attacks, builds, defender changes, struct health updates, etc. Categories include `raid_status`, `block_raid_start`, `shield_change`, `struct_attack`, `struct_health`, `fleet_arrive`, `fleet_advance`, `fleet_depart`, and others; see `.cursor/skills/structs-streaming/SKILL.md` for the GRASS-side category names. `block_raid_start` records the block height at which a raid began, and `shield_change` records planet shield adjustments. Use this REST surface for historical browsing; use GRASS for real-time reaction.
 
 ---
 
@@ -52,7 +52,7 @@ Per-planet activity log — raids, attacks, builds, defender changes, struct hea
 
 | Name | Type | Required | Format | Description |
 |------|------|----------|--------|-------------|
-| `category` | string | Yes | -- | Activity category (e.g. `raid_status`, `struct_attack`, `struct_health`, `fleet_arrive`, `fleet_depart`) |
+| `category` | string | Yes | -- | Activity category (e.g. `raid_status`, `block_raid_start`, `shield_change`, `struct_attack`, `struct_health`, `fleet_arrive`, `fleet_advance`, `fleet_depart`) |
 | `page` | integer | Yes | `\d+` | Page number |
 
 ---

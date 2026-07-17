@@ -30,11 +30,13 @@ These existed before the catalog read layer was added. They tend to return enric
 
 - [`auth.md`](auth.md) — `/api/auth/*`
 - [`player.md`](player.md) — `/api/player/{player_id}/*` plus `/api/player/list/*`
+- [`player-address.md`](player-address.md) — `/api/player-address/*` and `/api/auth/player-address*`
 - [`planet.md`](planet.md) — `/api/planet/{planet_id}/*` (shield, raid) plus `/api/planet/list/*`
 - [`guild.md`](guild.md) — `/api/guild/*` (directory, roster, power-stats, etc.) plus `/api/guild/list/*`
-- [`struct.md`](struct.md) — `/api/struct/*` (player, planet, type, single struct) plus `/api/struct/list/*`
+- [`struct.md`](struct.md) — `/api/struct/*` (player, type, single struct) plus `/api/struct/list/*`
 - [`ledger.md`](ledger.md) — `/api/ledger/{tx_id}` and `/api/ledger/player/*` plus `/api/ledger/list/*`
 - [`infusion.md`](infusion.md) — `/api/infusion/player/*` plus `/api/infusion/list/*`
+- [`work.md`](work.md) — `/api/work/*` (outstanding proof-of-work jobs)
 - [`system.md`](system.md) — `/api/timestamp` and other system endpoints
 
 ### Catalog read endpoints (one entity per file)
@@ -44,9 +46,9 @@ Uniform paginated reads under `/api/{entity}[/{filter}]/page/{page}`. See `proto
 - [`address-tag.md`](address-tag.md) — `/api/address-tag/*`
 - [`agreement.md`](agreement.md) — `/api/agreement/*`
 - [`allocation.md`](allocation.md) — `/api/allocation/*`
-- [`banned-word.md`](banned-word.md) — `/api/banned-word/all/page/{page}`
+- [`banned-word.md`](banned-word.md) — `/api/banned-word/all`
 - [`defusion.md`](defusion.md) — `/api/defusion/*`
-- [`fleet.md`](fleet.md) — `/api/fleet/list/*`
+- [`fleet.md`](fleet.md) — `/api/fleet/list/*` plus `/api/fleet/player/{player_id}`
 - [`grid.md`](grid.md) — `/api/grid/*`
 - [`guild-membership-application.md`](guild-membership-application.md) — `/api/guild-membership-application/*`
 - [`permission.md`](permission.md) — `/api/permission/*`

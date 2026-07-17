@@ -125,7 +125,7 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
 {
   "request": {
     "method": "GET",
-    "url": "/api/player/1",
+    "url": "/api/player/1-11",
     "headers": {
       "Accept": "application/json"
     }
@@ -136,14 +136,24 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
       "success": true,
       "errors": {},
       "data": {
-        "player": {...},
-        "stats": {...},
-        "planets": [...]
+        "id": "1-11",
+        "primary_address": "structs1...",
+        "guild_id": "0-1",
+        "guild_name": "GuildName",
+        "substation_id": "4-1",
+        "planet_id": "2-1",
+        "fleet_id": "9-11",
+        "fleet": {"...": "row_to_json of the fleet"},
+        "username": "PlayerName",
+        "pfp": "...",
+        "pfp_client_render_attributes": "..."
       }
     }
   }
 }
 ```
+
+> **`data` is a single flat object**, not nested `{player, stats, planets}`. Its keys are the SQL columns returned by `PlayerManager::getPlayer` (snake_case). For per-player ore/planet/raid figures, call the dedicated `/api/player/{player_id}/*` endpoints listed below.
 
 **Related Endpoints**:
 - `GET /api/player/{player_id}/ore/stats` - Ore statistics
@@ -254,7 +264,8 @@ Guild IDs are type `0` (`^0-[0-9]+$`), e.g. `0-1`. `GET /api/guild/{guild_id}` r
 ```
 
 **Related Endpoints**:
-- `GET /api/struct/planet/{planet_id}` - Structs on planet
+- `GET /api/struct/list/location/{location_id}/page/{page}` - Structs at a location (planet or fleet)
+- `GET /api/struct/player/{player_id}` - A player's structs
 - `GET /api/struct/type` - Struct types
 
 ### Pattern 5: Ledger Information
@@ -319,7 +330,7 @@ The page endpoint returns a **flat array** of ledger rows in `data` (page size 1
 
 ### Pattern 7: Catalog Read
 
-**Use Case**: Iterate or scan rows for any catalog entity (player, planet, struct, allocation, agreement, agreement, defusion, fleet, grid, infusion, ledger, permission, permission-guild-rank, planet-activity, planet-attribute, provider, reactor, struct-attribute, struct-defender, substation, address-tag, banned-word, guild-membership-application).
+**Use Case**: Iterate or scan rows for any catalog entity (player, planet, struct, allocation, agreement, defusion, fleet, grid, infusion, ledger, permission, permission-guild-rank, planet-activity, planet-attribute, provider, reactor, struct-attribute, struct-defender, substation, address-tag, work, guild-membership-application). A few list reads are **not** paginated and return the full set in one call (e.g. `/api/banned-word/all`, `/api/fleet/player/{player_id}`, `/api/work/player/{player_id}`).
 
 **Format**: `GET /api/{entity}[/{filter_name}/{filter_value}]/page/{page}`
 
@@ -329,7 +340,7 @@ Conventions:
 - Page size is **fixed at 100** (`PaginationLimits::DEFAULT`); it is not client-configurable and there are no `offset`/`limit` query params.
 - Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
 - To detect more pages: if `data.length === 100`, fetch `page + 1`; if `< 100` (or empty), you have reached the end.
-- Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all/page/1`, `/api/permission-guild-rank/object/{object_id}/page/1`).
+- Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all`, `/api/permission-guild-rank/object/{object_id}/page/1`).
 - For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
 
 **Example**:
@@ -551,7 +562,7 @@ The webapp does **not** expose `GET /api/reactor/{id}` or `GET /api/substation/{
     },
     "bannedWords": {
       "ttl": 300,
-      "endpoint": "/api/banned-word/all/page/1"
+      "endpoint": "/api/banned-word/all"
     }
   }
 }

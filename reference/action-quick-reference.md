@@ -41,8 +41,12 @@ This guide provides a quick reference for all game actions available to AI agent
 **Activate/Deactivate**:
 - `struct-activate` - Activate struct (bring online)
 - `struct-deactivate` - Deactivate struct (take offline)
+- `struct-deactivate-batch` - Deactivate up to 65 structs in one transaction
 - `struct-stealth-activate` - Activate with stealth
 - `struct-stealth-deactivate` - Deactivate stealth
+
+**Trash**:
+- `struct-trash` - Permanently destroy a built struct you own (costs `buildCharge`, irreversible)
 
 **Move/Defense**:
 - `struct-move` - Move struct to new location
@@ -50,10 +54,10 @@ This guide provides a quick reference for all game actions available to AI agent
 - `struct-defense-clear` - Clear defense mode
 
 **Requirements**:
-- Player online
-- Sufficient charge (for activate; ActivateCharge is 1 for all struct types)
-- Sufficient power (for activate)
-- Valid location (for move)
+- `struct-activate` requires the player online, sufficient charge (`activateCharge` = 2), and sufficient power
+- `struct-deactivate` / `struct-deactivate-batch` do **not** require the player online (recovery actions) and cost no charge; the struct(s) must be built and currently online
+- `struct-trash` requires charge equal to the type's `buildCharge` (8) and resets the charge bar; the struct must be built and not already destroyed
+- `struct-move` requires a valid location
 
 ---
 

@@ -62,6 +62,7 @@ Get player information from web application.
     "fleet": { "...": "row_to_json of the fleet" },
     "username": "PlayerName",
     "pfp": "...",
+    "pfp_client_render_attributes": "...",
     "alpha": "1000000",
     "ore": "1000",
     "load": "5"
@@ -70,6 +71,9 @@ Get player information from web application.
 ```
 
 Guild fields are type 0 (`0-1`). Always unwrap `data` after checking `success`; treat keys as SQL column names.
+
+- **`pfp`** is the raw profile-picture UGC value (chain `structs.player.pfp`).
+- **`pfp_client_render_attributes`** carries client-side render hints for the PFP. Both are returned by every bespoke player query in `PlayerManager`.
 
 ---
 
@@ -91,13 +95,13 @@ Get last action block height for player.
 
 **Request**: `GET http://localhost:8080/api/player/1-11/action/last/block/height`
 
-**Response** (envelope):
+**Response** (envelope; `data` is a single row, `last_action_block_height` is an LCD numeric string):
 
 ```json
 {
   "success": true,
   "errors": {},
-  "data": { "height": 12345 }
+  "data": { "last_action_block_height": "12345" }
 }
 ```
 
@@ -237,22 +241,6 @@ Catalog list of players connected to a substation.
 
 ## Response Schema
 
-Player responses include reactor staking summary:
-
-```json
-{
-  "player": {
-    "id": "1-11",
-    "username": "PlayerName",
-    ...
-  },
-  "reactorStaking": {
-    "totalStaked": "...",
-    "delegationStatus": "active",
-    "reactors": [...]
-  },
-  ...
-}
-```
+The bespoke `/api/player/{player_id}` response is a **single flat object** (not nested `{player, guild, stats}`); its keys are the SQL columns selected by `PlayerManager::getPlayer` — player identity plus resolved `guild_*`, `substation_id`, `planet_id`, `fleet` (a `row_to_json` sub-object), `username`, `pfp`, `pfp_client_render_attributes`, and balance columns. The column set may grow over releases; treat unknown keys as forward-compatible.
 
 The `/api/player/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke `/api/player/{player_id}` endpoints also use the `{ "success", "errors", "data" }` envelope; their `data` holds the SQL column names from the backing query (snake_case). See `protocols/webapp-api-protocol.md`.

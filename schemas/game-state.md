@@ -367,7 +367,7 @@ StructTypes are static definitions loaded from genesis/config. They define the p
 |-------|------|-------------|
 | id | string | Struct type identifier (integer as string, e.g., '1'). Note: uses regular integers, not 'type-index' format. |
 | type | string | Struct type name (e.g., 'Command Ship', 'Miner') |
-| class | string | Struct class identifier. Used for cosmetic mod linking. |
+| class | string | Struct class identifier. |
 | classAbbreviation | string | Abbreviated class name (e.g., 'CMD Ship') |
 | defaultCosmeticModelNumber | string | Default cosmetic model number (e.g., 'ST-21') |
 | defaultCosmeticName | string | Default cosmetic name (e.g., 'Spearpoint') |

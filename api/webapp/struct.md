@@ -12,7 +12,6 @@
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
 | GET | `/api/struct/player/{player_id}` | Get structs by player ID | Yes |
-| GET | `/api/struct/planet/{planet_id}` | Get structs on planet | Yes |
 | GET | `/api/struct/type` | Get struct types | Yes |
 | GET | `/api/struct/{struct_id}` | Get struct by ID | Yes |
 | GET | `/api/struct/list/all/page/{page}` | Catalog list of every struct | Yes |
@@ -71,50 +70,6 @@ Get structs by player ID.
 
 ---
 
-### GET `/api/struct/planet/{planet_id}`
-
-Get structs on planet.
-
-- **ID**: `webapp-struct-by-planet`
-- **Response Schema**: `schemas/entities.md#Struct`
-- **Content Type**: `application/json`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `planet_id` | string | Yes | planet-id | Planet identifier |
-
-#### Example
-
-**Request**: `GET http://localhost:8080/api/struct/planet/2-1`
-
-**Response** (envelope; flat array of snake_case struct rows):
-
-```json
-{
-  "success": true,
-  "errors": {},
-  "data": [
-    {
-      "id": "5-1",
-      "type": 14,
-      "owner": "1-11",
-      "location_type": "planet",
-      "location_id": "2-1",
-      "operating_ambit": "space",
-      "slot": 0,
-      "is_destroyed": false,
-      "health": 100,
-      "status": 1,
-      "defending_struct_ids": []
-    }
-  ]
-}
-```
-
----
-
 ### GET `/api/struct/type`
 
 Get struct types.
@@ -137,6 +92,10 @@ Get struct types.
     {
       "id": 14,
       "name": "Command Ship",
+      "generating_rate": "0",
+      "generating_rate_p": "0",
+      "primary_weapon_armour_piercing": false,
+      "secondary_weapon_armour_piercing": false,
       "cheatsheet_details": "...",
       "cheatsheet_extended_details": "..."
     }
@@ -288,17 +247,24 @@ Destroyed structs are filtered out of responses. The `is_destroyed` field is use
 
 ### Struct Type Response
 
-Struct type responses include cheatsheet fields (verified via `SELECT * FROM struct_type`):
+Struct type responses include cheatsheet fields plus the power/weapon columns (verified via `SELECT * FROM struct_type`):
 
 ```json
 {
   "id": 14,
   "name": "Command Ship",
+  "generating_rate": "0",
+  "generating_rate_p": "0",
+  "primary_weapon_armour_piercing": false,
+  "secondary_weapon_armour_piercing": false,
   "cheatsheet_details": "...",
   "cheatsheet_extended_details": "...",
   ...
 }
 ```
+
+- **`generating_rate`** and **`generating_rate_p`** are LCD numeric strings. `generating_rate_p` is the higher-precision passive-generation column added alongside the original `generating_rate` (see [api/integration-notes.md](../integration-notes.md)).
+- **`primary_weapon_armour_piercing`** / **`secondary_weapon_armour_piercing`** are booleans indicating whether each weapon ignores armour mitigation.
 
 **See**: `reviews/webapp-review-findings.md` for code review verification
 

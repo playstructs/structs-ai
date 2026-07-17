@@ -3,7 +3,7 @@
 **Version**: 1.0.0  
 **Purpose**: Identifying dangers before they hit. How to set up monitoring and what to watch.
 
-> Tool names below are from the `structs-desktop` MCP catalog (see [`TOOLS.md`](../TOOLS.md)): `structs_events` is the long-poll feed for raids/attacks/fleet moves; `structs_intel` covers scouting, planet history, valid targets, and power forecasts; `structs_query` looks up any single entity (named in the Check column); `structs_action` runs preflight checks.
+> Tool names below are from the `structs-desktop` MCP catalog (see [`TOOLS.md`](../TOOLS.md)): `structs_events` is the long-poll feed for raids/attacks/fleet moves; `structs_intel` covers scouting, planet history, valid targets, and power forecasts, and looks up any single entity via its `query` mode (named in the Check column); `structs_action` runs preflight checks.
 
 ---
 
@@ -17,7 +17,7 @@
 |---------|----------|-----------|
 | Planet activity | `structs_intel` | Every 5–10 min during active play |
 | Fleet arrivals | Subscribe to `structs.planet.{id}` (NATS) | Real-time |
-| Nearby players | `structs_intel` + `structs_query` | When scouting |
+| Nearby players | `structs_intel` + `structs_intel` | When scouting |
 
 **Signals**: `fleet_arrive`, `fleet_advance` events. Unknown fleet at your planet = potential raid.
 
@@ -29,7 +29,7 @@
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
-| Stored ore | `structs_query` (Ore Bunker, Miner) | Any > 0 is exposure |
+| Stored ore | `structs_intel` (Ore Bunker, Miner) | Any > 0 is exposure |
 | Planet activity | `structs_intel` | Recent raids, attacks |
 
 **Rule**: Refine immediately. Use `struct-ore-refinery-complete` as soon as ore is available. Zero unrefined ore = nothing to steal.
@@ -42,7 +42,7 @@
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
-| Power headroom | `structs_query` | `availablePower < 20%` of total capacity |
+| Power headroom | `structs_intel` | `availablePower < 20%` of total capacity |
 | Pending structs | `structs_intel` | Structs in "building" state |
 
 **Signals**: Building struct completing, reactor defusion, agreement expiring. Use `structs_intel` before any load change.
@@ -55,8 +55,8 @@
 
 | Monitor | MCP Tool | What to Watch |
 |---------|----------|---------------|
-| Guild relations | `structs_query` | Hostile guilds, war status |
-| Guild power | `structs_query` | Member count, capacity changes |
+| Guild relations | `structs_intel` | Hostile guilds, war status |
+| Guild power | `structs_intel` | Member count, capacity changes |
 | Planet activity | `structs_intel` | Raids on guild planets |
 
 ---
@@ -67,8 +67,8 @@
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
-| Planet ore | `structs_query` | Remaining ore vs `maxOre` |
-| Miner output | `structs_query` (Miner) | Production rate |
+| Planet ore | `structs_intel` | Remaining ore vs `maxOre` |
+| Miner output | `structs_intel` (Miner) | Production rate |
 
 **Action**: Plan exploration when planet nears empty. Must empty current planet (0 ore) before exploring.
 
@@ -78,8 +78,8 @@
 
 ### Periodic Checks (Every Game Loop)
 
-1. `structs_query` — Power, halted status
-2. `structs_query` (Ore Bunker) — Stored ore level
+1. `structs_intel` — Power, halted status
+2. `structs_intel` (Ore Bunker) — Stored ore level
 
 ### Event-Driven (Streaming)
 

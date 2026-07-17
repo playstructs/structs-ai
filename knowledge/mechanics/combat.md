@@ -243,8 +243,8 @@ damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on plane
 
 Two planetary defenses are wired to structs and affect combat: the Planetary Defense Cannon and the **low-orbit ballistic interceptor network** (provided by the Jamming Satellite struct).
 
-- **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade an incoming attack when the attacker is in air or space and the target struct is in land or water**. On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage (for example, a Battleship's space secondary against a land or water struct). It has no effect against water- or land-based attackers. Each additional interceptor on the planet compounds the evade chance.
-- **Guided weapons that miss repeatedly** are evading the **unit-level** `signalJamming` defense carried by the *target struct* (Battleship, Pursuit Fighter, Cruiser — 66% guided miss). This is a per-struct defense, not a planetary field. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
+- **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade incoming _guided_ ordnance aimed at a planetary struct sitting on its own planet**. **Source and target ambit are irrelevant** — the only requirements are that the target is a planetary (non-fleet) struct on its owner's planet and the incoming weapon is guided. **Unguided ordnance carries no guidance to jam and passes through untouched.** On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage. Each additional interceptor on the planet compounds the evade chance.
+- **Two layers protect against guided fire.** The target struct's own **unit-level** `signalJamming` defense (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first; only if that does not evade does the planetary interceptor network get its separate chance. So guided attacks on a defended planet face both the per-struct field and, for planetary targets, the planetary interceptor. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
 
 ---
 
@@ -255,17 +255,18 @@ When `struct-attack` is executed, the following steps occur in order per target:
 1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit. Verify target struct exists.
 2. **Stealth break** -- If the attacker has stealth active, it is instantly deactivated (attacking reveals position).
 3. **Evasion check** (per-target, not per-shot) -- Evaluate weapon control (guided/unguided) vs target defense type. If evaded, ALL shots against this target miss but counters still fire.
-4. **Per-shot loop** (inside `ResolveDefenders`) -- For each projectile:
-   - **Defender counter-attack** (once per `struct-attack` invocation) -- fires regardless of evasion. Only on the first shot where the defender hasn't already countered.
-   - **Block attempt** (only if NOT evaded) -- weapon must be blockable, defender must be in the same ambit as the target.
-   - **Damage** (only if NOT evaded) -- per-shot success rate applied, damage reduction from armor. Minimum damage after reduction is 1.
-5. **Target counter-attack** (once per `struct-attack` invocation) -- fires after all shots resolve. Destroyed targets cannot counter.
-6. **Early termination** -- If the attacker is destroyed mid-sequence, remaining targets do not process.
+4. **Defender resolution** (`ResolveDefenders`) -- all defenders are handled in a single pass, counters first:
+   - **Defender counter-attacks** -- every ready, in-range defender counters once (if the weapon is counterable), regardless of evasion. Counter damage from multiple defenders is **simultaneous** from the attacker's perspective.
+   - **Block is deferred** -- the first eligible defender in the **same ambit as the target** is remembered as the blocker, but the block is not applied until every counter has resolved. This is order-independent: an earlier-sorted defender can no longer absorb a volley from an attacker that a later defender's counter destroys.
+   - **Survival gate** -- if the combined counters destroy the attacker, no block occurs and the attack is fully neutralized.
+5. **Attack damage** (`ResolveAttackDamage`) -- the attacker's volley lands **only if it was not blocked and the attacker is still alive**. A **destroyed attacker deals no damage** — its entire volley is voided (a Bomber killed by a counter does not still bomb). If it fires, per-projectile success rates and armour reduction apply (minimum 1 damage per hit), unless the target evaded in step 3, in which case all shots miss.
+6. **Target counter-attack** (once per `struct-attack` invocation) -- fires after the volley resolves. Destroyed targets cannot counter.
+7. **Early termination** -- If the attacker is destroyed mid-sequence, remaining targets do not process.
 
 After **all targets** are resolved:
 
-7. **Recoil damage** -- Applied to attacker if it survived all shots
-8. **Planetary Defense Cannon auto-fire** -- If any target was a planetary struct, PDCs fire against the attacker
+8. **Recoil damage** -- Applied to attacker if it survived all shots
+9. **Planetary Defense Cannon auto-fire** -- If any target was a planetary struct, PDCs fire against the attacker
 
 ### Per-Projectile Events
 
@@ -278,6 +279,7 @@ In the live `struct_attack` event `detail`, the attacker context is **flat** at 
 - Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per target
 - Each struct counters at most once per `struct-attack` invocation, regardless of how many shots or targets
 - Counter-attacks fire even on evaded shots (defender counter) -- only block is suppressed by evasion
+- All defender counters resolve **before** any block; if they destroy the attacker, its volley deals no damage and no block is needed
 - If the attacker is destroyed during the target loop, remaining targets do not process
 - PDC fires against any attacker of planetary structs, not only during raids
 

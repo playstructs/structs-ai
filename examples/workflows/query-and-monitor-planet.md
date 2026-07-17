@@ -106,20 +106,21 @@ Response may be null if no active raid.
 
 ### 4. Get All Structs on Planet
 
-- **Endpoint**: `webapp-struct-by-planet`
+- **Endpoint**: `webapp-struct-list-by-location`
 - **Method**: `GET`
-- **URL**: `http://localhost:8080/api/struct/planet/{planet_id}`
+- **URL**: `http://localhost:8080/api/struct/list/location/{location_id}/page/{page}`
 
 **Parameters**:
 
 | Parameter | Value |
 |-----------|-------|
-| planet_id | `{{step1.extract.planet_id}}` |
+| location_id | `{{step1.extract.planet_id}}` |
+| page | `1` (fixed page size 100 — if `data.length === 100`, fetch the next page) |
 
 **Data Extraction**:
 
-- `structs` from `response.body`
-- `struct_count` from `response.body.length`
+- `structs` from `response.body.data`
+- `struct_count` from `response.body.data.length`
 
 **Expected Response**:
 

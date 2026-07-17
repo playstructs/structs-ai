@@ -41,7 +41,7 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 | 14 | Ore Extractor | `ore_mining_difficulty=14,000`, 1 per player |
 | 15 | Ore Refinery | `ore_refining_difficulty=28,000`, 1 per player |
 | 16 | Orbital Shield Generator | Shield contribution only (see below). Unlimited. |
-| 17 | Jamming Satellite | 1 per player. `noUnitDefenses`. Provides the planet's **low-orbit ballistic interceptor network** — a chance to **evade attacks from air/space attackers against the planet's land/water structs**. See [combat.md](../mechanics/combat.md#other-planetary-defense-structs) |
+| 17 | Jamming Satellite | 1 per player. Built in the space ambit. `noUnitDefenses`. Provides the planet's **low-orbit ballistic interceptor network** — a chance to **evade incoming _guided_ ordnance aimed at planetary structs on their own planet, regardless of attacker/target ambit**. Unguided ordnance passes through untouched. See [combat.md](../mechanics/combat.md#other-planetary-defense-structs) |
 | 20 | Field Generator | `generating_rate=2` (2 kW per gram), 1 per player. `armour` unit defense, damage reduction 1. |
 | 21 | Continental Power Plant | `generating_rate=5` (5 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
 | 22 | World Engine | `generating_rate=10` (10 kW per gram), 1 per player. `armour` unit defense, damage reduction 1 |
@@ -214,7 +214,6 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 - **Single type**: `GET /structs/struct_type/{id}` (id = integer, e.g. `1`, `2`)
 - **All types**: `GET /structs/struct_type`
 - **CLI**: `structsd query structs struct-type [id]` or `structsd query structs struct-type-all`
-- **With cosmetics**: Webapp `GET /api/struct-type/{id}/full?class={class}`
 
 ---
 

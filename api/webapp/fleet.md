@@ -19,6 +19,7 @@ Catalog list of fleets. For per-fleet detail use the chain query at `/structs/fl
 |--------|------|-------------|---------------|
 | GET | `/api/fleet/list/all/page/{page}` | List every fleet | Yes |
 | GET | `/api/fleet/list/location/{location_id}/page/{page}` | List fleets at a location | Yes |
+| GET | `/api/fleet/player/{player_id}` | Get a player's fleet | Yes |
 
 ---
 
@@ -44,6 +45,18 @@ List fleets currently at a location. The location is typically a planet ID (`2-x
 |------|------|----------|--------|-------------|
 | `location_id` | string | Yes | entity-id | Location object identifier (planet, etc.) |
 | `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+### GET `/api/fleet/player/{player_id}`
+
+Get the fleet belonging to a single player. Not paginated.
+
+- **ID**: `webapp-fleet-by-player`
+
+| Name | Type | Required | Format | Description |
+|------|------|----------|--------|-------------|
+| `player_id` | string | Yes | `\d+-\d+` | Player identifier (e.g. `1-5`) |
 
 ---
 

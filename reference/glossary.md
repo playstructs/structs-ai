@@ -158,7 +158,7 @@ Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram 
 ## J
 
 ### Jamming Satellite
-Planet struct (type 17, 1 per player, `noUnitDefenses`) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network). It does **not** zero guided weapons. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
+Planet struct (type 17, 1 per player, `noUnitDefenses`, built in the space ambit) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network), which evades incoming **guided** ordnance aimed at planetary structs on their own planet (ambit-irrelevant; unguided passes through). → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
 
 ## L
 
@@ -169,7 +169,7 @@ Power you've allocated **out** to others (distinct from `structsLoad`, the draw 
 Enum 5 / bitmask 32. The Command Ship's "current ambit" weapon flag — it attacks whatever ambit it currently occupies. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
 
 ### Low-orbit ballistic interceptor network
-A planetary defense (from the Jamming Satellite) that evades an incoming attack when the **attacker is in air/space and the target struct is in land/water**, flagged `evadedByPlanetaryDefenses`. → [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
+A planetary defense (from the Jamming Satellite) that evades incoming **guided** ordnance aimed at a planetary struct on its own planet, **regardless of attacker/target ambit**, flagged `evadedByPlanetaryDefenses`. Unguided ordnance passes through untouched. → [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
 
 ## M
 
@@ -241,7 +241,7 @@ The raid-winnable state: the defender's fleet is off-station, or their Command S
 A GRASS category fired when a planet's shield value changes. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
 
 ### Signal Jamming
-A unit defense (Battleship, Pursuit Fighter, Cruiser) that evades **guided** weapons 66% of the time. This — not the Jamming Satellite — is why guided weapons miss repeatedly. Beaten by unguided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
+A **unit-level** defense (Battleship, Pursuit Fighter, Cruiser) that evades **guided** weapons 66% of the time. It is a per-struct field, distinct from the planet-wide [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network) — both can cause guided fire to miss, and both stack against guided attacks on a defended planet. Beaten by unguided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
 
 ### Slots
 Build positions: **4 per ambit** (space/air/land/water) on **both** the planet and the fleet. A build reserves its slot immediately at initiate; counts are fixed (ore/power capacity scale separately). Fleet-category structs use fleet slots, planet-category use planet slots. → [building.md — Slots](../knowledge/mechanics/building.md#slots)

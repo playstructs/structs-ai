@@ -29,7 +29,7 @@ See [Async Operations](async-operations.md) for background job management.
 - Run [Threat Detection](threat-detection.md) — Fleet movements, ore exposure, power instability, hostile activity
 - Run [Opportunity Identification](opportunity-identification.md) — Undefended planets, agreements, weakened opponents
 
-**Tools**: `structs_dashboard` (fast self-snapshot), `structs_query` (any entity), `structs_intel` (scout, valid targets, simulate, forecasts), `structs_events` (activity feed)
+**Tools**: `structs_dashboard` (fast self-snapshot), `structs_intel` (any entity via `query`, plus scout, valid targets, simulate, forecasts), `structs_events` (activity feed)
 
 ### 2. Plan
 

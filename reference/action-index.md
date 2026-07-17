@@ -54,6 +54,8 @@ All construction actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 |----|------|-------------|----------|-------------|
 | struct-activate | Activate Struct | `/structs.structs.MsgStructActivate` | Yes | Activate a struct (bring online) |
 | struct-deactivate | Deactivate Struct | `/structs.structs.MsgStructDeactivate` | Yes | Deactivate a struct (take offline) |
+| struct-deactivate-batch | Deactivate Structs (batch) | `/structs.structs.MsgStructDeactivateBatch` | Yes | Deactivate up to 65 structs in one transaction |
+| struct-trash | Trash Struct | `/structs.structs.MsgStructTrash` | Yes | Permanently destroy a built struct you own (costs build charge) |
 | struct-stealth-activate | Activate Stealth | `/structs.structs.MsgStructStealthActivate` | Yes | Activate stealth mode for a struct |
 | struct-stealth-deactivate | Deactivate Stealth | `/structs.structs.MsgStructStealthDeactivate` | Yes | Deactivate stealth mode for a struct |
 | struct-defense-set | Set Defender | `/structs.structs.MsgStructDefenseSet` | Yes | Assign a defender struct to protect another struct |
@@ -62,8 +64,10 @@ All construction actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 **Details**:
 
-- **struct-activate**: Code: `x/structs/keeper/msg_server_struct_activate.go` | Proto: `proto/structs/structs/tx.proto:644-649` | Requires charge, requires power
-- **struct-deactivate**: Code: `x/structs/keeper/msg_server_struct_deactivate.go` | Proto: `proto/structs/structs/tx.proto:651-656`
+- **struct-activate**: Code: `x/structs/keeper/msg_server_struct_activate.go` | Proto: `proto/structs/structs/tx.proto:644-649` | Requires player online, requires charge (`activateCharge`), requires power
+- **struct-deactivate**: Code: `x/structs/keeper/msg_server_struct_deactivate.go` | Proto: `proto/structs/structs/tx.proto:651-656` | No charge cost; does **not** require the player to be online (a recovery action)
+- **struct-deactivate-batch**: Code: `x/structs/keeper/msg_server_struct_deactivate_batch.go` | Proto: `proto/structs/structs/tx.proto:776-781` | Takes a list of struct IDs (max 65, `MaxStructDeactivateBatchSize`); rejects duplicates/empty; validates every struct before deactivating any; no charge cost
+- **struct-trash**: Code: `x/structs/keeper/msg_server_struct_trash.go` | Proto: `proto/structs/structs/tx.proto:817-822` | Permanently destroys a built, non-destroyed struct; costs the type's `buildCharge` and resets the charge bar. **Irreversible.**
 - **struct-stealth-activate**: Code: `x/structs/keeper/msg_server_struct_stealth_activate.go` | Proto: `proto/structs/structs/tx.proto:117` | Requires charge
 - **struct-stealth-deactivate**: Code: `x/structs/keeper/msg_server_struct_stealth_deactivate.go` | Proto: `proto/structs/structs/tx.proto:118`
 - **struct-defense-set**: Code: `x/structs/keeper/msg_server_struct_defense_set.go` | Proto: `proto/structs/structs/tx.proto:702-708`
@@ -128,11 +132,19 @@ All resource actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 |----|------|-------------|----------|-------------|
 | provider-create | Create Energy Provider | `/structs.structs.MsgProviderCreate` | Yes | Create an energy provider |
 | agreement-open | Open Energy Agreement | `/structs.structs.MsgAgreementOpen` | Yes | Open an energy agreement with a provider |
+| allocation-create | Create Allocation | `/structs.structs.MsgAllocationCreate` | Yes | Route power from a source object (player/reactor/struct/substation) |
+| allocation-update | Update Allocation | `/structs.structs.MsgAllocationUpdate` | Yes | Change a dynamic allocation's power |
+| allocation-delete | Delete Allocation | `/structs.structs.MsgAllocationDelete` | Yes | Remove an allocation (destination capacity cascades) |
+| allocation-transfer | Transfer Allocation | `/structs.structs.MsgAllocationTransfer` | Yes | Reassign an allocation's controller |
 
 **Details**:
 
 - **provider-create**: Code: `x/structs/keeper/msg_server_provider_create.go` | Proto: `proto/structs/structs/tx.proto:83`
 - **agreement-open**: Code: `x/structs/keeper/msg_server_agreement_open.go` | Proto: `proto/structs/structs/tx.proto:32`
+- **allocation-create**: Code: `x/structs/keeper/msg_server_allocation_create.go` | Proto: `proto/structs/structs/tx.proto:199-207` | Fields: `creator`, `controller`, `sourceObjectId`, `allocationType`, `power`. No `destinationId` (set later via `substation-allocation-connect`). Requires `PermSourceAllocation` on the source.
+- **allocation-update**: Code: `x/structs/keeper/msg_server_allocation_update.go` | Proto: `proto/structs/structs/tx.proto:225-231` | Fields: `creator`, `allocationId`, `power`. Only `dynamic` allocations are updatable. Increasing an existing allocation releases its current power before the capacity check (so growing a live allocation no longer false-errors as `capacity_exceeded`).
+- **allocation-delete**: Code: `x/structs/keeper/msg_server_allocation_delete.go` | Proto: `proto/structs/structs/tx.proto:213-218` | Fields: `creator`, `allocationId`.
+- **allocation-transfer**: Code: `x/structs/keeper/msg_server_allocation_transfer.go` | Proto: `proto/structs/structs/tx.proto:237-243` | Fields: `creator`, `allocationId`, `controller`. Requires `PermAdmin`.
 
 All economic actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 

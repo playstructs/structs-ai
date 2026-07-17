@@ -183,11 +183,10 @@ Almost everything under `/api/` requires an authenticated session (the `PlayerAu
 
 | Public prefix | Purpose |
 |---------------|---------|
-| `/api/auth/` | `signup`, `login`, `logout`, `activation-code/{code}` |
+| `/api/auth/` | `signup`, `login`, `logout`, and the two `/api/auth/player-address*` onboarding routes |
 | `/api/guild/this` | This guild's metadata |
 | `/api/timestamp` | Server time |
 | `/api/setting` | Live tunables |
-| `/api/pfp` | Profile images |
 
 **Correction to a common assumption:** struct reads and the `planet-activity` feed are **not** public — `/api/struct/list/...`, `/api/struct/{id}`, `/api/planet-activity/...`, etc. all require a session. Authenticate first (see [api/webapp/auth.md](webapp/auth.md)) before any catalog or bespoke read.
 
@@ -208,6 +207,7 @@ Message field shapes (verified in `proto/structs/structs/tx.proto`):
 |---------|--------|--------|
 | `MsgReactorInfuse` | `creator`, `delegatorAddress`, `validatorAddress`, `amount` | `amount` is a **single** `Coin` (not a list); infusing is a delegation to the reactor's **validator** address. |
 | `MsgAllocationCreate` | `creator`, `controller`, `sourceObjectId`, `allocationType`, `power` | **No** `destinationId` — the destination is set later via connect. |
+| `MsgAllocationUpdate` | `creator`, `allocationId`, `power` | Only `dynamic` allocations are updatable. Growing an existing allocation releases its own current power before the capacity check — an increase on a live allocation no longer false-errors as `capacity_exceeded` (create-vs-update asymmetry, `allocation_cache.go` `SetDynamicPower`). |
 | `MsgSubstationAllocationConnect` | `creator`, `allocationId`, `destinationId` | The substation id goes in **`destinationId`** — there is no `substationId` field. |
 
 See [energy.md](../knowledge/mechanics/energy.md) for the grid mechanics behind these shapes.

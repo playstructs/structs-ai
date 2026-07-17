@@ -160,19 +160,25 @@ The embedded server runs on `http://127.0.0.1:8420/mcp` with bearer-token authen
 
 The bearer token is generated on first launch and stored with the app's config. Every request must carry it — requests without the token are rejected (`400 Bad Request`), which keeps other local processes and websites from driving the game. Treat the token like a key.
 
-### Tools (9)
+### Tools (13)
 
 | Tool | Purpose |
 |------|---------|
 | `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events |
-| `structs_query` | Query any game entity with enriched output (resolved names, decoded flags, 25-bit permission decode, formatted units) |
-| `structs_hash` | Manage proof-of-work tasks with ETAs (list, start, stop, progress) |
-| `structs_action` | Execute game actions with preflight checks (explore, build, mine, attack, defend, raid, resync, etc.) |
-| `structs_intel` | Strategic intelligence + perception: whoami, scout, valid_targets, battle_log, ruleset, simulate, slot_map, is_active, intents, power forecast, economy, timeline |
-| `structs_policy` | Standing orders (auto_refine, power_alert, agent_ui, combat orders) |
-| `structs_ui` | Drive the human's screen for co-op play (menus, map previews, HUD badges, prompts) — display/elicitation only, never signs |
+| `structs_hash` | Manage proof-of-work tasks with ETAs and tune the engine (cpu/gpu/auto, difficulty_start, max_concurrent) |
+| `structs_action` | Execute game actions with preflight checks (explore, build, mine, refine, attack, defend, raid, resync, etc.) |
+| `structs_intel` | Strategic intelligence + perception: whoami, scout, valid_targets, simulate, strike_options, battle_log, ruleset, slot_map, is_active, intents, forecast, economy, timeline, plus raw `query` |
+| `structs_policy` | Standing orders (auto_refine, power_alert, agent_ui, combat orders, watchdog_remediate) |
 | `structs_events` | Long-poll event feed (raids, attacks, fleet moves, completions) so agents react instead of polling |
-| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates (e.g. CMD-ship HP floor) |
+| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates; `as` runs as a virtual player |
+| `structs_players` | Manage virtual players (extra players off the same mnemonic, joined to your guild): create / list / roster / state / act-as |
+| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, menus/dialogues/map previews/HUD/prompts) — never signs |
+| `structs_system` | System health, logs, self-tuning: watchdog status, loop liveness, tx-attempt ledger, PoW stats, structured log |
+| `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
+| `structs_doctrine` | Standing rules of engagement + per-tick executor (advise / auto) |
+| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
+
+Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`; the old names remain only as deprecation stubs.)
 
 ### Prompts (6)
 
@@ -189,14 +195,9 @@ The bearer token is generated on first launch and stored with the app's config. 
 
 This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://knowledge/mechanics/combat.md`, `structs://playbooks/phases/early-game.md`, `structs://QUICKSTART.md`).
 
-### Charge-paced queueing and agent-driven UI
+### Signing, automation, and co-op
 
-Two features make the embedded MCP more than a thin CLI wrapper:
-
-- **Charge-paced action queueing** (`structs_sequence`): queue a chain of actions and the app executes them smoothly as the per-player charge bar refills over time, with abort predicates (for example, stop if the Command Ship's HP drops below a floor). You don't have to hand-time each action to the charge cooldown.
-- **Agent-driven UI** (`structs_ui`): the agent can render on the human's screen — menus, map previews, HUD badges, prompts — for human+agent co-op. These directives are **display/elicitation only and can never sign**; every surface is marked "⚡ Agent", the `agent_ui` policy is a master off-switch, and any action the human selects still flows through the approval-gated transaction bridge.
-
-Transactions submitted via `structs_action`/`structs_sequence` are signed through the app's CosmJS bridge after preflight checks — the engine never auto-signs outside these gated paths.
+The MCP never holds keys: `structs_action`/`structs_sequence` submit through the app's CosmJS bridge after preflight checks, and the engine never auto-signs outside those gated paths. `structs_sequence` paces action chains to the per-player charge bar with abort predicates; `structs_board` can drive the human's screen for co-op (display/elicitation only — it cannot sign). See [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) for the policy engine, virtual players, hashing, and agent-driven UI.
 
 ### CLI Fallback
 

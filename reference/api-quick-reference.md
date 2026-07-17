@@ -108,58 +108,14 @@ GET /structs/struct_type/{id}
 ```
 > Note: the `struct_type` LCD query can return gRPC `code 12` ("Not Implemented") on the deployed testnet build. Fall back to the CLI (`structsd query structs struct-type-all`) or the Guild Stack PostgreSQL mirror.
 
-**Get Struct Type with Cosmetics (Webapp)**:
+**Get Structs at a Location (Webapp)** (planet or fleet):
 ```
-GET /api/struct-type/{structTypeId}/full?language=en&guildId={guildId}
-```
-
-### Cosmetic Sets and Skins Endpoints
-
-**List Sets**:
-```
-GET /api/cosmetic-sets?active=true&guildId={guildId}
+GET /api/struct/list/location/{location_id}/page/{page}
 ```
 
-**Get Set Details**:
+**Get a Player's Structs (Webapp)**:
 ```
-GET /api/cosmetic-sets/{setHash}
-```
-
-**Get Cosmetic by Class**:
-```
-GET /api/cosmetic/class/{class}?language=en&guildId={guildId}
-```
-
-**Install Mod** (converts to Sets/Skins):
-```
-POST /api/cosmetic-mods/install
-Content-Type: multipart/form-data
-file: [ZIP file or directory path]
-```
-
-**Validate Mod** (mod file format):
-```
-POST /api/cosmetic-mods/validate
-Content-Type: multipart/form-data
-file: [ZIP file or directory path]
-```
-
-**Delete Set**:
-```
-DELETE /api/cosmetic-sets/{setHash}
-```
-
-**Activate/Deactivate Set**:
-```
-POST /api/cosmetic-sets/{setHash}/activate
-POST /api/cosmetic-sets/{setHash}/deactivate
-```
-
-**Note**: `setHash` and `skinHash` are SHA-256 hashes (64-character hexadecimal). Cosmetics are linked to struct types via the `class` field (e.g., "Miner", "Reactor").
-
-**Get Structs by Planet**:
-```
-GET /api/struct/planet/{planet_id}
+GET /api/struct/player/{player_id}
 ```
 
 ### Transaction Endpoints
@@ -186,7 +142,7 @@ GET /api/permission-guild-rank/guild/{guild_id}/page/{page}
 GET /api/planet-activity/planet/{planet_id}/page/{page}
 GET /api/grid/object/{object_id}/page/{page}
 GET /api/struct-defender/protected/{protected_struct_id}/page/{page}
-GET /api/banned-word/all/page/{page}
+GET /api/banned-word/all
 GET /api/defusion/validator/{validator_address}/page/{page}
 ```
 
@@ -393,17 +349,6 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 
 **See**: `examples/workflows/README.md` for complete workflow examples
 
-### Install and Use Cosmetic Mod
-1. `POST /api/cosmetic-mods/validate` - Validate mod (Phase 1 format)
-2. `POST /api/cosmetic-mods/install` - Install mod (converts to Sets/Skins)
-3. `GET /api/cosmetic-sets/{setHash}` - Verify set installation (if type is 'set')
-4. `GET /api/cosmetic/class/{class}` - Get cosmetic skin data by class
-5. `GET /api/struct-type/{id}/full?class={class}` - Get merged data (alternative)
-
-**See**: `examples/workflows/install-and-use-cosmetic-mod.md` for complete workflow
-
-**Note**: Mods (Phase 1) are converted to Sets/Skins (Phases 2-4) during ingestion. Use `setHash`/`skinHash` for management and `class` for cosmetic queries.
-
 ---
 
 ## Schema References
@@ -425,7 +370,6 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 - `protocols/authentication.md` - Authentication
 - `protocols/error-handling.md` - Error handling
 - `protocols/testing-protocol.md` - Testing
-- `protocols/cosmetic-mod-integration.md` - Cosmetic Sets/Skins integration
 
 **API Documentation**:
 - `api/endpoints.md` - Complete endpoint catalog
@@ -433,7 +377,6 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 - `api/error-codes.md` - Error code catalog
 - `api/rate-limits.md` - Rate limiting
 - `api/streaming/` - Streaming documentation
-- `api/cosmetic-mods.md` - Cosmetic Sets/Skins API
 
 **Examples**:
 - `examples/workflows/` - Workflow examples

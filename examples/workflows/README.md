@@ -125,38 +125,10 @@ Workflows for monitoring game state in real-time.
 
 ---
 
-### Modding Workflows
-
-Workflows for cosmetic mod management.
-
-#### `install-and-use-cosmetic-mod.md`
-**Pattern**: Linear Chain  
-**Purpose**: Install and use a cosmetic mod
-
-**Steps**:
-1. Validate mod file
-2. Install mod
-3. Activate mod
-4. Verify installation
-5. Query struct type with cosmetics
-6. Use cosmetic data
-
-**Use When**:
-- Installing cosmetic mods
-- Managing mod lifecycle
-- Testing mod integration
-
-**Dependencies**: Mod file, Guild ID
-
-**Related**: See `api/cosmetic-mods.md` for mod API endpoints
-
----
-
 ## Workflow Patterns Used
 
 ### Linear Chain
 - `get-player-and-planets.md`
-- `install-and-use-cosmetic-mod.md`
 - `authenticated-guild-query.md`
 
 **Use When**: Steps depend on previous results
@@ -193,14 +165,10 @@ Workflows for cosmetic mod management.
 - `query-and-monitor-planet.md` - Query and monitor planet
 - `monitor-planet-shield.md` - Monitor shield health
 
-**Modding Operations**:
-- `install-and-use-cosmetic-mod.md` - Install and use mod
-
 ### By Pattern
 
 **Linear Chain**:
 - `get-player-and-planets.md`
-- `install-and-use-cosmetic-mod.md`
 - `authenticated-guild-query.md`
 
 **Parallel**:

@@ -16,7 +16,6 @@
 | Player Address | PlayerAddressAddPendingRequest, PlayerAddressMetaRequest, PlayerAddressActivationCodeRequest, PlayerAddressPendingPermissionsRequest, PlayerAddressPermissionsRequest |
 | Transaction | TransactionRequest |
 | Query | QueryParameters, PlayerRaidSearchQuery, PlayerTransferSearchQuery, GuildNameFilterQuery, GuildDirectoryQuery |
-| Cosmetic Mod | CosmeticModInstallRequest, CosmeticModValidateRequest |
 
 ---
 
@@ -206,6 +205,8 @@ The `@type` field must be one of the following message types:
 | `/structs.structs.MsgStructBuildComplete` | Complete struct build |
 | `/structs.structs.MsgStructActivate` | Activate a struct |
 | `/structs.structs.MsgStructDeactivate` | Deactivate a struct |
+| `/structs.structs.MsgStructDeactivateBatch` | Deactivate up to 65 structs in one transaction (`structId` is a list) |
+| `/structs.structs.MsgStructTrash` | Permanently destroy a built struct (costs `buildCharge`, irreversible) |
 | `/structs.structs.MsgStructStealthActivate` | Stealth activate a struct |
 | `/structs.structs.MsgStructStealthDeactivate` | Stealth deactivate a struct |
 | `/structs.structs.MsgStructAttack` | Attack with a struct |
@@ -224,6 +225,10 @@ The `@type` field must be one of the following message types:
 | `/structs.structs.MsgSubstationCreate` | Create a substation |
 | `/structs.structs.MsgSubstationPlayerConnect` | Connect player to substation |
 | `/structs.structs.MsgSubstationAllocationConnect` | Connect an allocation to a substation |
+| `/structs.structs.MsgAllocationCreate` | Create an allocation from a source object (`creator`, `controller`, `sourceObjectId`, `allocationType`, `power`) |
+| `/structs.structs.MsgAllocationUpdate` | Update a dynamic allocation's power (`creator`, `allocationId`, `power`) |
+| `/structs.structs.MsgAllocationDelete` | Delete an allocation (`creator`, `allocationId`) |
+| `/structs.structs.MsgAllocationTransfer` | Reassign an allocation's controller (`creator`, `allocationId`, `controller`) |
 | `/structs.structs.MsgProviderCreate` | Create a provider |
 | `/structs.structs.MsgAgreementOpen` | Open an energy agreement |
 | `/structs.structs.MsgGuildCreate` | Create a guild |
@@ -266,29 +271,3 @@ Query parameters for guild directory.
 |-------|------|---------|-------------|-------------|
 | page | integer | 1 | min: 1 | Page number |
 | limit | integer | 20 | min: 1, max: 100 | Items per page |
-
----
-
-## Cosmetic Mod Requests
-
-### CosmeticModInstallRequest
-
-Install cosmetic mod.
-
-- **Endpoint**: `POST /api/cosmetic-mods/install`
-
-| Field | Type | Default | Required | Description |
-|-------|------|---------|----------|-------------|
-| file | string | | Yes | Path to mod file (ZIP) or directory, or file upload in multipart/form-data |
-| validate | boolean | true | No | Whether to validate mod before installation |
-| activate | boolean | true | No | Whether to activate mod after installation |
-
-### CosmeticModValidateRequest
-
-Validate cosmetic mod.
-
-- **Endpoint**: `POST /api/cosmetic-mods/validate`
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| file | string | Yes | Path to mod file (ZIP) or directory, or file upload in multipart/form-data |

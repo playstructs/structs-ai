@@ -88,7 +88,7 @@ Even when a transaction is free, the rest of the ante chain still runs:
 - **Per-address CheckTx throttle** (`CheckTxThrottleDecorator`) -- rate limits how many txs a single address can cram into the mempool per block.
 - **`StructsDecorator`** -- looks up the player for the signing address, applies the static permission check from `PermissionMap` for messages that use it, enforces the per-player message cap, and short-circuits same-block `lastAction` collisions for `ChargeMessages`.
 - **`ThrottleDecorator`** -- per-object throttles for proof-of-work messages, fleet move, planet explore, address register.
-- **Charge messages** (`StructActivate`, `StructAttack`, `StructBuildInitiate`, `StructDefenseClear/Set`, `StructMove`, `StructStealthActivate/Deactivate`) -- still require positive charge, so you cannot use the free path to side-step the once-per-block-per-object rules.
+- **Charge messages** (`StructActivate`, `StructAttack`, `StructBuildInitiate`, `StructDefenseClear/Set`, `StructMove`, `StructStealthActivate/Deactivate`) -- still require positive charge, so you cannot use the free path to side-step the once-per-block-per-object rules. `StructTrash` is not in this ante set but its handler still consumes charge (equal to the struct type's `buildCharge`) and resets the charge bar; `StructDeactivate` and `StructDeactivateBatch` cost no charge at all.
 
 The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission management, guild membership voting flows) skips the ante-level permission check and lets the handler enforce the right permission, since the bits depend on runtime fields. This has nothing to do with fees -- those messages are still free as long as the tx stays purely Structs.
 

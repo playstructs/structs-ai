@@ -108,6 +108,7 @@ Reference material about the game world.
 | File | Topic |
 |------|-------|
 | [guild-stack.md](knowledge/infrastructure/guild-stack.md) | Guild Stack architecture, services, data flow, CLI vs PG comparison |
+| [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) | Structs desktop app + embedded MCP: tools, prompts, resources, subsystems |
 | [database-schema.md](knowledge/infrastructure/database-schema.md) | PostgreSQL tables, grid pattern, query patterns, event categories |
 
 ---
@@ -198,7 +199,6 @@ Endpoint specifications and streaming protocols.
 | [endpoints-by-entity.md](api/endpoints-by-entity.md) | Endpoints grouped by entity |
 | [error-codes.md](api/error-codes.md) | Error code reference |
 | [rate-limits.md](api/rate-limits.md) | Rate limiting behavior |
-| [cosmetic-mods.md](api/cosmetic-mods.md) | Cosmetic mod API |
 | [integration-notes.md](api/integration-notes.md) | Live data-shape & endpoint gotchas for integrators |
 
 ### Queries (`api/queries/`)
@@ -223,8 +223,8 @@ Per-entity query endpoints: [address](api/queries/address.md), [agreement](api/q
 
 Webapp endpoints split per entity (load only what you need):
 
-- **Bespoke entity endpoints** (joined / aggregated objects): [auth](api/webapp/auth.md), [guild](api/webapp/guild.md), [infusion](api/webapp/infusion.md), [ledger](api/webapp/ledger.md), [planet](api/webapp/planet.md), [player](api/webapp/player.md), [struct](api/webapp/struct.md), [system](api/webapp/system.md)
-- **Catalog read endpoints** (paginated lists per entity): [address-tag](api/webapp/address-tag.md), [agreement](api/webapp/agreement.md), [allocation](api/webapp/allocation.md), [banned-word](api/webapp/banned-word.md), [defusion](api/webapp/defusion.md), [fleet](api/webapp/fleet.md), [grid](api/webapp/grid.md), [guild-membership-application](api/webapp/guild-membership-application.md), [permission](api/webapp/permission.md), [permission-guild-rank](api/webapp/permission-guild-rank.md), [planet-activity](api/webapp/planet-activity.md), [planet-attribute](api/webapp/planet-attribute.md), [provider](api/webapp/provider.md), [reactor](api/webapp/reactor.md), [substation](api/webapp/substation.md), [struct-attribute](api/webapp/struct-attribute.md), [struct-defender](api/webapp/struct-defender.md)
+- **Bespoke entity endpoints** (joined / aggregated objects): [auth](api/webapp/auth.md), [guild](api/webapp/guild.md), [infusion](api/webapp/infusion.md), [ledger](api/webapp/ledger.md), [planet](api/webapp/planet.md), [player](api/webapp/player.md), [player-address](api/webapp/player-address.md), [struct](api/webapp/struct.md), [system](api/webapp/system.md)
+- **Catalog read endpoints** (paginated lists per entity): [address-tag](api/webapp/address-tag.md), [agreement](api/webapp/agreement.md), [allocation](api/webapp/allocation.md), [banned-word](api/webapp/banned-word.md), [defusion](api/webapp/defusion.md), [fleet](api/webapp/fleet.md), [grid](api/webapp/grid.md), [guild-membership-application](api/webapp/guild-membership-application.md), [permission](api/webapp/permission.md), [permission-guild-rank](api/webapp/permission-guild-rank.md), [planet-activity](api/webapp/planet-activity.md), [planet-attribute](api/webapp/planet-attribute.md), [provider](api/webapp/provider.md), [reactor](api/webapp/reactor.md), [substation](api/webapp/substation.md), [struct-attribute](api/webapp/struct-attribute.md), [struct-defender](api/webapp/struct-defender.md), [work](api/webapp/work.md)
 - **Live tunables and stats**: [setting](api/webapp/setting.md), [stat](api/webapp/stat.md)
 - **Index**: [README.md](api/webapp/README.md)
 
@@ -253,10 +253,6 @@ Data structure definitions and formulas.
 | [trading.md](schemas/trading.md) | Trading schemas |
 | [validation.md](schemas/validation.md) | Validation rules |
 | [code-structures.md](schemas/code-structures.md) | Code structure patterns |
-| [cosmetic-mod.md](schemas/cosmetic-mod.md) | Cosmetic mod schema |
-| [cosmetic-set.md](schemas/cosmetic-set.md) | Cosmetic set schema |
-| [cosmetic-skin.md](schemas/cosmetic-skin.md) | Cosmetic skin schema |
-
 ### Entity Schemas (`schemas/entities/`)
 
 Per-entity schemas: [agreement](schemas/entities/agreement.md), [allocation](schemas/entities/allocation.md), [fleet](schemas/entities/fleet.md), [guild](schemas/entities/guild.md), [planet](schemas/entities/planet.md), [player](schemas/entities/player.md), [provider](schemas/entities/provider.md), [reactor](schemas/entities/reactor.md), [struct-type](schemas/entities/struct-type.md), [struct](schemas/entities/struct.md), [substation](schemas/entities/substation.md)
@@ -282,9 +278,6 @@ Communication and integration protocols.
 | [economic-protocol.md](protocols/economic-protocol.md) | Economic transaction protocol |
 | [webapp-api-protocol.md](protocols/webapp-api-protocol.md) | Webapp API protocol |
 | [testing-protocol.md](protocols/testing-protocol.md) | Testing protocol |
-| [cosmetic-mod-protocol.md](protocols/cosmetic-mod-protocol.md) | Cosmetic mod protocol |
-| [cosmetic-mod-integration.md](protocols/cosmetic-mod-integration.md) | Cosmetic mod integration |
-
 ---
 
 ## Patterns (`patterns/`)
@@ -336,7 +329,7 @@ Working code examples and workflows.
 
 ### Workflows (`examples/workflows/`)
 
-Step-by-step operations: [planet-setup](examples/workflows/planet-setup.md), [mine-refine-convert](examples/workflows/mine-refine-convert.md), [energy-agreement-setup](examples/workflows/energy-agreement-setup.md), [reactor-staking-infuse](examples/workflows/reactor-staking-infuse.md), [reactor-staking-defuse](examples/workflows/reactor-staking-defuse.md), [reactor-staking-begin-migration](examples/workflows/reactor-staking-begin-migration.md), [reactor-staking-cancel-defusion](examples/workflows/reactor-staking-cancel-defusion.md), [guild-token-lifecycle](examples/workflows/guild-token-lifecycle.md), [trade-alpha-matter](examples/workflows/trade-alpha-matter.md), [query-guild-stats](examples/workflows/query-guild-stats.md), [query-and-monitor-planet](examples/workflows/query-and-monitor-planet.md), [get-player-and-planets](examples/workflows/get-player-and-planets.md), [monitor-planet-shield](examples/workflows/monitor-planet-shield.md), [struct-lifecycle-sweep-delay](examples/workflows/struct-lifecycle-sweep-delay.md), [permission-checking](examples/workflows/permission-checking.md), [authenticated-guild-query](examples/workflows/authenticated-guild-query.md), [raid-attacker-retreated](examples/workflows/raid-attacker-retreated.md), [install-and-use-cosmetic-mod](examples/workflows/install-and-use-cosmetic-mod.md)
+Step-by-step operations: [planet-setup](examples/workflows/planet-setup.md), [mine-refine-convert](examples/workflows/mine-refine-convert.md), [energy-agreement-setup](examples/workflows/energy-agreement-setup.md), [reactor-staking-infuse](examples/workflows/reactor-staking-infuse.md), [reactor-staking-defuse](examples/workflows/reactor-staking-defuse.md), [reactor-staking-begin-migration](examples/workflows/reactor-staking-begin-migration.md), [reactor-staking-cancel-defusion](examples/workflows/reactor-staking-cancel-defusion.md), [guild-token-lifecycle](examples/workflows/guild-token-lifecycle.md), [trade-alpha-matter](examples/workflows/trade-alpha-matter.md), [query-guild-stats](examples/workflows/query-guild-stats.md), [query-and-monitor-planet](examples/workflows/query-and-monitor-planet.md), [get-player-and-planets](examples/workflows/get-player-and-planets.md), [monitor-planet-shield](examples/workflows/monitor-planet-shield.md), [struct-lifecycle-sweep-delay](examples/workflows/struct-lifecycle-sweep-delay.md), [permission-checking](examples/workflows/permission-checking.md), [authenticated-guild-query](examples/workflows/authenticated-guild-query.md), [raid-attacker-retreated](examples/workflows/raid-attacker-retreated.md)
 
 ### Auth Examples (`examples/auth/`)
 
@@ -344,15 +337,11 @@ Step-by-step operations: [planet-setup](examples/workflows/planet-setup.md), [mi
 
 ### Error Examples (`examples/errors/`)
 
-[404-not-found](examples/errors/404-not-found.md), [429-rate-limit](examples/errors/429-rate-limit.md), [500-server-error](examples/errors/500-server-error.md), [cosmetic-mod-conflict](examples/errors/cosmetic-mod-conflict.md), [cosmetic-mod-invalid](examples/errors/cosmetic-mod-invalid.md)
+[404-not-found](examples/errors/404-not-found.md), [429-rate-limit](examples/errors/429-rate-limit.md), [500-server-error](examples/errors/500-server-error.md)
 
 ### Database Examples (`examples/database/`)
 
 [query-examples](examples/database/query-examples.md)
-
-### Cosmetic Mod Examples (`examples/cosmetic-mods/`)
-
-[simple-miner-mod](examples/cosmetic-mods/simple-miner-mod.md), [guild-alpha-complete-mod](examples/cosmetic-mods/guild-alpha-complete-mod.md), [multi-language-mod](examples/cosmetic-mods/multi-language-mod.md)
 
 ---
 

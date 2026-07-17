@@ -103,7 +103,9 @@ Action costs (the charge the player's bar must hold to act):
 | Action | Charge Cost | Notes |
 |--------|------------|-------|
 | Build (initiate) | 8 | Same for all struct types |
+| Trash (destroy a built struct) | 8 | Equal to the type's `buildCharge`; irreversible |
 | Activate | 2 | Same for all struct types |
+| Deactivate | 0 | No charge; also works while the player is offline (a recovery action) |
 | Defend change | 1 | Set or clear defense assignment |
 | Move | 3 | Command Ship only |
 | Primary weapon | 3-5 | 3 for fast attackers (Command Ship, Starfighter, Pursuit Fighter, Tank); 5 for heavier hulls |

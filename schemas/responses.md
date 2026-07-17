@@ -80,13 +80,23 @@ Player data structure, reused across multiple responses.
 
 ### WebappPlayerResponse
 
-Web application player response (`data` payload of `GET /api/player/{player_id}`).
+Web application player response (`data` payload of `GET /api/player/{player_id}`). `data` is a **single flat object** whose keys are the SQL columns from `PlayerManager::getPlayer` (snake_case) — not nested `{player, guild, stats}`.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| player | PlayerData | Player data |
-| guild | object | Guild information |
-| stats | object | Player statistics |
+| id | string | Player identifier (e.g. `1-11`) |
+| primary_address | string | Player's primary signing address |
+| guild_id | string | Guild identifier (e.g. `0-1`) |
+| guild_name | string | Guild name |
+| substation_id | string | Connected substation |
+| planet_id | string | Current planet |
+| fleet_id | string | Fleet identifier |
+| fleet | object | `row_to_json` of the fleet row |
+| username | string | Player UGC username |
+| pfp | string | Player UGC profile picture |
+| pfp_client_render_attributes | string | Client-side PFP render hints |
+
+The column set may grow across releases; treat unknown keys as forward-compatible. For ore/planet/raid figures, call the dedicated `/api/player/{player_id}/*` endpoints.
 
 ### PlayerIdResponse
 
@@ -189,11 +199,11 @@ Ore statistics response.
 
 ### BlockHeightResponse
 
-Block height response.
+Player last-action block height response. `data` is a single row; the value is an LCD numeric string.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| height | integer | Yes | Block height |
+| last_action_block_height | string | Yes | Block height of the player's last action (LCD numeric string) |
 
 ### CountResponse
 
@@ -241,159 +251,3 @@ RPC node status response.
 | result.node_info | object | Node information |
 | result.sync_info | object | Sync information |
 
----
-
-## Cosmetic Set Responses
-
-### CosmeticSetListResponse
-
-List of cosmetic sets response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| sets | array of CosmeticSetSummary | Yes | List of installed cosmetic sets |
-
-### CosmeticSetSummary
-
-Summary information about a cosmetic set.
-
-| Field | Type | Required | Pattern | Description |
-|-------|------|----------|---------|-------------|
-| setHash | string | Yes | `^[a-f0-9]{64}$` | Set hash (SHA-256, 64-character hexadecimal) |
-| name | object | No | | Set name by language (string values keyed by language code) |
-| version | string | Yes | `^\d+\.\d+\.\d+$` | Set version |
-| author | string | Yes | | Set author |
-| guildId | string | No | `^0-[0-9]+$` | Guild ID (if guild-specific, entity-id format) |
-| active | boolean | Yes | | Whether set is active |
-| classes | array of string | No | | Struct type classes this set affects (e.g., `Miner`, `Reactor`) |
-| languages | array of string | No | `^[a-z]{2}$` each | Supported language codes |
-
-### CosmeticSetResponse
-
-Detailed cosmetic set information response.
-
-| Field | Type | Required | Pattern | Description |
-|-------|------|----------|---------|-------------|
-| setHash | string | Yes | `^[a-f0-9]{64}$` | Set hash (SHA-256, 64-character hexadecimal) |
-| name | object | No | | Set name by language |
-| version | string | Yes | `^\d+\.\d+\.\d+$` | Set version |
-| author | string | Yes | | Set author |
-| guildId | string | No | `^0-[0-9]+$` | Guild ID (if guild-specific) |
-| description | object | No | | Set description by language |
-| active | boolean | Yes | | Whether set is active |
-| skins | array | No | | List of skins in this set (see `schemas/cosmetic-set.md` SkinReference definition) |
-| languages | array of string | No | `^[a-z]{2}$` each | Supported language codes |
-
-### CosmeticSetDeleteResponse
-
-Cosmetic set deletion response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| status | string | Yes | `success` or `error` |
-| setHash | string | Yes | Deleted set hash. Pattern: `^[a-f0-9]{64}$` |
-
-### CosmeticSetActivateResponse
-
-Cosmetic set activation response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| status | string | Yes | `success` or `error` |
-| setHash | string | Yes | Activated set hash. Pattern: `^[a-f0-9]{64}$` |
-| active | boolean | Yes | Whether set is now active |
-
-### CosmeticSetDeactivateResponse
-
-Cosmetic set deactivation response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| status | string | Yes | `success` or `error` |
-| setHash | string | Yes | Deactivated set hash. Pattern: `^[a-f0-9]{64}$` |
-| active | boolean | Yes | Whether set is now active (should be false) |
-
----
-
-## Cosmetic Install and Validate Responses
-
-### CosmeticModInstallResponse
-
-Cosmetic mod installation response. Mod is converted to Sets/Skins during ingestion.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| status | string | Yes | `success` or `error` |
-| type | string | Yes | Type of cosmetic installed: `set` or `skin` |
-| setHash | string | No | Set hash if type is `set`. Pattern: `^[a-f0-9]{64}$` |
-| skinHash | string | No | Skin hash if type is `skin`. Pattern: `^[a-f0-9]{64}$` |
-| version | string | No | Version. Pattern: `^\d+\.\d+\.\d+$` |
-| skins | array | No | List of skins if type is `set` (each with `skinHash` and `class`) |
-| storagePath | string | No | Path where cosmetic was stored (hash-based directory structure) |
-| validated | boolean | No | Whether mod was validated |
-| activated | boolean | No | Whether cosmetic was activated |
-
-Each entry in `skins` (when type is `set`):
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| skinHash | string | Yes | Pattern: `^[a-f0-9]{64}$` |
-| class | string | Yes | Struct type class |
-
-### CosmeticModValidateResponse
-
-Cosmetic mod validation response.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| valid | boolean | Yes | Whether mod is valid |
-| errors | array of string | Yes | Validation errors |
-| warnings | array of string | Yes | Validation warnings |
-| modId | string | No | Mod identifier (if valid). Pattern: `^[a-z0-9-]+$` |
-| version | string | No | Mod version (if valid). Pattern: `^\d+\.\d+\.\d+$` |
-
----
-
-## Struct Type Cosmetic Responses
-
-### StructTypeCosmeticResponse
-
-Cosmetic data for a struct type class (with skin overrides applied).
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| class | string | Yes | Struct type class name (e.g., `Miner`, `Reactor`, `Command Ship`). Must match `struct_type.class` field. |
-| skinHash | string | Yes | Skin hash (SHA-256, 64-character hexadecimal). Pattern: `^[a-f0-9]{64}$` |
-| name | string | No | Cosmetic name (localized) |
-| lore | string | No | Lore/description (localized) |
-| weapons | array | No | Weapon cosmetic overrides (see `schemas/cosmetic-skin.md` WeaponCosmetic definition) |
-| abilities | array | No | Ability cosmetic overrides (see `schemas/cosmetic-skin.md` AbilityCosmetic definition) |
-| animations | object | No | Animation file paths (string values keyed by animation name) |
-| icon | string | No | Icon file path |
-| skinSource | object | No | Source skin information (see below) |
-
-#### skinSource
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| skinHash | string | Yes | Skin hash (SHA-256). Pattern: `^[a-f0-9]{64}$` |
-| setHash | string | No | Parent set hash (if skin is part of a set). Pattern: `^[a-f0-9]{64}$` |
-| version | string | No | Skin version. Pattern: `^\d+\.\d+\.\d+$` |
-
-### StructTypeCosmeticListResponse
-
-List of struct type cosmetics.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| structTypes | array of StructTypeCosmeticResponse | Yes | List of struct type cosmetic entries |
-
-### StructTypeFullResponse
-
-Struct type data with cosmetic overrides applied (integration endpoint).
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| structType | object | Yes | Base struct type data from consensus network |
-| cosmetic | StructTypeCosmeticResponse | Yes | Cosmetic override data |
-| merged | object | No | Merged data combining base and cosmetic |

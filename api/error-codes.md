@@ -41,17 +41,6 @@
 | timeout | REQUEST_TIMEOUT | network_error | Yes | Retry with exponential backoff | Increase timeout duration or reduce request complexity |
 | network | NETWORK_ERROR | network_error | Yes | Retry with exponential backoff | Check network connectivity, verify server is running |
 
-### Cosmetic Mod Error Codes
-
-| Code | Name | HTTP Status | Retryable | Action | Recovery |
-|------|------|-------------|-----------|--------|----------|
-| COSMETIC_MOD_NOT_FOUND | Cosmetic mod not found | 404 | No | Verify mod ID and check installed mods | List installed mods to find correct mod ID |
-| COSMETIC_MOD_INVALID | Cosmetic mod validation failed | 400 | No | Fix mod file and retry | Check validation errors, fix mod manifest and structure, then retry |
-| COSMETIC_MOD_INSTALL_FAILED | Cosmetic mod installation failed | 500 | Yes | Retry installation after checking disk space | Check disk space, verify mod file integrity, then retry |
-| COSMETIC_MOD_CONFLICT | Cosmetic mod conflicts with existing mod | 409 | No | Uninstall existing mod or use different mod ID | Uninstall conflicting mod first, or use different mod ID/version |
-| COSMETIC_MOD_UNSUPPORTED_VERSION | Cosmetic mod version incompatible | 400 | No | Update game or use compatible mod version | Check mod compatibility, update game or find compatible mod version |
-| COSMETIC_STRUCT_TYPE_NOT_FOUND | Struct type referenced in mod not found | 400 | No | Fix mod to reference valid struct types | Verify struct type IDs in mod match game struct types, update mod manifest |
-
 ---
 
 ## Error Response Examples
@@ -68,7 +57,7 @@
 
 ### 404 NOT_FOUND
 
-Affected endpoints: `webapp-player-by-id`, `webapp-planet-by-id`, `webapp-guild-by-id`, `webapp-struct-by-id`, `player-by-id`, `planet-by-id`, `guild-by-id`, `struct-by-id`, `cosmetic-mod-get`
+Affected endpoints: `webapp-player-by-id`, `webapp-planet-by-id`, `webapp-guild-by-id`, `webapp-struct-by-id`, `player-by-id`, `planet-by-id`, `guild-by-id`, `struct-by-id`
 
 ```json
 {
@@ -133,32 +122,6 @@ Consensus Network errors are returned with HTTP 200 but with a non-zero `code` f
 }
 ```
 
-### Cosmetic Mod Validation Error
-
-```json
-{
-  "valid": false,
-  "errors": [
-    "Invalid setHash format: must be 64-character hexadecimal string (SHA-256)",
-    "Missing required field: manifest.version"
-  ],
-  "warnings": []
-}
-```
-
-### Cosmetic Mod Conflict
-
-```json
-{
-  "error": "Mod conflict",
-  "code": 409,
-  "details": [
-    "Mod 'guild-alpha-miner-v1' version 1.0.0 already installed",
-    "Use uninstall endpoint to remove existing mod first"
-  ]
-}
-```
-
 ---
 
 ## Error Categories
@@ -166,8 +129,8 @@ Consensus Network errors are returned with HTTP 200 but with a non-zero `code` f
 | Category | Description | Codes |
 |----------|-------------|-------|
 | success | Successful operations | 0, 200 |
-| client_error | Client-side errors (not retryable) | 400, 404, 5, 6, 7, 8, 9, 1900, COSMETIC_MOD_NOT_FOUND, COSMETIC_MOD_INVALID, COSMETIC_MOD_CONFLICT, COSMETIC_MOD_UNSUPPORTED_VERSION, COSMETIC_STRUCT_TYPE_NOT_FOUND |
-| server_error | Server-side errors (retryable) | 500, 503, COSMETIC_MOD_INSTALL_FAILED |
+| client_error | Client-side errors (not retryable) | 400, 404, 5, 6, 7, 8, 9, 1900 |
+| server_error | Server-side errors (retryable) | 500, 503 |
 | rate_limit | Rate limiting errors (retryable with delay) | 429 |
 | network_error | Network-related errors (retryable) | timeout, network |
 | error | Game-specific errors | 1, 2, 3, 4 |

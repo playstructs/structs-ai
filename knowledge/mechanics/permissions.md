@@ -622,7 +622,9 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `StructBuildCancel` | Owner (player) | `PermPlay` (1) | |
 | `StructBuildComplete` | Owner (player) | `PermHashBuild` (1048576) | Only this single bit; ante also checks `PermHashBuild` on the signing address |
 | `StructActivate` | Owner (player) | `PermPlay` (1) | |
-| `StructDeactivate` | Owner (player) | `PermPlay` (1) | |
+| `StructDeactivate` | Owner (player) | `PermPlay` (1) | No player-online requirement; costs no charge |
+| `StructDeactivateBatch` | Owner (player) | `PermPlay` (1) | Checked per struct; up to 65 per tx |
+| `StructTrash` | Owner (player) | `PermPlay` (1) | Costs `buildCharge`; destroys a built struct |
 | `StructStealthActivate` | Owner (player) | `PermPlay` (1) | |
 | `StructStealthDeactivate` | Owner (player) | `PermPlay` (1) | |
 | `StructMove` | Owner (player) | `PermPlay` (1) | |
@@ -706,7 +708,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 
 | Permission | Value | Used By |
 |------------|-------|---------|
-| `PermPlay` | 1 | StructBuildInitiate, StructBuildCancel, StructActivate, StructDeactivate, StructStealthActivate, StructStealthDeactivate, StructMove, StructAttack, StructDefenseSet, StructDefenseClear, FleetMove, PlanetExplore |
+| `PermPlay` | 1 | StructBuildInitiate, StructBuildCancel, StructActivate, StructDeactivate, StructDeactivateBatch, StructTrash, StructStealthActivate, StructStealthDeactivate, StructMove, StructAttack, StructDefenseSet, StructDefenseClear, FleetMove, PlanetExplore |
 | `PermAdmin` | 2 | GuildUpdateOwnerId, PlayerUpdateGuildRank, AllocationTransfer, Permission transactions (when caller-specified) |
 | `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration*, GuildUpdateName, GuildUpdatePfp; self-service path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp |
 | `PermDelete` | 8 | AddressRevoke, ProviderDelete, SubstationDelete, AllocationDelete (fallback) |

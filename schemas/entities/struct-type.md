@@ -16,7 +16,7 @@
 |-------|------|----------|-------------|
 | id | string (struct-type-id) | Yes | Struct type identifier (integer as string, e.g., `1`, `2`, `3`). Note: StructType IDs use regular integers, not `type-index` format. |
 | type | string | Yes | Struct type name (e.g., `Command Ship`, `Miner`, `Reactor`) |
-| class | string | Yes | Struct class identifier (e.g., `Command Ship`, `Miner`, `Reactor`). Used for cosmetic mod linking. |
+| class | string | Yes | Struct class identifier (e.g., `Command Ship`, `Miner`, `Reactor`). |
 | classAbbreviation | string | No | Abbreviated class name (e.g., `CMD Ship`) |
 | category | string | Yes | Struct category. One of: `fleet`, `mining`, `refining`, `power`, `combat`, `defense`, `utility` |
 

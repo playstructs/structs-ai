@@ -17,21 +17,19 @@ The seeded list of banned tokens used by the chain's UGC validators. The on-chai
 
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
-| GET | `/api/banned-word/all/page/{page}` | List every banned word, paginated | Yes |
+| GET | `/api/banned-word/all` | List every banned word | Yes |
 
 ---
 
 ## Endpoint Details
 
-### GET `/api/banned-word/all/page/{page}`
+### GET `/api/banned-word/all`
 
-List every banned word.
+List every banned word. **Not paginated** — the full list is returned in a single response.
 
 - **ID**: `webapp-banned-word-all`
 
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
+Takes no path parameters.
 
 ---
 

@@ -163,12 +163,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://structs.ai/api/cosmetic-mods</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://structs.ai/api/endpoints-by-entity</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -361,6 +355,18 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://structs.ai/api/webapp/player-address</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://structs.ai/api/webapp/work</loc>
+    <lastmod>2026-07-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://structs.ai/api/webapp/system</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -445,30 +451,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://structs.ai/examples/cosmetic-mods/</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/cosmetic-mods/guild-alpha-complete-mod</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/cosmetic-mods/multi-language-mod</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/cosmetic-mods/simple-miner-mod</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://structs.ai/examples/database/query-examples</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -500,18 +482,6 @@
   </url>
   <url>
     <loc>https://structs.ai/examples/errors/500-server-error</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/errors/cosmetic-mod-conflict</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/errors/cosmetic-mod-invalid</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -560,12 +530,6 @@
   </url>
   <url>
     <loc>https://structs.ai/examples/workflows/guild-token-lifecycle</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/examples/workflows/install-and-use-cosmetic-mod</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -777,6 +741,12 @@
   <url>
     <loc>https://structs.ai/knowledge/infrastructure/guild-stack</loc>
     <lastmod>2026-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://structs.ai/knowledge/infrastructure/structs-desktop</loc>
+    <lastmod>2026-07-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1123,18 +1093,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://structs.ai/protocols/cosmetic-mod-integration</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/protocols/cosmetic-mod-protocol</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://structs.ai/protocols/economic-protocol</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -1232,24 +1190,6 @@
   </url>
   <url>
     <loc>https://structs.ai/schemas/code-structures</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/schemas/cosmetic-mod</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/schemas/cosmetic-set</loc>
-    <lastmod>2026-02-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://structs.ai/schemas/cosmetic-skin</loc>
     <lastmod>2026-02-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

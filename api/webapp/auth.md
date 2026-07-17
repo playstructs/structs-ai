@@ -15,8 +15,10 @@
 | POST | `/api/auth/signup` | Register a new player (signature) | No (public) |
 | POST | `/api/auth/login` | Authenticate via Cosmos signature | No (public) |
 | GET | `/api/auth/logout` | Clear the current session | No (public prefix) |
+| GET | `/api/auth/player-address/{address}/guild/{guild_id}/player-id` | Resolve a player ID from an address + guild | No (public prefix) |
+| POST | `/api/auth/player-address` | Propose a pending signing address (signature-validated) | No (public) |
 
-All `/api/auth/*` routes are public (no session enforced by `PlayerAuthenticator`). `logout` operates on the current session cookie if one is present.
+All `/api/auth/*` routes are public (no session enforced by `PlayerAuthenticator`). `logout` operates on the current session cookie if one is present. The two `/api/auth/player-address*` routes are part of address registration — see [`player-address.md`](player-address.md) for the full address-management surface.
 
 ---
 

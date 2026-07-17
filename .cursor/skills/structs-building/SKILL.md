@@ -71,7 +71,7 @@ Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entit
 | Continental Power Plant | 10 | 1 | `armour` (DR 1); 5 kW/g |
 | World Engine | 10 | 1 | `armour` (DR 1); 10 kW/g |
 
-Charge costs (from your **per-player** bar): build-initiate 8, activate 2, defense-change 1, Command Ship move 3, stealth activate 2. Full charge table and PoW decay times: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building).
+Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate 2, defense-change 1, Command Ship move 3, stealth activate 2. Deactivate (single or batch) is free and works even while offline. Full charge table and PoW decay times: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building).
 
 ### Build times (initiation → D=3 complete, ~6 s/block)
 
@@ -91,7 +91,8 @@ Charge costs (from your **per-player** bar): build-initiate 8, activate 2, defen
 - **Move (Command Ship only — it's the one movable struct):** `struct-move TX_FLAGS -- [cmd-ship-id] [new-ambit] [new-slot] [new-location]`. The chain rejects `struct-move` on any other struct.
 - **Defense assignment:** `struct-defense-set TX_FLAGS -- [defender-id] [protected-id]` / `struct-defense-clear TX_FLAGS -- [defender-id]` (1 charge).
 - **Stealth (Stealth Bomber, Submersible):** `struct-stealth-activate` / `struct-stealth-deactivate` (2 charge to activate).
-- **Deactivate / re-activate:** `struct-deactivate` frees its power; `struct-activate` brings it back (2 charge). Taking an Extractor/Refinery offline halts your pipeline (Tier 1).
+- **Deactivate / re-activate:** `struct-deactivate` frees its power (free, and works even while you're offline — a recovery lever); `struct-activate` brings it back (2 charge, requires you online). Deactivate many at once with `struct-deactivate-batch -- [id1,id2,...]` (up to 65). Taking an Extractor/Refinery offline halts your pipeline (Tier 1).
+- **Trash (Tier 2, IRREVERSIBLE):** `struct-trash TX_FLAGS -- [struct-id]` permanently destroys a **built** struct you own to free its slot (costs 8 charge, same as building it). There is no undo and nothing is refunded. To abort an **unfinished** build instead, use `struct-build-cancel`.
 - **Generator infuse (Tier 2, IRREVERSIBLE):** `struct-generator-infuse TX_FLAGS -- [struct-id] [amount]`. Alpha Matter is annihilated into energy — no defusion, and a raided generator takes the infused matter with it. Always escalate; confirm the generator's defense posture first. See [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL).
 
 ## Commands reference
@@ -103,6 +104,8 @@ Charge costs (from your **per-player** bar): build-initiate 8, activate 2, defen
 | Complete (manual, rare) | `structsd tx structs struct-build-complete TX_FLAGS -- [struct-id]` |
 | Cancel | `structsd tx structs struct-build-cancel TX_FLAGS -- [struct-id]` |
 | Activate / Deactivate | `structsd tx structs struct-activate \| struct-deactivate TX_FLAGS -- [struct-id]` |
+| Deactivate (batch, ≤65) | `structsd tx structs struct-deactivate-batch TX_FLAGS -- [id1,id2,...]` |
+| Trash (destroy built struct, IRREVERSIBLE) | `structsd tx structs struct-trash TX_FLAGS -- [struct-id]` |
 | Move (CMD ship) | `structsd tx structs struct-move TX_FLAGS -- [cmd-ship-id] [ambit] [slot] [location]` |
 | Defense set / clear | `structsd tx structs struct-defense-set \| struct-defense-clear TX_FLAGS -- [defender-id] [protected-id]` |
 | Stealth on / off | `structsd tx structs struct-stealth-activate \| struct-stealth-deactivate TX_FLAGS -- [struct-id]` |
