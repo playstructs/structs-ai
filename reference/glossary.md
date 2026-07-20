@@ -149,6 +149,9 @@ A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struc
 
 ## I
 
+### idle vs vulnerable
+A **dormant** owner (no recent transactions) is not a **vulnerable** one: online status is pure power math, not activity, so a powered Command Ship keeps defending indefinitely with no player action. Never infer raidability from an inactivity signal or a UI "inactive"/"vulnerable" badge; gate on the live predicate (Command Ship online + fleet on station). A dormant owner who holds ore is a prime [siege](#siege-raid) target, not an opportunistic one. → [combat.md — Idle is not vulnerable](../knowledge/mechanics/combat.md#idle-is-not-vulnerable)
+
 ### Indirect Combat Module
 Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
 
@@ -235,7 +238,10 @@ Self-damage the attacker takes after firing, applied only if it survives the who
 ## S
 
 ### shieldsVulnerable
-The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate. → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate — and a state you can **create** (see [siege raid](#siege-raid)), not only wait for. Distinct from an owner being merely [idle](#idle-vs-vulnerable). → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+
+### siege raid
+Forcing shieldsVulnerable open on a shielded defender: with your fleet present at the target, strip same-ambit blockers and destroy (or power-starve) the defender's Command Ship, then complete the raid before they rebuild it. The active counterpart to an **opportunistic raid** (catching a defender already vulnerable). Most reliable against a dormant defender who won't rebuild. → [combat.md — Raid attack doctrine](../knowledge/mechanics/combat.md#raid-attack-doctrine)
 
 ### shield_change
 A GRASS category fired when a planet's shield value changes. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)

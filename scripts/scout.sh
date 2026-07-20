@@ -7,6 +7,17 @@
 # the fleet is on station. This script gathers those facts plus defenders and
 # stealable ore, then prints a verdict. It is READ-ONLY.
 #
+# Two raid modes shape the verdict:
+#   - OPPORTUNISTIC: the target is already vulnerable  -> "GO (verify)".
+#   - SIEGE:         the target is shielded but holds ore -> "SIEGE CANDIDATE":
+#                    an opportunistic raid can't complete, but you can force the
+#                    window open by destroying their Command Ship (a fleet
+#                    engagement + your home left exposed while away). Best vs a
+#                    dormant owner who won't rebuild.
+# NOTE: an idle/dormant owner is NOT the same as a vulnerable one — powered
+# structs stay online with no player action. This script surfaces the owner's
+# last action so you don't mistake inactivity for raidability.
+#
 # Usage:   scripts/scout.sh <planet-id>            # e.g. scripts/scout.sh 2-117
 #          scripts/scout.sh <planet-id> --raw      # also dump raw JSON sections
 # Env:     STRUCTSD, STRUCTS_NODE (see lib.sh)
@@ -71,8 +82,22 @@ fi
 
 defender_count="$(printf '%s' "$defenders_json" | jq -r '[ (.. | objects | select(.id? != null)) ] | length' 2>/dev/null || echo "?")"
 
+# Owner activity: lastAction is a block height. Compare to current height (best
+# effort) so a dormant owner is visible and not mistaken for a vulnerable one.
+last_action="$(jget "$owner_json" '(.Player // .player // .).lastAction // .lastAction')"
+current_height="$(${STRUCTSD} status 2>/dev/null | jq -r '.sync_info.latest_block_height // .SyncInfo.latest_block_height // empty' 2>/dev/null || true)"
+idle_desc=""
+if [[ -n "$last_action" && "$last_action" =~ ^[0-9]+$ ]]; then
+  if [[ -n "$current_height" && "$current_height" =~ ^[0-9]+$ && "$current_height" -ge "$last_action" ]]; then
+    idle_desc="lastAction=$last_action (~$((current_height - last_action)) blocks ago)"
+  else
+    idle_desc="lastAction=$last_action"
+  fi
+fi
+
 echo "${C_CYN}== Raid scout: planet $PLANET_ID ($pname) ==${C_RST}"
 printf '  %-22s %s\n' "owner"            "${owner:-?}"
+[[ -n "$idle_desc" ]] && printf '  %-22s %s\n' "owner activity" "$idle_desc"
 printf '  %-22s %s\n' "stealable ore"    "${ore:-0}"
 printf '  %-22s %s\n' "command ship"     "present=$cs_present status=${cs_status:-?}"
 printf '  %-22s %s\n' "fleet"            "${fleet_station:-?} (away=$fleet_away)"
@@ -81,14 +106,18 @@ printf '  %-22s %s\n' "defenders on planet" "${defender_count:-?}"
 echo
 
 verdict="${C_YEL}REVIEW${C_RST}"; reason="confirm command-ship and fleet status manually"
-if [[ "$vulnerable" == "no" ]]; then
-  verdict="${C_RED}NO-GO${C_RST}"; reason="fleet on station with Command Ship online — shields up, raid cannot complete"
+if [[ "$vulnerable" == "no" && "${ore:-0}" != "0" ]]; then
+  verdict="${C_YEL}SIEGE CANDIDATE${C_RST}"
+  reason="shields up (CMD ship online, fleet on station) — an opportunistic raid can't complete; the only path is to destroy the CMD ship first (a fleet engagement + your home exposed while away). Weigh ${ore} ore vs that cost; best vs a dormant owner who won't rebuild."
+elif [[ "$vulnerable" == "no" ]]; then
+  verdict="${C_RED}NO-GO${C_RST}"; reason="shields up and no unrefined ore to steal — nothing to gain even via siege"
 elif [[ "$vulnerable" == "yes" && "${ore:-0}" != "0" ]]; then
   verdict="${C_GRN}GO (verify)${C_RST}"; reason="shields vulnerable and ore present — confirm you out-damage $defender_count defender(s)"
 elif [[ "$vulnerable" == "yes" ]]; then
   verdict="${C_YEL}LOW VALUE${C_RST}"; reason="vulnerable but no unrefined ore to steal"
 fi
 echo "  verdict: $verdict — $reason"
+echo "${C_DIM}  Idle != vulnerable: a dormant owner with an online CMD ship is shielded, not raidable — don't fleet-move on inactivity alone.${C_RST}"
 echo "${C_DIM}  Re-scout immediately before fleet-move; power/fleet state changes block-to-block.${C_RST}"
 
 if [[ "$RAW" == "--raw" ]]; then

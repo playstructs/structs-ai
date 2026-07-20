@@ -84,7 +84,48 @@ nohup structsd tx structs planet-raid-compute -D 3 --from ferro --gas auto --gas
 ## What made this good
 
 - **Scouted first** — one free query prevented hours of wasted proof-of-work.
-- **Applied the shield-vulnerability gate correctly**: fleet on station with the Command Ship online → no completable raid, full stop.
-- **Chose the cheap option** (watch + wait) over a disproportionate fleet war for modest ore.
+- **Applied the shield-vulnerability gate correctly**: fleet on station with the Command Ship online → no *opportunistic* raid, but a siege decision (not a full stop).
+- **Chose the cheap option** (watch + wait) over a disproportionate fleet war for modest ore — an explicit siege *rejection on economics*, not ignorance of the option.
 - **Re-scouted on fresh signal** before committing, and only then did the **target economics** (armour-piercing vs. Tank armour, reward vs. cost).
 - **Stayed disciplined**: an honest NO-GO is a win, not a failure.
+
+---
+
+## Variant — dormant target with ore (when a siege *is* worth it)
+
+Same gate, different economics. A scout of planet `2-398` returns:
+
+```
+== Raid scout: planet 2-398 (Hale) ==
+  owner                  1-229
+  owner activity         lastAction=1636389 (~83000 blocks ago)
+  stealable ore          410
+  command ship           present=yes status=online
+  fleet                  onStation (away=no)
+  shields vulnerable     no
+  defenders on planet    1
+  verdict: SIEGE CANDIDATE — shields up (CMD ship online, fleet on station) — an
+    opportunistic raid can't complete; the only path is to destroy the CMD ship
+    first. Weigh 410 ore vs that cost; best vs a dormant owner who won't rebuild.
+```
+
+> **Idle is not vulnerable.** The owner hasn't acted in ~83k blocks (~5 days), but their Command Ship is still online and their fleet on station, so `IsDefenderCommandStructVulnerable()` is false — a straight `planet-raid-compute` would be rejected ("no active raid window"), and moving my fleet in *without* a plan to break the shield would just drop my own shields for nothing. Inactivity is not raidability.
+
+> But that same dormancy is exactly what makes a **siege** attractive: an idle owner won't rebuild a destroyed Command Ship, so the window I force open stays open. Economics: 410 ore, a single defender on the planet, and a Command Ship I can reach with my Battleship. The cost is a fleet engagement plus my home exposed while away — acceptable for 410 ore against a target that can't react. This is a go, as a **siege**, not an opportunistic raid.
+
+```bash
+# 1) refine my home ore first (home shields drop while my fleet is away), then move in
+structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9-318 2-398
+# 2) strip the same-ambit blocker, then destroy the defender's Command Ship
+structsd query structs struct-all-by-planet 2-398 -o json | jq '.. | objects | select(.id) | {id, type, ambit:.operatingAmbit}'
+structsd tx structs struct-attack --from ferro --gas auto --gas-adjustment 1.5 -- 6-812 6-800 primaryWeapon
+# ... continue until the Command Ship (6 HP) is destroyed ...
+# 3) verify the window opened, THEN compute
+structsd query structs planet 2-398 -o json | jq '{blockStartRaid}'   # != 0 means shieldsVulnerable
+nohup structsd tx structs planet-raid-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 9-318 \
+  > memory/jobs/raid-9-318.log 2>&1 & echo $! > memory/jobs/raid-9-318.pid
+```
+
+> Destroying the Command Ship fires the chain's vulnerability hook and starts `blockStartRaid` because my raider is already present — only then is compute worthwhile. If this owner were *active*, I'd expect a Command Ship rebuild and treat the raid as a race; against a dormant owner, the window holds. Move home and refine the seized ore immediately.
+
+**The lesson**: "Command Ship online" is a *decision point* — opportunistic no-go, siege maybe-go — not a reason to abandon a target that holds ore.

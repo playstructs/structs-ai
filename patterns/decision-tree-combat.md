@@ -32,8 +32,13 @@ flowchart TD
     playerCheck -->|Yes| shieldCheck{"Defender shields vulnerable?\n(fleet off-station, or CMD\noffline/destroyed)"}
     playerCheck -->|No| errPlayer["Error: Player must\nbe online to raid"]
     shieldCheck -->|Yes| executeRaid["Execute raid\n(requires proof-of-work)"]
-    shieldCheck -->|No| errShield["Rejected: shields_active -\nwait for defender vulnerability"]
+    shieldCheck -->|No| createVuln{"Ore worth a siege?\n(target holds ore, CMD ship\nreachable, home exposure OK)"}
+    createVuln -->|Yes| siege["Siege: strip same-ambit blockers,\ndestroy defender CMD ship to open\nthe window, then execute raid"]
+    createVuln -->|No| errShield["Abort/watch: shields up\n(no active raid window) -\ncompute would be wasted work"]
+    siege --> executeRaid
 ```
+
+Vulnerability is a state you can create: if the defender is shielded (Command Ship online, fleet on station), you either wait for them to slip (opportunistic) or **destroy their Command Ship** to force the window open (siege). "Shields up" is a decision point, not a dead end.
 
 ### Defend Flow
 
@@ -73,7 +78,7 @@ flowchart TD
 | risk <= acceptable | Prepare forces and execute | Abort attack | Assessed after scouting target |
 | fleetAway == true | Check raider player status | Error: move fleet first | Required for raid initiation |
 | playerOnline == true | Check defender shields | Error: player must be online | Raider's player must be online |
-| defenderShieldsVulnerable == true | Execute raid with PoW | Rejected: shields_active | Defender's fleet off-station, or CMD offline/destroyed |
+| defenderShieldsVulnerable == true | Execute raid with PoW | Siege decision (create vulnerability) or abort | Vulnerable = defender's fleet off-station, or CMD offline/destroyed. If not vulnerable, evaluate destroying the CMD ship to force the window rather than treating it as a hard stop. |
 | battleOutcome == victory | Secure position | Rebuild and recover | Evaluated after defense resolution |
 
 ## Attack Workflow
@@ -93,10 +98,10 @@ Raids have strict prerequisites that must all be satisfied in sequence:
 
 1. **Fleet Away** -- The fleet must have departed its home station before a raid can begin.
 2. **Player Online** -- The raider's player must be online to authorize the raid action.
-3. **Defender Shields Vulnerable** -- The target's shields must be vulnerable (defender's fleet off-station, or their Command Ship offline/destroyed/non-existent); otherwise completion is rejected with `shields_active`.
+3. **Defender Shields Vulnerable** -- The target's shields must be vulnerable (defender's fleet off-station, or their Command Ship offline/destroyed/non-existent); otherwise completion is rejected with `shields_active` (and `planet-raid-compute` refuses with "no active raid window" while `blockStartRaid == 0`). If the defender is shielded, you can **create** vulnerability: with your fleet present at the target, strip same-ambit blockers and destroy the defender's Command Ship to open the window (the **siege** path). Note an idle/dormant owner is not automatically vulnerable — a powered Command Ship keeps defending.
 4. **Proof-of-Work** -- Raid execution requires a proof-of-work submission.
 
-Failure at any step produces a specific error and halts the raid attempt.
+Failure at any step produces a specific error and halts the raid attempt (or, for a shielded defender, points you at the siege path rather than a dead end).
 
 ## Defend Workflow
 

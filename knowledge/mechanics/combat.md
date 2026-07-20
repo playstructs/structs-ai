@@ -321,12 +321,55 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
 
+This predicate is the chain function `IsDefenderCommandStructVulnerable()` (verified in `structsd` source, `keeper/planet_cache.go`): it returns vulnerable when the owner has no fleet, the **defender's fleet is off-station**, there is **no Command Ship**, or the Command Ship is **destroyed or offline**. (Struct/player *online* is pure power math — load vs capacity — not recent activity; see [power.md](power.md).)
+
+### Vulnerability is a state you can create — two ways to raid
+
+The single biggest raid misconception is treating "shields vulnerable" as a fixed property to *hunt for*. It is a **state**, and you can put a defender into it. There are two modes:
+
+- **Opportunistic raid** — the defender is *already* vulnerable when you scout (their fleet is off-station, or their Command Ship is already offline/destroyed/absent). You move in and grind the PoW. Cheap, but genuinely-vulnerable targets holding ore are rare.
+- **Siege raid (force vulnerability)** — the defender is shielded (Command Ship online, fleet on station), so you **manufacture** the window: strip same-ambit blockers, **destroy the defender's Command Ship**, and complete the raid before they rebuild it. Destroying (or power-starving) the Command Ship is the intended lever — see [Raid attack doctrine](#raid-attack-doctrine) below.
+
+```mermaid
+stateDiagram-v2
+    [*] --> shielded: CMD ship online + fleet on station
+    shielded --> vulnerable: defender fleet leaves / CMD ship offline / CMD ship destroyed
+    vulnerable --> shielded: CMD ship back online with fleet on station (clock clears)
+    vulnerable --> raidSuccessful: raider completes PoW while clock runs
+    note right of shielded
+        planet-raid-compute is rejected here
+        ("no active raid window"); blockStartRaid = 0
+    end note
+    note right of vulnerable
+        blockStartRaid running; PoW age accrues
+    end note
+```
+
+### Idle is not vulnerable
+
+A **dormant** owner (no transactions for days) is *not* the same as a **vulnerable** one. A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their fleet stays on station — `IsDefenderCommandStructVulnerable()` returns **false** and the planet is unraidable by the opportunistic path, no matter how long they've been idle. Do not infer raidability from an inactivity signal (or from a UI "vulnerable"/"inactive" badge). Gate on the **live predicate**: Command Ship online + fleet on station.
+
+The flip side is the key insight for offense: **a dormant owner is the *ideal siege target*.** Because they are not watching, they will not rebuild a destroyed Command Ship or restore a power-starved one — so once you force the window open it stays open. An active defender, by contrast, may rebuild the Command Ship and slam the window shut.
+
+**The trap (a strictly-negative move).** Moving your fleet to a *not-yet-vulnerable* target and expecting to raid is worse than doing nothing: your fleet is now off-station, so **your own** shields drop and your stored ore is exposed — all for a raid that can never complete until you also destroy their Command Ship. If you commit your fleet, commit to the *siege* (destroy the Command Ship), not just the fleet-move.
+
 The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
 
-- Set when the planet becomes vulnerable (the defending Command Ship goes offline or the defender's fleet leaves station), or when raiders arrive to find it already vulnerable.
+- The clock is only meaningful **while a raider is present** (the planet's raid slot is occupied). It is set to the current block when the planet becomes vulnerable with a raider present — either raiders arrive to find it already vulnerable (opportunistic), or the defender's Command Ship goes down *while* raiders are there (siege). The chain recomputes this on every relevant change via `RefreshRaidVulnerability()`.
 - Cleared (back to 0) when the planet stops being vulnerable (the Command Ship comes back online with the fleet on station), and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
 
-So a raider must catch the defender vulnerable *and* let the clock age before the puzzle becomes solvable. If the defender restores their shields mid-raid (Command Ship back online with the fleet on station), the clock resets and the raider must wait for the planet to become vulnerable again.
+So a raider must have their fleet at the target, catch (or make) the defender vulnerable, *and* let the clock age before the puzzle becomes solvable. If the defender restores their shields mid-raid (Command Ship back online with the fleet on station), the clock resets and the raid status flips to `ongoing` until the planet becomes vulnerable again.
+
+### The two rejection messages (don't confuse them)
+
+The tooling surfaces the vulnerability gate in two different places with two different strings — verified in `structsd` source:
+
+| Where | Message | Meaning |
+|-------|---------|---------|
+| CLI pre-check, `planet-raid-compute` (`client/cli/tx_planet_raid_compute.go`) | `planet (X) shields are not vulnerable: no active raid window (defending Command Ship may still be online)` | `blockStartRaid == 0` — no live raid window; the compute would be wasted work. This is the message a raider usually hits first. |
+| Chain handler, `planet-raid-complete` (`keeper/msg_server_planet_raid_complete.go`) | `planet (X) cannot raid_complete while shields_active` / `...while raid_clock_unset` | The completion transaction itself is rejected: `shields_active` = defender not vulnerable at completion; `raid_clock_unset` = clock is 0. |
+
+Both point at the same fix: the defender is not vulnerable. Either wait/watch for them to slip (opportunistic), or open the window yourself by destroying their Command Ship (siege). Neither means "grind harder."
 
 ### Raid statuses
 
@@ -352,12 +395,17 @@ Destroying the defender's Command Ship (or catching their fleet off-station) mak
 
 `trigger_raid_defeat_by_destruction` is a property of the Command Ship. When a Command Ship is destroyed while **away from home** (its planet's owner differs from its own owner), its fleet is defeated: the raid ends with `attackerDefeated` and the fleet is sent home. This defeats an **attacking** fleet whose Command Ship dies during a raid.
 
-**Raid attack doctrine:**
+### Raid attack doctrine
 
-1. Strip **same-ambit blockers** so your attacks reach the Command Ship (cross-ambit defenders counter but cannot block — see [Blocking](#blocking)).
-2. Destroy the defender's **Command Ship** to open the `shieldsVulnerable` window.
-3. Complete the **raid** while it is down to seize all stored ore.
-4. Expect an online defender to rebuild the Command Ship — a destroyed Command Ship can be rebuilt (see [Struct Destruction](#struct-destruction)), which shuts the window. Raids are most reliable against an **offline** defender who cannot restore it.
+This is the **siege** path — how to force the window open when the defender is shielded. It is executable at the source level: an away raiding fleet that is **first in the target's raid queue** can attack any struct on that planet, including the on-station defender's Command Ship (`isReachable`, verified in `keeper/struct_cache.go`), subject to ambit reach and same-ambit blockers.
+
+1. **Move your fleet to the target** (raid `initiated`). While the defender is still shielded, `blockStartRaid` stays 0 and `planet-raid-compute` is rejected — this is expected; do not grind yet.
+2. Strip **same-ambit blockers** so your attacks reach the Command Ship (cross-ambit defenders counter but cannot block — see [Blocking](#blocking)).
+3. Destroy the defender's **Command Ship** to open the `shieldsVulnerable` window. The destruction path fires `CommandStructRaidStatusHook()` → `RefreshRaidVulnerability()`, which starts the clock and emits `shieldsVulnerable` because your raider is already present.
+4. Run **`planet-raid-compute`** now that the clock is running, and complete while it is down to seize all stored ore.
+5. Expect an *online* defender to rebuild the Command Ship — a destroyed Command Ship can be rebuilt (see [Struct Destruction](#struct-destruction)), which shuts the window. Sieges are most reliable against an **offline or dormant** defender who cannot/will not restore it.
+
+**Cost of a siege.** It is a real commitment, not a free option: you must win the fleet engagement to kill the Command Ship (6 HP, usually defended), and while your fleet is away **your own** planet's shields are down. Weigh the defender's `storedOre` (all of which you seize) against that exposure and the risk your raiding Command Ship dies while away (`attackerDefeated`, `trigger_raid_defeat_by_destruction`). Small ore + a defended Command Ship often means "watch and wait" beats "siege." But a dormant target holding meaningful ore, whose Command Ship you can reach, is exactly what a siege is for.
 
 ---
 

@@ -21,10 +21,10 @@ Conventions are in [`conventions.md`](https://structs.ai/skills/conventions). Ev
 ## Decisions
 
 **Scout before you commit.** A raid is ~hours of PoW; a single query tells you if it's even possible. Always check, in order:
-1. **Shield vulnerability** — is the owner's Command Ship offline/destroyed? If not, the raid cannot complete. Stop here.
-2. **Defenders** — Planetary Defense Cannons, Tanks, generators (armoured: damage-reduction 1), shield contribution. Can your fleet out-damage the defense within the vulnerability window?
+1. **Shield vulnerability** — is the owner's fleet off-station, or their Command Ship offline/destroyed/absent? If **yes**, an opportunistic raid is on the table. If **no** (Command Ship online, fleet on station), an opportunistic raid can't complete — but this is *not* a dead end: it's a **siege decision** (can you reach and destroy their Command Ship?). See [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL). Note: **idle is not vulnerable** — a dormant owner's powered Command Ship keeps defending, so never read raidability off an inactivity signal.
+2. **Defenders** — Planetary Defense Cannons, Tanks, generators (armoured: damage-reduction 1), shield contribution. Can your fleet out-damage the defense within the vulnerability window (and, for a siege, kill the Command Ship before an active defender rebuilds it)?
 3. **Reward** — unrefined ore on the planet (stealable) vs. your cost. Refined Alpha can't be raided.
-4. **Power** — is the target online at all? An offline player can't react but also may have little worth taking.
+4. **Power** — is the target online at all? An offline/power-starved owner is already vulnerable *and* can't react — the ideal target; but confirm there's ore worth taking.
 
 **Read playstyle, then counter it.** Map observations to an archetype with [`playbooks/meta/reading-opponents`](https://structs.ai/playbooks/meta/reading-opponents) and pick a response from [`playbooks/meta/counter-strategies`](https://structs.ai/playbooks/meta/counter-strategies).
 
