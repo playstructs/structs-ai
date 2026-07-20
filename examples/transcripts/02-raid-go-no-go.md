@@ -61,7 +61,8 @@ scripts/scout.sh 2-117
 **Agent:** Gate passes. Now the economics. I check that my fleet out-damages their defense within the window, and that the reward beats my cost.
 
 ```bash
-structsd query structs struct-all-by-planet 2-117 -o json | jq '.. | objects | select(.id) | {id, type, ambit:.operatingAmbit}'
+# Enumerate the planet's defenders via the Guild Stack (no CLI lists structs by planet):
+psql "$GUILD_STACK_DSN" -c "select id, type, operating_ambit from struct where location_id = '2-117';"
 ```
 
 > Defenders: a Planetary Defense Cannon and two Tanks (Tanks have armour — damage-reduction 1). My raiding fleet has a Battleship (armour-piercing primary on land/water — it negates that Tank armour) plus two more units. I can clear or out-pace the defense before they likely restore power. Reward 900 ore vs. my raid proof-of-work cost and the risk of counter-fire: worth it.
@@ -116,8 +117,11 @@ Same gate, different economics. A scout of planet `2-398` returns:
 ```bash
 # 1) refine my home ore first (home shields drop while my fleet is away), then move in
 structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9-318 2-398
-# 2) strip the same-ambit blocker, then destroy the defender's Command Ship
-structsd query structs struct-all-by-planet 2-398 -o json | jq '.. | objects | select(.id) | {id, type, ambit:.operatingAmbit}'
+# 2) inspect the defending Command Ship's ambit (scout.sh surfaced its id), then
+#    enumerate same-ambit blockers via the Guild Stack (no CLI lists structs by planet)
+structsd query structs struct 5-2187 -o json | jq '{ambit:(.Struct//.struct).operatingAmbit, status:(.structAttributes.status)}'
+psql "$GUILD_STACK_DSN" -c "select id, type, operating_ambit from struct where location_id = '2-398';"
+# strip the same-ambit blocker, then destroy the defender's Command Ship
 structsd tx structs struct-attack --from ferro --gas auto --gas-adjustment 1.5 -- 6-812 6-800 primaryWeapon
 # ... continue until the Command Ship (6 HP) is destroyed ...
 # 3) verify the window opened, THEN compute

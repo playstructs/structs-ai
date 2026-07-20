@@ -2634,7 +2634,7 @@ If the defender restores their Command Ship mid-raid, the clock resets — withd
 
 Use this when the target holds ore but is shielded (Command Ship online, fleet on station) — the case an opportunistic raid can't touch. It costs a fleet engagement and leaves your home exposed, so run the go/no-go above first. Best against a dormant defender who won't rebuild.
 
-1. **Scout the Command Ship's ambit and defenders** — `scripts/scout.sh [planet-id]` plus `structsd query structs struct-all-by-planet [planet-id]`. Identify the defender's Command Ship, its ambit, and the **same-ambit** structs that can block for it. Confirm you have weapons that reach that ambit.
+1. **Scout the Command Ship's ambit and defenders** — `scripts/scout.sh [planet-id]` surfaces the defender's Command Ship id and status; query it directly with `structsd query structs struct [commandStruct-id]` for its `operatingAmbit`. To enumerate the **same-ambit** structs that can block for it, use the Guild Stack ("defenders by planet" — there is no `structsd` CLI command that lists a planet's structs). Confirm you have weapons that reach the Command Ship's ambit.
 2. **Refine your own ore and move your fleet to the target.** Your home shields drop while away — accept that exposure as the cost of the siege.
    ```
    structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]
@@ -3168,8 +3168,11 @@ Conventions are in [`conventions.md`](https://structs.ai/skills/conventions). Ev
 ```bash
 structsd query structs player [player-id]
 structsd query structs planet [planet-id]
-structsd query structs struct-all-by-planet [planet-id]   # defenders, generators, Command Ship
-structsd query structs player-charge [player-id]          # are they accumulating to act?
+structsd query structs fleet [fleet-id]                   # owner's fleet: commandStruct id + on-station/away
+structsd query structs struct [commandStruct-id]          # Command Ship status/ambit (from the fleet's commandStruct)
+# Defenders/generators by planet and player charge are NOT structsd CLI commands
+# (they route through the Guild Stack / webapp query API — see scripts/BASELINE.md):
+#   Guild Stack: select id,type,operating_ambit from struct where location_id='[planet-id]';
 ```
 Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`](https://structs.ai/scripts/scout.sh) for a one-shot bundle when available.
 
@@ -3220,7 +3223,7 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 |--------|---------|
 | Player | `structsd query structs player [id]` / `player-charge [id]` |
 | Planet | `structsd query structs planet [id]` / `planet-all` |
-| Structs on a planet | `structsd query structs struct-all-by-planet [planet-id]` |
+| Structs on a planet | Guild Stack: `select id,type,operating_ambit from struct where location_id='[planet-id]'` (no `structsd` CLI equivalent) |
 | Struct detail | `structsd query structs struct [id]` |
 | Guild | `structsd query structs guild [id]` / `guild-all` |
 | Guild members | `structsd query structs guild-membership-all-by-guild [guild-id]` |
@@ -3233,7 +3236,7 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 
 ## Verification
 
-Intel is only as good as its freshness. Confirm a raid window by re-running `struct-all-by-planet` + the owner's Command Ship status immediately before acting, and compare the new block height to your stored `scoutedAtBlock`.
+Intel is only as good as its freshness. Confirm a raid window by re-checking the owner's Command Ship status (`struct [commandStruct-id]`) and fleet position (`fleet [fleet-id]`) immediately before acting, and compare the new block height to your stored `scoutedAtBlock`.
 
 ## Errors
 
@@ -4864,6 +4867,7 @@ In the live `struct_attack` event `detail`, the attacker context is **flat** at 
 | Sufficient charge | ✓ | — |
 | Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
 | Raider fleet away (at the target) | — | ✓ |
+| Raider fleet first in the target's queue (`LocationListForward == ""`) | — | ✓ |
 | **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
 | Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
@@ -4929,6 +4933,8 @@ The tooling surfaces the vulnerability gate in two different places with two dif
 | Chain handler, `planet-raid-complete` (`keeper/msg_server_planet_raid_complete.go`) | `planet (X) cannot raid_complete while shields_active` / `...while raid_clock_unset` | The completion transaction itself is rejected: `shields_active` = defender not vulnerable at completion; `raid_clock_unset` = clock is 0. |
 
 Both point at the same fix: the defender is not vulnerable. Either wait/watch for them to slip (opportunistic), or open the window yourself by destroying their Command Ship (siege). Neither means "grind harder."
+
+> **One message, two independent gates.** `blockStartRaid` is set only by `RefreshRaidVulnerability()`, which returns early unless `GetLocationListStart() != ""` (a raider is present). So `blockStartRaid == 0` — and the single `no active raid window` string — collapses **two independent conditions**: (1) **a raider is present** at the target, and (2) **the defender is vulnerable**. If you have not moved your fleet in yet, the clock is 0 for reason (1), not (2); moving in against a shielded defender then flips the reason to (2) but the clock still stays 0. Completion (`planet-raid-complete`) adds two more gates the compute message doesn't mention: your raiding fleet must be **first in the queue** (`LocationListForward == ""`) and your **player online**. Read "no active raid window" as "one of {raider-present-and-first-in-queue, defender-vulnerable} is not yet true," not as a hashing problem.
 
 ### Raid statuses
 
@@ -12340,7 +12346,8 @@ scripts/scout.sh 2-117
 **Agent:** Gate passes. Now the economics. I check that my fleet out-damages their defense within the window, and that the reward beats my cost.
 
 ```bash
-structsd query structs struct-all-by-planet 2-117 -o json | jq '.. | objects | select(.id) | {id, type, ambit:.operatingAmbit}'
+# Enumerate the planet's defenders via the Guild Stack (no CLI lists structs by planet):
+psql "$GUILD_STACK_DSN" -c "select id, type, operating_ambit from struct where location_id = '2-117';"
 ```
 
 > Defenders: a Planetary Defense Cannon and two Tanks (Tanks have armour — damage-reduction 1). My raiding fleet has a Battleship (armour-piercing primary on land/water — it negates that Tank armour) plus two more units. I can clear or out-pace the defense before they likely restore power. Reward 900 ore vs. my raid proof-of-work cost and the risk of counter-fire: worth it.
@@ -12395,8 +12402,11 @@ Same gate, different economics. A scout of planet `2-398` returns:
 ```bash
 # 1) refine my home ore first (home shields drop while my fleet is away), then move in
 structsd tx structs fleet-move --from ferro --gas auto --gas-adjustment 1.5 -- 9-318 2-398
-# 2) strip the same-ambit blocker, then destroy the defender's Command Ship
-structsd query structs struct-all-by-planet 2-398 -o json | jq '.. | objects | select(.id) | {id, type, ambit:.operatingAmbit}'
+# 2) inspect the defending Command Ship's ambit (scout.sh surfaced its id), then
+#    enumerate same-ambit blockers via the Guild Stack (no CLI lists structs by planet)
+structsd query structs struct 5-2187 -o json | jq '{ambit:(.Struct//.struct).operatingAmbit, status:(.structAttributes.status)}'
+psql "$GUILD_STACK_DSN" -c "select id, type, operating_ambit from struct where location_id = '2-398';"
+# strip the same-ambit blocker, then destroy the defender's Command Ship
 structsd tx structs struct-attack --from ferro --gas auto --gas-adjustment 1.5 -- 6-812 6-800 primaryWeapon
 # ... continue until the Command Ship (6 HP) is destroyed ...
 # 3) verify the window opened, THEN compute

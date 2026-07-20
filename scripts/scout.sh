@@ -46,16 +46,42 @@ owner_json=""; fleet_json=""; defenders_json=""
 [[ -n "$owner" ]] && owner_json="$(q player "$owner" || true)"
 fleet_id="$(jget "$owner_json" '(.Player // .player // .).fleetId // (.Player // .player // .).fleet_id')"
 [[ -n "$fleet_id" ]] && fleet_json="$(q fleet "$fleet_id" || true)"
-defenders_json="$(q struct-all-by-planet "$PLANET_ID" || true)"
+# NOTE: there is no `structsd query structs` command that lists the structs on a
+# planet (struct-all-by-planet is a Guild Stack / webapp query, not a CLI one —
+# see scripts/BASELINE.md). Defender enumeration is therefore out of scope for
+# this CLI-only script; use the Guild Stack for "defenders by planet".
 
-# Stealable ore = owner's unrefined ore balance (refined Alpha cannot be raided).
-ore="$(jget "$owner_json" '(.Player // .player // .).ore // .ore' "0")"
+# Stealable ore = owner's unrefined ore (refined Alpha cannot be raided).
+# storedOre lives on the PLAYER as a grid attribute, exposed as gridAttributes.ore
+# on the player query — NOT as planet.ore or player.ore.
+ore="$(jget "$owner_json" '(.gridAttributes // .GridAttributes // {}).ore' "0")"
 
-# Command Ship (struct type 1) status in the owner's fleet.
-cs_status="$(printf '%s' "$fleet_json" | jq -r '
-  [ (.. | objects | select((.type? // .structType? // .typeId?) as $t | ($t==1 or $t=="1")) ) ]
-  | (.[0].status // .[0].state // empty)' 2>/dev/null || true)"
-cs_present="no"; [[ -n "$cs_status" ]] && cs_present="yes"
+# Command Ship: it lives in the fleet's dedicated `commandStruct` field (a struct
+# id), NOT in the space/air/land/water ambit slot arrays. Read that id, then query
+# the struct for its live status. status is a bitmask (online=4, destroyed=32);
+# this mirrors HasCommandStruct + IsOnline/IsDestroyed as used by the chain's
+# IsDefenderCommandStructVulnerable().
+cs_id="$(jget "$fleet_json" '(.Fleet // .fleet // .).commandStruct')"
+cs_present="no"; [[ -n "$cs_id" ]] && cs_present="yes"
+
+cs_status_num=""; cs_health=""; cs_online="unknown"; cs_destroyed="unknown"
+if [[ "$cs_present" == "yes" ]]; then
+  cs_json="$(q struct "$cs_id" || true)"
+  cs_status_num="$(jget "$cs_json" '(.structAttributes // .StructAttributes // {}).status')"
+  cs_health="$(jget "$cs_json" '(.structAttributes // .StructAttributes // {}).health')"
+  if [[ "$cs_status_num" =~ ^[0-9]+$ ]]; then
+    (( cs_status_num & 32 )) && cs_destroyed="yes" || cs_destroyed="no"
+    (( cs_status_num & 4  )) && cs_online="yes"    || cs_online="no"
+  fi
+fi
+
+cs_desc="absent"
+if [[ "$cs_present" == "yes" ]]; then
+  if   [[ "$cs_destroyed" == "yes" ]]; then cs_desc="$cs_id destroyed"
+  elif [[ "$cs_online" == "yes" ]];    then cs_desc="$cs_id online (hp ${cs_health:-?})"
+  elif [[ "$cs_online" == "no" ]];     then cs_desc="$cs_id offline (hp ${cs_health:-?})"
+  else                                      cs_desc="$cs_id status=${cs_status_num:-?}"; fi
+fi
 
 # Fleet on-station vs away. The Command Ship only defends home while the fleet
 # is on station, so an away/off-station fleet leaves the planet vulnerable.
@@ -66,21 +92,24 @@ case "$(printf '%s' "$fleet_station" | tr '[:upper:]' '[:lower:]')" in
   *away*|*offstation*|*off_station*) fleet_away="yes" ;;
   *onstation*|*on_station*|*station*) fleet_away="no" ;;
 esac
-
-# Vulnerability: vulnerable if the fleet is away, or no command ship, or the
-# command ship reads offline/destroyed/inactive. Only "not vulnerable" when the
-# fleet is on station AND the command ship is online.
-vulnerable="unknown"
-if [[ "$fleet_away" == "yes" ]]; then
-  vulnerable="yes"
-else
-  case "$(printf '%s' "$cs_status" | tr '[:upper:]' '[:lower:]')" in
-    *offline*|*destroyed*|*inactive*|*off*|"") [[ "$cs_present" == "no" ]] && vulnerable="yes" || { [[ -n "$cs_status" ]] && vulnerable="yes"; } ;;
-    *online*|*active*|*on*) [[ "$fleet_away" == "no" ]] && vulnerable="no" ;;
-  esac
+# FleetStatus is onStation(0)/away(1); the 0 value is omitted from JSON. An away
+# fleet always renders "away", so an existing fleet with no away signal is on
+# station. Infer that so the readout and vulnerability check are explicit.
+if [[ "$fleet_away" == "unknown" && -n "$fleet_id" && -n "$fleet_json" ]]; then
+  fleet_away="no"; fleet_station="onStation (inferred)"
 fi
 
-defender_count="$(printf '%s' "$defenders_json" | jq -r '[ (.. | objects | select(.id? != null)) ] | length' 2>/dev/null || echo "?")"
+# Vulnerability mirrors IsDefenderCommandStructVulnerable(): vulnerable if the
+# fleet is off-station, there is no Command Ship, or the Command Ship is
+# destroyed or offline. Only "not vulnerable" when the fleet is on station AND a
+# built Command Ship is online.
+vulnerable="unknown"
+if   [[ "$fleet_away" == "yes" ]];    then vulnerable="yes"
+elif [[ "$cs_present" == "no" ]];     then vulnerable="yes"
+elif [[ "$cs_destroyed" == "yes" ]];  then vulnerable="yes"
+elif [[ "$cs_online" == "yes" ]];     then vulnerable="no"
+elif [[ "$cs_online" == "no" ]];      then vulnerable="yes"
+fi
 
 # Owner activity: lastAction is a block height. Compare to current height (best
 # effort) so a dormant owner is visible and not mistaken for a vulnerable one.
@@ -99,10 +128,10 @@ echo "${C_CYN}== Raid scout: planet $PLANET_ID ($pname) ==${C_RST}"
 printf '  %-22s %s\n' "owner"            "${owner:-?}"
 [[ -n "$idle_desc" ]] && printf '  %-22s %s\n' "owner activity" "$idle_desc"
 printf '  %-22s %s\n' "stealable ore"    "${ore:-0}"
-printf '  %-22s %s\n' "command ship"     "present=$cs_present status=${cs_status:-?}"
+printf '  %-22s %s\n' "command ship"     "present=$cs_present ($cs_desc)"
 printf '  %-22s %s\n' "fleet"            "${fleet_station:-?} (away=$fleet_away)"
 printf '  %-22s %s\n' "shields vulnerable" "$vulnerable"
-printf '  %-22s %s\n' "defenders on planet" "${defender_count:-?}"
+printf '  %-22s %s\n' "defenders on planet" "(CLI cannot list; use Guild Stack)"
 echo
 
 verdict="${C_YEL}REVIEW${C_RST}"; reason="confirm command-ship and fleet status manually"
@@ -112,7 +141,7 @@ if [[ "$vulnerable" == "no" && "${ore:-0}" != "0" ]]; then
 elif [[ "$vulnerable" == "no" ]]; then
   verdict="${C_RED}NO-GO${C_RST}"; reason="shields up and no unrefined ore to steal — nothing to gain even via siege"
 elif [[ "$vulnerable" == "yes" && "${ore:-0}" != "0" ]]; then
-  verdict="${C_GRN}GO (verify)${C_RST}"; reason="shields vulnerable and ore present — confirm you out-damage $defender_count defender(s)"
+  verdict="${C_GRN}GO (verify)${C_RST}"; reason="shields vulnerable and ${ore} ore present — confirm you out-damage the planet's defenders (enumerate via Guild Stack)"
 elif [[ "$vulnerable" == "yes" ]]; then
   verdict="${C_YEL}LOW VALUE${C_RST}"; reason="vulnerable but no unrefined ore to steal"
 fi
@@ -124,5 +153,5 @@ if [[ "$RAW" == "--raw" ]]; then
   echo; echo "${C_DIM}--- planet ---${C_RST}";    printf '%s\n' "$planet_json"    | jq . 2>/dev/null || true
   echo "${C_DIM}--- owner ---${C_RST}";           printf '%s\n' "$owner_json"     | jq . 2>/dev/null || true
   echo "${C_DIM}--- fleet ---${C_RST}";           printf '%s\n' "$fleet_json"     | jq . 2>/dev/null || true
-  echo "${C_DIM}--- defenders ---${C_RST}";       printf '%s\n' "$defenders_json" | jq . 2>/dev/null || true
+  echo "${C_DIM}--- command ship ---${C_RST}";    printf '%s\n' "${cs_json:-}"    | jq . 2>/dev/null || true
 fi

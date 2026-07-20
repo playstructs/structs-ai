@@ -305,6 +305,7 @@ In the live `struct_attack` event `detail`, the attacker context is **flat** at 
 | Sufficient charge | ✓ | — |
 | Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
 | Raider fleet away (at the target) | — | ✓ |
+| Raider fleet first in the target's queue (`LocationListForward == ""`) | — | ✓ |
 | **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
 | Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
@@ -370,6 +371,8 @@ The tooling surfaces the vulnerability gate in two different places with two dif
 | Chain handler, `planet-raid-complete` (`keeper/msg_server_planet_raid_complete.go`) | `planet (X) cannot raid_complete while shields_active` / `...while raid_clock_unset` | The completion transaction itself is rejected: `shields_active` = defender not vulnerable at completion; `raid_clock_unset` = clock is 0. |
 
 Both point at the same fix: the defender is not vulnerable. Either wait/watch for them to slip (opportunistic), or open the window yourself by destroying their Command Ship (siege). Neither means "grind harder."
+
+> **One message, two independent gates.** `blockStartRaid` is set only by `RefreshRaidVulnerability()`, which returns early unless `GetLocationListStart() != ""` (a raider is present). So `blockStartRaid == 0` — and the single `no active raid window` string — collapses **two independent conditions**: (1) **a raider is present** at the target, and (2) **the defender is vulnerable**. If you have not moved your fleet in yet, the clock is 0 for reason (1), not (2); moving in against a shielded defender then flips the reason to (2) but the clock still stays 0. Completion (`planet-raid-complete`) adds two more gates the compute message doesn't mention: your raiding fleet must be **first in the queue** (`LocationListForward == ""`) and your **player online**. Read "no active raid window" as "one of {raider-present-and-first-in-queue, defender-vulnerable} is not yet true," not as a hashing problem.
 
 ### Raid statuses
 

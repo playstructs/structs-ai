@@ -37,8 +37,11 @@ Conventions are in [`conventions.md`](https://structs.ai/skills/conventions). Ev
 ```bash
 structsd query structs player [player-id]
 structsd query structs planet [planet-id]
-structsd query structs struct-all-by-planet [planet-id]   # defenders, generators, Command Ship
-structsd query structs player-charge [player-id]          # are they accumulating to act?
+structsd query structs fleet [fleet-id]                   # owner's fleet: commandStruct id + on-station/away
+structsd query structs struct [commandStruct-id]          # Command Ship status/ambit (from the fleet's commandStruct)
+# Defenders/generators by planet and player charge are NOT structsd CLI commands
+# (they route through the Guild Stack / webapp query API — see scripts/BASELINE.md):
+#   Guild Stack: select id,type,operating_ambit from struct where location_id='[planet-id]';
 ```
 Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`](https://structs.ai/scripts/scout.sh) for a one-shot bundle when available.
 
@@ -89,7 +92,7 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 |--------|---------|
 | Player | `structsd query structs player [id]` / `player-charge [id]` |
 | Planet | `structsd query structs planet [id]` / `planet-all` |
-| Structs on a planet | `structsd query structs struct-all-by-planet [planet-id]` |
+| Structs on a planet | Guild Stack: `select id,type,operating_ambit from struct where location_id='[planet-id]'` (no `structsd` CLI equivalent) |
 | Struct detail | `structsd query structs struct [id]` |
 | Guild | `structsd query structs guild [id]` / `guild-all` |
 | Guild members | `structsd query structs guild-membership-all-by-guild [guild-id]` |
@@ -102,7 +105,7 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 
 ## Verification
 
-Intel is only as good as its freshness. Confirm a raid window by re-running `struct-all-by-planet` + the owner's Command Ship status immediately before acting, and compare the new block height to your stored `scoutedAtBlock`.
+Intel is only as good as its freshness. Confirm a raid window by re-checking the owner's Command Ship status (`struct [commandStruct-id]`) and fleet position (`fleet [fleet-id]`) immediately before acting, and compare the new block height to your stored `scoutedAtBlock`.
 
 ## Errors
 

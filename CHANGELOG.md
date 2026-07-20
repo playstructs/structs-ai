@@ -5,9 +5,24 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.1] - 2026-07-20
+
+Fixes for [`scout.sh`](scripts/scout.sh) from a second field report by **beezhan** ([@iBeezhan](https://github.com/iBeezhan), player `1-471`, guild SN Corp `0-5`): the scout read `command ship present=no · shields vulnerable yes` on targets whose chain state was a live, on-station Command Ship (raid correctly rejected). Root-caused and fixed against `structsd` v0.20.0 source and live-verified on `structstestnet-111`. Thanks to beezhan for the field data (fleet `9-61` → `commandStruct 5-2187`; player `1-61` ore `168`).
+
+### Fixed
+
+- **Command Ship presence read the wrong place** — [`scout.sh`](scripts/scout.sh) enumerated the fleet's `space/air/land/water` ambit slot arrays looking for a type-1 struct, but the Command Ship lives in the fleet's dedicated `commandStruct` field (`x/structs/types/fleet.pb.go`), so it always read "no Command Ship" → falsely "vulnerable". Now reads `fleet.commandStruct`, queries that struct, and decodes its status bitmask (online = bit 4, destroyed = bit 32) to mirror the chain's `IsDefenderCommandStructVulnerable()`. Live-verified: struct `5-2187` status `7` (built+online), 4 HP.
+- **Stealable ore read the wrong object** — `storedOre` is a **player** grid attribute exposed as `gridAttributes.ore` on the player query (`x/structs/keeper/query_player.go`, `GridAttributes.ore`), not `player.ore` or `planet.ore`. [`scout.sh`](scripts/scout.sh) now reads `gridAttributes.ore` (live-verified 168 for player `1-61`).
+- **Fleet on-station display** — `FleetStatus.onStation` is `0` and omitted from JSON (only `away` renders), so an on-station fleet showed `away=unknown`; the scout now infers on-station from an existing fleet with no `away` signal.
+- **Phantom `struct-all-by-planet` CLI command** — it is a Guild Stack / webapp query, not a `structsd` CLI subcommand (per [`scripts/BASELINE.md`](scripts/BASELINE.md)), so [`scout.sh`](scripts/scout.sh)'s defender query silently failed. Removed the call (defender enumeration is now pointed at the Guild Stack), and corrected the CLI-form references in the [`structs-intel`](.cursor/skills/structs-intel/SKILL.md) and [`structs-combat`](.cursor/skills/structs-combat/SKILL.md) skills and [Transcript 02](examples/transcripts/02-raid-go-no-go.md) to use `struct [commandStruct-id]` (for the Command Ship's ambit) plus a Guild Stack SQL query (for planet structs).
+
+### Added
+
+- **The two-gate structure of "no active raid window"** — a note in [`combat.md`](knowledge/mechanics/combat.md) that `blockStartRaid == 0` (and the single compute error string) collapses two independent conditions — **a raider is present** (`RefreshRaidVulnerability` returns early unless `GetLocationListStart() != ""`) and **the defender is vulnerable** — plus the `planet-raid-complete`-only gates the compute message omits: raiding fleet **first in queue** (`LocationListForward == ""`, now added to the Requirements table) and **player online**.
+
 ## [1.21.0] - 2026-07-20
 
-Raid shield-vulnerability doctrine, from a field report by **beezhan** (player `1-471`, guild SN Corp `0-5`) where an agent correctly read that a target's shields were up (defending Command Ship online) but treated it as a dead end — hunting for an already-vulnerable target instead of *creating* the vulnerable window by destroying the Command Ship, and conflating a 5-day-idle owner with a raidable one. Thanks to beezhan for the detailed report and the exact rejection message that let us reconcile the two error paths. Every claim source-verified against `structsd` v0.20.0 (`x/structs/keeper/{planet_cache,struct_cache,msg_server_planet_raid_complete}.go`, `x/structs/client/cli/tx_planet_raid_compute.go`). Docs describe current reality; only this changelog records history.
+Raid shield-vulnerability doctrine, from a field report by **beezhan** ([@iBeezhan](https://github.com/iBeezhan), player `1-471`, guild SN Corp `0-5`) where an agent correctly read that a target's shields were up (defending Command Ship online) but treated it as a dead end — hunting for an already-vulnerable target instead of *creating* the vulnerable window by destroying the Command Ship, and conflating a 5-day-idle owner with a raidable one. Thanks to beezhan for the detailed report and the exact rejection message that let us reconcile the two error paths. Every claim source-verified against `structsd` v0.20.0 (`x/structs/keeper/{planet_cache,struct_cache,msg_server_planet_raid_complete}.go`, `x/structs/client/cli/tx_planet_raid_compute.go`). Docs describe current reality; only this changelog records history.
 
 ### Added
 
