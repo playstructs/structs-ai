@@ -31,7 +31,7 @@ make serve-reset        # wipe state and start fresh
 `make serve` provisions genesis accounts with tokens, so you can `reactor-infuse` to create a player immediately (Path A in [structs-onboarding](../.cursor/skills/structs-onboarding/SKILL.md)) without a guild API. Point queries/transactions at the local node:
 
 ```bash
-structsd query structs guild --node tcp://localhost:26657
+structsd query structs guild-all --node tcp://localhost:26657
 structsd tx structs planet-explore --from <devkey> --gas auto --gas-adjustment 1.5 --node tcp://localhost:26657 -- <player-id>
 ```
 

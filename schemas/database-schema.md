@@ -145,9 +145,8 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 | `owner` | varchar | Player ID |
 | `max_ore` | integer | Maximum ore capacity |
 | `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts per ambit |
-| `status` | varchar | Planet status |
+| `status` | varchar | `active`, `complete` |
 | `name` | text | Chain UGC display name |
-| `seized_ore` | numeric | Cumulative ore seized across all raids |
 | `map` | jsonb | Planet map data |
 | `creator` | varchar | Creating address |
 | `location_list_start` / `location_list_end` | varchar | Location list bounds |
@@ -155,7 +154,7 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 
 `planet_meta` was dropped; `name` lives directly on this table.
 
-Related: `planet_attribute` (key-value, e.g. `planetaryShield`), `planet_raid` (`planet_id` PK, `fleet_id`, `status`, `seized_ore` per raid).
+There is **no `seized_ore` column on `structs.planet`** — seized ore lives on `planet_raid`. Related: `planet_attribute` (key-value, e.g. `planetaryShield`), and `planet_raid` (`planet_id`, `fleet_id`, `status`, `updated_at`, `seized_ore`). Note `planet_raid`'s primary key is `planet_id` alone, so it holds only the **latest** raid per planet, not raid history — derive history from `ledger` rows with `action = 'seized'`.
 
 ---
 
@@ -230,7 +229,7 @@ Related: `struct_attribute` (`health`, `status`, `protectedStructIndex`, …), `
 |--------|------|-------|
 | `id` | varchar PK | `9-{index}` |
 | `owner` | varchar | Player ID |
-| `status` | varchar | `on_station`, `away` |
+| `status` | varchar | `onStation`, `away` — **camelCase**, not snake_case. Querying `= 'on_station'` returns zero rows, which for a raid check fails *open* (every target looks raidable). |
 | `location_type` | varchar | `planet` |
 | `location_id` | varchar | Planet ID where fleet is located |
 | `command_struct` | varchar | Command Ship struct ID |

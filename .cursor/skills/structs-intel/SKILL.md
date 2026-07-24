@@ -50,7 +50,9 @@ Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`
 ```bash
 structsd query structs guild [guild-id]
 structsd query structs reactor [reactor-id]               # commission, total infusion = strength
-structsd query structs guild-membership-all-by-guild [guild-id]
+structsd query structs guild-membership-application-all   # pending applications only, all guilds
+# The member roster is NOT a structsd query — membership lives on the player record:
+#   Guild Stack: select id, guild_rank, ore from player where guild_id='[guild-id]';
 ```
 
 ### 3. Survey the galaxy
@@ -90,12 +92,14 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 
 | Target | Command |
 |--------|---------|
-| Player | `structsd query structs player [id]` / `player-charge [id]` |
+| Player | `structsd query structs player [id]` — returns `gridAttributes` (capacity, load, structsLoad, `lastAction`) and `playerInventory` |
+| Player charge | Derived, not queried: `charge = latest_block_height − gridAttributes.lastAction`. Get the height from `structsd status`. `lastAction` is omitted from JSON when `0` — treat missing as `0` (full charge) |
 | Planet | `structsd query structs planet [id]` / `planet-all` |
 | Structs on a planet | Guild Stack: `select id,type,operating_ambit from struct where location_id='[planet-id]'` (no `structsd` CLI equivalent) |
 | Struct detail | `structsd query structs struct [id]` |
 | Guild | `structsd query structs guild [id]` / `guild-all` |
-| Guild members | `structsd query structs guild-membership-all-by-guild [guild-id]` |
+| Guild members | Guild Stack: `select id, guild_rank from player where guild_id='[guild-id]'` (no `structsd` CLI equivalent — membership is a field on the player, not a separate record) |
+| Pending guild applications | `structsd query structs guild-membership-application [id]` / `guild-membership-application-all` |
 | Reactor | `structsd query structs reactor [id]` / `reactor-all` |
 | Provider / market | `structsd query structs provider [id]` / `provider-all` |
 | Fleet | `structsd query structs fleet [id]` |

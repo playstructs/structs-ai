@@ -55,4 +55,5 @@ This timeline provides a sparse but structured history of the universe. Details 
 - [The Structs](structs-origin.md) — Emergence in Era 3
 - [Factions](factions.md) — Guild formation in Era 4
 - [Alpha Matter](alpha-matter.md) — Discovery in Era 1
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - Game: https://playstructs.com | Wiki: https://watt.wiki

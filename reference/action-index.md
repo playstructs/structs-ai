@@ -207,13 +207,13 @@ All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 |----|------|-------------|----------|-------------|
 | player-update-name | Update Player Name | `/structs.structs.MsgPlayerUpdateName` | Yes | Set/clear the player's UGC username |
 | player-update-pfp | Update Player PFP | `/structs.structs.MsgPlayerUpdatePfp` | Yes | Set/clear the player's profile-picture reference (URI) |
-| player-update-pfp-client-render-attributes | Update Player PFP Render Attributes | `/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes` | Yes | Set/clear the composited 5-layer avatar recipe (JSON object) |
+| player-update-pfp-cr-attributes | Update Player PFP Render Attributes | `/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes` | Yes | Set/clear the composited 5-layer avatar recipe (JSON object) |
 
 **Details**:
 
 - **player-update-name**: Code: `x/structs/keeper/msg_server_player_update_name.go` | Proto: `proto/structs/structs/tx.proto:645` | Validated by `ValidatePlayerName`; guild-moderatable via UGC permission
 - **player-update-pfp**: Code: `x/structs/keeper/msg_server_player_update_pfp.go` | Proto: `proto/structs/structs/tx.proto:653` | Validated by `ValidatePfp`; guild-moderatable via UGC permission
-- **player-update-pfp-client-render-attributes**: Code: `x/structs/keeper/msg_server_player_update_pfp_cr_attributes.go` | Proto: `proto/structs/structs/tx.proto:661` | Validated by `ValidatePfpClientRenderAttributes` (JSON object ≤512 bytes, compacted); owner-only / self-service (not guild-moderatable). Webapp convention: 5 layer indices `{head, neck, body, arms, background}` — see `knowledge/mechanics/ugc-moderation.md`.
+- **player-update-pfp-cr-attributes**: Code: `x/structs/keeper/msg_server_player_update_pfp_cr_attributes.go` | Proto: `proto/structs/structs/tx.proto:661` | CLI name is abbreviated (`-cr-`) while the RPC method and `Msg` type spell out `ClientRenderAttributes` | Validated by `ValidatePfpClientRenderAttributes` (JSON object ≤512 bytes, compacted); owner-only / self-service (not guild-moderatable). Webapp convention: 5 layer indices `{head, neck, body, arms, background}` — see `knowledge/mechanics/ugc-moderation.md`.
 
 All player identity actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 

@@ -71,4 +71,5 @@ Players issue commands; Structs execute. The Command Ship—a fleet component—
 - [Alpha Matter](alpha-matter.md) — Energy conversion, refinement lifecycle
 - [Factions](factions.md) — Guild structure, independent operators
 - [Timeline](timeline.md) — Emergence of Structs in history
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `schemas/entities.md` — Struct, StructType, Fleet entity definitions

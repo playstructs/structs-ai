@@ -1,6 +1,6 @@
 # Combat Mechanics
 
-**Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases.
+**Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases. If you only need to keep yourself alive — what a raid can take, what keeps shields up, and the minimum defensive posture — read the shorter [defense.md](defense.md) card instead.
 
 ---
 
@@ -410,6 +410,18 @@ This is the **siege** path — how to force the window open when the defender is
 
 **Cost of a siege.** It is a real commitment, not a free option: you must win the fleet engagement to kill the Command Ship (6 HP, usually defended), and while your fleet is away **your own** planet's shields are down. Weigh the defender's `storedOre` (all of which you seize) against that exposure and the risk your raiding Command Ship dies while away (`attackerDefeated`, `trigger_raid_defeat_by_destruction`). Small ore + a defended Command Ship often means "watch and wait" beats "siege." But a dormant target holding meaningful ore, whose Command Ship you can reach, is exactly what a siege is for.
 
+### What the outcome data says
+
+Everything above is derivable from the source. It is also confirmed by outcomes: roughly 300 raid episodes reconstructed from `planet_activity` (92k events, 2026-03 → 2026-07), used to tune the Desktop `auto_raid` loop. Four findings are worth internalizing before you raid anyone.
+
+**Vulnerability is not an edge, it is the entire game.** Since the current mechanic landed on 2026-06-15, raids that reached `shieldsVulnerable` went **69 successful vs 7 retreats**. Raids that never saw it went **0 successful vs 50 retreats** — not "unlikely," zero. This is why the shield-vulnerability doctrine is stated as a hard gate rather than a preference, and why moving a fleet onto a *healthy* planet is strictly self-harm: it drops your own shields for a raid that cannot complete.
+
+**Shield strength does not predict the outcome.** Successful raids faced an average shield of 127.9; retreats faced 111.5. Both span 25–325. Shield is a **timer**, not armor — it sets the raid proof's difficulty range. Score a target's shield as *speed*, never as strength, and never skip a rich target because its shield number looks big.
+
+**Loot is a lottery with a fat tail.** 123 successful raids yielded 1,336 ore in total, but the **median haul was 1** and 52 of them seized nothing at all. Nine raids carried 74% of all ore ever stolen. Since a raid risks a Command Ship that costs far more than one ore, a minimum-ore threshold is not optional — below it you are taking an unpriced risk for a rounding error.
+
+**The attacker's own risk is badly underrated.** Across 22 raids by one well-instrumented operator: 2 wins, 11 retreats, and **9 `attackerDefeated`** — a 41% loss rate against an ecosystem baseline near 5%, every one of them their primary's Command Ship dying in the field. Raiding with the account you cannot afford to lose is the single most expensive habit in the data. If you run multiple players, raid with an expendable one.
+
 ---
 
 ## Edge Cases
@@ -451,6 +463,7 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 
 ## See Also
 
+- [defense.md](defense.md) — Survival quick card condensed from this page
 - [resources.md](resources.md) — Ore vs Alpha Matter security
 - [power.md](power.md) — Power requirements for combat
 - [fleet.md](fleet.md) — Fleet status for raids

@@ -109,6 +109,7 @@ How to read the board. See `awareness/`.
 - [`priority-framework`](awareness/priority-framework.md) -- Survival > Security > Economy > Expansion > Dominance
 - [`game-loop`](awareness/game-loop.md) -- Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat
 - [`async-operations`](awareness/async-operations.md) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
+- [`briefing`](awareness/briefing.md) -- Report game state to your commander in terms they can act on: jargon translation, the three report shapes, what not to send
 - [`context-handoff`](awareness/context-handoff.md) -- Save state when context runs low
 - [`continuity`](awareness/continuity.md) -- Persist across sessions
 - [`scorecard`](awareness/scorecard.md) -- Self-evaluation rubric: grade judgment and process before and after a session
@@ -128,6 +129,7 @@ Reference material in `knowledge/`.
 
 ### Mechanics
 - [`combat`](knowledge/mechanics/combat.md) -- Damage, evasion, raids
+- [`defense`](knowledge/mechanics/defense.md) -- Survival card: what a raid can take, what keeps shields up, minimum posture (quick card)
 - [`permissions`](knowledge/mechanics/permissions.md) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
 - [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
 - [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events

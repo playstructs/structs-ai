@@ -22,9 +22,17 @@ START_FILES=(
   .cursor/skills/play-structs/SKILL.md
 )
 
-# CORE: common play capabilities to get established safely. Kept lean (<=100 KB)
-# so it fits in context. Deep references (hashing, building internals, combat,
-# onboarding detail) live in llms-full.txt and the linked pages.
+# CORE: common play capabilities to get established safely. Deep references
+# (hashing, building internals, full combat, onboarding detail) live in
+# llms-full.txt and the linked pages. Core carries the *quick cards* instead:
+# power.md for the online/offline math and defense.md for the survival rules,
+# not the full energy/combat systems.
+#
+# Budget: the largest remaining entries are struct-types.md (~17 KB) and
+# SAFETY.md (~14 KB). Both are load-bearing — struct-types is the build-decision
+# lookup table and SAFETY is the trust contract — so getting under 100 KB would
+# mean giving up one of them. The budget in scripts/ci/check-bundles.sh is set to
+# match what core actually needs to carry.
 CORE_FILES=(
   START.md
   SAFETY.md
@@ -38,7 +46,7 @@ CORE_FILES=(
   knowledge/mechanics/resources.md
   knowledge/mechanics/power.md
   knowledge/mechanics/energy.md
-  knowledge/mechanics/combat.md
+  knowledge/mechanics/defense.md
   knowledge/entities/struct-types.md
 
   awareness/priority-framework.md
@@ -85,6 +93,7 @@ FULL_FILES=(
 
   # Knowledge - Mechanics
   knowledge/mechanics/combat.md
+  knowledge/mechanics/defense.md
   knowledge/mechanics/permissions.md
   knowledge/mechanics/transactions.md
   knowledge/mechanics/ugc-moderation.md
@@ -156,6 +165,7 @@ FULL_FILES=(
 
   # Reference
   reference/glossary.md
+  reference/codex-crosswalk.md
   reference/local-devnet.md
 )
 

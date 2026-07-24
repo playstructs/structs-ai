@@ -4,6 +4,9 @@ structs-desktop/
 docker-structs-guild/
 .references/
 
+# Continuous review loop working area (local process tracking, not shipped)
+.review/
+
 # OS files
 .DS_Store
 .DS_Store?

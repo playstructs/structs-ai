@@ -19,7 +19,7 @@ The Guild Stack is a Docker Compose application that runs a full guild node with
 
 The Guild Stack runs persistent services on your machine and (if exposed) on your network. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
 
-- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-sync-state structs-grass`). Enable more services explicitly when you need them.
+- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-nats structs-sync-state structs-grass`). Enable more services explicitly when you need them.
 - **Pin a release tag.** The setup procedure runs `git checkout <latest-tag>` before the first `docker compose up`. Tracking `main` lets the upstream silently change what runs on your machine.
 - **MCP server** — not part of the Guild Stack. Agents connect through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop); see [`TOOLS.md`](https://structs.ai/TOOLS). The Guild Stack just provides the PostgreSQL data store and event bridge behind it.
 - **Transaction signing agent** — only started when you opt in. *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* See `Signing-Agent Caveat` below.
@@ -72,24 +72,28 @@ You are about to launch a fleet of containers including a chain node, sync-state
 
 ### 3. Configure Environment
 
-Copy or create `.env` with at minimum:
+Start from `.env.example` and set at minimum:
 
 ```
 MONIKER=MyAgentNode
-NETWORK_VERSION=113b
+NETWORK_VERSION=116b
 NETWORK_CHAIN_ID=structstestnet-111
+DATABASE_NAME=structs
+SQITCH_PG_CONNECTION=postgres://structs@structs-pg:5432/structs
 STRUCTS_PG_BRANCH=main
 ```
 
+`NETWORK_VERSION=116b` corresponds to chain v0.20.0. The webapp and Struct Control SPA additionally require `WEBAPP_SOURCE` and `CONTROL_SOURCE` to point at sibling host checkouts; leave those services stopped and you can ignore both.
+
 ### 4. Start the Stack (Read-Only Profile — Recommended Default)
 
-For PG-driven game-state queries, you need four services. `structs-sync-state` is required — without it, PG has no indexed game state:
+For PG-driven game-state queries, you need five services. `structs-sync-state` is required — without it, PG has no indexed game state — and `structs-nats` must be named explicitly because `structs-grass` does not declare a dependency on it:
 
 ```bash
-docker compose up -d structsd structs-pg structs-sync-state structs-grass
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass
 ```
 
-The webapp, TSA, crawler, and NATS (if not needed for GRASS) stay stopped unless you enable them. Only enable services when you specifically need them (see `Enabling Additional Services` below).
+`structs-pg-init` starts automatically as a dependency of `structs-pg`. The webapp, Struct Control SPA, TSA, and crawler stay stopped unless you enable them. Only enable services when you specifically need them (see `Enabling Additional Services` below).
 
 To start the full stack instead (only if you have read every service's purpose):
 
@@ -202,8 +206,8 @@ WHERE p.id = '1-142';
 ```sql
 SELECT s.id, st.class_abbreviation, s.operating_ambit,
     st.primary_weapon_control, st.primary_weapon_damage,
-    st.primary_weapon_ambits_array, st.unit_defenses,
-    st.counter_attack_same_ambit
+    st.primary_weapon_ambits_array, st.primary_weapon_armour_piercing,
+    st.unit_defenses, st.counter_attack_same_ambit
 FROM structs.struct s
 JOIN structs.struct_type st ON st.id = s.type
 WHERE s.owner = '1-142' AND s.location_type = 'fleet'
@@ -211,23 +215,34 @@ WHERE s.owner = '1-142' AND s.location_type = 'fleet'
 ORDER BY s.operating_ambit, s.slot;
 ```
 
+`primary_weapon_armour_piercing` / `secondary_weapon_armour_piercing` (added v0.18.0) mark weapons that bypass a target's `armour` damage reduction — the deciding factor when picking a weapon against an armoured hull.
+
+Generator output lives on `generating_rate_p`, which is the writable column; the bare `generating_rate` is a GENERATED mirror (`generating_rate_p * 1000`). Both read fine, but match on `generating_rate_p` for exact integer comparisons.
+
 ### Raid Target Scouting
 
+Stealable ore is a **player** balance, not a planet balance, so drive the scan from `structs.player` and anchor on each player's home planet. Joining ore to `planet.owner` instead repeats the same balance once per planet that player owns, which inflates a target list badly — one player holding 20 planets appears 20 times with identical ore.
+
 ```sql
-SELECT pl.id as planet, pl.name, pl.owner, g_ore.val as ore,
-    COALESCE(pa_shield.val, 0) as shield,
-    COALESCE(g_load.val, 0) as structs_load
-FROM structs.planet pl
-JOIN structs.grid g_ore ON g_ore.object_id = pl.owner AND g_ore.attribute_type = 'ore'
+SELECT pl.id AS planet, pl.name, p.id AS owner, p.username,
+    g_ore.val AS ore,
+    COALESCE(pa_shield.val, 0) AS shield,
+    f.status AS fleet_status,
+    cs.is_destroyed AS command_destroyed
+FROM structs.player p
+JOIN structs.planet pl ON pl.id = p.planet_id
+JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
 LEFT JOIN structs.planet_attribute pa_shield ON pa_shield.object_id = pl.id
     AND pa_shield.attribute_type = 'planetaryShield'
-LEFT JOIN structs.grid g_load ON g_load.object_id = pl.owner
-    AND g_load.attribute_type = 'structsLoad'
+LEFT JOIN structs.fleet f ON f.id = p.fleet_id
+LEFT JOIN structs.struct cs ON cs.id = f.command_struct
 WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
-A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. Join the owner's fleet and Command Ship status before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status` and `command_destroyed` columns are for; a target with `fleet_status = 'onStation'` and a live Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+
+`fleet.status` values are **camelCase**: `onStation` and `away`. `WHERE f.status = 'on_station'` matches nothing and silently makes every target look raidable.
 
 ### Enemy Structs at a Planet
 
@@ -245,20 +260,37 @@ ORDER BY s.operating_ambit;
 
 ### Real-Time Threat Detection (Poll Pattern)
 
-```sql
--- Set high-water mark on startup
-SELECT COALESCE(MAX(seq), 0) FROM structs.planet_activity
-WHERE planet_id IN ('2-105');
+`planet_activity.seq` is a **per-planet** counter starting at 0, not a table-wide sequence. One scalar high-water mark shared across several planets silently drops events on every planet whose counter is behind the highest one. Either keep a cursor per planet:
 
--- Poll every ~6 seconds (one block interval)
-SELECT seq, planet_id, category, detail::text
+```sql
+-- Set one high-water mark per watched planet on startup
+SELECT planet_id, COALESCE(MAX(seq), 0) AS last_seq
 FROM structs.planet_activity
 WHERE planet_id IN ('2-105', '2-127')
-    AND seq > $LAST_SEQ
-ORDER BY seq ASC;
+GROUP BY planet_id;
+
+-- Poll every ~6 seconds (one block interval)
+SELECT pa.planet_id, pa.seq, pa.category, pa.detail::text
+FROM structs.planet_activity pa
+JOIN (VALUES ('2-105', $LAST_SEQ_2_105), ('2-127', $LAST_SEQ_2_127))
+    AS cur(planet_id, last_seq) ON cur.planet_id = pa.planet_id
+WHERE pa.seq > cur.last_seq
+ORDER BY pa.planet_id, pa.seq ASC;
 ```
 
-Watch for `fleet_arrive`, `raid_status`, and `struct_attack` categories.
+...or, simpler for a watcher that does not have a fixed planet list, use the globally ordered `block_height`:
+
+```sql
+SELECT planet_id, seq, category, detail::text
+FROM structs.planet_activity
+WHERE block_height > $LAST_HEIGHT
+    AND category IN ('fleet_arrive', 'raid_status', 'struct_attack', 'shield_change')
+ORDER BY block_height, planet_id, seq;
+```
+
+Watch for `fleet_arrive`, `raid_status`, and `struct_attack`. Filter by category rather than pulling everything: `struct_status` and `shield_change` together dominate row volume, and `shield_change` fires on every shield tick.
+
+`raid_status` `detail` carries `planet_id`, `fleet_id`, `status`, and `seized_ore`. Status values are `initiated`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized` — there is no `completed`. On data indexed before the recent indexer fix the `seized_ore` key is **absent rather than zero**, so read it as `detail ? 'seized_ore'` before trusting a value.
 
 ### Sync-State Health
 
@@ -290,7 +322,7 @@ WHERE protected_struct_id = '5-100';
 
 ```bash
 # Start the read-only profile (recommended default)
-docker compose up -d structsd structs-pg structs-sync-state structs-grass
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass
 
 # Start all services (only if you have reviewed every one)
 docker compose up -d
@@ -315,19 +347,20 @@ docker compose down -v
 
 ## Enabling Additional Services
 
-The setup procedure above starts only `structsd`, `structs-pg`, `structs-sync-state`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
+The setup procedure above starts `structsd`, `structs-pg`, `structs-nats`, `structs-sync-state`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
 
 | Service | What it is | When to enable |
 |---------|-----------|----------------|
-| `structs-nats` | NATS messaging + GRASS WebSocket on port 1443 | Required for GRASS (included in read-only profile when using `structs-grass`) |
-| `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally |
+| `structs-pg-auto-migrate` | Re-runs `sqitch deploy` on a loop | When you want schema updates from `STRUCTS_PG_BRANCH` after the initial deploy. Not started as a dependency of anything. |
+| `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally. **Requires a `WEBAPP_SOURCE` host checkout** (default `../structs-webapp/src`). |
+| `structs-control` | Struct Control SPA, an operator console on port 8081 | When you want a browser UI over the webapp. **Requires a `CONTROL_SOURCE` host checkout** (default `../structs-control`); without it the container crash-loops on a missing `package.json`. |
 | `structs-tsa` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
 | `structs-crawler` | Guild metadata crawler | When running a guild node that publishes guild config |
 
 To enable a service, add it to the `docker compose up -d` argument list:
 
 ```bash
-docker compose up -d structsd structs-pg structs-sync-state structs-grass structs-webapp
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass structs-webapp
 ```
 
 ---
@@ -379,8 +412,10 @@ If you spun the stack up to investigate something, tear it down when you're done
 | 5432 | structs-pg | PostgreSQL database |
 | 8080 | structs-webapp | Webapp HTTP API |
 | 443 | structs-webapp | Webapp HTTPS |
+| 8081 | structs-control | Struct Control SPA |
 | 4222 | structs-nats | NATS client connections |
 | 1443 | structs-nats | NATS WebSocket (GRASS events) |
+| 8222 | structs-nats | NATS monitoring endpoint |
 
 ---
 
@@ -389,7 +424,11 @@ If you spun the stack up to investigate something, tear it down when you're done
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "connection refused" on PG | Stack not started or PG not healthy yet | `docker compose ps` to check; wait for PG healthy |
-| Query returns 0 rows | Chain sync or sync-state catch-up incomplete | Check `sync_state.sync_cursor`; wait for `status` to leave `catching_up` |
+| Query returns 0 rows | Chain sync or sync-state catch-up incomplete | Check `sync_state.sync_cursor`; wait for `status` to reach `current` |
+| Query returns 0 rows but data exists | Snake_case guess at a camelCase value | Chain-derived string values are camelCase: `onStation` not `on_station`, `raidSuccessful` not `completed`, `planetaryShield`, `structsLoad` |
+| Poller misses events on some planets | `planet_activity.seq` is per-planet, not table-wide | Keep one cursor per planet, or order on `block_height` |
+| Ledger balances are too high | Historical duplicate `received`/`sent` rows shadowing `refined`/`infused` | See the ledger note in [database-schema](https://structs.ai/knowledge/infrastructure/database-schema) |
+| `structs-control` restarting | Missing `CONTROL_SOURCE` sibling checkout | Clone `structs-control` next to the stack, or leave the service stopped |
 | Container name not found | Container naming varies by installation | Run `docker compose ps` to find actual container names |
 | "role does not exist" | Wrong PG role in connection string | Use `structs_indexer` role via the GRASS container |
 | Slow PoW with guild stack | Multiple agents running concurrent PoW | CPU contention; stagger PoW operations or reduce parallelism |

@@ -71,10 +71,12 @@ The `create-player.mjs` script keeps your mnemonic local but sends to the guild'
 Agents reach the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop), and the Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). Either can become an attack surface if exposed beyond `localhost`:
 
 - The **embedded MCP server** speaks the MCP protocol over a local port and is gated by a bearer token (connection details are in the app's Debug menu). Anyone who reaches the port *with the token* can act as your agent — keep the token secret and the port bound to `localhost`.
+- The **web board** (`/board`, enabled with `structs_board {web:"on"}`) serves the Team Ops dashboard over HTTP so a human can watch from another device. It is off by default, and turning it on is a real decision: the board is not a read-only view — it exposes **mass actions that sign transactions**. The bearer token appears in the board URL, so anyone who obtains that URL has full operator control, not just visibility. A URL shared over chat, pasted into a bug report, or left in a browser history is a key disclosure.
 - The **signing agent** is designed to sign transactions on behalf of a configured key. If configured with a real key and exposed, anyone who can reach the port can spend on your behalf.
 
 **Mitigation**:
 - Keep the embedded MCP server bound to `127.0.0.1` and treat its bearer token like a key — never paste it into untrusted tools or share it.
+- Leave the web board off unless you need it. When you do need remote viewing, prefer an **SSH tunnel** to the local port over exposing `/board` to a network, and treat the tokenised board URL with the same care as the bearer token itself. Turn it back off (`structs_board {web:"off"}`) when finished.
 - Use the read-only guild profile (`structsd`, `structs-pg`, `structs-sync-state`, `structs-grass`) — no signing surface by default.
 - **Do not configure the signing-agent service with a real key** until you have read its code and understood what it will sign.
 
@@ -115,7 +117,7 @@ Halt every running `*-compute` job for the affected key. Find PIDs in `memory/jo
 Start the cooldown clocks. Defused alpha is locked but not yet stolen.
 
 ```
-structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [reactor-id]
+structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]
 ```
 
 Do this for every reactor the player has infused into.
@@ -149,7 +151,7 @@ structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [un
 Create the new key first (`structsd keys add agent-recovery`), get its address, then:
 
 ```
-structsd tx structs address-register --from [compromised-key] --gas auto -y -- [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
+structsd tx structs address-register --from [compromised-key] --gas auto -y -- [player-id] [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
 structsd tx structs player-update-primary-address --from [compromised-key] --gas auto -y -- [new-address]
 structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [old-address]
 ```

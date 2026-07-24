@@ -91,6 +91,7 @@ Reference material about the game world.
 | File | Topic |
 |------|-------|
 | [combat.md](knowledge/mechanics/combat.md) | Damage, evasion, blocking, counter-attacks, raids |
+| [defense.md](knowledge/mechanics/defense.md) | Survival quick card: raid loot limits, shield vulnerability, minimum defensive posture |
 | [permissions.md](knowledge/mechanics/permissions.md) | 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference |
 | [transactions.md](knowledge/mechanics/transactions.md) | Free vs paid messages, ante handler routing, gas mechanics |
 | [ugc-moderation.md](knowledge/mechanics/ugc-moderation.md) | Decentralized name/pfp moderation philosophy, validation rules, audit events |
@@ -174,6 +175,7 @@ How to read the board and maintain continuity.
 | [priority-framework.md](awareness/priority-framework.md) | Survival > Security > Economy > Expansion > Dominance |
 | [game-loop.md](awareness/game-loop.md) | Assess → Plan → Act → Verify → Repeat |
 | [async-operations.md](awareness/async-operations.md) | Background PoW, pipeline pattern, job tracking |
+| [briefing.md](awareness/briefing.md) | Report game state to a human commander: jargon translation, report shapes, what not to send |
 | [context-handoff.md](awareness/context-handoff.md) | Save state when context runs low |
 | [continuity.md](awareness/continuity.md) | Persist across sessions |
 | [scorecard.md](awareness/scorecard.md) | Self-evaluation rubric: grade judgment and process before/after a session |
@@ -367,6 +369,7 @@ Quick-lookup indexes.
 | File | Topic |
 |------|-------|
 | [glossary.md](reference/glossary.md) | Lexical index — every key term with a definition and a link to its canonical page |
+| [codex-crosswalk.md](reference/codex-crosswalk.md) | Maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds, Battery, Alpha Ore, …) to canonical pages |
 | [action-quick-reference.md](reference/action-quick-reference.md) | All game actions at a glance |
 | [action-index.md](reference/action-index.md) | Action index |
 | [api-quick-reference.md](reference/api-quick-reference.md) | API endpoint quick lookup |
@@ -396,7 +399,6 @@ Agent working memory (populated during gameplay).
 | File | Purpose |
 |------|---------|
 | [README.md](memory/README.md) | Memory directory guide |
-| [SKILLS-AUDIT.md](memory/SKILLS-AUDIT.md) | Skills audit notes |
 | [intel/README.md](memory/intel/README.md) | Intelligence directory guide |
 | [intel/territory.md](memory/intel/territory.md) | Territory intelligence |
 | [intel/threats.md](memory/intel/threats.md) | Threat intelligence |

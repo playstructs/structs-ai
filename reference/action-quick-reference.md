@@ -182,7 +182,7 @@ This guide provides a quick reference for all game actions available to AI agent
 - `guild-update-primary-reactor` - Reassign primary reactor (recovery for retired/jailed validator; requires `PermAdmin` on guild)
 - `player-update-name` - Rename a player (self-service via `PermUpdate` on the player, OR guild moderation via `PermGuildUGCUpdate` on the player's guild)
 - `player-update-pfp` - Set a player's profile picture (same permission rules as player-update-name)
-- `player-update-pfp-client-render-attributes` - Set/clear render hints (JSON object, ≤512 bytes) for a locally-rendered pfp (owner-only, not guild-moderatable)
+- `player-update-pfp-cr-attributes` - Set/clear render hints (JSON object, ≤512 bytes) for a locally-rendered pfp (owner-only, not guild-moderatable)
 - `planet-update-name` - Rename a planet (self-service via `PermUpdate`, OR guild moderation via `PermGuildUGCUpdate` on the planet owner's guild)
 - `substation-update-name` - Rename a substation (same permission rules as planet-update-name applied to the substation owner's guild)
 - `substation-update-pfp` - Set a substation's profile picture (same permission rules as substation-update-name)

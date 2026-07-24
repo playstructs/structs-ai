@@ -301,7 +301,7 @@ structsd tx structs permission-guild-rank-revoke {objectId} {guildId} {permissio
 Sets a player's guild rank. The caller must have `PermAdmin` (2) on the guild, or have rank-based authority (actor rank must be strictly better than target's current rank).
 
 ```
-structsd tx structs player-update-guild-rank -- {playerId} {guildRank} --from {signer} --gas auto -y
+structsd tx structs player-update-guild-rank --from {signer} --gas auto -y -- {playerId} {guildRank}
 ```
 
 ---
@@ -446,7 +446,7 @@ Object owners can delegate specific capabilities to other players:
 
 ```bash
 # Guild owner grants Player 2 membership management and token minting
-structsd tx structs permission-grant-on-object -- $GUILD_ID $PLAYER_2_ID 8704 --from owner --gas auto -y
+structsd tx structs permission-grant-on-object --from owner --gas auto -y -- $GUILD_ID $PLAYER_2_ID 8704
 # 8704 = PermGuildMembership (512) | PermGuildTokenMint (8192)
 ```
 
@@ -478,17 +478,17 @@ When an object is deleted, all permission records for that object (both direct `
 
 ```bash
 # Admin sets: guild members rank 3 or better can update endpoint and manage membership
-structsd tx structs permission-guild-rank-set -- $GUILD_ID $GUILD_ID 16896 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 16896 3
 # 16896 = PermGuildMembership (512) | PermGuildEndpointUpdate (16384)
 
 # Promote player to rank 2 (officer)
-structsd tx structs player-update-guild-rank -- $PLAYER_ID 2 --from admin --gas auto -y
+structsd tx structs player-update-guild-rank --from admin --gas auto -y -- $PLAYER_ID 2
 
 # Player can now update the guild endpoint (rank 2 <= 3)
-structsd tx structs guild-update-endpoint -- $GUILD_ID "new.endpoint" --from officer --gas auto -y
+structsd tx structs guild-update-endpoint --from officer --gas auto -y -- $GUILD_ID "new.endpoint"
 
 # Demote player to rank 5 (grunt)
-structsd tx structs player-update-guild-rank -- $PLAYER_ID 5 --from admin --gas auto -y
+structsd tx structs player-update-guild-rank --from admin --gas auto -y -- $PLAYER_ID 5
 # Player can no longer update the endpoint (rank 5 > 3) -- transaction fails
 ```
 
@@ -496,10 +496,10 @@ structsd tx structs player-update-guild-rank -- $PLAYER_ID 5 --from admin --gas 
 
 ```bash
 # Rank 3+ can connect allocations
-structsd tx structs permission-guild-rank-set -- $SUB_ID $GUILD_ID 2048 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $SUB_ID $GUILD_ID 2048 3
 
 # Rank 5+ can connect to the substation
-structsd tx structs permission-guild-rank-set -- $SUB_ID $GUILD_ID 1024 5 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $SUB_ID $GUILD_ID 1024 5
 
 # Query shows 2 records with independent ranks
 structsd query structs guild-rank-permission-by-object-and-guild $SUB_ID $GUILD_ID
@@ -509,17 +509,17 @@ structsd query structs guild-rank-permission-by-object-and-guild $SUB_ID $GUILD_
 
 ```bash
 # Set combined PermUpdate | PermDelete at rank 3
-structsd tx structs permission-guild-rank-set -- $GUILD_ID $GUILD_ID 12 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 12 3
 
 # Revoke only PermUpdate (4), PermDelete (8) stays
-structsd tx structs permission-guild-rank-revoke -- $GUILD_ID $GUILD_ID 4 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-revoke --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 4
 ```
 
 ### Provider access via guild rank
 
 ```bash
 # Grant guild members rank 5+ the ability to open agreements on a provider
-structsd tx structs permission-guild-rank-set -- $PROVIDER_ID $GUILD_ID 262144 5 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $PROVIDER_ID $GUILD_ID 262144 5
 # 262144 = PermProviderOpen
 ```
 
@@ -653,7 +653,7 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `SubstationDelete` | Substation | `PermDelete` (8) | Also checks `PermSubstationConnection` (1024) on migration target if specified |
 | `SubstationPlayerConnect` | Substation + Player | `PermSubstationConnection` (1024) on both | Both checks must pass |
 | `SubstationPlayerDisconnect` | Player OR Substation | `PermSubstationConnection` (1024) | Either check sufficient |
-| `SubstationPlayerMigrate` | Substation + Player | `PermSubstationConnection` (1024) on both | Player check conditional |
+| `SubstationPlayerMigrate` | Substation + Player | `PermSubstationConnection` (1024) on both | Both required; the player-side check runs for **every** player in the list |
 | `SubstationAllocationConnect` | Allocation | `PermAllocationConnection` (2048) | |
 | `SubstationAllocationDisconnect` | Allocation OR Destination | `PermAllocationConnection` (2048) | Either sufficient |
 
@@ -698,7 +698,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `GuildUpdateEntrySubstationId` | `PermGuildSubstationUpdate` on guild | `PermSubstationConnection` on target substation | Both required |
 | `SubstationPlayerConnect` | `PermSubstationConnection` on substation | `PermSubstationConnection` on player | Both required |
 | `SubstationPlayerDisconnect` | `PermSubstationConnection` on player | `PermSubstationConnection` on substation | Either sufficient |
-| `SubstationPlayerMigrate` | `PermSubstationConnection` on destination | `PermSubstationConnection` on player | Both required (player conditional) |
+| `SubstationPlayerMigrate` | `PermSubstationConnection` on destination | `PermSubstationConnection` on player | Both required (checked once per player in the list) |
 | `SubstationDelete` | `PermDelete` on substation | `PermSubstationConnection` on migration substation | Both required (migration only) |
 | `AllocationDelete` | `PermSourceAllocation` on source | `PermDelete` on allocation | Either sufficient |
 | `SubstationAllocationDisconnect` | `PermAllocationConnection` on allocation | `PermAllocationConnection` on destination | Either sufficient |

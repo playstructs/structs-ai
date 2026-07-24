@@ -88,7 +88,9 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
 3. Connect/disconnect sources: `substation-allocation-connect|disconnect -- [substation-id] [allocation-id]`.
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
-5. Migrate players: `substation-player-migrate -- [src-sub] [dest-sub] [player-id,...]`.
+5. Migrate players: `substation-player-migrate -- [substation-id] [player-id,player-id2,...]` (destination substation + player CSV; there is **no** source-substation argument).
+
+> **Connecting/migrating another player needs `PermSubstationConnection` (1024) on the player too — not just the substation.** Connect and migrate run the same two checks (`1024` on the destination substation AND on each target player) and both call `MigrateSubstation`. A player object is owned by itself, so **owning the substation is not enough to move other members**: either the member **self-connects** (they own themselves; gate the substation with `permission-guild-rank-set [sub] [guild] 1024 [rank]`), or they grant you `permission-grant-on-object [player] [you] 1024` first. Repointing the guild entry substation (`guild-update-entry-substation-id`) only reroutes **new** join-proxy members — existing members are not auto-migrated. See [energy.md](https://structs.ai/knowledge/mechanics/energy).
 
 **Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
 

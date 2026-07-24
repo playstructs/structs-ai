@@ -13,5 +13,7 @@ How to read the board and think about the game.
 - [Priority Framework](priority-framework) -- Survival > Security > Economy > Expansion > Dominance
 - [Game Loop](game-loop) -- Check Jobs, Assess, Plan, Initiate, Dispatch, Verify, Repeat
 - [Async Operations](async-operations) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
+- [Briefing Your Commander](briefing) -- Report game state to a human who does not speak Structs
 - [Context Handoff](context-handoff) -- Save state when context runs low
 - [Continuity](continuity) -- Persist across sessions
+- [Scorecard](scorecard) -- Self-evaluation rubric for judgment and process

@@ -248,13 +248,14 @@ To grant `PermAll` (every bit including the new `PermGuildUGCUpdate` bit 24), us
 
 **CLI Example**:
 ```bash
-# Set guild rank permissions (grant PermAll to rank)
+# Set guild rank permissions: [object id] [guild id] [permission] [rank]
+# — here, PermAll (33554431) on guild 0-1 requires rank 1
 structsd tx structs permission-guild-rank-set \
-  --from keyname --gas auto -y -- 0-1 1 33554431
+  --from keyname --gas auto -y -- 0-1 0-1 33554431 1
 
-# Revoke guild rank permissions
+# Revoke guild rank permissions: [object id] [guild id] [permission]
 structsd tx structs permission-guild-rank-revoke \
-  --from keyname --gas auto -y -- 0-1 1
+  --from keyname --gas auto -y -- 0-1 0-1 33554431
 ```
 
 **Reference**: `schemas/actions.md`, `api/queries/permission.md`

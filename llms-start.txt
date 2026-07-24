@@ -248,6 +248,18 @@ The chain tracks a sequence number per account. Submitting two transactions from
 
 ---
 
+## Scripting `structsd tx` (avoiding silent hangs)
+
+When you wrap `structsd` in a shell script (batch migrations, loops, background jobs), three things make a run look "stuck" or "do nothing." All three have bitten real runs:
+
+- **Do not capture stderr on a `tx`.** `structsd tx` writes the `Enter keyring passphrase:` prompt to **stderr** and reads the passphrase from stdin. Capturing output with `out=$(structsd tx ... 2>&1)` swallows the prompt, so the command blocks forever on invisible input. Instead, let stderr reach the terminal and capture only stdout (`structsd tx ... >"$tmp"`), or feed the passphrase non-interactively: `printf '%s\n' "$PASS" | structsd tx ...`. For a **batch of many txs**, a `file`/`os` keyring prompts **once per tx** — use `--keyring-backend test` (testnet) or pipe the passphrase, or you will be typing it hundreds of times.
+- **Guard command substitution under `set -e`.** With `set -euo pipefail`, `st=$(structsd status ...)` that exits non-zero aborts the whole script **silently** (no error printed). Wrap it: `if st=$(structsd status --node "$NODE" -o json 2>&1); then rc=0; else rc=$?; fi`, merge stderr, and tolerantly extract the JSON (e.g. regex the first `{...}`) since `status` output varies across builds.
+- **Never broadcast against a catching-up node.** If `structsd status` reports `sync_info.catching_up=true`, a `--broadcast-mode sync` tx is accepted but **never commits** — the classic "it hangs after broadcast." Check `catching_up=false` before broadcasting, and time out the commit-poll so a lagging node surfaces an error instead of spinning.
+
+See [api/integration-notes.md](https://structs.ai/api/integration-notes) for the data-shape counterparts (including why a permission error always says "administrate").
+
+---
+
 ## Skill authoring template
 
 Every gameplay skill follows this shape so agents can navigate any skill the same way:

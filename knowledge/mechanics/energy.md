@@ -105,6 +105,21 @@ Two consequences:
 1. **Anyone can contribute capacity to any substation** — an open shared pool by design.
 2. **Contributions are diluted by `1/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
 
+### Connecting/migrating a PLAYER needs permission on BOTH the substation and the player
+
+Unlike allocation-connect, moving a **player** onto a substation is gated on both objects. `substation-player-connect` and `substation-player-migrate` run the **same two checks** and both ultimately call `MigrateSubstation` (connect first disconnects the player from any prior substation):
+
+1. `PermSubstationConnection` (1024) on the **destination substation** (`substation.CanManageConnectionsBy`), and
+2. `PermSubstationConnection` (1024) on **each target player object** (`targetPlayer.CanManageSubstationConnectionBy`).
+
+The catch: **a player object is owned by itself** (`GetOwnerId()` returns the player's own id), so ownership of the substation does **not** confer authority over other players. A guild owner/leader who owns the tier substations still **cannot** connect or migrate other members — the player-side check fails with a (misleadingly worded) "no administrate permission on object" error. To move another player you need 1024 on **that player's object**, via one of:
+
+- **(a) The player self-connects.** They own their own player object (ownership passes check 2), and if the destination substation's connect permission is rank-gated to them via a guild-rank register (`permission-guild-rank-set [sub] [guild] 1024 [rank]`), check 1 passes too. This is the scalable path — each member signs their own `substation-player-connect`.
+- **(b) An explicit grant.** The target player signs `permission-grant-on-object [player-id] [mover-id] 1024`, after which the mover can connect/migrate them.
+- **(c) A guild-rank register on the player object** granting 1024 — but setting it requires 1024 on that player object already, so it is not a leader-side shortcut.
+
+**Operational corollary:** `guild-update-entry-substation-id` only reroutes **new** members joining via join-proxy (they are auto-connected to the guild entry substation). **Existing** members are never auto-migrated when you repoint the entry substation — they must be moved by one of the paths above. (Verified: `msg_server_substation_player_connect.go`, `msg_server_substation_player_migrate.go`, `CanManageSubstationConnectionBy` in `player_cache.go`, `CanManageConnectionsBy` in `substation_cache.go`, `PermissionCheck` in `permissions_context.go`, and `msg_server_guild_membership_join_proxy.go`.)
+
 ---
 
 ## Brownout: `GridCascade` destroys allocations

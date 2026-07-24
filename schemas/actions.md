@@ -1062,7 +1062,7 @@ User-generated content (name and pfp) updates. All seven messages are part of th
 
 ### MsgPlayerUpdatePfpClientRenderAttributes
 
-- **ID**: `player-update-pfp-client-render-attributes`
+- **ID**: `player-update-pfp-cr-attributes`
 - **Name**: Update Player Pfp Client Render Attributes
 - **Message Type**: `/structs.structs.MsgPlayerUpdatePfpClientRenderAttributes`
 - **Description**: Set or clear render hints (a JSON object) for a player's locally-rendered profile picture. Owner-only — not guild-moderatable.

@@ -111,8 +111,9 @@ structsd tx structs permission-guild-rank-set \
 **Revoke guild rank permissions**:
 
 ```bash
+# [object id] [guild id] [permission]
 structsd tx structs permission-guild-rank-revoke \
-  --from keyname --gas auto -y -- 0-1 1
+  --from keyname --gas auto -y -- 0-1 0-1 33554431
 ```
 
 ### 5. Check Other Permissions

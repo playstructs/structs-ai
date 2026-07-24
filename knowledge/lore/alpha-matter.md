@@ -92,4 +92,5 @@ Higher efficiency = higher risk. Reactors are safe but inefficient. World Engine
 - [The Structs](structs-origin.md) — Energy dependency, conversion usage
 - [Factions](factions.md) — Central Banks, token backing
 - [Timeline](timeline.md) — Discovery of Alpha Matter
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `reference/action-quick-reference.md` — Mining, refining, reactor actions

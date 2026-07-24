@@ -25,6 +25,9 @@ jobs:
       - name: Command-name lint (deprecated tokens = hard gate)
         run: bash scripts/ci/lint-commands.sh
 
+      - name: Invocation lint (arity, `--` order, --gas auto)
+        run: python3 scripts/ci/check-invocations.py
+
       - name: Internal link check
         run: bash scripts/ci/check-links.sh
 

@@ -23,8 +23,9 @@
 | Power capacity | BuildDraw + PassiveDraw available |
 | Resources | Sufficient Alpha Matter |
 | Valid location | Correct slot type (space/air/land/water) |
-| Fleet on station | Required for planet building |
+| Fleet on station | Required for planet building, and for building on the fleet itself |
 | Command Ship online | Required for planet building |
+| Fleet has a command struct | Required to build anything on a fleet **except** a Command Ship — see [Building on a fleet](#building-on-a-fleet-two-extra-gates) |
 
 ---
 
@@ -202,6 +203,17 @@ Both the power-capacity check (4) and the build-limit check (6) reject with the 
 - **Large values** (hundreds of thousands to millions) — the **power-capacity** check, in milliwatts: `required` is the struct's `BuildDraw`, `available` is your remaining capacity (`capacity + capacitySecondary − load − structsLoad`). Free capacity by adding generation or deactivating structs (see [power.md](power.md)).
 
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
+
+### Building on a fleet: two extra gates
+
+`FleetCache.BuildInitiateReadiness` (`x/structs/keeper/fleet_cache.go`) adds two checks before anything else, in this order:
+
+1. **The fleet must be on station.** Building on an `away` fleet is rejected with `fleet (9-X) away, cannot build` (`FleetStateError`). Deploy before you travel, not after.
+2. **The fleet must already have a command struct** — *unless the struct you are building is itself the Command Ship*. Without one you get `fleet (9-X) needs a command struct before deploy` (`FleetCommandError`, reason `no_command_struct`).
+
+That exemption is the recovery path, and it matters: **if your Command Ship is destroyed, the fleet is frozen** — it cannot move (`PlanetMoveReadinessCheck` requires a command struct that is also *online*, else `needs an online command struct before deploy`) and it cannot deploy anything else. The one action still available is rebuilding the Command Ship. Do that first; every other attempt will be rejected until it is back and online.
+
+Because a destroyed Command Ship also drops your planetary shields (see [defense.md](defense.md)), the rebuild is both the unblock and the defensive fix. Treat it as the single highest-priority action in that state.
 
 ---
 

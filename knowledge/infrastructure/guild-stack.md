@@ -14,11 +14,11 @@ Three compose variants exist:
 
 | Variant | File | Purpose |
 |---------|------|---------|
-| Guild node | `compose.yaml` | Standard deployment: chain node, sync-state indexer, PG, GRASS, webapp, TSA, crawler |
+| Guild node | `compose.yaml` | Standard deployment: chain node, sync-state indexer, PG, GRASS/NATS, webapp, Struct Control SPA, TSA, crawler |
 | Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no sync-state/webapp) |
 | Guild + Discord | `compose-discord.yaml` | Standard + Discord bot integration |
 
-**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=113b`.
+**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (v0.20.0).
 
 ---
 
@@ -62,11 +62,16 @@ One blockchain block is ~6 seconds. Charge is a single **per-player** bar (share
 | `structs-pg` | 5432 | PostgreSQL 17 + TimescaleDB. Central data store. |
 | `structs-pg-auto-migrate` | — | Re-runs `sqitch deploy` on a loop for schema updates. |
 | `structs-sync-state` | — | Chain event indexer. Polls `structsd` RPC, writes `structs.*` and `sync_state.*`. **Do not scale** (writer lock). |
-| `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443. |
+| `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443, monitoring on 8222. |
 | `structs-grass` | — | Event bridge: PG `NOTIFY 'grass'` → NATS subjects. |
-| `structs-webapp` | 8080, 443 | Guild webapp (PHP/Symfony). Guild API at `/api/`. |
+| `structs-webapp` | 8080, 443 | Guild webapp (PHP/Symfony). Guild API at `/api/`. Bind-mounts `WEBAPP_SOURCE`. |
+| `structs-control` | 8081 | Struct Control SPA — browser admin/operator console. Dev mode proxies the webapp; bind-mounts `CONTROL_SOURCE`. |
 | `structs-tsa` | — | Transaction Signing Agent. Manages signing account pool. |
 | `structs-crawler` | — | Supplementary guild metadata crawler. |
+
+Two services mount source trees from **sibling checkouts on the host**, not from their images: `structs-webapp` needs `WEBAPP_SOURCE` (default `../structs-webapp/src`) and `structs-control` needs `CONTROL_SOURCE` (default `../structs-control`). Start either without that checkout and the container crash-loops — `structs-control` fails immediately on a missing `/app/package.json`. Neither is needed for PG query work.
+
+`structs-pg` starts `structs-pg-init` automatically through a `service_completed_successfully` dependency, but `structs-pg-auto-migrate` has no such link. If you start only the query services, schema migrations are applied once at init and then never again; start `structs-pg-auto-migrate` explicitly to keep pulling `STRUCTS_PG_BRANCH` updates.
 
 The PostgreSQL schema (`structs.*`, `sync_state.*`, `cache.*` views, `signer.*`, `view.*` — see [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. Pin the schema branch with `STRUCTS_PG_BRANCH` in `.env`.
 
@@ -100,7 +105,10 @@ structsd (CometBFT + Cosmos SDK)
             |                     |
             v                     v
       PG NOTIFY 'grass'     Direct queries
-            |               (webapp, tsa, agents)
+            |               (webapp, tsa, crawler, agents)
+            |                     |
+            |                     v
+            |               structs-webapp (:8080) <--- structs-control SPA (:8081)
             v
       structs-grass
             |
@@ -126,13 +134,26 @@ structsd (CometBFT + Cosmos SDK)
 `structs-sync-state` is the sole chain-to-PG ingester:
 
 - Image: `structs/structs-pg:latest`, command: `/src/scripts/sync_state.sh`
-- Connects to `structsd` RPC and PG as `structs_indexer`
+- Connects to `structsd` RPC and PG as `structs_indexer`; polls every `SYNC_POLL_INTERVAL` (default `3s`)
 - Writes directly into `structs.*` tables and `sync_state.*` audit tables
 - `cache.*` is a **compatibility view layer** over `sync_state.raw_*` (not an event-sink schema)
-- Monitor progress: `SELECT chain_id, last_height, status, lag_blocks FROM sync_state.sync_cursor;`
+- `SYNC_STATE_MIRROR_RAW` defaults to `false`, so `sync_state.raw_*` (and therefore the `cache.*` views over them) stay empty on a default deployment
+- Monitor progress: `SELECT chain_id, last_height, status, lag_blocks FROM sync_state.sync_cursor;` — `status` reads `catching_up`, then `current`
 - **Never run two instances** — the writer lock will fail the second container
 
 PG game state is empty or stale until sync-state is running and caught up. The default agent profile must include `structs-sync-state` alongside `structsd` and `structs-pg`.
+
+### Derived rows and historical gaps
+
+Some `structs.planet_activity` rows have no corresponding chain event — sync-state derives them from state changes it observes. That means **a fix to the indexer changes only future rows**; already-indexed history keeps whatever shape it was written with. Three cases currently matter to anyone querying the timeline:
+
+| Row / field | Derived from | Gap in older data |
+|-------------|--------------|-------------------|
+| `raid_status` `detail.seized_ore` | The `EventRaid` payload, which already carries it | Key absent entirely on rows indexed before the fix |
+| `struct_defense_remove` | The `struct_defender_clear` handler (no chain event exists) | Category never written, so removals are missing while additions are present |
+| `shield_change`, `block_raid_start` | `planet_attribute` writes for `planetaryShield` / `blockStartRaid` | Not emitted before v0.18.0 |
+
+Upstream ships one-time repair scripts under `sync-state/sql/` (`repair-raid-status-seized-ore.sql`, `repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`) that backfill or clean the affected rows. These are **operator tasks** — they write to the database and are not something an agent should run as part of gameplay. See [database-schema.md](database-schema.md) for the query-side consequences.
 
 ---
 
@@ -143,8 +164,12 @@ The `structs-grass` service bridges PostgreSQL change notifications to NATS:
 - Listens on PG channel: `grass`
 - Publishes to NATS subjects matching entity types (see streaming skill for subject patterns)
 - Game events (attacks, fleet moves, raids, builds) flow through this bridge
+- Categories come from the shared `structs.grass_category` enum, which spans both planet-scoped timeline rows and notifications that never land in `planet_activity` (`block`, `guild_consensus`, `guild_membership`, `player_meta`, …)
 - Player/guild UGC updates surface as `player_consensus` / `guild_meta` categories (not `player_meta`)
+- `shield_change` is the highest-volume planet-scoped category after `struct_status`; subscribe selectively
 - `consensus` and `healthcheck` subjects fire constantly as baseline traffic
+
+`structs-grass` declares no dependency on `structs-nats`, so starting it by name does not bring NATS up. Launch both if you want events to reach subscribers.
 
 This is the same system documented in the `structs-streaming` skill. The guild stack runs it locally rather than connecting to a remote GRASS endpoint.
 

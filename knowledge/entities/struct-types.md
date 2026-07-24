@@ -13,32 +13,32 @@
 
 ## Complete Struct Type Table
 
-All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable).
+All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable). **Abbrev** is the chain's `classAbbreviation` — the short label the webapp and Desktop board render, so use it when reading a UI or naming a struct to your commander. (The `class` field also exists on chain but is identical to Type for every type, so it is omitted here.)
 
-| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
-|----|------|----------|-------|------------|------------|--------------|-------|--------|----------------|--------|
-| 1 | Command Ship | fleet | Command Ship | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
-| 2 | Battleship | fleet | Battleship | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
-| 3 | Starfighter | fleet | Starfighter | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
-| 4 | Frigate | fleet | Frigate | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
-| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
-| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 9 | Tank | fleet | Tank | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 11 | Cruiser | fleet | Cruiser | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
-| 12 | Destroyer | fleet | Destroyer | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
-| 13 | Submersible | fleet | Submersible | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
-| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
-| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
-| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
-| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
-| 20 | Field Generator | planet | Field Generator | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
-| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
-| 22 | World Engine | planet | World Engine | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
+| ID | Type | Abbrev | Category | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
+|----|------|--------|----------|------------|------------|--------------|-------|--------|----------------|--------|
+| 1 | Command Ship | CMD Ship | fleet | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
+| 2 | Battleship | Battleship | fleet | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
+| 3 | Starfighter | Starfighter | fleet | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
+| 4 | Frigate | Frigate | fleet | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
+| 5 | Pursuit Fighter | Pursuit Fighter | fleet | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
+| 6 | Stealth Bomber | Stealth Bomber | fleet | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 7 | High Altitude Interceptor | Interceptor | fleet | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 8 | Mobile Artillery | Mobile Artillery | fleet | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 9 | Tank | Tank | fleet | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 10 | SAM Launcher | SAM Launcher | fleet | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 11 | Cruiser | Cruiser | fleet | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
+| 12 | Destroyer | Destroyer | fleet | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
+| 13 | Submersible | Submersible | fleet | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
+| 14 | Ore Extractor | Extractor | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 15 | Ore Refinery | Refinery | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 16 | Orbital Shield Generator | Orb. Shield | planet | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
+| 17 | Jamming Satellite | Jamming Sat. | planet | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
+| 18 | Ore Bunker | Ore Bunker | planet | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
+| 19 | Planetary Defense Cannon | PDC | planet | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
+| 20 | Field Generator | Generator | planet | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
+| 21 | Continental Power Plant | Power Plant | planet | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
+| 22 | World Engine | World Engine | planet | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
 
 ### Special Properties
 

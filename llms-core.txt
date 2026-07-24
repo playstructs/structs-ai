@@ -149,6 +149,7 @@ Escalate if `Autonomy level = "ask before acting"`. Surface as a **battle order*
 - `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your wallet during the wait
 - `provider-delete`, `substation-delete`, `allocation-delete` — power cascades to connected players
 - Multi-target `struct-attack` that crosses guild boundaries (an act of war, not a skirmish)
+- Arming an autonomous combat loop — `structs_players {command:"autoraid"|"autoresponse", args:{autonomy:"auto"}}` — a standing grant to attack on the commander's behalf (see "Standing Automation Grants")
 - Cross-account `player-send` to a recipient you have not transacted with before
 
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
@@ -208,6 +209,34 @@ Auto-submission is deferred consent. The original approval has to still be valid
 5. **Re-verify if the situation changed.** If your planet was raided while a mine was running, the original consent may be stale; review before letting the auto-submit happen if you can.
 
 Never launch two `*-compute` jobs with the same signing key. Sequence numbers will collide. (This is also rule 7 in [`AGENTS.md`](AGENTS).)
+
+---
+
+## Standing Automation Grants
+
+Everything above prices a *transaction*. Structs Desktop's native loops are a different shape: enabling one is a **standing grant** to sign an open-ended series of future transactions, with no per-action approval and no natural end. The tiers still apply, but they apply **at the moment you arm the loop**, to every action it will ever take.
+
+The four economic loops (`harvest`, `autobuild`, `autodefend`, `infuse`) are Tier 1: bounded, reversible in effect, and confined to your own assets. `infuse` deserves particular care because it wraps a Tier 2 action — infusion annihilates Alpha Matter — so `keep_grams` is the only thing standing between an automated flywheel and an empty reserve. Set it deliberately.
+
+The two combat loops are **Tier 2, always escalate**:
+
+- **`autoresponse`** — signs attacks on your behalf when you are raided. Defensive, but it is still your key firing on another player without you in the room, and it silently accumulates a **grudge list** that later feeds target selection.
+- **`autoraid`** — selects other players and raids them. This is the one to be most careful with: it is unprompted aggression, attributable to your commander, at machine cadence, against targets neither of you individually chose.
+
+Four things make these safe to *evaluate* before they are dangerous to run. Say all four when you present the option:
+
+1. **Off by default**, and enabling is not arming — once enabled they still default to `autonomy: advise`, which ranks and explains but signs nothing.
+2. **`dry_run` is independent of `autonomy`**, so it stays safe even in `auto` and is the correct way to watch a loop's judgment for a while before trusting it.
+3. **`ally` and `protected` are hard vetoes** checked before scoring. Populate them *first*; a rich target cannot outweigh them.
+4. **`raid_hours_utc`, `max_concurrent_raids`, and `min_ore`** bound the blast radius in time, volume, and pettiness.
+
+Two failure modes to raise explicitly, because neither is obvious from the config:
+
+**Consent drifts.** A grudge list written by weeks of `autoresponse` is a target set your commander never approved. Show `structs_doctrine {command:"lists", list_action:"show"}` before arming `autoraid`, not after.
+
+**Diplomacy is not in the model.** The loop scores ore and weakness. It cannot know that a target is your guild's trading partner or that a war is being negotiated. `protected` and `ally` are the only place that knowledge can live — and only if a human puts it there.
+
+Never arm a combat loop on a commander's behalf under `full autonomy`. Autonomy over *your* assets is not authority to start fights in their name.
 
 ---
 
@@ -492,6 +521,18 @@ Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command S
 ## One transaction at a time per account
 
 The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+
+---
+
+## Scripting `structsd tx` (avoiding silent hangs)
+
+When you wrap `structsd` in a shell script (batch migrations, loops, background jobs), three things make a run look "stuck" or "do nothing." All three have bitten real runs:
+
+- **Do not capture stderr on a `tx`.** `structsd tx` writes the `Enter keyring passphrase:` prompt to **stderr** and reads the passphrase from stdin. Capturing output with `out=$(structsd tx ... 2>&1)` swallows the prompt, so the command blocks forever on invisible input. Instead, let stderr reach the terminal and capture only stdout (`structsd tx ... >"$tmp"`), or feed the passphrase non-interactively: `printf '%s\n' "$PASS" | structsd tx ...`. For a **batch of many txs**, a `file`/`os` keyring prompts **once per tx** — use `--keyring-backend test` (testnet) or pipe the passphrase, or you will be typing it hundreds of times.
+- **Guard command substitution under `set -e`.** With `set -euo pipefail`, `st=$(structsd status ...)` that exits non-zero aborts the whole script **silently** (no error printed). Wrap it: `if st=$(structsd status --node "$NODE" -o json 2>&1); then rc=0; else rc=$?; fi`, merge stderr, and tolerantly extract the JSON (e.g. regex the first `{...}`) since `status` output varies across builds.
+- **Never broadcast against a catching-up node.** If `structsd status` reports `sync_info.catching_up=true`, a `--broadcast-mode sync` tx is accepted but **never commits** — the classic "it hangs after broadcast." Check `catching_up=false` before broadcasting, and time out the commit-poll so a lagging node surfaces an error instead of spinning.
+
+See [api/integration-notes.md](https://structs.ai/api/integration-notes) for the data-shape counterparts (including why a permission error always says "administrate").
 
 ---
 
@@ -982,7 +1023,9 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
 3. Connect/disconnect sources: `substation-allocation-connect|disconnect -- [substation-id] [allocation-id]`.
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
-5. Migrate players: `substation-player-migrate -- [src-sub] [dest-sub] [player-id,...]`.
+5. Migrate players: `substation-player-migrate -- [substation-id] [player-id,player-id2,...]` (destination substation + player CSV; there is **no** source-substation argument).
+
+> **Connecting/migrating another player needs `PermSubstationConnection` (1024) on the player too — not just the substation.** Connect and migrate run the same two checks (`1024` on the destination substation AND on each target player) and both call `MigrateSubstation`. A player object is owned by itself, so **owning the substation is not enough to move other members**: either the member **self-connects** (they own themselves; gate the substation with `permission-guild-rank-set [sub] [guild] 1024 [rank]`), or they grant you `permission-grant-on-object [player] [you] 1024` first. Repointing the guild entry substation (`guild-update-entry-substation-id`) only reroutes **new** join-proxy members — existing members are not auto-migrated. See [energy.md](https://structs.ai/knowledge/mechanics/energy).
 
 **Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
 
@@ -1359,6 +1402,21 @@ Two consequences:
 1. **Anyone can contribute capacity to any substation** — an open shared pool by design.
 2. **Contributions are diluted by `1/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
 
+### Connecting/migrating a PLAYER needs permission on BOTH the substation and the player
+
+Unlike allocation-connect, moving a **player** onto a substation is gated on both objects. `substation-player-connect` and `substation-player-migrate` run the **same two checks** and both ultimately call `MigrateSubstation` (connect first disconnects the player from any prior substation):
+
+1. `PermSubstationConnection` (1024) on the **destination substation** (`substation.CanManageConnectionsBy`), and
+2. `PermSubstationConnection` (1024) on **each target player object** (`targetPlayer.CanManageSubstationConnectionBy`).
+
+The catch: **a player object is owned by itself** (`GetOwnerId()` returns the player's own id), so ownership of the substation does **not** confer authority over other players. A guild owner/leader who owns the tier substations still **cannot** connect or migrate other members — the player-side check fails with a (misleadingly worded) "no administrate permission on object" error. To move another player you need 1024 on **that player's object**, via one of:
+
+- **(a) The player self-connects.** They own their own player object (ownership passes check 2), and if the destination substation's connect permission is rank-gated to them via a guild-rank register (`permission-guild-rank-set [sub] [guild] 1024 [rank]`), check 1 passes too. This is the scalable path — each member signs their own `substation-player-connect`.
+- **(b) An explicit grant.** The target player signs `permission-grant-on-object [player-id] [mover-id] 1024`, after which the mover can connect/migrate them.
+- **(c) A guild-rank register on the player object** granting 1024 — but setting it requires 1024 on that player object already, so it is not a leader-side shortcut.
+
+**Operational corollary:** `guild-update-entry-substation-id` only reroutes **new** members joining via join-proxy (they are auto-connected to the guild entry substation). **Existing** members are never auto-migrated when you repoint the entry substation — they must be moved by one of the paths above. (Verified: `msg_server_substation_player_connect.go`, `msg_server_substation_player_migrate.go`, `CanManageSubstationConnectionBy` in `player_cache.go`, `CanManageConnectionsBy` in `substation_cache.go`, `PermissionCheck` in `permissions_context.go`, and `msg_server_guild_membership_join_proxy.go`.)
+
 ---
 
 ## Brownout: `GridCascade` destroys allocations
@@ -1393,467 +1451,126 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 </document>
 
 <document>
-<source>knowledge/mechanics/combat.md</source>
-# Combat Mechanics
+<source>knowledge/mechanics/defense.md</source>
+# Defense (Quick Reference)
 
-**Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases.
-
----
-
-## Combat Actions
-
-| Action | Message | Description |
-|--------|---------|-------------|
-| Attack | `struct-attack` | Direct struct-to-struct combat |
-| Defend | `struct-defense-set` | Set struct to defense mode (blocking) |
-| Raid | `planet-raid-complete` | Planet assault; steals unrefined ore |
+**Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](https://structs.ai/skills/structs-combat/SKILL).
 
 ---
 
-## Ambit Targeting
+## The two rules that decide everything
 
-Combat in Structs revolves around four ambits. Each struct operates in one ambit, and each weapon can only target specific ambits. This creates a strategic mesh where fleet composition and positioning determine what you can hit and what can hit you.
+**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (`remainingOre`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
 
-| Ambit | Reach Bit Value |
-|-------|-----------------|
-| none | 1 |
-| Water | 2 |
-| Land | 4 |
-| Air | 8 |
-| Space | 16 |
-| local | 32 |
+**2. A raid can only complete while your shields are vulnerable.** Shields are vulnerable when *any* of these is true (chain predicate `IsDefenderCommandStructVulnerable()`):
 
-The four combat ambits are Water/Land/Air/Space; `none` (1) is a placeholder and `local` (32) is the Command Ship's "current ambit" flag (its weapon reaches whatever ambit it currently occupies).
+- you have no fleet, or your **fleet is off-station**
+- you have **no Command Ship**, or it is **destroyed**, or it is **offline**
 
-**Two ambit numberings — do not conflate.** The bit values above are the **reach bitmask** (`bit = 1 << enum`) used for `StructType.possibleAmbit` and weapon-reach fields. Transaction messages (`struct-build-initiate`, `struct-move`) and a struct's stored `operatingAmbit` use a different **enum**: none=0, water=1, land=2, air=3, space=4, local=5. When building or moving, pass the enum (the CLI takes the name `space|air|land|water`), not the bitmask number. See [building.md — Ambit Encoding](building.md#ambit-encoding) and [api/integration-notes.md — Ambit](../../api/integration-notes.md#ambit-enum-vs-reach-bitmask).
-
-### Weapon Target Matrix
-
-Which ambits each struct's primary weapon can hit:
-
-| Struct | Lives In | Targets (Primary) | Targets (Secondary) |
-|--------|----------|--------------------|---------------------|
-| Command Ship | Any (movable) | Local only (flag 32 = current ambit) | — |
-| Battleship | Space | Land, Water (armour-piercing) | Space |
-| Starfighter | Space | Space | Space |
-| Frigate | Space | Space, Air | — |
-| Pursuit Fighter | Air | Air | — |
-| Stealth Bomber | Air | Land, Water | — |
-| High Altitude Interceptor | Air | Space, Air | — |
-| Mobile Artillery | Land | Land, Water | — |
-| Tank | Land | Land | — |
-| SAM Launcher | Land | Space, Air | — |
-| Cruiser | Water | Land, Water | Air |
-| Destroyer | Water | Air, Water | — |
-| Submersible | Water | Space, Water | — |
-
-### Threatened-By Matrix
-
-Which structs can attack into each ambit:
-
-| Target Ambit | Threatened By |
-|--------------|---------------|
-| Space | Battleship (secondary), Starfighter, Frigate, High Altitude Interceptor, SAM Launcher, Submersible |
-| Air | Frigate, Pursuit Fighter, High Altitude Interceptor, SAM Launcher, Cruiser (secondary), Destroyer |
-| Land | Battleship, Stealth Bomber, Mobile Artillery, Tank, Cruiser |
-| Water | Battleship, Stealth Bomber, Mobile Artillery, Cruiser, Destroyer, Submersible |
-
-The Command Ship can attack into any ambit but must first move there (see below). The Battleship's armour-piercing primary covers Land and Water; its guided secondary reaches Space.
-
-### Targets per attack
-
-`struct-attack` accepts a **comma-separated list of target IDs**, but how many of those targets a weapon engages is governed by that weapon's `primaryWeaponTargets` / `secondaryWeaponTargets` value.
-
-- **Every weapon is single-target** — `primaryWeaponTargets = 1` on all fleet hulls, and `secondaryWeaponTargets = 1` on the three hulls with a secondary (Battleship, Starfighter, Cruiser). Listing extra IDs does not let a `targets = 1` weapon spread its volley across them.
-- This is distinct from **multi-shot** (`primaryWeaponShots`), which is how many projectiles a weapon fires *at a single target* (e.g. Starfighter Attack Run = 3 shots, 1 target).
-
-### Command Ship Ambit Mobility
-
-The Command Ship is the **only struct that can change ambits** (`movable=true`). All other structs are fixed in their operating ambit, and the chain rejects `struct-move` on a non-movable struct — only the Command Ship can be moved.
-
-- **Offensive use**: Move the Command Ship to the target's ambit before attacking. It can only hit structs in its current ambit.
-- **Defensive use**: If the enemy fleet can only target water, moving the Command Ship out of water protects it from direct attack.
-- **CLI**: `structsd tx structs struct-move [cmd-ship-id] [new-ambit] [new-slot] [new-location] --from [key] --gas auto --gas-adjustment 1.5 -y`
+While your fleet is on station with a built, online Command Ship, `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does.
 
 ---
 
-## Health Points
+## Two traps in rule 2
 
-Each struct has a Max HP that determines how much damage it can absorb before destruction.
+**Online is power math, not activity.** A struct or player is online when capacity covers load — see [power.md](power.md). Going quiet does not take your Command Ship offline; running out of capacity does.
 
-| Struct | Max HP |
+**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their shields stay up. Never infer raidability from an inactivity signal or a UI badge — gate on the live predicate. The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
+
+**Raiding drops your own shields.** Sending your fleet to someone else's planet takes it off-station, which makes *you* vulnerable until it returns. Never move your fleet out while holding meaningful unrefined ore.
+
+---
+
+## Minimum defensive posture
+
+In priority order. The first two are worth more than everything below them combined.
+
+1. **Refine ore as soon as it lands.** Removes the prize entirely.
+2. **Keep the Command Ship online and the fleet on station.** Keeps shields up. Watch capacity headroom, because a brownout takes the Command Ship down as surely as an attack does.
+3. **Assign same-ambit defenders** to the Command Ship — those are the only ones that can *block* damage aimed at it.
+4. **Spread cross-ambit defenders** for counter coverage against attackers your same-ambit structs cannot reach.
+5. **Build an Ore Bunker** if ore must sit unrefined, and a **Planetary Defense Cannon** (1 per player) for automatic return fire.
+
+---
+
+## Defenders: block vs. counter
+
+Assigning a defender (`struct-defense-set`) requires only that it is **co-located** with the protected struct and **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+
+| | Block | Counter-attack |
+|---|---|---|
+| Ambit requirement | Defender must be in the **same ambit as the protected struct** | Independent of the protected struct's ambit, but the defender's weapons must be able to reach the **attacker's** ambit |
+| Effect | Soaks a hit meant for the protected struct | Deals damage back to the attacker |
+| Frequency | Attempted on **every** shot | **Once per `struct-attack` invocation**, per struct |
+| Also requires | Shot not evaded; weapon is blockable; defender struct online **and its owner online** | Weapon is counterable; neither party destroyed; location reachability |
+
+Both the defender and the target can counter, so one attacker may take damage from two sources per target. **Defenders never take counter damage.** A fleet struct that is `away` cannot defend anything at its home planet.
+
+Counter damage comes from two per-type fields — `counterAttackSameAmbit` and `counterAttack` — and is typically **1**. Treat counters as a backstop, not a damage plan: an attacker striking from an ambit none of your structs can reach takes no counter at all.
+
+---
+
+## Planetary defenses
+
+| Struct | Effect |
 |--------|--------|
-| Command Ship | 6 |
-| Other fleet structs (IDs 2-13) | 3 |
-| Baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, PDC) | 6 |
-| Field Generator | 8 |
-| Continental Power Plant | 10 |
-| World Engine | 10 |
+| Planetary Defense Cannon (type 19, `PDC`) | Auto-fires **after all targets resolve** — it is not a counter-attack and cannot be triggered as one. 1 per player; multiple players' cannons on one planet stack. |
+| Jamming Satellite (type 17, `Jamming Sat.`) | Gives the planet a chance to evade incoming **guided** ordnance aimed at a planetary struct on its owner's planet. Source and target ambit are irrelevant. **Unguided ordnance passes through untouched.** Each additional satellite compounds the chance. |
 
-Planetary structs are hardened so a raider cannot casually demolish a planet's infrastructure; the power generators are the toughest (and carry `armour`, damage reduction 1), making a power kill a deliberate objective. Armour-piercing weapons (Battleship primary) bypass that reduction.
-
-- Damage reduces current HP. At 0 HP the struct is destroyed (see Struct Destruction below).
-- **HP does not regenerate.** A damaged struct stays damaged.
-- Defenders absorb attacks directed at the struct they protect — the protected struct only takes damage after the defender is destroyed or fails to block.
+Guided fire at a planetary target faces two independent layers: the target's own `signalJamming` (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first, then the planetary interceptor network gets a separate chance.
 
 ---
 
-## Damage Formulas
+## Reading a raid against you
 
-### Multi-Shot Damage
+| Status | What it means for you |
+|--------|----------------------|
+| `initiated` | A raider's fleet has arrived. Shields still up. Refine ore now. |
+| `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
+| `ongoing` | You restored shields mid-raid. Completion is blocked. |
+| `raidSuccessful` | You lost **all** stored ore. Nothing else. |
+| `attackerDefeated` | The raider's Command Ship died while away; their fleet went home. |
+| `attackerRetreated` | They withdrew. |
+| `demilitarized` | No defenders to resolve against. |
 
-```
-damage = sum(successful_shots) - damageReduction
-if damage >= health then health = 0
-else health = health - damage
-```
-
-| Variable | Description |
-|----------|-------------|
-| weaponShots | Number of shots per attack (`primaryWeaponShots` / `secondaryWeaponShots`) |
-| weaponShotSuccessRate | Per-shot success (Numerator/Denominator) |
-| weaponGuaranteedShots | Minimum number of shots that hit before the success rate roll applies (`primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots`) |
-| weaponDamage | Damage per successful shot |
-| damageReduction | Defense reduction (target's `attackReduction`, e.g. Tank/generator armour = 1); **negated when the weapon is armour-piercing** |
-| armourPiercing | If the weapon is armour-piercing (`primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`), the target's `damageReduction` is treated as 0 |
-| health | Target current health |
-
-**Algorithm**: For shot index `i` in `0..weaponShots`, the shot hits if `i < weaponGuaranteedShots` OR `IsSuccessful(weaponShotSuccessRate)`. The first `weaponGuaranteedShots` shots are auto-hits; only the remaining shots roll against the success rate. Sum the damage from successful shots, then apply `damageReduction` (unless the weapon is armour-piercing, in which case reduction is skipped). Minimum damage after reduction is 1. Cap at target health.
-
-**Armour-piercing**: A weapon flagged armour-piercing negates the target's damage reduction during volley resolution. The Battleship's primary is armour-piercing — it deals full damage to Tanks and to power generators (which otherwise reduce incoming damage by 1). Each shot's piercing is reported on `EventAttackShotDetail.armourPiercing`.
-
-**Why guaranteed shots exist**: A weapon with `shots=3` and `successRate=1/3` has the same expected value as a single guaranteed hit, but its variance is much higher — most attacks would deal zero damage. Setting `guaranteedShots=1` floors the damage at one hit per volley while preserving the upside of the other rolls. Guaranteed shots apply only to the Starfighter Attack Run (secondary weapon, `secondaryWeaponGuaranteedShots = 1`); other weapons leave the field at 0, which means "no guarantee, all shots roll".
-
-> **Querying note**: `primaryWeaponGuaranteedShots` / `secondaryWeaponGuaranteedShots` are `omitempty` in the chain's JSON output. Because the value is 0 for every struct type except the Starfighter secondary, the field is **omitted entirely** from most `struct_type` query responses. A payload with no guaranteed-shots key means the value is 0, not that the field was removed from the chain. (Verified present in current `structsd` source.)
-
-**Attack results**: Attack events include health results (remaining health after attack) in addition to damage amounts.
-
-### Evasion
-
-```
-if weaponControl == guided then successRate = guidedDefensiveSuccessRate
-else successRate = unguidedDefensiveSuccessRate
-canEvade = IsSuccessful(successRate) if successRate.Numerator != 0
-```
-
-### Weapon Control vs Defense Type
-
-The interaction between a weapon's control type (guided/unguided) and the target's defense type is the core of combat tactics. This matrix determines whether shots can be evaded:
-
-| Target Defense | vs Guided | vs Unguided |
-|----------------|-----------|-------------|
-| Signal Jamming (Battleship, Pursuit Fighter, Cruiser) | **66% miss** | Full hit |
-| Defensive Maneuver (High Alt Interceptor) | Full hit | **66% miss** |
-| Armour (Tank, Field Generator, Continental Power Plant, World Engine) | Full hit, -1 damage | Full hit, -1 damage |
-| Stealth Mode (Stealth Bomber, Submersible) | Same-ambit only | Same-ambit only |
-| Indirect Combat Module (Mobile Artillery) | Full hit | Full hit |
-| None | Full hit | Full hit |
-
-**Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour reduces damage by 1 regardless of weapon control — **except** against armour-piercing weapons (Battleship primary), which ignore it entirely. The Battleship is the dedicated answer to Tanks and to armoured power generators.
-
-### Stealth
-
-Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
-
-- **Attacking breaks stealth**: When a stealthed struct attacks, its stealth is **instantly deactivated** (firing reveals position).
-- **Re-activation**: Stealth must be manually re-activated after deactivation. Costs 2 charge (from the player's shared charge bar).
-- **Activation**: `struct-stealth-activate [struct-id]` (2 charge). Deactivation: `struct-stealth-deactivate [struct-id]`.
-
-### Recoil Damage
-
-Attacker takes damage after firing: `health = health - weaponRecoilDamage`. Recoil only applies if the attacker survives the entire shot sequence (including counter-attacks).
-
-### Post-Destruction Damage
-
-If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding structs.
-
-### Assigning Defenders (`struct-defense-set`)
-
-**Any** struct can be assigned to defend another, regardless of ambit. Assignment checks only that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
-
-- A **same-ambit** defender can **block** (soak a hit meant for the protected struct) and can counter.
-- A **cross-ambit** defender cannot block, but still **counters** whenever its weapon reach includes the attacker's ambit.
-
-So assigning a water Submersible to defend a land struct is valid and useful: it will counter air/space-reachable attackers even though it can never block for the land struct. Spread defenders across ambits to widen counter coverage, and keep same-ambit defenders where you need actual damage interception. There is no per-ambit cap on how many structs can defend (see [Edge Cases](#edge-cases)).
-
-### Blocking
-
-```
-if !evaded and defender exists and defender.operatingAmbit == target.operatingAmbit then
-  if weapon.blockable and defender.ReadinessCheck() then
-    canBlock = IsSuccessful(defender.blockingSuccessRate)
-```
-
-**Requirements** (all must be true):
-1. The shot was NOT evaded -- block does not fire on evaded shots
-2. Weapon must be blockable (`GetWeaponBlockable` returns true)
-3. Defender must pass ReadinessCheck -- struct online AND owner online
-4. Defender must be in the **same ambit as the target being defended** (not the attacker)
-
-A struct cannot block for a friendly in a different ambit. Blocking is strictly same-ambit defense. Unlike counter-attacks, block is attempted on every shot (not limited to once per attack).
-
-### Counter-Attack
-
-Each struct can counter-attack **at most once per `struct-attack` invocation**. Counter-spent state is tracked per struct per attack command (not per target, not per shot). For a 3-shot Attack Run: the defender counters on the first shot only, but can attempt to block all 3 shots. The target counters once after all shots resolve.
-
-Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct. **Defenders do not take counter-attack damage** — only the original attacker and target can be damaged by counters.
-
-**Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only on-station fleet structs and planet-based structs can defend their home planet.
-
-| Scenario | Damage |
-|----------|--------|
-| Same ambit as attacker | the defender type's `counterAttackSameAmbit` value |
-| Different ambit from attacker | the defender type's `counterAttack` value |
-
-Counter damage comes from two per-type fields, not a flat number: `counterAttackSameAmbit` (when the counter-attacker shares the attacker's ambit) and `counterAttack` (when it does not). Most hulls are `1 / 1`; the Command Ship is `2 / 2`; the Destroyer is `1 / 2` (cross / same). See [struct-types.md — Defensive Properties](../entities/struct-types.md) for the per-type values.
-
-**Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
-
-**Requirements** (all must be true):
-1. Weapon must be counterable (`GetWeaponCounterable` returns true)
-2. Neither counter-attacker nor attacker is destroyed
-3. Defender's weapons must be able to target the **attacker's ambit** (via `CanCounterTargetAmbit`)
-4. Location reachability to the attacker:
-   - If defender on planet: attacker's fleet must be at that planet
-   - If defender on fleet on-station: attacker must be reachable at the planet
-   - If defender on fleet away: attacker must be on same planet or adjacent in location list
-
-**Two types of counter-attack**:
-- **Defender counter-attack**: Fires before the block attempt, once per `struct-attack` invocation. Fires even on evaded shots.
-- **Target counter-attack**: Fires after all shots resolve damage against the target, once per `struct-attack` invocation. Destroyed targets cannot counter.
-
-Both the defender and the target can counter-attack -- an attacker may take damage from two sources per target.
-
-### Planetary Defense Cannon
-
-```
-damage = planetaryShieldBase + sum(defenseCannon.damage for each cannon on planet)
-```
-
-- **Limit**: 1 Planetary Defense Cannon per player
-- PDC fires automatically **after all targets are resolved**, not as a counter-attack
-- PDC does NOT counter-attack -- it only auto-fires at the end of the attack sequence
-- Multiple players' PDCs on the same planet stack correctly
-
-### Other Planetary Defense Structs
-
-Two planetary defenses are wired to structs and affect combat: the Planetary Defense Cannon and the **low-orbit ballistic interceptor network** (provided by the Jamming Satellite struct).
-
-- **Low-orbit ballistic interceptor network (the Jamming Satellite, type 17)** — the Jamming Satellite carries `noUnitDefenses`; its planetary effect gives the planet a chance to **evade incoming _guided_ ordnance aimed at a planetary struct sitting on its own planet**. **Source and target ambit are irrelevant** — the only requirements are that the target is a planetary (non-fleet) struct on its owner's planet and the incoming weapon is guided. **Unguided ordnance carries no guidance to jam and passes through untouched.** On a successful evade the shot is flagged `evadedByPlanetaryDefenses: true` with cause `lowOrbitBallisticInterceptorNetwork`, dealing 0 damage. Each additional interceptor on the planet compounds the evade chance.
-- **Two layers protect against guided fire.** The target struct's own **unit-level** `signalJamming` defense (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first; only if that does not evade does the planetary interceptor network get its separate chance. So guided attacks on a defended planet face both the per-struct field and, for planetary targets, the planetary interceptor. See [Weapon Control vs Defense Type](#weapon-control-vs-defense-type).
-
-> **Two different things are called "jamming" — don't conflate them.** Both defeat only **guided** ordnance (unguided passes through either), but they operate at different scopes:
->
-> | | Unit `signalJamming` | Low-orbit ballistic interceptor network |
-> |---|---|---|
-> | **Provided by** | Being a Battleship, Pursuit Fighter, or Cruiser (per-unit trait) | The **Jamming Satellite** struct (type 17) on the planet |
-> | **Scope** | Protects **only the struct that has it** | Protects **all planetary structs** on that struct's owner's planet |
-> | **Effect** | 66% miss on incoming guided fire | Per-shot evade chance; stacks with each extra interceptor |
-> | **Ambit** | N/A (self) | Source and target ambit **irrelevant** |
-> | **Order** | Checked **first** | Checked **second**, only if the unit field didn't already evade |
-> | **Flag on evade** | normal weapon-control miss | `evadedByPlanetaryDefenses: true`, cause `lowOrbitBallisticInterceptorNetwork` |
+A destroyed Command Ship **can be rebuilt**, and doing so shuts the window — so an attentive defender under siege should rebuild immediately rather than fight for the wreck.
 
 ---
 
-## Attack Resolution Sequence
+## The four-minute clock
 
-When `struct-attack` is executed, the following steps occur in order per target:
+From ~300 raid episodes reconstructed out of `planet_activity` (92k events, 2026-03 → 2026-07), the defensive game is decided almost immediately:
 
-1. **Validation** -- Verify weapon ambits can reach target ambit. Stealthed targets are only targetable from the same ambit. Verify target struct exists.
-2. **Stealth break** -- If the attacker has stealth active, it is instantly deactivated (attacking reveals position).
-3. **Evasion check** (per-target, not per-shot) -- Evaluate weapon control (guided/unguided) vs target defense type. If evaded, ALL shots against this target miss but counters still fire.
-4. **Defender resolution** (`ResolveDefenders`) -- all defenders are handled in a single pass, counters first:
-   - **Defender counter-attacks** -- every ready, in-range defender counters once (if the weapon is counterable), regardless of evasion. Counter damage from multiple defenders is **simultaneous** from the attacker's perspective.
-   - **Block is deferred** -- the first eligible defender in the **same ambit as the target** is remembered as the blocker, but the block is not applied until every counter has resolved. This is order-independent: an earlier-sorted defender can no longer absorb a volley from an attacker that a later defender's counter destroys.
-   - **Survival gate** -- if the combined counters destroy the attacker, no block occurs and the attack is fully neutralized.
-5. **Attack damage** (`ResolveAttackDamage`) -- the attacker's volley lands **only if it was not blocked and the attacker is still alive**. A **destroyed attacker deals no damage** — its entire volley is voided (a Bomber killed by a counter does not still bomb). If it fires, per-projectile success rates and armour reduction apply (minimum 1 damage per hit), unless the target evaded in step 3, in which case all shots miss.
-6. **Target counter-attack** (once per `struct-attack` invocation) -- fires after the volley resolves. Destroyed targets cannot counter.
-7. **Early termination** -- If the attacker is destroyed mid-sequence, remaining targets do not process.
+- Median time from `initiated` to `shieldsVulnerable` is **2.1 minutes**.
+- The vulnerable → loot lock is a hard **22 blocks ≈ 2 min 6 s**.
 
-After **all targets** are resolved:
+So your entire response budget is **roughly four minutes** from the moment a hostile fleet arrives. Two consequences follow, and they are the difference between the two outcomes you actually care about:
 
-8. **Recoil damage** -- Applied to attacker if it survived all shots
-9. **Planetary Defense Cannon auto-fire** -- If any target was a planetary struct, PDCs fire against the attacker
+**React to the alarm, not to damage.** Trigger on `raid_status: initiated`. Waiting until you see structs taking damage spends most of the budget.
 
-### Per-Projectile Events
+**Return fire is what defeats attackers, and only if it is fast.** All 16 episodes that ended `attackerDefeated` had the defender shooting back within **~1.8 minutes**. Of the 123 that ended `raidSuccessful`, only 11 saw any return fire at all — median **12.3 minutes**, far too late to matter.
 
-Each projectile gets its own `EventAttackShotDetail` row. For a 3-shot Attack Run, the attack event contains 3 separate shot detail entries with per-projectile hit/miss breakdowns. `targetPlayerId` is on `EventAttackShotDetail` (not `EventAttackDetail`).
+**Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
 
-In the live `struct_attack` event `detail`, the attacker context is **flat** at the top and the per-shot rows are a **nested array** `eventAttackShotDetail[]`. See [api/integration-notes.md — struct_attack event detail schema](../../api/integration-notes.md#struct_attack-event-detail-schema) for the exact field layout integrators receive.
+None of this displaces refining first. Refining removes the prize entirely and takes the loss to zero even if you lose the fight, so it stays the first move — it simply has to happen inside the same four minutes, not after them.
 
-**Key implications**:
-- Evasion is per-target (entire volley evaded), while shot accuracy is per-projectile
-- Both the **defender** and the **target** can counter-attack -- an attacker may take damage from two sources per target
-- Each struct counters at most once per `struct-attack` invocation, regardless of how many shots or targets
-- Counter-attacks fire even on evaded shots (defender counter) -- only block is suppressed by evasion
-- All defender counters resolve **before** any block; if they destroy the attacker, its volley deals no damage and no block is needed
-- If the attacker is destroyed during the target loop, remaining targets do not process
-- PDC fires against any attacker of planetary structs, not only during raids
+One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
 
 ---
 
-## Requirements
+## Under attack right now
 
-| Requirement | Attack | Raid |
-|-------------|--------|------|
-| Operating struct online, and its owner online | ✓ | — |
-| Raider player online (sufficient power) | — | ✓ |
-| Sufficient charge | ✓ | — |
-| Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
-| Raider fleet away (at the target) | — | ✓ |
-| Raider fleet first in the target's queue (`LocationListForward == ""`) | — | ✓ |
-| **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
-| Raid clock started (`blockStartRaid` != 0) | — | ✓ |
-| Proof-of-work | — | ✓ |
-
-An attack action depends only on the attacking struct (and its owner) being online — the attacker's Command Ship does not need to be online, and the same holds for defensive changes (`struct-defense-set`) and stealth changes. The target must be a built struct; `struct-attack` against a struct that is still building is rejected (`unbuilt`), and a destroyed struct is rejected (`destroyed`). The target's online status is irrelevant.
-
-Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
-
----
-
-## Raid Phases and SHIELDS_VULNERABLE
-
-> **A raid cannot eliminate a player — the only prize is stored ore.** No matter how one-sided the outcome, a successful raid seizes the defender's **unrefined stored ore** and nothing more: it does not destroy the player, take their planet, capture structs, or touch refined Alpha Matter. Refined Alpha is untouchable; refine promptly and a raid can win you nothing. (This is the single most common combat misconception — treat raids as ore theft, not conquest.)
-
-A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
-
-This predicate is the chain function `IsDefenderCommandStructVulnerable()` (verified in `structsd` source, `keeper/planet_cache.go`): it returns vulnerable when the owner has no fleet, the **defender's fleet is off-station**, there is **no Command Ship**, or the Command Ship is **destroyed or offline**. (Struct/player *online* is pure power math — load vs capacity — not recent activity; see [power.md](power.md).)
-
-### Vulnerability is a state you can create — two ways to raid
-
-The single biggest raid misconception is treating "shields vulnerable" as a fixed property to *hunt for*. It is a **state**, and you can put a defender into it. There are two modes:
-
-- **Opportunistic raid** — the defender is *already* vulnerable when you scout (their fleet is off-station, or their Command Ship is already offline/destroyed/absent). You move in and grind the PoW. Cheap, but genuinely-vulnerable targets holding ore are rare.
-- **Siege raid (force vulnerability)** — the defender is shielded (Command Ship online, fleet on station), so you **manufacture** the window: strip same-ambit blockers, **destroy the defender's Command Ship**, and complete the raid before they rebuild it. Destroying (or power-starving) the Command Ship is the intended lever — see [Raid attack doctrine](#raid-attack-doctrine) below.
-
-```mermaid
-stateDiagram-v2
-    [*] --> shielded: CMD ship online + fleet on station
-    shielded --> vulnerable: defender fleet leaves / CMD ship offline / CMD ship destroyed
-    vulnerable --> shielded: CMD ship back online with fleet on station (clock clears)
-    vulnerable --> raidSuccessful: raider completes PoW while clock runs
-    note right of shielded
-        planet-raid-compute is rejected here
-        ("no active raid window"); blockStartRaid = 0
-    end note
-    note right of vulnerable
-        blockStartRaid running; PoW age accrues
-    end note
-```
-
-### Idle is not vulnerable
-
-A **dormant** owner (no transactions for days) is *not* the same as a **vulnerable** one. A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their fleet stays on station — `IsDefenderCommandStructVulnerable()` returns **false** and the planet is unraidable by the opportunistic path, no matter how long they've been idle. Do not infer raidability from an inactivity signal (or from a UI "vulnerable"/"inactive" badge). Gate on the **live predicate**: Command Ship online + fleet on station.
-
-The flip side is the key insight for offense: **a dormant owner is the *ideal siege target*.** Because they are not watching, they will not rebuild a destroyed Command Ship or restore a power-starved one — so once you force the window open it stays open. An active defender, by contrast, may rebuild the Command Ship and slam the window shut.
-
-**The trap (a strictly-negative move).** Moving your fleet to a *not-yet-vulnerable* target and expecting to raid is worse than doing nothing: your fleet is now off-station, so **your own** shields drop and your stored ore is exposed — all for a raid that can never complete until you also destroy their Command Ship. If you commit your fleet, commit to the *siege* (destroy the Command Ship), not just the fleet-move.
-
-The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
-
-- The clock is only meaningful **while a raider is present** (the planet's raid slot is occupied). It is set to the current block when the planet becomes vulnerable with a raider present — either raiders arrive to find it already vulnerable (opportunistic), or the defender's Command Ship goes down *while* raiders are there (siege). The chain recomputes this on every relevant change via `RefreshRaidVulnerability()`.
-- Cleared (back to 0) when the planet stops being vulnerable (the Command Ship comes back online with the fleet on station), and when the raid ends. With the clock at 0, raid completion is rejected (`raid_clock_unset`).
-
-So a raider must have their fleet at the target, catch (or make) the defender vulnerable, *and* let the clock age before the puzzle becomes solvable. If the defender restores their shields mid-raid (Command Ship back online with the fleet on station), the clock resets and the raid status flips to `ongoing` until the planet becomes vulnerable again.
-
-### The two rejection messages (don't confuse them)
-
-The tooling surfaces the vulnerability gate in two different places with two different strings — verified in `structsd` source:
-
-| Where | Message | Meaning |
-|-------|---------|---------|
-| CLI pre-check, `planet-raid-compute` (`client/cli/tx_planet_raid_compute.go`) | `planet (X) shields are not vulnerable: no active raid window (defending Command Ship may still be online)` | `blockStartRaid == 0` — no live raid window; the compute would be wasted work. This is the message a raider usually hits first. |
-| Chain handler, `planet-raid-complete` (`keeper/msg_server_planet_raid_complete.go`) | `planet (X) cannot raid_complete while shields_active` / `...while raid_clock_unset` | The completion transaction itself is rejected: `shields_active` = defender not vulnerable at completion; `raid_clock_unset` = clock is 0. |
-
-Both point at the same fix: the defender is not vulnerable. Either wait/watch for them to slip (opportunistic), or open the window yourself by destroying their Command Ship (siege). Neither means "grind harder."
-
-> **One message, two independent gates.** `blockStartRaid` is set only by `RefreshRaidVulnerability()`, which returns early unless `GetLocationListStart() != ""` (a raider is present). So `blockStartRaid == 0` — and the single `no active raid window` string — collapses **two independent conditions**: (1) **a raider is present** at the target, and (2) **the defender is vulnerable**. If you have not moved your fleet in yet, the clock is 0 for reason (1), not (2); moving in against a shielded defender then flips the reason to (2) but the clock still stays 0. Completion (`planet-raid-complete`) adds two more gates the compute message doesn't mention: your raiding fleet must be **first in the queue** (`LocationListForward == ""`) and your **player online**. Read "no active raid window" as "one of {raider-present-and-first-in-queue, defender-vulnerable} is not yet true," not as a hashing problem.
-
-### Raid statuses
-
-| Status | Meaning |
-|--------|---------|
-| initiated | Raider fleet has arrived at the planet |
-| shieldsVulnerable | Defender's shields are down (fleet off-station, or Command Ship offline/destroyed) — the raid is now winnable and the clock is running |
-| ongoing | Defender restored shields mid-raid (Command Ship back online with the fleet on station) — completion blocked |
-| raidSuccessful | Raider won and seized all of the defender's stored ore |
-| attackerDefeated | Raider's own Command Ship was destroyed while away (`trigger_raid_defeat_by_destruction`) — the raiding fleet is defeated and sent home |
-| attackerRetreated | Raider withdrew before completion |
-| demilitarized | Planet has no defenders to resolve against (`fleet.PeaceDeal()`) |
-
-Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a defender loses to a raid is all of their stored ore (`raidSuccessful`).
-
-**Raid status** also includes `seizedOre` -- a convenience figure for the ore stolen, surfaced on the `planet_raid` record. For an authoritative count, derive it from `ledger` rows with `action = 'seized'` (which also record 0-gram seizures). See `schemas/entities/planet.md` for the `planet_raid` table schema.
-
-### What a raid does
-
-A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs.
-
-Destroying the defender's Command Ship (or catching their fleet off-station) makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender restores their shields before completion — Command Ship back online with the fleet on station — the shields return and `planet-raid-complete` is rejected with `shields_active`. So the planet is either vulnerable at completion — and the raider takes all the ore — or shielded, and the raid is rejected.
-
-`trigger_raid_defeat_by_destruction` is a property of the Command Ship. When a Command Ship is destroyed while **away from home** (its planet's owner differs from its own owner), its fleet is defeated: the raid ends with `attackerDefeated` and the fleet is sent home. This defeats an **attacking** fleet whose Command Ship dies during a raid.
-
-### Raid attack doctrine
-
-This is the **siege** path — how to force the window open when the defender is shielded. It is executable at the source level: an away raiding fleet that is **first in the target's raid queue** can attack any struct on that planet, including the on-station defender's Command Ship (`isReachable`, verified in `keeper/struct_cache.go`), subject to ambit reach and same-ambit blockers.
-
-1. **Move your fleet to the target** (raid `initiated`). While the defender is still shielded, `blockStartRaid` stays 0 and `planet-raid-compute` is rejected — this is expected; do not grind yet.
-2. Strip **same-ambit blockers** so your attacks reach the Command Ship (cross-ambit defenders counter but cannot block — see [Blocking](#blocking)).
-3. Destroy the defender's **Command Ship** to open the `shieldsVulnerable` window. The destruction path fires `CommandStructRaidStatusHook()` → `RefreshRaidVulnerability()`, which starts the clock and emits `shieldsVulnerable` because your raider is already present.
-4. Run **`planet-raid-compute`** now that the clock is running, and complete while it is down to seize all stored ore.
-5. Expect an *online* defender to rebuild the Command Ship — a destroyed Command Ship can be rebuilt (see [Struct Destruction](#struct-destruction)), which shuts the window. Sieges are most reliable against an **offline or dormant** defender who cannot/will not restore it.
-
-**Cost of a siege.** It is a real commitment, not a free option: you must win the fleet engagement to kill the Command Ship (6 HP, usually defended), and while your fleet is away **your own** planet's shields are down. Weigh the defender's `storedOre` (all of which you seize) against that exposure and the risk your raiding Command Ship dies while away (`attackerDefeated`, `trigger_raid_defeat_by_destruction`). Small ore + a defended Command Ship often means "watch and wait" beats "siege." But a dormant target holding meaningful ore, whose Command Ship you can reach, is exactly what a siege is for.
-
----
-
-## Edge Cases
-
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen -- not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
-- **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
-- **Damage overflow**: Post-destruction damage carries over to adjacent structs
-- **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Block does NOT fire on evaded shots. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.
-- **Minimum damage**: After damage reduction, minimum damage is 1 -- attacks always deal at least 1 damage
-- **Offline counter-attack**: Offline/destroyed structs cannot counter-attack
-- **Counter-attack limit**: Each struct can counter-attack at most once per `struct-attack` invocation. For multi-shot weapons (Attack Run with 3 projectiles), the defender counters on the first shot only but can attempt to block all 3 shots. The target counters once after all shots.
-- **Counter on evaded shots**: Defender counter-attacks fire even when the shot is evaded. Only the block attempt is suppressed by evasion.
-- **EvadedCause**: Only set on successful evasion. Not populated on failed evasion attempts.
-- **Target validation**: Target struct existence is validated before attack proceeds
-- **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
-- **PDC stacking**: Multiple players' Planetary Defense Cannons on the same planet stack correctly.
-- **No defender cap**: there is no per-ambit limit on how many structs can defend another — `defense-set` only checks co-location, and attack resolution iterates every registered defender. The planet's **slot** structure provides 4 slots per ambit, which caps how many structs can exist per ambit, not how many can defend.
-- **No charge banking before an attack**: Charge cannot be stockpiled for an alpha-strike. Any charge-consuming action resets the player's shared bar to 0 and it only refills linearly (~1/block); you cannot "burst" multiple expensive attacks back-to-back. See [building.md — Charge Accumulation](building.md#charge-accumulation).
-
----
-
-## Struct Destruction
-
-When a struct reaches 0 HP, it is **destroyed** and removed from the game. The destroyed instance is gone forever and **cannot be repaired**. However, you **can build a new struct** of the same type as a replacement — full build PoW required.
-
-| Consequence | Detail |
-|-------------|--------|
-| Destroyed struct | Instance gone forever; build a replacement (full PoW) |
-| Lost defenders | Each destroyed defender must be individually rebuilt |
-| Rebuild cost | Full PoW + power draw, same as original build |
-
-### FAQ: Can I rebuild a destroyed Command Ship?
-
-**YES.** A destroyed Command Ship cannot be repaired, but you **can build a brand new Command Ship** (type 1) to replace it. The new Command Ship gets a new struct ID and requires full build PoW (~17 min at D=3). You choose the starting ambit at build time.
-
-Until the replacement is online, the fleet **cannot move, raid, or build in space**. This downtime is the real cost of losing a Command Ship. Always assign defenders to protect it via `struct-defense-set` before engaging in offensive operations.
+Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: the response order is survival-first, and the correct first move is usually to refine or bunker ore rather than to shoot back.
 
 ---
 
 ## See Also
 
-- [resources.md](resources.md) — Ore vs Alpha Matter security
-- [power.md](power.md) — Power requirements for combat
-- [fleet.md](fleet.md) — Fleet status for raids
-- [building.md — Status field (numeric)](building.md#status-field-numeric) — Canonical decoder for the numeric struct `status` bitmask (e.g. `35` = destroyed)
-- `schemas/formulas.md` — Verified formula definitions
-- `reference/action-quick-reference.md` — Combat action endpoints
-- `protocols/action-protocol.md` — Transaction flow
+- [combat.md](combat.md) — full mechanics: ambit matrices, damage and evasion formulas, attack resolution, siege doctrine
+- [power.md](power.md) — the online/offline math that shields depend on
+- [planet.md](planet.md) — shields, `blockStartRaid`, ore depletion
+- [struct-types.md](../entities/struct-types.md) — per-type HP, counter values, and defensive properties
+- [`awareness/threat-detection.md`](../../awareness/threat-detection.md) — spotting an attack forming before it lands
 
 </document>
 
@@ -1874,32 +1591,32 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 
 ## Complete Struct Type Table
 
-All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable).
+All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable). **Abbrev** is the chain's `classAbbreviation` — the short label the webapp and Desktop board render, so use it when reading a UI or naming a struct to your commander. (The `class` field also exists on chain but is identical to Type for every type, so it is omitted here.)
 
-| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
-|----|------|----------|-------|------------|------------|--------------|-------|--------|----------------|--------|
-| 1 | Command Ship | fleet | Command Ship | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
-| 2 | Battleship | fleet | Battleship | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
-| 3 | Starfighter | fleet | Starfighter | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
-| 4 | Frigate | fleet | Frigate | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
-| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
-| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 9 | Tank | fleet | Tank | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 11 | Cruiser | fleet | Cruiser | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
-| 12 | Destroyer | fleet | Destroyer | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
-| 13 | Submersible | fleet | Submersible | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
-| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
-| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
-| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
-| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
-| 20 | Field Generator | planet | Field Generator | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
-| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
-| 22 | World Engine | planet | World Engine | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
+| ID | Type | Abbrev | Category | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
+|----|------|--------|----------|------------|------------|--------------|-------|--------|----------------|--------|
+| 1 | Command Ship | CMD Ship | fleet | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
+| 2 | Battleship | Battleship | fleet | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
+| 3 | Starfighter | Starfighter | fleet | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
+| 4 | Frigate | Frigate | fleet | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
+| 5 | Pursuit Fighter | Pursuit Fighter | fleet | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
+| 6 | Stealth Bomber | Stealth Bomber | fleet | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 7 | High Altitude Interceptor | Interceptor | fleet | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 8 | Mobile Artillery | Mobile Artillery | fleet | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 9 | Tank | Tank | fleet | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 10 | SAM Launcher | SAM Launcher | fleet | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 11 | Cruiser | Cruiser | fleet | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
+| 12 | Destroyer | Destroyer | fleet | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
+| 13 | Submersible | Submersible | fleet | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
+| 14 | Ore Extractor | Extractor | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 15 | Ore Refinery | Refinery | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 16 | Orbital Shield Generator | Orb. Shield | planet | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
+| 17 | Jamming Satellite | Jamming Sat. | planet | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
+| 18 | Ore Bunker | Ore Bunker | planet | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
+| 19 | Planetary Defense Cannon | PDC | planet | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
+| 20 | Field Generator | Generator | planet | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
+| 21 | Continental Power Plant | Power Plant | planet | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
+| 22 | World Engine | World Engine | planet | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
 
 ### Special Properties
 

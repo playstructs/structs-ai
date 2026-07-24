@@ -10,10 +10,33 @@ snapshot (`generated/structsd-commands.txt`) and catalogs (`generated/commands.m
 `generated/struct-types.md`) are generated against it. Command-name truth is additionally
 enforced by the version-independent deprecated-token blocklist.
 
-Note: several read commands used by skills (e.g. `struct-all-by-planet`, `player-charge`,
-`guild-membership-all-by-guild`) are NOT `structsd query structs` subcommands in either
-0.19.0 or v0.20.0 — they route through the Guild Stack / webapp query API. The command
-lint therefore treats unknown *invocations* as warnings, not hard failures.
+Note: the command lint treats unknown *invocations* as warnings, not hard failures, because
+some reads legitimately have no CLI form. Resolved so far — do not reintroduce these names:
+
+| Phantom name | Reality (verified v0.20.0) |
+|--------------|----------------------------|
+| `struct-all-by-planet` | No CLI form. Guild Stack: `select … from struct where location_id=…` |
+| `player-charge` | Not a query at all. Derived: `latest_block_height − player.gridAttributes.lastAction` (`GetCharge()` in `x/structs/keeper/player_cache.go`); `lastAction` is omitted from JSON when `0` |
+| `guild-membership-all-by-guild` | No CLI form. Membership is a field on the player: `select id, guild_rank from player where guild_id=…`. `guild-membership-application[-all]` covers *pending applications* only |
+| `player-update-pfp-client-render-attributes` | CLI name is abbreviated: `player-update-pfp-cr-attributes`. Only the RPC method and `Msg` type spell out `ClientRenderAttributes` |
+
+When a lint warning turns out to be a phantom, fix the doc and add a row here rather than
+leaving the warning to be re-triaged every audit.
+
+### Invocation lint (`check-invocations.py`) — hard gate
+
+A correct command *name* is not enough to be runnable. `scripts/ci/check-invocations.py` gates
+three parse-time failures that `lint-commands.sh` cannot see, reading arities from
+`generated/structsd-signatures.txt` so it needs no binary in CI:
+
+- **ARITY** — positional count must match the Usage line.
+- **ORDER** — `--` must come *after* the flags. pflag stops parsing flags at `--`, so
+  `… -- 0-1 1 --from key` hands `--from` and `key` to the command as positional arguments and it
+  dies with `accepts N arg(s), received M`. Verified empirically against v0.20.0.
+- **GAS** — every `tx` needs `--gas auto` ([`AGENTS.md`](../AGENTS.md) rule 6).
+
+Regenerate the signature snapshot alongside the command snapshot with
+`scripts/ci/snapshot-commands.sh` whenever the pinned binary moves.
 
 ## Harness entry files (root)
 

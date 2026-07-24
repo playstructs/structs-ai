@@ -176,6 +176,7 @@ How to read the board. See `awareness/`.
 - [`priority-framework`](awareness/priority-framework.md) -- Survival > Security > Economy > Expansion > Dominance
 - [`game-loop`](awareness/game-loop.md) -- Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat
 - [`async-operations`](awareness/async-operations.md) -- Background PoW, pipeline strategy, job tracking, multi-player orchestration
+- [`briefing`](awareness/briefing.md) -- Report game state to your commander in terms they can act on: jargon translation, the three report shapes, what not to send
 - [`context-handoff`](awareness/context-handoff.md) -- Save state when context runs low
 - [`continuity`](awareness/continuity.md) -- Persist across sessions
 - [`scorecard`](awareness/scorecard.md) -- Self-evaluation rubric: grade judgment and process before and after a session
@@ -195,6 +196,7 @@ Reference material in `knowledge/`.
 
 ### Mechanics
 - [`combat`](knowledge/mechanics/combat.md) -- Damage, evasion, raids
+- [`defense`](knowledge/mechanics/defense.md) -- Survival card: what a raid can take, what keeps shields up, minimum posture (quick card)
 - [`permissions`](knowledge/mechanics/permissions.md) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
 - [`transactions`](knowledge/mechanics/transactions.md) -- Free vs paid messages, ante handler routing, gas mechanics
 - [`ugc-moderation`](knowledge/mechanics/ugc-moderation.md) -- Decentralized name/pfp moderation, validation rules, audit events
@@ -358,6 +360,7 @@ Escalate if `Autonomy level = "ask before acting"`. Surface as a **battle order*
 - `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your wallet during the wait
 - `provider-delete`, `substation-delete`, `allocation-delete` — power cascades to connected players
 - Multi-target `struct-attack` that crosses guild boundaries (an act of war, not a skirmish)
+- Arming an autonomous combat loop — `structs_players {command:"autoraid"|"autoresponse", args:{autonomy:"auto"}}` — a standing grant to attack on the commander's behalf (see "Standing Automation Grants")
 - Cross-account `player-send` to a recipient you have not transacted with before
 
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
@@ -417,6 +420,34 @@ Auto-submission is deferred consent. The original approval has to still be valid
 5. **Re-verify if the situation changed.** If your planet was raided while a mine was running, the original consent may be stale; review before letting the auto-submit happen if you can.
 
 Never launch two `*-compute` jobs with the same signing key. Sequence numbers will collide. (This is also rule 7 in [`AGENTS.md`](AGENTS).)
+
+---
+
+## Standing Automation Grants
+
+Everything above prices a *transaction*. Structs Desktop's native loops are a different shape: enabling one is a **standing grant** to sign an open-ended series of future transactions, with no per-action approval and no natural end. The tiers still apply, but they apply **at the moment you arm the loop**, to every action it will ever take.
+
+The four economic loops (`harvest`, `autobuild`, `autodefend`, `infuse`) are Tier 1: bounded, reversible in effect, and confined to your own assets. `infuse` deserves particular care because it wraps a Tier 2 action — infusion annihilates Alpha Matter — so `keep_grams` is the only thing standing between an automated flywheel and an empty reserve. Set it deliberately.
+
+The two combat loops are **Tier 2, always escalate**:
+
+- **`autoresponse`** — signs attacks on your behalf when you are raided. Defensive, but it is still your key firing on another player without you in the room, and it silently accumulates a **grudge list** that later feeds target selection.
+- **`autoraid`** — selects other players and raids them. This is the one to be most careful with: it is unprompted aggression, attributable to your commander, at machine cadence, against targets neither of you individually chose.
+
+Four things make these safe to *evaluate* before they are dangerous to run. Say all four when you present the option:
+
+1. **Off by default**, and enabling is not arming — once enabled they still default to `autonomy: advise`, which ranks and explains but signs nothing.
+2. **`dry_run` is independent of `autonomy`**, so it stays safe even in `auto` and is the correct way to watch a loop's judgment for a while before trusting it.
+3. **`ally` and `protected` are hard vetoes** checked before scoring. Populate them *first*; a rich target cannot outweigh them.
+4. **`raid_hours_utc`, `max_concurrent_raids`, and `min_ore`** bound the blast radius in time, volume, and pettiness.
+
+Two failure modes to raise explicitly, because neither is obvious from the config:
+
+**Consent drifts.** A grudge list written by weeks of `autoresponse` is a target set your commander never approved. Show `structs_doctrine {command:"lists", list_action:"show"}` before arming `autoraid`, not after.
+
+**Diplomacy is not in the model.** The loop scores ore and weakness. It cannot know that a target is your guild's trading partner or that a war is being negotiated. `protected` and `ally` are the only place that knowledge can live — and only if a human puts it there.
+
+Never arm a combat loop on a commander's behalf under `full autonomy`. Autonomy over *your* assets is not authority to start fights in their name.
 
 ---
 
@@ -790,26 +821,27 @@ The bearer token is generated on first launch and stored with the app's config. 
 
 | Tool | Purpose |
 |------|---------|
-| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events |
-| `structs_hash` | Manage proof-of-work tasks with ETAs and tune the engine (cpu/gpu/auto, difficulty_start, max_concurrent) |
-| `structs_action` | Execute game actions with preflight checks (explore, build, mine, refine, attack, defend, raid, resync, etc.) |
-| `structs_intel` | Strategic intelligence + perception: whoami, scout, valid_targets, simulate, strike_options, battle_log, ruleset, slot_map, is_active, intents, forecast, economy, timeline, plus raw `query` |
-| `structs_policy` | Standing orders (auto_refine, power_alert, agent_ui, combat orders, watchdog_remediate) |
-| `structs_events` | Long-poll event feed (raids, attacks, fleet moves, completions) so agents react instead of polling |
-| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates; `as` runs as a virtual player |
-| `structs_players` | Manage virtual players (extra players off the same mnemonic, joined to your guild): create / list / roster / state / act-as |
-| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, menus/dialogues/map previews/HUD/prompts) — never signs |
-| `structs_system` | System health, logs, self-tuning: watchdog status, loop liveness, tx-attempt ledger, PoW stats, structured log |
+| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events. `player_id` defaults to the logged-in player |
+| `structs_hash` | Proof-of-work tasks — `list` / `start` (`task_type` `MINE`, `REFINE`, `BUILD`, `RAID`) / `progress` / `stop` / `config` (`enabled`, `engine` cpu/gpu/auto, `difficulty_start`, `max_concurrent`, `auto_tune`) |
+| `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync` |
+| `structs_intel` | Strategic intelligence + perception. `query` is one of `whoami`, `intents`, `ruleset`, `simulate`, `strike_options`, `what_can_i_build`, `power_forecast`, `economy_status`, `plan_timeline`, `planet_history`, `valid_targets`, `scout`, `battle_log`, `slot_map`, `is_active`, `market`, `metric_trend`, `query` (raw entity reads) |
+| `structs_policy` | Standing orders — `list` / `set` / `remove` / `log` over `auto_refine`, `power_alert`, `combat_alert`, `agent_ui`, `auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`, `rules_of_engagement`, `primary_home_guard`, `board_auto_open`, `watchdog_remediate` |
+| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor` |
+| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with `abort_if` predicates; `as` runs the chain as a virtual player |
+| `structs_players` | Virtual players and the native automation loops: `list`, `roster`, `create`, `state`, `act`, `capacity`, `role`, `economy`, `infra`, `harvest`, `autobuild`, `autodefend`, `autoresponse`, `autoraid`, `infuse` |
+| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, `component` menus/dialogues/map previews/HUD/prompts) and `web` browser-dashboard control — never signs |
+| `structs_system` | Health, logs, self-tuning — `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed`, `config` |
 | `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
-| `structs_doctrine` | Standing rules of engagement + per-tick executor (advise / auto) |
+| `structs_doctrine` | Standing rules of engagement, per-tick executor, and the persistent combat lists (`set` / `show` / `tick` / `lists`, autonomy advise/auto, presets `turtle` / `economy` / `balanced` / `warfighter`) |
 | `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
 
-Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`; the old names remain only as deprecation stubs.)
+Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`. The old names still answer with a pointer to the replacement, but are no longer advertised — `tools/list` returns exactly the 13 above.)
 
-### Prompts (6)
+### Prompts (7)
 
 | Prompt | Purpose |
 |--------|---------|
+| `getting_started` | Guided first session for a brand-new player: explore → build → mine → refine, with the agent as the tutorial |
 | `structs_first_session` | Orientation for new agents — check dashboard, identify priorities |
 | `structs_game_loop` | One tick: dashboard → assess → plan → execute → verify |
 | `structs_state_assessment` | Deep analysis with risk ratings: power, threats, economy, operations |
@@ -821,9 +853,15 @@ Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/struc
 
 This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://START.md`, `structs://play/index.md`, `structs://knowledge/mechanics/combat.md`, `structs://reference/index.md`). URIs are derived from the file tree — see the [resource map](knowledge/infrastructure/structs-desktop.md) and [`develop/structs-resources.md`](develop/structs-resources.md).
 
+The sync is a **build step**, so a given build may ship none. A live server checked on 2026-07-24 returned an empty `resources/list` and 404'd every URI above. Call `resources/list` once before relying on it, and fall back to [structs.ai](https://structs.ai) or a local checkout if it is empty.
+
 ### Signing, automation, and co-op
 
-The MCP never holds keys: `structs_action`/`structs_sequence` submit through the app's CosmJS bridge after preflight checks, and the engine never auto-signs outside those gated paths. `structs_sequence` paces action chains to the per-player charge bar with abort predicates; `structs_board` can drive the human's screen for co-op (display/elicitation only — it cannot sign). See [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) for the policy engine, virtual players, hashing, and agent-driven UI.
+The MCP never holds keys: `structs_action`/`structs_sequence` submit through the app's CosmJS bridge after preflight checks, and the engine never auto-signs outside those gated paths. `structs_sequence` paces action chains to the per-player charge bar with abort predicates; `structs_board` can drive the human's screen for co-op (display/elicitation only — it cannot sign). The native automation loops (`structs_players` `harvest` / `autobuild` / `autodefend` / `infuse`) do auto-sign for the players they manage and are **off until you enable them**. Two further loops — `autoresponse` and `autoraid` — auto-sign *combat*: returning fire when raided, and selecting and raiding targets. Both are off by default and, once enabled, still default to `autonomy: advise` (they explain, they do not sign) until you set `autonomy: auto`. Treat arming either as a standing grant to attack other players; see [SAFETY.md](SAFETY.md). See [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) for the policy engine, virtual players, hashing, and agent-driven UI.
+
+### Sharing the board with a remote human
+
+`structs_board {web:"on"}` serves the same Team Ops dashboard as a web page at `http://127.0.0.1:8420/board?token=…` (off by default). The server still binds loopback only, so a remote human reaches it through their own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). The token in that URL is the MCP bearer token and grants **full operator control**, including mass actions that sign transactions — treat it like a password and turn the dashboard off with `structs_board {web:"off"}` when you're done.
 
 ### CLI Fallback
 
@@ -1144,6 +1182,18 @@ Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command S
 ## One transaction at a time per account
 
 The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+
+---
+
+## Scripting `structsd tx` (avoiding silent hangs)
+
+When you wrap `structsd` in a shell script (batch migrations, loops, background jobs), three things make a run look "stuck" or "do nothing." All three have bitten real runs:
+
+- **Do not capture stderr on a `tx`.** `structsd tx` writes the `Enter keyring passphrase:` prompt to **stderr** and reads the passphrase from stdin. Capturing output with `out=$(structsd tx ... 2>&1)` swallows the prompt, so the command blocks forever on invisible input. Instead, let stderr reach the terminal and capture only stdout (`structsd tx ... >"$tmp"`), or feed the passphrase non-interactively: `printf '%s\n' "$PASS" | structsd tx ...`. For a **batch of many txs**, a `file`/`os` keyring prompts **once per tx** — use `--keyring-backend test` (testnet) or pipe the passphrase, or you will be typing it hundreds of times.
+- **Guard command substitution under `set -e`.** With `set -euo pipefail`, `st=$(structsd status ...)` that exits non-zero aborts the whole script **silently** (no error printed). Wrap it: `if st=$(structsd status --node "$NODE" -o json 2>&1); then rc=0; else rc=$?; fi`, merge stderr, and tolerantly extract the JSON (e.g. regex the first `{...}`) since `status` output varies across builds.
+- **Never broadcast against a catching-up node.** If `structsd status` reports `sync_info.catching_up=true`, a `--broadcast-mode sync` tx is accepted but **never commits** — the classic "it hangs after broadcast." Check `catching_up=false` before broadcasting, and time out the commit-poll so a lagging node surfaces an error instead of spinning.
+
+See [api/integration-notes.md](https://structs.ai/api/integration-notes) for the data-shape counterparts (including why a permission error always says "administrate").
 
 ---
 
@@ -1778,7 +1828,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-client-render-attributes` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-cr-attributes -- [player-id] '[json]'` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
@@ -2329,7 +2379,7 @@ Optional `[name]` sets the planet's display name at creation (validated like `Ms
 1. **Verify depletion** — `structsd query structs planet [id]` shows `currentOre == 0`.
 2. **Recall the fleet home** if it's away, and confirm `onStation`:
    ```
-   structsd tx structs fleet-move TX_FLAGS -- [fleet-id] 2 [current-planet-id]
+   structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [current-planet-id]
    ```
 3. **Evacuate** anything worth keeping into the fleet (`struct-move`, Command Ship only is movable; other structs on the planet are lost).
 4. **Approval Block** — `currentOre == 0`; fleet `onStation`; everything you care about moved or accepted as lost; you understand this is **irreversible**.
@@ -2484,7 +2534,9 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
 3. Connect/disconnect sources: `substation-allocation-connect|disconnect -- [substation-id] [allocation-id]`.
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
-5. Migrate players: `substation-player-migrate -- [src-sub] [dest-sub] [player-id,...]`.
+5. Migrate players: `substation-player-migrate -- [substation-id] [player-id,player-id2,...]` (destination substation + player CSV; there is **no** source-substation argument).
+
+> **Connecting/migrating another player needs `PermSubstationConnection` (1024) on the player too — not just the substation.** Connect and migrate run the same two checks (`1024` on the destination substation AND on each target player) and both call `MigrateSubstation`. A player object is owned by itself, so **owning the substation is not enough to move other members**: either the member **self-connects** (they own themselves; gate the substation with `permission-guild-rank-set [sub] [guild] 1024 [rank]`), or they grant you `permission-grant-on-object [player] [you] 1024` first. Repointing the guild entry substation (`guild-update-entry-substation-id`) only reroutes **new** join-proxy members — existing members are not auto-migrated. See [energy.md](https://structs.ai/knowledge/mechanics/energy).
 
 **Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
 
@@ -3181,7 +3233,9 @@ Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`
 ```bash
 structsd query structs guild [guild-id]
 structsd query structs reactor [reactor-id]               # commission, total infusion = strength
-structsd query structs guild-membership-all-by-guild [guild-id]
+structsd query structs guild-membership-application-all   # pending applications only, all guilds
+# The member roster is NOT a structsd query — membership lives on the player record:
+#   Guild Stack: select id, guild_rank, ore from player where guild_id='[guild-id]';
 ```
 
 ### 3. Survey the galaxy
@@ -3221,12 +3275,14 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 
 | Target | Command |
 |--------|---------|
-| Player | `structsd query structs player [id]` / `player-charge [id]` |
+| Player | `structsd query structs player [id]` — returns `gridAttributes` (capacity, load, structsLoad, `lastAction`) and `playerInventory` |
+| Player charge | Derived, not queried: `charge = latest_block_height − gridAttributes.lastAction`. Get the height from `structsd status`. `lastAction` is omitted from JSON when `0` — treat missing as `0` (full charge) |
 | Planet | `structsd query structs planet [id]` / `planet-all` |
 | Structs on a planet | Guild Stack: `select id,type,operating_ambit from struct where location_id='[planet-id]'` (no `structsd` CLI equivalent) |
 | Struct detail | `structsd query structs struct [id]` |
 | Guild | `structsd query structs guild [id]` / `guild-all` |
-| Guild members | `structsd query structs guild-membership-all-by-guild [guild-id]` |
+| Guild members | Guild Stack: `select id, guild_rank from player where guild_id='[guild-id]'` (no `structsd` CLI equivalent — membership is a field on the player, not a separate record) |
+| Pending guild applications | `structsd query structs guild-membership-application [id]` / `guild-membership-application-all` |
 | Reactor | `structsd query structs reactor [id]` / `reactor-all` |
 | Provider / market | `structsd query structs provider [id]` / `provider-all` |
 | Fleet | `structsd query structs fleet [id]` |
@@ -3755,7 +3811,7 @@ The Guild Stack is a Docker Compose application that runs a full guild node with
 
 The Guild Stack runs persistent services on your machine and (if exposed) on your network. See [SAFETY.md](https://structs.ai/SAFETY) for the trust contract; in this skill:
 
-- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-sync-state structs-grass`). Enable more services explicitly when you need them.
+- **`docker compose up -d`** (Tier 1 — persistent services) — *"Starts a background fleet of containers. They keep running after this command returns."* The setup procedure below uses the **read-only profile** as the default (`structsd structs-pg structs-nats structs-sync-state structs-grass`). Enable more services explicitly when you need them.
 - **Pin a release tag.** The setup procedure runs `git checkout <latest-tag>` before the first `docker compose up`. Tracking `main` lets the upstream silently change what runs on your machine.
 - **MCP server** — not part of the Guild Stack. Agents connect through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop); see [`TOOLS.md`](https://structs.ai/TOOLS). The Guild Stack just provides the PostgreSQL data store and event bridge behind it.
 - **Transaction signing agent** — only started when you opt in. *"Do not configure with keys until you have read its code and understood what it will sign on your behalf."* See `Signing-Agent Caveat` below.
@@ -3808,24 +3864,28 @@ You are about to launch a fleet of containers including a chain node, sync-state
 
 ### 3. Configure Environment
 
-Copy or create `.env` with at minimum:
+Start from `.env.example` and set at minimum:
 
 ```
 MONIKER=MyAgentNode
-NETWORK_VERSION=113b
+NETWORK_VERSION=116b
 NETWORK_CHAIN_ID=structstestnet-111
+DATABASE_NAME=structs
+SQITCH_PG_CONNECTION=postgres://structs@structs-pg:5432/structs
 STRUCTS_PG_BRANCH=main
 ```
 
+`NETWORK_VERSION=116b` corresponds to chain v0.20.0. The webapp and Struct Control SPA additionally require `WEBAPP_SOURCE` and `CONTROL_SOURCE` to point at sibling host checkouts; leave those services stopped and you can ignore both.
+
 ### 4. Start the Stack (Read-Only Profile — Recommended Default)
 
-For PG-driven game-state queries, you need four services. `structs-sync-state` is required — without it, PG has no indexed game state:
+For PG-driven game-state queries, you need five services. `structs-sync-state` is required — without it, PG has no indexed game state — and `structs-nats` must be named explicitly because `structs-grass` does not declare a dependency on it:
 
 ```bash
-docker compose up -d structsd structs-pg structs-sync-state structs-grass
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass
 ```
 
-The webapp, TSA, crawler, and NATS (if not needed for GRASS) stay stopped unless you enable them. Only enable services when you specifically need them (see `Enabling Additional Services` below).
+`structs-pg-init` starts automatically as a dependency of `structs-pg`. The webapp, Struct Control SPA, TSA, and crawler stay stopped unless you enable them. Only enable services when you specifically need them (see `Enabling Additional Services` below).
 
 To start the full stack instead (only if you have read every service's purpose):
 
@@ -3938,8 +3998,8 @@ WHERE p.id = '1-142';
 ```sql
 SELECT s.id, st.class_abbreviation, s.operating_ambit,
     st.primary_weapon_control, st.primary_weapon_damage,
-    st.primary_weapon_ambits_array, st.unit_defenses,
-    st.counter_attack_same_ambit
+    st.primary_weapon_ambits_array, st.primary_weapon_armour_piercing,
+    st.unit_defenses, st.counter_attack_same_ambit
 FROM structs.struct s
 JOIN structs.struct_type st ON st.id = s.type
 WHERE s.owner = '1-142' AND s.location_type = 'fleet'
@@ -3947,23 +4007,34 @@ WHERE s.owner = '1-142' AND s.location_type = 'fleet'
 ORDER BY s.operating_ambit, s.slot;
 ```
 
+`primary_weapon_armour_piercing` / `secondary_weapon_armour_piercing` (added v0.18.0) mark weapons that bypass a target's `armour` damage reduction — the deciding factor when picking a weapon against an armoured hull.
+
+Generator output lives on `generating_rate_p`, which is the writable column; the bare `generating_rate` is a GENERATED mirror (`generating_rate_p * 1000`). Both read fine, but match on `generating_rate_p` for exact integer comparisons.
+
 ### Raid Target Scouting
 
+Stealable ore is a **player** balance, not a planet balance, so drive the scan from `structs.player` and anchor on each player's home planet. Joining ore to `planet.owner` instead repeats the same balance once per planet that player owns, which inflates a target list badly — one player holding 20 planets appears 20 times with identical ore.
+
 ```sql
-SELECT pl.id as planet, pl.name, pl.owner, g_ore.val as ore,
-    COALESCE(pa_shield.val, 0) as shield,
-    COALESCE(g_load.val, 0) as structs_load
-FROM structs.planet pl
-JOIN structs.grid g_ore ON g_ore.object_id = pl.owner AND g_ore.attribute_type = 'ore'
+SELECT pl.id AS planet, pl.name, p.id AS owner, p.username,
+    g_ore.val AS ore,
+    COALESCE(pa_shield.val, 0) AS shield,
+    f.status AS fleet_status,
+    cs.is_destroyed AS command_destroyed
+FROM structs.player p
+JOIN structs.planet pl ON pl.id = p.planet_id
+JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
 LEFT JOIN structs.planet_attribute pa_shield ON pa_shield.object_id = pl.id
     AND pa_shield.attribute_type = 'planetaryShield'
-LEFT JOIN structs.grid g_load ON g_load.object_id = pl.owner
-    AND g_load.attribute_type = 'structsLoad'
+LEFT JOIN structs.fleet f ON f.id = p.fleet_id
+LEFT JOIN structs.struct cs ON cs.id = f.command_struct
 WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
-A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. Join the owner's fleet and Command Ship status before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status` and `command_destroyed` columns are for; a target with `fleet_status = 'onStation'` and a live Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+
+`fleet.status` values are **camelCase**: `onStation` and `away`. `WHERE f.status = 'on_station'` matches nothing and silently makes every target look raidable.
 
 ### Enemy Structs at a Planet
 
@@ -3981,20 +4052,37 @@ ORDER BY s.operating_ambit;
 
 ### Real-Time Threat Detection (Poll Pattern)
 
-```sql
--- Set high-water mark on startup
-SELECT COALESCE(MAX(seq), 0) FROM structs.planet_activity
-WHERE planet_id IN ('2-105');
+`planet_activity.seq` is a **per-planet** counter starting at 0, not a table-wide sequence. One scalar high-water mark shared across several planets silently drops events on every planet whose counter is behind the highest one. Either keep a cursor per planet:
 
--- Poll every ~6 seconds (one block interval)
-SELECT seq, planet_id, category, detail::text
+```sql
+-- Set one high-water mark per watched planet on startup
+SELECT planet_id, COALESCE(MAX(seq), 0) AS last_seq
 FROM structs.planet_activity
 WHERE planet_id IN ('2-105', '2-127')
-    AND seq > $LAST_SEQ
-ORDER BY seq ASC;
+GROUP BY planet_id;
+
+-- Poll every ~6 seconds (one block interval)
+SELECT pa.planet_id, pa.seq, pa.category, pa.detail::text
+FROM structs.planet_activity pa
+JOIN (VALUES ('2-105', $LAST_SEQ_2_105), ('2-127', $LAST_SEQ_2_127))
+    AS cur(planet_id, last_seq) ON cur.planet_id = pa.planet_id
+WHERE pa.seq > cur.last_seq
+ORDER BY pa.planet_id, pa.seq ASC;
 ```
 
-Watch for `fleet_arrive`, `raid_status`, and `struct_attack` categories.
+...or, simpler for a watcher that does not have a fixed planet list, use the globally ordered `block_height`:
+
+```sql
+SELECT planet_id, seq, category, detail::text
+FROM structs.planet_activity
+WHERE block_height > $LAST_HEIGHT
+    AND category IN ('fleet_arrive', 'raid_status', 'struct_attack', 'shield_change')
+ORDER BY block_height, planet_id, seq;
+```
+
+Watch for `fleet_arrive`, `raid_status`, and `struct_attack`. Filter by category rather than pulling everything: `struct_status` and `shield_change` together dominate row volume, and `shield_change` fires on every shield tick.
+
+`raid_status` `detail` carries `planet_id`, `fleet_id`, `status`, and `seized_ore`. Status values are `initiated`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized` — there is no `completed`. On data indexed before the recent indexer fix the `seized_ore` key is **absent rather than zero**, so read it as `detail ? 'seized_ore'` before trusting a value.
 
 ### Sync-State Health
 
@@ -4026,7 +4114,7 @@ WHERE protected_struct_id = '5-100';
 
 ```bash
 # Start the read-only profile (recommended default)
-docker compose up -d structsd structs-pg structs-sync-state structs-grass
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass
 
 # Start all services (only if you have reviewed every one)
 docker compose up -d
@@ -4051,19 +4139,20 @@ docker compose down -v
 
 ## Enabling Additional Services
 
-The setup procedure above starts only `structsd`, `structs-pg`, `structs-sync-state`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
+The setup procedure above starts `structsd`, `structs-pg`, `structs-nats`, `structs-sync-state`, and `structs-grass`. Enable the rest one at a time, only when you have a reason.
 
 | Service | What it is | When to enable |
 |---------|-----------|----------------|
-| `structs-nats` | NATS messaging + GRASS WebSocket on port 1443 | Required for GRASS (included in read-only profile when using `structs-grass`) |
-| `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally |
+| `structs-pg-auto-migrate` | Re-runs `sqitch deploy` on a loop | When you want schema updates from `STRUCTS_PG_BRANCH` after the initial deploy. Not started as a dependency of anything. |
+| `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally. **Requires a `WEBAPP_SOURCE` host checkout** (default `../structs-webapp/src`). |
+| `structs-control` | Struct Control SPA, an operator console on port 8081 | When you want a browser UI over the webapp. **Requires a `CONTROL_SOURCE` host checkout** (default `../structs-control`); without it the container crash-loops on a missing `package.json`. |
 | `structs-tsa` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
 | `structs-crawler` | Guild metadata crawler | When running a guild node that publishes guild config |
 
 To enable a service, add it to the `docker compose up -d` argument list:
 
 ```bash
-docker compose up -d structsd structs-pg structs-sync-state structs-grass structs-webapp
+docker compose up -d structsd structs-pg structs-nats structs-sync-state structs-grass structs-webapp
 ```
 
 ---
@@ -4115,8 +4204,10 @@ If you spun the stack up to investigate something, tear it down when you're done
 | 5432 | structs-pg | PostgreSQL database |
 | 8080 | structs-webapp | Webapp HTTP API |
 | 443 | structs-webapp | Webapp HTTPS |
+| 8081 | structs-control | Struct Control SPA |
 | 4222 | structs-nats | NATS client connections |
 | 1443 | structs-nats | NATS WebSocket (GRASS events) |
+| 8222 | structs-nats | NATS monitoring endpoint |
 
 ---
 
@@ -4125,7 +4216,11 @@ If you spun the stack up to investigate something, tear it down when you're done
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "connection refused" on PG | Stack not started or PG not healthy yet | `docker compose ps` to check; wait for PG healthy |
-| Query returns 0 rows | Chain sync or sync-state catch-up incomplete | Check `sync_state.sync_cursor`; wait for `status` to leave `catching_up` |
+| Query returns 0 rows | Chain sync or sync-state catch-up incomplete | Check `sync_state.sync_cursor`; wait for `status` to reach `current` |
+| Query returns 0 rows but data exists | Snake_case guess at a camelCase value | Chain-derived string values are camelCase: `onStation` not `on_station`, `raidSuccessful` not `completed`, `planetaryShield`, `structsLoad` |
+| Poller misses events on some planets | `planet_activity.seq` is per-planet, not table-wide | Keep one cursor per planet, or order on `block_height` |
+| Ledger balances are too high | Historical duplicate `received`/`sent` rows shadowing `refined`/`infused` | See the ledger note in [database-schema](https://structs.ai/knowledge/infrastructure/database-schema) |
+| `structs-control` restarting | Missing `CONTROL_SOURCE` sibling checkout | Clone `structs-control` next to the stack, or leave the service stopped |
 | Container name not found | Container naming varies by installation | Run `docker compose ps` to find actual container names |
 | "role does not exist" | Wrong PG role in connection string | Use `structs_indexer` role via the GRASS container |
 | Slow PoW with guild stack | Multiple agents running concurrent PoW | CPU contention; stagger PoW operations or reduce parallelism |
@@ -4208,6 +4303,7 @@ There is no end state. There is only expansion, consolidation, and the relentles
 - [The Structs](structs-origin.md) — The dominant faction in the current era
 - [Factions](factions.md) — Guilds, independents, mercenaries
 - [Timeline](timeline.md) — Historical context
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - Game: https://playstructs.com | Wiki: https://watt.wiki
 
 </document>
@@ -4287,6 +4383,7 @@ Players issue commands; Structs execute. The Command Ship—a fleet component—
 - [Alpha Matter](alpha-matter.md) — Energy conversion, refinement lifecycle
 - [Factions](factions.md) — Guild structure, independent operators
 - [Timeline](timeline.md) — Emergence of Structs in history
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `schemas/entities.md` — Struct, StructType, Fleet entity definitions
 
 </document>
@@ -4391,6 +4488,7 @@ The choice is strategic. Guilds scale; independents specialize. Both are viable.
 - [Alpha Matter](alpha-matter.md) — Token backing, collateral
 - [The Structs](structs-origin.md) — Primary actors in guild operations
 - [Timeline](timeline.md) — Formation of first guilds
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `schemas/entities.md` — Guild entity definition
 
 </document>
@@ -4491,6 +4589,7 @@ Higher efficiency = higher risk. Reactors are safe but inefficient. World Engine
 - [The Structs](structs-origin.md) — Energy dependency, conversion usage
 - [Factions](factions.md) — Central Banks, token backing
 - [Timeline](timeline.md) — Discovery of Alpha Matter
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `reference/action-quick-reference.md` — Mining, refining, reactor actions
 
 </document>
@@ -4554,6 +4653,7 @@ This timeline provides a sparse but structured history of the universe. Details 
 - [The Structs](structs-origin.md) — Emergence in Era 3
 - [Factions](factions.md) — Guild formation in Era 4
 - [Alpha Matter](alpha-matter.md) — Discovery in Era 1
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - Game: https://playstructs.com | Wiki: https://watt.wiki
 
 </document>
@@ -4562,7 +4662,7 @@ This timeline provides a sparse but structured history of the universe. Details 
 <source>knowledge/mechanics/combat.md</source>
 # Combat Mechanics
 
-**Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases.
+**Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases. If you only need to keep yourself alive — what a raid can take, what keeps shields up, and the minimum defensive posture — read the shorter [defense.md](defense.md) card instead.
 
 ---
 
@@ -4972,6 +5072,18 @@ This is the **siege** path — how to force the window open when the defender is
 
 **Cost of a siege.** It is a real commitment, not a free option: you must win the fleet engagement to kill the Command Ship (6 HP, usually defended), and while your fleet is away **your own** planet's shields are down. Weigh the defender's `storedOre` (all of which you seize) against that exposure and the risk your raiding Command Ship dies while away (`attackerDefeated`, `trigger_raid_defeat_by_destruction`). Small ore + a defended Command Ship often means "watch and wait" beats "siege." But a dormant target holding meaningful ore, whose Command Ship you can reach, is exactly what a siege is for.
 
+### What the outcome data says
+
+Everything above is derivable from the source. It is also confirmed by outcomes: roughly 300 raid episodes reconstructed from `planet_activity` (92k events, 2026-03 → 2026-07), used to tune the Desktop `auto_raid` loop. Four findings are worth internalizing before you raid anyone.
+
+**Vulnerability is not an edge, it is the entire game.** Since the current mechanic landed on 2026-06-15, raids that reached `shieldsVulnerable` went **69 successful vs 7 retreats**. Raids that never saw it went **0 successful vs 50 retreats** — not "unlikely," zero. This is why the shield-vulnerability doctrine is stated as a hard gate rather than a preference, and why moving a fleet onto a *healthy* planet is strictly self-harm: it drops your own shields for a raid that cannot complete.
+
+**Shield strength does not predict the outcome.** Successful raids faced an average shield of 127.9; retreats faced 111.5. Both span 25–325. Shield is a **timer**, not armor — it sets the raid proof's difficulty range. Score a target's shield as *speed*, never as strength, and never skip a rich target because its shield number looks big.
+
+**Loot is a lottery with a fat tail.** 123 successful raids yielded 1,336 ore in total, but the **median haul was 1** and 52 of them seized nothing at all. Nine raids carried 74% of all ore ever stolen. Since a raid risks a Command Ship that costs far more than one ore, a minimum-ore threshold is not optional — below it you are taking an unpriced risk for a rounding error.
+
+**The attacker's own risk is badly underrated.** Across 22 raids by one well-instrumented operator: 2 wins, 11 retreats, and **9 `attackerDefeated`** — a 41% loss rate against an ecosystem baseline near 5%, every one of them their primary's Command Ship dying in the field. Raiding with the account you cannot afford to lose is the single most expensive habit in the data. If you run multiple players, raid with an expendable one.
+
 ---
 
 ## Edge Cases
@@ -5013,6 +5125,7 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 
 ## See Also
 
+- [defense.md](defense.md) — Survival quick card condensed from this page
 - [resources.md](resources.md) — Ore vs Alpha Matter security
 - [power.md](power.md) — Power requirements for combat
 - [fleet.md](fleet.md) — Fleet status for raids
@@ -5020,6 +5133,130 @@ Until the replacement is online, the fleet **cannot move, raid, or build in spac
 - `schemas/formulas.md` — Verified formula definitions
 - `reference/action-quick-reference.md` — Combat action endpoints
 - `protocols/action-protocol.md` — Transaction flow
+
+</document>
+
+<document>
+<source>knowledge/mechanics/defense.md</source>
+# Defense (Quick Reference)
+
+**Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](https://structs.ai/skills/structs-combat/SKILL).
+
+---
+
+## The two rules that decide everything
+
+**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (`remainingOre`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
+
+**2. A raid can only complete while your shields are vulnerable.** Shields are vulnerable when *any* of these is true (chain predicate `IsDefenderCommandStructVulnerable()`):
+
+- you have no fleet, or your **fleet is off-station**
+- you have **no Command Ship**, or it is **destroyed**, or it is **offline**
+
+While your fleet is on station with a built, online Command Ship, `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does.
+
+---
+
+## Two traps in rule 2
+
+**Online is power math, not activity.** A struct or player is online when capacity covers load — see [power.md](power.md). Going quiet does not take your Command Ship offline; running out of capacity does.
+
+**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their shields stay up. Never infer raidability from an inactivity signal or a UI badge — gate on the live predicate. The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
+
+**Raiding drops your own shields.** Sending your fleet to someone else's planet takes it off-station, which makes *you* vulnerable until it returns. Never move your fleet out while holding meaningful unrefined ore.
+
+---
+
+## Minimum defensive posture
+
+In priority order. The first two are worth more than everything below them combined.
+
+1. **Refine ore as soon as it lands.** Removes the prize entirely.
+2. **Keep the Command Ship online and the fleet on station.** Keeps shields up. Watch capacity headroom, because a brownout takes the Command Ship down as surely as an attack does.
+3. **Assign same-ambit defenders** to the Command Ship — those are the only ones that can *block* damage aimed at it.
+4. **Spread cross-ambit defenders** for counter coverage against attackers your same-ambit structs cannot reach.
+5. **Build an Ore Bunker** if ore must sit unrefined, and a **Planetary Defense Cannon** (1 per player) for automatic return fire.
+
+---
+
+## Defenders: block vs. counter
+
+Assigning a defender (`struct-defense-set`) requires only that it is **co-located** with the protected struct and **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+
+| | Block | Counter-attack |
+|---|---|---|
+| Ambit requirement | Defender must be in the **same ambit as the protected struct** | Independent of the protected struct's ambit, but the defender's weapons must be able to reach the **attacker's** ambit |
+| Effect | Soaks a hit meant for the protected struct | Deals damage back to the attacker |
+| Frequency | Attempted on **every** shot | **Once per `struct-attack` invocation**, per struct |
+| Also requires | Shot not evaded; weapon is blockable; defender struct online **and its owner online** | Weapon is counterable; neither party destroyed; location reachability |
+
+Both the defender and the target can counter, so one attacker may take damage from two sources per target. **Defenders never take counter damage.** A fleet struct that is `away` cannot defend anything at its home planet.
+
+Counter damage comes from two per-type fields — `counterAttackSameAmbit` and `counterAttack` — and is typically **1**. Treat counters as a backstop, not a damage plan: an attacker striking from an ambit none of your structs can reach takes no counter at all.
+
+---
+
+## Planetary defenses
+
+| Struct | Effect |
+|--------|--------|
+| Planetary Defense Cannon (type 19, `PDC`) | Auto-fires **after all targets resolve** — it is not a counter-attack and cannot be triggered as one. 1 per player; multiple players' cannons on one planet stack. |
+| Jamming Satellite (type 17, `Jamming Sat.`) | Gives the planet a chance to evade incoming **guided** ordnance aimed at a planetary struct on its owner's planet. Source and target ambit are irrelevant. **Unguided ordnance passes through untouched.** Each additional satellite compounds the chance. |
+
+Guided fire at a planetary target faces two independent layers: the target's own `signalJamming` (Battleship, Pursuit Fighter, Cruiser — 66% guided miss) is checked first, then the planetary interceptor network gets a separate chance.
+
+---
+
+## Reading a raid against you
+
+| Status | What it means for you |
+|--------|----------------------|
+| `initiated` | A raider's fleet has arrived. Shields still up. Refine ore now. |
+| `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
+| `ongoing` | You restored shields mid-raid. Completion is blocked. |
+| `raidSuccessful` | You lost **all** stored ore. Nothing else. |
+| `attackerDefeated` | The raider's Command Ship died while away; their fleet went home. |
+| `attackerRetreated` | They withdrew. |
+| `demilitarized` | No defenders to resolve against. |
+
+A destroyed Command Ship **can be rebuilt**, and doing so shuts the window — so an attentive defender under siege should rebuild immediately rather than fight for the wreck.
+
+---
+
+## The four-minute clock
+
+From ~300 raid episodes reconstructed out of `planet_activity` (92k events, 2026-03 → 2026-07), the defensive game is decided almost immediately:
+
+- Median time from `initiated` to `shieldsVulnerable` is **2.1 minutes**.
+- The vulnerable → loot lock is a hard **22 blocks ≈ 2 min 6 s**.
+
+So your entire response budget is **roughly four minutes** from the moment a hostile fleet arrives. Two consequences follow, and they are the difference between the two outcomes you actually care about:
+
+**React to the alarm, not to damage.** Trigger on `raid_status: initiated`. Waiting until you see structs taking damage spends most of the budget.
+
+**Return fire is what defeats attackers, and only if it is fast.** All 16 episodes that ended `attackerDefeated` had the defender shooting back within **~1.8 minutes**. Of the 123 that ended `raidSuccessful`, only 11 saw any return fire at all — median **12.3 minutes**, far too late to matter.
+
+**Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
+
+None of this displaces refining first. Refining removes the prize entirely and takes the loss to zero even if you lose the fight, so it stays the first move — it simply has to happen inside the same four minutes, not after them.
+
+One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
+
+---
+
+## Under attack right now
+
+Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: the response order is survival-first, and the correct first move is usually to refine or bunker ore rather than to shoot back.
+
+---
+
+## See Also
+
+- [combat.md](combat.md) — full mechanics: ambit matrices, damage and evasion formulas, attack resolution, siege doctrine
+- [power.md](power.md) — the online/offline math that shields depend on
+- [planet.md](planet.md) — shields, `blockStartRaid`, ore depletion
+- [struct-types.md](../entities/struct-types.md) — per-type HP, counter values, and defensive properties
+- [`awareness/threat-detection.md`](../../awareness/threat-detection.md) — spotting an attack forming before it lands
 
 </document>
 
@@ -5328,7 +5565,7 @@ structsd tx structs permission-guild-rank-revoke {objectId} {guildId} {permissio
 Sets a player's guild rank. The caller must have `PermAdmin` (2) on the guild, or have rank-based authority (actor rank must be strictly better than target's current rank).
 
 ```
-structsd tx structs player-update-guild-rank -- {playerId} {guildRank} --from {signer} --gas auto -y
+structsd tx structs player-update-guild-rank --from {signer} --gas auto -y -- {playerId} {guildRank}
 ```
 
 ---
@@ -5473,7 +5710,7 @@ Object owners can delegate specific capabilities to other players:
 
 ```bash
 # Guild owner grants Player 2 membership management and token minting
-structsd tx structs permission-grant-on-object -- $GUILD_ID $PLAYER_2_ID 8704 --from owner --gas auto -y
+structsd tx structs permission-grant-on-object --from owner --gas auto -y -- $GUILD_ID $PLAYER_2_ID 8704
 # 8704 = PermGuildMembership (512) | PermGuildTokenMint (8192)
 ```
 
@@ -5505,17 +5742,17 @@ When an object is deleted, all permission records for that object (both direct `
 
 ```bash
 # Admin sets: guild members rank 3 or better can update endpoint and manage membership
-structsd tx structs permission-guild-rank-set -- $GUILD_ID $GUILD_ID 16896 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 16896 3
 # 16896 = PermGuildMembership (512) | PermGuildEndpointUpdate (16384)
 
 # Promote player to rank 2 (officer)
-structsd tx structs player-update-guild-rank -- $PLAYER_ID 2 --from admin --gas auto -y
+structsd tx structs player-update-guild-rank --from admin --gas auto -y -- $PLAYER_ID 2
 
 # Player can now update the guild endpoint (rank 2 <= 3)
-structsd tx structs guild-update-endpoint -- $GUILD_ID "new.endpoint" --from officer --gas auto -y
+structsd tx structs guild-update-endpoint --from officer --gas auto -y -- $GUILD_ID "new.endpoint"
 
 # Demote player to rank 5 (grunt)
-structsd tx structs player-update-guild-rank -- $PLAYER_ID 5 --from admin --gas auto -y
+structsd tx structs player-update-guild-rank --from admin --gas auto -y -- $PLAYER_ID 5
 # Player can no longer update the endpoint (rank 5 > 3) -- transaction fails
 ```
 
@@ -5523,10 +5760,10 @@ structsd tx structs player-update-guild-rank -- $PLAYER_ID 5 --from admin --gas 
 
 ```bash
 # Rank 3+ can connect allocations
-structsd tx structs permission-guild-rank-set -- $SUB_ID $GUILD_ID 2048 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $SUB_ID $GUILD_ID 2048 3
 
 # Rank 5+ can connect to the substation
-structsd tx structs permission-guild-rank-set -- $SUB_ID $GUILD_ID 1024 5 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $SUB_ID $GUILD_ID 1024 5
 
 # Query shows 2 records with independent ranks
 structsd query structs guild-rank-permission-by-object-and-guild $SUB_ID $GUILD_ID
@@ -5536,17 +5773,17 @@ structsd query structs guild-rank-permission-by-object-and-guild $SUB_ID $GUILD_
 
 ```bash
 # Set combined PermUpdate | PermDelete at rank 3
-structsd tx structs permission-guild-rank-set -- $GUILD_ID $GUILD_ID 12 3 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 12 3
 
 # Revoke only PermUpdate (4), PermDelete (8) stays
-structsd tx structs permission-guild-rank-revoke -- $GUILD_ID $GUILD_ID 4 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-revoke --from admin --gas auto -y -- $GUILD_ID $GUILD_ID 4
 ```
 
 ### Provider access via guild rank
 
 ```bash
 # Grant guild members rank 5+ the ability to open agreements on a provider
-structsd tx structs permission-guild-rank-set -- $PROVIDER_ID $GUILD_ID 262144 5 --from admin --gas auto -y
+structsd tx structs permission-guild-rank-set --from admin --gas auto -y -- $PROVIDER_ID $GUILD_ID 262144 5
 # 262144 = PermProviderOpen
 ```
 
@@ -5680,7 +5917,7 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `SubstationDelete` | Substation | `PermDelete` (8) | Also checks `PermSubstationConnection` (1024) on migration target if specified |
 | `SubstationPlayerConnect` | Substation + Player | `PermSubstationConnection` (1024) on both | Both checks must pass |
 | `SubstationPlayerDisconnect` | Player OR Substation | `PermSubstationConnection` (1024) | Either check sufficient |
-| `SubstationPlayerMigrate` | Substation + Player | `PermSubstationConnection` (1024) on both | Player check conditional |
+| `SubstationPlayerMigrate` | Substation + Player | `PermSubstationConnection` (1024) on both | Both required; the player-side check runs for **every** player in the list |
 | `SubstationAllocationConnect` | Allocation | `PermAllocationConnection` (2048) | |
 | `SubstationAllocationDisconnect` | Allocation OR Destination | `PermAllocationConnection` (2048) | Either sufficient |
 
@@ -5725,7 +5962,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `GuildUpdateEntrySubstationId` | `PermGuildSubstationUpdate` on guild | `PermSubstationConnection` on target substation | Both required |
 | `SubstationPlayerConnect` | `PermSubstationConnection` on substation | `PermSubstationConnection` on player | Both required |
 | `SubstationPlayerDisconnect` | `PermSubstationConnection` on player | `PermSubstationConnection` on substation | Either sufficient |
-| `SubstationPlayerMigrate` | `PermSubstationConnection` on destination | `PermSubstationConnection` on player | Both required (player conditional) |
+| `SubstationPlayerMigrate` | `PermSubstationConnection` on destination | `PermSubstationConnection` on player | Both required (checked once per player in the list) |
 | `SubstationDelete` | `PermDelete` on substation | `PermSubstationConnection` on migration substation | Both required (migration only) |
 | `AllocationDelete` | `PermSourceAllocation` on source | `PermDelete` on allocation | Either sufficient |
 | `SubstationAllocationDisconnect` | `PermAllocationConnection` on allocation | `PermAllocationConnection` on destination | Either sufficient |
@@ -6580,6 +6817,21 @@ Two consequences:
 1. **Anyone can contribute capacity to any substation** — an open shared pool by design.
 2. **Contributions are diluted by `1/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
 
+### Connecting/migrating a PLAYER needs permission on BOTH the substation and the player
+
+Unlike allocation-connect, moving a **player** onto a substation is gated on both objects. `substation-player-connect` and `substation-player-migrate` run the **same two checks** and both ultimately call `MigrateSubstation` (connect first disconnects the player from any prior substation):
+
+1. `PermSubstationConnection` (1024) on the **destination substation** (`substation.CanManageConnectionsBy`), and
+2. `PermSubstationConnection` (1024) on **each target player object** (`targetPlayer.CanManageSubstationConnectionBy`).
+
+The catch: **a player object is owned by itself** (`GetOwnerId()` returns the player's own id), so ownership of the substation does **not** confer authority over other players. A guild owner/leader who owns the tier substations still **cannot** connect or migrate other members — the player-side check fails with a (misleadingly worded) "no administrate permission on object" error. To move another player you need 1024 on **that player's object**, via one of:
+
+- **(a) The player self-connects.** They own their own player object (ownership passes check 2), and if the destination substation's connect permission is rank-gated to them via a guild-rank register (`permission-guild-rank-set [sub] [guild] 1024 [rank]`), check 1 passes too. This is the scalable path — each member signs their own `substation-player-connect`.
+- **(b) An explicit grant.** The target player signs `permission-grant-on-object [player-id] [mover-id] 1024`, after which the mover can connect/migrate them.
+- **(c) A guild-rank register on the player object** granting 1024 — but setting it requires 1024 on that player object already, so it is not a leader-side shortcut.
+
+**Operational corollary:** `guild-update-entry-substation-id` only reroutes **new** members joining via join-proxy (they are auto-connected to the guild entry substation). **Existing** members are never auto-migrated when you repoint the entry substation — they must be moved by one of the paths above. (Verified: `msg_server_substation_player_connect.go`, `msg_server_substation_player_migrate.go`, `CanManageSubstationConnectionBy` in `player_cache.go`, `CanManageConnectionsBy` in `substation_cache.go`, `PermissionCheck` in `permissions_context.go`, and `msg_server_guild_membership_join_proxy.go`.)
+
 ---
 
 ## Brownout: `GridCascade` destroys allocations
@@ -6732,8 +6984,9 @@ Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/
 | Power capacity | BuildDraw + PassiveDraw available |
 | Resources | Sufficient Alpha Matter |
 | Valid location | Correct slot type (space/air/land/water) |
-| Fleet on station | Required for planet building |
+| Fleet on station | Required for planet building, and for building on the fleet itself |
 | Command Ship online | Required for planet building |
+| Fleet has a command struct | Required to build anything on a fleet **except** a Command Ship — see [Building on a fleet](#building-on-a-fleet-two-extra-gates) |
 
 ---
 
@@ -6911,6 +7164,17 @@ Both the power-capacity check (4) and the build-limit check (6) reject with the 
 - **Large values** (hundreds of thousands to millions) — the **power-capacity** check, in milliwatts: `required` is the struct's `BuildDraw`, `available` is your remaining capacity (`capacity + capacitySecondary − load − structsLoad`). Free capacity by adding generation or deactivating structs (see [power.md](power.md)).
 
 **Common mistakes**: Building on planet before Command Ship is online. Building Command Ship on planet (must be in fleet, locationType = 2).
+
+### Building on a fleet: two extra gates
+
+`FleetCache.BuildInitiateReadiness` (`x/structs/keeper/fleet_cache.go`) adds two checks before anything else, in this order:
+
+1. **The fleet must be on station.** Building on an `away` fleet is rejected with `fleet (9-X) away, cannot build` (`FleetStateError`). Deploy before you travel, not after.
+2. **The fleet must already have a command struct** — *unless the struct you are building is itself the Command Ship*. Without one you get `fleet (9-X) needs a command struct before deploy` (`FleetCommandError`, reason `no_command_struct`).
+
+That exemption is the recovery path, and it matters: **if your Command Ship is destroyed, the fleet is frozen** — it cannot move (`PlanetMoveReadinessCheck` requires a command struct that is also *online*, else `needs an online command struct before deploy`) and it cannot deploy anything else. The one action still available is rebuilding the Command Ship. Do that first; every other attempt will be rejected until it is back and online.
+
+Because a destroyed Command Ship also drops your planetary shields (see [defense.md](defense.md)), the rebuild is both the unblock and the defensive fix. Treat it as the single highest-priority action in that state.
 
 ---
 
@@ -7969,32 +8233,32 @@ Valuation in Structs is contextual—assets derive value from ore, location, inf
 
 ## Complete Struct Type Table
 
-All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable).
+All 22 struct types, verified from chain genesis. Power draws are in **watts** (the chain stores milliwatts; W = chain value ÷ 1,000 — see [energy.md — Units](../mechanics/energy.md#units)). **Limit** is the per-player build cap (`buildLimit`; `unlimited` = stackable). **Abbrev** is the chain's `classAbbreviation` — the short label the webapp and Desktop board render, so use it when reading a UI or naming a struct to your commander. (The `class` field also exists on chain but is identical to Type for every type, so it is omitted here.)
 
-| ID | Type | Category | Class | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
-|----|------|----------|-------|------------|------------|--------------|-------|--------|----------------|--------|
-| 1 | Command Ship | fleet | Command Ship | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
-| 2 | Battleship | fleet | Battleship | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
-| 3 | Starfighter | fleet | Starfighter | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
-| 4 | Frigate | fleet | Frigate | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
-| 5 | Pursuit Fighter | fleet | Pursuit Fighter | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
-| 6 | Stealth Bomber | fleet | Stealth Bomber | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 7 | High Altitude Interceptor | fleet | High Altitude Interceptor | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
-| 8 | Mobile Artillery | fleet | Mobile Artillery | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 9 | Tank | fleet | Tank | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 10 | SAM Launcher | fleet | SAM Launcher | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
-| 11 | Cruiser | fleet | Cruiser | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
-| 12 | Destroyer | fleet | Destroyer | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
-| 13 | Submersible | fleet | Submersible | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
-| 14 | Ore Extractor | planet | Ore Extractor | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 15 | Ore Refinery | planet | Ore Refinery | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
-| 16 | Orbital Shield Generator | planet | Orbital Shield Generator | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
-| 17 | Jamming Satellite | planet | Jamming Satellite | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
-| 18 | Ore Bunker | planet | Ore Bunker | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
-| 19 | Planetary Defense Cannon | planet | Planetary Defense Cannon | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
-| 20 | Field Generator | planet | Field Generator | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
-| 21 | Continental Power Plant | planet | Continental Power Plant | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
-| 22 | World Engine | planet | World Engine | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
+| ID | Type | Abbrev | Category | Build Diff | Build Draw | Passive Draw | Limit | Max HP | Possible Ambit | Ambits |
+|----|------|--------|----------|------------|------------|--------------|-------|--------|----------------|--------|
+| 1 | Command Ship | CMD Ship | fleet | 200 | 50 W | 50 W | 1 | 6 | 30 | space, air, land, water |
+| 2 | Battleship | Battleship | fleet | 765 | 135 W | 135 W | unlimited | 3 | 16 | space |
+| 3 | Starfighter | Starfighter | fleet | 250 | 100 W | 100 W | unlimited | 3 | 16 | space |
+| 4 | Frigate | Frigate | fleet | 450 | 75 W | 75 W | unlimited | 3 | 16 | space |
+| 5 | Pursuit Fighter | Pursuit Fighter | fleet | 215 | 60 W | 60 W | unlimited | 3 | 8 | air |
+| 6 | Stealth Bomber | Stealth Bomber | fleet | 455 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 7 | High Altitude Interceptor | Interceptor | fleet | 460 | 125 W | 125 W | unlimited | 3 | 8 | air |
+| 8 | Mobile Artillery | Mobile Artillery | fleet | 305 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 9 | Tank | Tank | fleet | 220 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 10 | SAM Launcher | SAM Launcher | fleet | 450 | 75 W | 75 W | unlimited | 3 | 4 | land |
+| 11 | Cruiser | Cruiser | fleet | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
+| 12 | Destroyer | Destroyer | fleet | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
+| 13 | Submersible | Submersible | fleet | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
+| 14 | Ore Extractor | Extractor | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 15 | Ore Refinery | Refinery | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 16 | Orbital Shield Generator | Orb. Shield | planet | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
+| 17 | Jamming Satellite | Jamming Sat. | planet | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
+| 18 | Ore Bunker | Ore Bunker | planet | 3,600 | 750 W | 750 W | unlimited | 6 | 4 | land |
+| 19 | Planetary Defense Cannon | PDC | planet | 2,880 | 600 W | 600 W | 1 | 6 | 6 | land, water |
+| 20 | Field Generator | Generator | planet | 700 | 500 W | 500 W | 1 | 8 | 6 | land, water |
+| 21 | Continental Power Plant | Power Plant | planet | 1,440 | 10,000 W | 10,000 W | 1 | 10 | 6 | land, water |
+| 22 | World Engine | World Engine | planet | 5,000 | 100,000 W | 100,000 W | 1 | 10 | 6 | land, water |
 
 ### Special Properties
 
@@ -8359,11 +8623,11 @@ Three compose variants exist:
 
 | Variant | File | Purpose |
 |---------|------|---------|
-| Guild node | `compose.yaml` | Standard deployment: chain node, sync-state indexer, PG, GRASS, webapp, TSA, crawler |
+| Guild node | `compose.yaml` | Standard deployment: chain node, sync-state indexer, PG, GRASS/NATS, webapp, Struct Control SPA, TSA, crawler |
 | Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no sync-state/webapp) |
 | Guild + Discord | `compose-discord.yaml` | Standard + Discord bot integration |
 
-**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=113b`.
+**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (v0.20.0).
 
 ---
 
@@ -8407,11 +8671,16 @@ One blockchain block is ~6 seconds. Charge is a single **per-player** bar (share
 | `structs-pg` | 5432 | PostgreSQL 17 + TimescaleDB. Central data store. |
 | `structs-pg-auto-migrate` | — | Re-runs `sqitch deploy` on a loop for schema updates. |
 | `structs-sync-state` | — | Chain event indexer. Polls `structsd` RPC, writes `structs.*` and `sync_state.*`. **Do not scale** (writer lock). |
-| `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443. |
+| `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443, monitoring on 8222. |
 | `structs-grass` | — | Event bridge: PG `NOTIFY 'grass'` → NATS subjects. |
-| `structs-webapp` | 8080, 443 | Guild webapp (PHP/Symfony). Guild API at `/api/`. |
+| `structs-webapp` | 8080, 443 | Guild webapp (PHP/Symfony). Guild API at `/api/`. Bind-mounts `WEBAPP_SOURCE`. |
+| `structs-control` | 8081 | Struct Control SPA — browser admin/operator console. Dev mode proxies the webapp; bind-mounts `CONTROL_SOURCE`. |
 | `structs-tsa` | — | Transaction Signing Agent. Manages signing account pool. |
 | `structs-crawler` | — | Supplementary guild metadata crawler. |
+
+Two services mount source trees from **sibling checkouts on the host**, not from their images: `structs-webapp` needs `WEBAPP_SOURCE` (default `../structs-webapp/src`) and `structs-control` needs `CONTROL_SOURCE` (default `../structs-control`). Start either without that checkout and the container crash-loops — `structs-control` fails immediately on a missing `/app/package.json`. Neither is needed for PG query work.
+
+`structs-pg` starts `structs-pg-init` automatically through a `service_completed_successfully` dependency, but `structs-pg-auto-migrate` has no such link. If you start only the query services, schema migrations are applied once at init and then never again; start `structs-pg-auto-migrate` explicitly to keep pulling `STRUCTS_PG_BRANCH` updates.
 
 The PostgreSQL schema (`structs.*`, `sync_state.*`, `cache.*` views, `signer.*`, `view.*` — see [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. Pin the schema branch with `STRUCTS_PG_BRANCH` in `.env`.
 
@@ -8445,7 +8714,10 @@ structsd (CometBFT + Cosmos SDK)
             |                     |
             v                     v
       PG NOTIFY 'grass'     Direct queries
-            |               (webapp, tsa, agents)
+            |               (webapp, tsa, crawler, agents)
+            |                     |
+            |                     v
+            |               structs-webapp (:8080) <--- structs-control SPA (:8081)
             v
       structs-grass
             |
@@ -8471,13 +8743,26 @@ structsd (CometBFT + Cosmos SDK)
 `structs-sync-state` is the sole chain-to-PG ingester:
 
 - Image: `structs/structs-pg:latest`, command: `/src/scripts/sync_state.sh`
-- Connects to `structsd` RPC and PG as `structs_indexer`
+- Connects to `structsd` RPC and PG as `structs_indexer`; polls every `SYNC_POLL_INTERVAL` (default `3s`)
 - Writes directly into `structs.*` tables and `sync_state.*` audit tables
 - `cache.*` is a **compatibility view layer** over `sync_state.raw_*` (not an event-sink schema)
-- Monitor progress: `SELECT chain_id, last_height, status, lag_blocks FROM sync_state.sync_cursor;`
+- `SYNC_STATE_MIRROR_RAW` defaults to `false`, so `sync_state.raw_*` (and therefore the `cache.*` views over them) stay empty on a default deployment
+- Monitor progress: `SELECT chain_id, last_height, status, lag_blocks FROM sync_state.sync_cursor;` — `status` reads `catching_up`, then `current`
 - **Never run two instances** — the writer lock will fail the second container
 
 PG game state is empty or stale until sync-state is running and caught up. The default agent profile must include `structs-sync-state` alongside `structsd` and `structs-pg`.
+
+### Derived rows and historical gaps
+
+Some `structs.planet_activity` rows have no corresponding chain event — sync-state derives them from state changes it observes. That means **a fix to the indexer changes only future rows**; already-indexed history keeps whatever shape it was written with. Three cases currently matter to anyone querying the timeline:
+
+| Row / field | Derived from | Gap in older data |
+|-------------|--------------|-------------------|
+| `raid_status` `detail.seized_ore` | The `EventRaid` payload, which already carries it | Key absent entirely on rows indexed before the fix |
+| `struct_defense_remove` | The `struct_defender_clear` handler (no chain event exists) | Category never written, so removals are missing while additions are present |
+| `shield_change`, `block_raid_start` | `planet_attribute` writes for `planetaryShield` / `blockStartRaid` | Not emitted before v0.18.0 |
+
+Upstream ships one-time repair scripts under `sync-state/sql/` (`repair-raid-status-seized-ore.sql`, `repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`) that backfill or clean the affected rows. These are **operator tasks** — they write to the database and are not something an agent should run as part of gameplay. See [database-schema.md](database-schema.md) for the query-side consequences.
 
 ---
 
@@ -8488,8 +8773,12 @@ The `structs-grass` service bridges PostgreSQL change notifications to NATS:
 - Listens on PG channel: `grass`
 - Publishes to NATS subjects matching entity types (see streaming skill for subject patterns)
 - Game events (attacks, fleet moves, raids, builds) flow through this bridge
+- Categories come from the shared `structs.grass_category` enum, which spans both planet-scoped timeline rows and notifications that never land in `planet_activity` (`block`, `guild_consensus`, `guild_membership`, `player_meta`, …)
 - Player/guild UGC updates surface as `player_consensus` / `guild_meta` categories (not `player_meta`)
+- `shield_change` is the highest-volume planet-scoped category after `struct_status`; subscribe selectively
 - `consensus` and `healthcheck` subjects fire constantly as baseline traffic
+
+`structs-grass` declares no dependency on `structs-nats`, so starting it by name does not bring NATS up. Launch both if you want events to reach subscribers.
 
 This is the same system documented in the `structs-streaming` skill. The guild stack runs it locally rather than connecting to a remote GRASS endpoint.
 
@@ -8556,8 +8845,10 @@ Key subsystems the MCP fronts:
 - **GPU/CPU hashing** — Rust-native SHA256 proof-of-work (~200M h/s GPU via wgpu, ~3M h/s CPU via rayon) that transparently replaces the webapp's JS WebWorker hasher.
 - **Perception + simulator** — recon, a weapon-matrix ruleset, and a pure-math damage simulator so an agent can plan attacks without raw DB access.
 - **Policy engine** — standing orders with delta tracking (auto-refine, power alerts, combat orders, watchdog self-healing).
+- **Native automation loops** — Rust-side `auto_harvest`, `auto_build`, `auto_defend`, and `auto_infuse` that run the mine → refine → infuse flywheel across the whole roster without an agent in the loop.
 - **Virtual players** — extra players derived from the same mnemonic (different HD indices), joined to your guild, so one operator fields a team.
 - **Agent-driven UI** — the agent can render menus/dialogues/HUD on the human's screen for co-op play (display/elicitation only; it cannot sign).
+- **Team Ops dashboard** — a multi-page command center (Ops / Fleet / Energy / Work / Tx / Grass / Config / Map) in a native window, optionally served to a browser for a remote human.
 - **Event feed + notifications** — a long-poll stream over a NATS ring buffer, plus native OS alerts filtered to your planet/fleet.
 
 ---
@@ -8572,6 +8863,7 @@ Key subsystems the MCP fronts:
 | Missing/bad token | `400 Bad Request` (not `401` — a `401` would trigger a Claude Code OAuth flow) |
 | Liveness probe | unauthenticated `GET /health` |
 | Token location | generated on first launch; shown in the app's **Debug tab** and browser console, stored at `~/Library/Application Support/structs-app/mcp_config.json` (macOS) |
+| Web board routes | `/board*` — off by default; when enabled it accepts the same token as a `?token=` query or session cookie. `/mcp` **only** ever accepts the bearer header |
 
 Example client config (copyable from the Debug tab):
 
@@ -8593,30 +8885,51 @@ The bearer token exists because any browser page can reach `localhost` — witho
 
 ## Tool Catalog (13)
 
-| Tool | Purpose |
-|------|---------|
-| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events |
-| `structs_hash` | Manage proof-of-work tasks with ETAs (list/start/stop/progress) and tune the engine (`config`: enable/disable, `engine` cpu/gpu/auto, `difficulty_start`, `max_concurrent`, `auto_tune`) — knobs persist across restarts |
-| `structs_action` | Execute game actions with preflight checks (explore, build, mine, refine, attack, defend, raid, `resync`, etc.); routes through the signing bridge |
-| `structs_intel` | Strategic intelligence + perception: `whoami`, `scout`, `valid_targets`, `simulate`, `strike_options`, `battle_log`, `ruleset`, `slot_map`, `is_active`, `intents`, power forecast, economy, timeline — plus `query` for raw entity reads/lists/filters (absorbs the retired `structs_query`) |
-| `structs_policy` | Standing orders: `auto_refine`, `power_alert`, `agent_ui`, combat orders, `watchdog_remediate` |
-| `structs_events` | Long-poll event feed (raids, attacks, fleet moves, completions) so agents react instead of polling |
-| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates (e.g. CMD-ship HP floor); pass `as` to run as a virtual player |
-| `structs_players` | Manage virtual players (extra players off the same mnemonic, joined to your guild): create / list / `roster` / state / act-as. Keys stay in the webapp |
-| `structs_board` | Team Ops board + human-facing UI surfaces: the at-a-glance command view and event feed, plus declarative components (menus, dialogues, map previews, HUD badges, prompts — absorbs the retired `structs_ui`). Display/elicitation only, never signs |
-| `structs_system` | System health, logs, self-tuning: watchdog status, per-loop liveness, tx-attempt ledger, PoW solve stats, and the persistent structured log |
-| `structs_map` | Render a planet map to PNG/GIF using the game's own renderer |
-| `structs_doctrine` | Standing rules of engagement + per-tick executor (advise / auto autonomy) |
-| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
+| Tool | Parameters | Purpose |
+|------|-----------|---------|
+| `structs_dashboard` | `player_id` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events. The schema lists `player_id` as required, but omitting it is accepted and falls back to the logged-in player |
+| `structs_hash` | `command`, `task_id`, `task_type`, `block_start`, `difficulty_target`, `target_id`, `enabled`, `engine`, `difficulty_start`, `max_concurrent`, `auto_tune` | Proof-of-work tasks with ETAs: `list` / `start` / `progress` / `stop` / `config`. `task_type` is `MINE`, `REFINE`, `BUILD`, or `RAID` (RAID also needs `target_id`, the planet). Config knobs persist across restarts |
+| `structs_action` | `action`, `args` | One game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Routes through the signing bridge |
+| `structs_intel` | `query`, `args` | Strategic intelligence + perception. Combat/recon: `scout`, `valid_targets`, `simulate`, `strike_options`, `battle_log`, `ruleset`, `is_active`. Identity/planning: `whoami`, `what_can_i_build`, `economy_status`, `plan_timeline`, `slot_map`, `intents`. Economy/trend: `power_forecast`, `planet_history`, `market`, `metric_trend`. Raw: `query` (absorbs the retired `structs_query`) |
+| `structs_policy` | `command`, `policy`, `enabled`, `config` | Standing orders: `list` / `set` / `remove` / `log`. See the policy table below |
+| `structs_events` | `since`, `category`, `mine_only`, `team`, `threats_only`, `limit`, `wait_secs` | Long-poll event feed (raids, attacks, fleet moves, completions, `tx_settled` receipts) so agents react instead of polling |
+| `structs_sequence` | `steps`, `abort_if`, `max_wait_secs`, `as` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates (e.g. CMD-ship HP floor); pass `as` to run as a virtual player |
+| `structs_players` | `command`, `name`, `index`, `guild_id`, `player`, `role`, `action`, `args` | Virtual players **and** the native automation loops. See the command table below. Keys stay in the webapp |
+| `structs_board` | `open`, `push`, `component`, `mode`, `timeout_secs`, `web` | Team Ops board + human-facing UI surfaces: the at-a-glance command view and event feed, declarative components (absorbs the retired `structs_ui`), and `web` control for the browser-served dashboard. Display/elicitation only, never signs |
+| `structs_system` | `command`, `component`, `severity`, `since_ms`, `limit`, `window_minutes`, `set` | Health, logs, self-tuning: `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed` (Team Ops event feed), `config` (read adaptive values; `set {remediate:bool}` toggles self-healing) |
+| `structs_map` | `planet_id`, `player`, `format`, `frames`, `interval_ms` | Render a planet map to PNG (or animated GIF) using the game's own renderer; returns a file path |
+| `structs_doctrine` | `command`, `preset`, `posture`, `pinned_target`, `auto_counter`, `retreat_cmd_below`, `autonomy`, `list_action`, `kind`, `id`, `weight`, `note` | Standing rules of engagement + per-tick executor (`set` / `show` / `tick` / `lists`, advise / auto autonomy). `preset` (`turtle`, `economy`, `balanced`, `warfighter`) configures loops + policies + doctrine in one call; explicit fields override it |
+| `structs_strike` | `target`, `max`, `dry_run`, `strip_blockers` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
 
-**Retired/folded tools**: `structs_query` was merged into `structs_intel` (`query`), and `structs_ui` into `structs_board` (`component`). The old names remain only as deprecation stubs that return a pointer to the replacement.
+**Retired/folded tools**: `structs_query` was merged into `structs_intel` (`query`), and `structs_ui` into `structs_board` (`component`). The old names survive as deprecation stubs that return a pointer to the replacement, but they are **no longer advertised** — `tools/list` returns exactly the 13 above. An agent enumerating tools will never see them; only a hardcoded call to the old name hits the stub.
+
+### `structs_players` commands
+
+| Command | Args | What it does |
+|---------|------|--------------|
+| `list` | — | Virtual-player registry + status |
+| `roster` | — | Team overview: primary + every virtual player (planet, fleet, struct count, Alpha, ore) |
+| `create` | `name`, `index?`, `guild_id?`, `role?` | Derive a new address at the next free HD index (**≥ 1**), guild-signup, register. The guild fronts the join fee, so no Alpha is needed. Accepts `role` at creation |
+| `state` | `player` | One virtual player's on-chain state (structs/HP/charge/resources) |
+| `act` | `player`, `action`, `args` | Act as that player, signed by its own key. Direct: `explore`, `build`, `activate`, `deactivate`, `deploy`, `defend`, `attack`, `player_send`. PoW: `mine`, `refine`, `raid`, `complete_build` (auto-signs the completion). Escape hatch: `tx` with `{type_url, msg}` for any message without a named action |
+| `capacity` | — | Read-only guild power budget: how many more players the entry substation can power |
+| `role` | `player`, `role` | `bait` (mines so ore piles up as raid bait), `productive` (runs the flywheel), or `raider` (expendable offensive arm that `auto_raid` flies; keeps a refinery to launder seized ore) |
+| `economy` | — | Planner: each productive player's next step in mine → refine → send Alpha to primary |
+| `infra` | `args:{mode: hub\|direct, infuse_ualpha?, keep_w?}`, `player?` | Advisory infrastructure plan — the exact infuse → allocate → substation → feed-guild-pool transaction sequence with computed amounts and dilution math. In `direct` mode it grows your one existing dynamic allocation (`MsgAllocationUpdate`) rather than minting a new one each cycle |
+| `harvest` | `args:{enabled, difficulty, interval_secs, refine, auto_explore, include_primary, now}` | Configure the native auto-harvest loop |
+| `autobuild` | `args:{enabled, complete_difficulty, interval_secs, include_primary, now}` | Configure the native auto-build loop |
+| `autodefend` | `args:{enabled, interval_secs, include_bait, now}` | Configure the native auto-defense loop |
+| `autoresponse` | `args:{enabled, autonomy, mode, max_shots_per_incident, max_shots_per_hour, incident_cooldown_secs, panic_refine, prefer_counter_free_ambit, include_primary_shooters, dry_run, now}` | Configure the native raid-**response** loop (defensive combat) |
+| `autoraid` | `args:{enabled, autonomy, posture, min_ore, min_score, max_raid_minutes, max_defenders, require_vulnerable_now, allow_siege, skip_if_defender_active_mins, raid_hours_utc, w_ore, w_vulnerability, w_weakness, w_grudge, w_guild, w_speed, w_history, max_concurrent_raids, target_cooldown_mins, abort_cmd_hp_below, raider_players, dry_run, now}` | Configure the native raid-**targeting** loop (offensive combat) |
+| `infuse` | `args:{keep_grams, enabled, now}` | Configure the primary's keep-N-grams-then-infuse rule. `now` runs it once; `enabled` auto-runs it |
 
 ---
 
-## Prompts (6)
+## Prompts (7)
 
 | Prompt | Purpose |
 |--------|---------|
+| `getting_started` | Guided first session for a brand-new player: explore → build → mine → refine, teaching each concept just before it is used |
 | `structs_first_session` | Orientation for new agents — check dashboard, identify priorities |
 | `structs_game_loop` | One tick: dashboard → assess → plan → execute → verify |
 | `structs_state_assessment` | Deep analysis with risk ratings: power, threats, economy, operations |
@@ -8635,6 +8948,8 @@ The [structs-ai](https://github.com/playstructs/structs-ai) compendium (this doc
 - `structs://knowledge/mechanics/combat.md`
 - `structs://reference/index.md`
 
+**Because the sync is a build step, resources can legitimately be absent.** A live server checked on 2026-07-24 advertised the `resources` capability but returned an **empty `resources/list` and empty `resources/templates/list`**, and every documented URI above answered `-32602 Resource not found`. So do not assume the compendium is reachable over MCP: call `resources/list` once and fall back to [structs.ai](https://structs.ai) or a local checkout if it comes back empty. Treat a populated resource set as a bonus, not a dependency.
+
 ---
 
 ## Subsystems
@@ -8646,7 +8961,74 @@ GPU (wgpu compute shader, ~200M h/s) is auto-selected when available and falls b
 `structs_intel` fronts a recon layer, a weapon-matrix `ruleset`, and a pure-math `simulate` so an agent can evaluate `valid_targets`, `strike_options`, and outcomes before committing charge. This mirrors the combat rules in [combat.md](../mechanics/combat.md).
 
 ### Policy engine + watchdog
-Standing orders run on game-state transitions using **delta tracking** (previous vs current snapshot) to avoid double-triggers. Defaults: `auto_refine` ON, `power_alert` ON (80%), `agent_ui` ON, `watchdog_remediate` ON; combat orders (`auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`) and `rules_of_engagement` default OFF. Combat orders are **agent-honored** — the engine never auto-signs; the agent reads them via `structs_intel {query:"intents"}` and acts through `structs_action`/`structs_sequence`. The watchdog self-heals wedged loop guards / stalled hash tasks / dead sync ticks, logging every remedy (`structs_system`) and notifying only on repeat failure.
+Standing orders run on game-state transitions using **delta tracking** (previous vs current snapshot) to avoid double-triggers. Only policies the engine actually evaluates are seeded, so `structs_policy list` is an honest inventory:
+
+| Policy | Default | Notes |
+|--------|---------|-------|
+| `auto_refine` | ON | Starts a REFINE task when a MINE completes |
+| `power_alert` | ON | `{threshold_pct: 80}` |
+| `combat_alert` | ON | Native notification + toast the moment combat involving you is detected |
+| `agent_ui` | ON | Master toggle for agent-driven UI |
+| `auto_counterattack` | OFF | Agent-honored combat order |
+| `auto_retreat_if_cmd_below` | OFF | `{hp: 4}`; agent-honored |
+| `auto_rebuild_losses` | OFF | Agent-honored |
+| `rules_of_engagement` | OFF | `{posture: "defensive"}`; written by `structs_doctrine set` |
+| `primary_home_guard` | ON | `{max_stored_ore: 10.0, min_headroom_pct: 15.0}` — blocks primary fleet-move/raid while the ore pile is worth raiding or headroom is thin. It never signs; every recorded Command Ship loss happened with the fleet away |
+| `board_auto_open` | OFF | Opt-in: let important feed entries pop the Team Ops window |
+| `watchdog_remediate` | ON | Self-healing for stuck loops/hashers/sync |
+
+Combat orders are **agent-honored** — the policy engine never auto-signs; the agent reads them via `structs_intel {query:"intents"}` and acts through `structs_action`/`structs_sequence`. (The native loops below are the separate, opt-in path that does sign.) The watchdog self-heals wedged loop guards / stalled hash tasks / dead sync ticks, logging every remedy (`structs_system`) and notifying only on repeat failure.
+
+### Native automation loops
+Six Rust-side loops run without an agent tick. All are **off by default**, all auto-sign for the players they manage, and all are configured through `structs_players` (or the Team Ops Config page) with `{now:true}` to force an immediate scan.
+
+The first four run the economic flywheel. The last two are **autonomous combat** and carry a second safety gate: even once enabled they default to `autonomy: advise`, meaning they rank and explain but sign nothing until you set `autonomy: auto`. Both also accept `dry_run`, which is independent of `autonomy` — it computes and logs everything and signs nothing, so it stays safe even in `auto`.
+
+| Loop | Command | Behavior |
+|------|---------|----------|
+| `auto_harvest` | `harvest` | Mines, then refines, each owned struct once its PoW difficulty decays to ≤ `difficulty` (higher threshold = harvest sooner with a pricier proof; ~10 ≈ every ~6h, ~1 ≈ near-instant ~23h). `auto_explore` re-explores a mined-out planet |
+| `auto_build` | `autobuild` | Fills free slots one charge-paced build per player per scan with a defensive loadout (OSG shields → fleet defenders → Ore Bunkers, power-gated), then auto-completes each build at difficulty ≤ `complete_difficulty`. Idles when full |
+| `auto_defend` | `autodefend` | Assigns each productive player's idle combat structs to defend its refinery (one assignment per player per scan, 1 charge) |
+| `auto_infuse` | `infuse` | Keeps `keep_grams` of Alpha in reserve on the primary and infuses the rest into the guild reactor, signed at HD index 0 |
+| `auto_response` | `autoresponse` | **Defensive combat.** Triggers on `raid_status: initiated` — the alarm, not on damage — resolves the raiding fleet's Command Ship and fires every co-located shooter at it. Records a persistent grudge on every confirmed attack. Defaults: `mode: decapitate`, 8 shots per incident, 30 per hour, `prefer_counter_free_ambit: true`, `panic_refine: true` |
+| `auto_raid` | `autoraid` | **Offensive combat.** Scores every reachable player on stored ore × vulnerability × weakness × grudge, then dispatches one `raider` virtual player at a time — never the primary. Defaults: `posture: opportunist`, `require_vulnerable_now: true`, `allow_siege: false` |
+
+Two `auto_build` behaviors matter when reading its logs. It is **command-struct-first**: if a player's Command Ship is destroyed, rebuilding it is the only initiate that scan (a fleet with no command struct is rejected on every other deploy, and planet builds need the Command Ship online), and the loop waits while the replacement is still building. And it disambiguates the chain's overloaded `cannot handle new load requirements (required: X, available: Y)` error — small integers mean the **per-player build-count cap** for a one-per-player struct type (advance to the next loadout item; no charge was spent), while milliwatt-magnitude values mean a **real power shortage** (back off).
+
+**`panic_refine` is the one part of `auto_response` that acts in `advise` mode**, and deliberately so: refining the threatened ore is purely defensive, removes the entire prize, and cannot harm anyone. It also runs in `harden` mode and even when no shot is possible. The three `mode` values are `harden` (refine and alert only), `counter`, and `decapitate` (default — go for the raider's Command Ship).
+
+Two design choices in `auto_response` follow from constraints documented elsewhere in this repo. Shooter selection is limited to the attacked player's own on-station fleet plus anyone already parked at that planet, because **combat is co-located** — the other virtual players' charge bars are irrelevant no matter how full. And detection runs off effect events rather than `struct_attack`, because a real multi-shot exchange exceeds the ~8 KB NATS payload ceiling and arrives as a stub with no attacker fields; the attacker identity is pulled from the Guild API `planet-activity` feed. See [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL).
+
+`auto_raid` applies a **friend-or-foe veto before scoring**: your own accounts, allied guilds, and protected players are never targets regardless of what they hold. Those lists are managed with `structs_doctrine {command:"lists"}`.
+
+### Combat lists
+
+`structs_doctrine {command:"lists"}` reads and edits four persistent lists that **both** combat loops consult, via `{list_action: show|add|remove|mute|unmute, kind, id, weight?, note?}`.
+
+| Kind | Keyed by | Effect |
+|------|----------|--------|
+| `grudge` | player id | Raises that player's target score. Appended **automatically** by `auto_response` on every confirmed attack; can also be added by hand for someone who has never touched you |
+| `priority_guild` | guild id | Biases every member of that guild upward without naming each one |
+| `ally` | guild id | **Hard veto** — no member is ever targeted |
+| `protected` | player id | **Hard veto** — never targeted |
+
+`weight` is a priority multiplier, **0–10, default 1**, and `note` is free text shown on the dashboard's WAR page. What `auto_raid` actually scores for a grudge is its **heat** — `weight × (0.35 + 0.4 × incidents + 0.25 × harm)` — so repeated attacks and real struct losses raise a target on their own without you touching the weight.
+
+Two lifetime rules matter. **Auto-recorded grudges expire after 30 days; manually added ones never expire.** And `mute`/`unmute` applies only to grudges: a muted grudge is kept for the record but scores zero, which is the right way to spare someone without losing the history.
+
+**When your own guild gets its ally veto is a trap worth knowing.** Seeding happens at the top of `auto_raid`'s scan, not at app start — so until that loop has run at least once, `lists` shows **no allied guilds at all**, which looks alarming and is easy to misread as "my guild is targetable." It is not: the seed runs before scoring in the same tick, so there is no window where your own guild can be picked. Verified live on a server that had never run the loop — allies empty, and `seed_own_guild` is called from exactly one place, `auto_raid`'s tick. A latch respects later manual removal, so deliberately un-allying your own guild sticks.
+
+Grudges accumulating on their own is worth understanding *before* you arm `auto_raid`: `auto_response` writes them whenever it observes an attack, including while it is merely advising. By the time you turn the offensive loop on, the list may already describe a target set you never explicitly chose. Read it with `{list_action:"show"}` first.
+
+### Team Ops dashboard and web board
+The Team Ops window is a multi-page command center: **Ops** (the same board `structs_board` renders), **Fleet** (roster with per-player detail — including buried planet ore and estimated seconds to the next mine/refine completion — plus mass actions: `sweep_alpha`, `launch_players`, `set_role`, `force_scan`), **Energy** (guild reactor/substation power plus per-player supply/demand margins, worst first), **Work** (PoW queue, loop health, tx ledger, hash config), **Tx** (signing-queue snapshot and lane mutation via the `txq_bridge`), **Grass** (live GRASS event stream), **Config** (policies, loops, hash, doctrine presets, web-board toggle), and **Map**.
+
+`structs_board {web:"on"}` additionally serves those same pages over HTTP at `/board` on the MCP port so a remote human can drive the dashboard from a browser; `{web:"status"}` returns the shareable URL and `{web:"off"}` stops serving. It is opt-in and every route 404s until enabled. Authentication is the MCP bearer token, handed over once as `?token=` and swapped for an HttpOnly cookie. The server binds `127.0.0.1` only, so remote access goes through the operator's own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). Because the web path bypasses the native window guard, **the token is full operator authority** — including mass actions that sign transactions. Web writes push the same audit entries into the event feed as native ones.
+
+### Event feed
+Combat reaches `structs_events` as `struct_health` (with `health`/`health_old` and `struct_id`) and `struct_status`, alongside `shield_change`, `struct_block_build_start`, `fleet_arrive`/`fleet_depart`, `raid_status`, `player_consensus`, and `lastAction`. There is **no `struct_attack` category in the feed** — for your own attack outcomes use `structs_intel {query:"battle_log"}`. Actions you submitted come back as `tx_settled` receipts carrying the real tx hash, chain code, and succeeded/dropped status.
+
+Every GRASS event is also scanned for player (`1-…`) and struct (`5-…`) ids; unknown ones are resolved to names by background LCD reads, cached, and pushed to the board so live rows upgrade in place. `block` heartbeat events are relayed to the Grass page but deliberately **not** buffered — they would flush the 1000-entry ring within the hour — so they never appear in `structs_events` results.
 
 ### Combat mode
 The policy engine auto-detects combat events (raids, attacks, fleet arrivals) and tightens the gameState sync interval from 10s to 3s, dropping back after ~30 quiet blocks (~3 min).
@@ -8655,10 +9037,12 @@ The policy engine auto-detects combat events (raids, attacks, fleet arrivals) an
 `structs_players` manages additional players derived from the same mnemonic at different HD indices and joined to your guild. Keys never leave the webapp; the MCP drives signing through the vplayer bridge. Run a chain as a specific virtual player with the `as` parameter on `structs_sequence` (and act-as on `structs_players`). See [team-operations](../../playbooks/meta/team-operations.md) for why a team of players beats a single account (the charge bar is per-player).
 
 ### Transaction signing bridge
-MCP actions never hold keys. `structs_action` validates preconditions, Rust emits `mcp_transaction_request` to the webview, the JS `SigningClientManager` signs+broadcasts via CosmJS, and the result returns over `mcp_transaction_response`. This is why the app is a safe MCP host: the agent requests signatures, it does not possess them.
+MCP actions never hold keys. `structs_action` validates preconditions, Rust emits `mcp_transaction_request` to the webview, the JS `SigningClientManager` signs+broadcasts via CosmJS, and the result returns over `mcp_transaction_response`. This is why the app is a safe MCP host: the agent requests signatures, it does not possess them. A second, parallel bridge (`structs:txq-request`) reads and reorders the webapp's signing queue for the Tx page; it only inspects and mutates in-memory lanes and never signs or broadcasts anything itself.
+
+**Charge-gated actions auto-queue — do not hand-time them.** The webapp signing queue holds a charge-gated message in a *charge lane* and broadcasts it once the on-chain charge bar is sufficient, so the MCP no longer blocks on charge. Submit the action and read the returned note, which tells you whether it broadcasts this block or is queued and for how many blocks. This is a meaningful difference from the raw CLI, where you must wait out the charge bar yourself: through Desktop, an agent should submit and move on rather than sleeping between actions.
 
 ### Agent-driven UI
-`structs_board` component mode renders on the human's screen (`menu`, `dialogue`, `panel`, `info`, `map_preview`, `hud_badge`, `toast`, `open_menu`, `raw_html`). **notify** shows-and-returns; **prompt** blocks until the human chooses. Guardrails: every agent-drawn surface carries an "⚡ Agent" marker, the `agent_ui` policy is a master off-switch, and directives are **display/elicitation only — they cannot sign** (any chosen action still flows through the approval-gated tx bridge).
+`structs_board` component mode renders on the human's screen (`menu`, `dialogue`, `panel`, `info`, `map_preview`, `hud_badge`, `toast`, `open_menu`, `raw_html`, `dismiss`). Toasts and dialogues render in the Team Ops window; only `open_menu` and `map_preview` touch the main game view. **notify** shows-and-returns; **prompt** blocks until the human chooses. Guardrails: every agent-drawn surface carries an "⚡ Agent" marker, the `agent_ui` policy is a master off-switch, and directives are **display/elicitation only — they cannot sign** (any chosen action still flows through the approval-gated tx bridge).
 
 ### Notifications
 Native OS alerts fire off NATS WebSocket events, filtered to your planet/fleet: raid alerts, structs under attack, enemy fleet incoming/departed, your fleet moved, mining/refining/build started, struct status changed, Alpha Matter transfer, power alert. macOS uses `UNUserNotificationCenter` (needs a signed `.app`); Windows/Linux use `notify-rust`.
@@ -8690,14 +9074,14 @@ The app connects to a guild's infrastructure via stored configs (`guildApi`, `re
 
 ## Schema Overview
 
-PostgreSQL 17 with TimescaleDB extension. Six schemas:
+PostgreSQL 17 with TimescaleDB extension. Six application schemas (plus `cron` for pg_cron jobs and the `_timescaledb_*` internals):
 
 | Schema | Purpose |
 |--------|---------|
-| `structs` | Game state (~50 tables covering all game objects) |
+| `structs` | Game state (51 base tables covering all game objects) |
 | `sync_state` | Chain indexer state: sync cursor, block log, raw blocks/events, handler error log |
 | `cache` | Compatibility views over `sync_state.raw_*` (read-only; not an event-sink) |
-| `view` | Computed views (`view.player`, `view.guild`, leaderboards, permission projection) |
+| `view` | Computed views (`view.player`, `view.guild`, leaderboards, inventories, permission projection) |
 | `signer` | Transaction signing queue (TSA account/role/tx management) |
 | `sqitch` | Schema migration tracking |
 
@@ -8730,10 +9114,12 @@ For agent queries, use `structs_indexer` via the GRASS container (see guild-stac
 | `guild_rank` | bigint | Player's rank within their guild (1 = highest, 101 = default on join, 0 = unset) |
 | `planet_id` | varchar | Home planet (e.g., `2-105`) |
 | `fleet_id` | varchar | Fleet (e.g., `9-142`) |
+| `substation_id` | varchar | Substation the player draws capacity from (e.g., `4-5`) |
 | `primary_address` | varchar | Cosmos address |
 | `creator` | varchar | Who created this player |
 | `username` | varchar | Player display name (chain UGC; from `MsgPlayerUpdateName` or signup proxy) |
 | `pfp` | varchar | Profile picture URI (chain UGC; from `MsgPlayerUpdatePfp` or signup proxy) |
+| `pfp_client_render_attributes` | varchar | Compacted JSON string describing how a client renders a locally generated pfp (chain `Player` field 12, added v0.18.0). Untrusted UGC — do not eval. |
 
 ### `structs.fleet`
 
@@ -8741,7 +9127,7 @@ For agent queries, use `structs_indexer` via the GRASS container (see guild-stac
 |--------|------|-------|
 | `id` | varchar PK | `9-{index}` |
 | `owner` | varchar | Player ID |
-| `status` | varchar | `on_station`, `away` |
+| `status` | varchar | `onStation`, `away` — **camelCase**. `WHERE status = 'on_station'` returns 0 rows. |
 | `location_type` | varchar | `planet` |
 | `location_id` | varchar | Planet ID where fleet is located |
 | `command_struct` | varchar | Command Ship struct ID |
@@ -8772,6 +9158,7 @@ The authoritative reference for all game balance data (~60 columns). Key columns
 - `*_weapon_ambits_array` -- JSONB readable form
 - `*_weapon_shots`, `*_weapon_damage` -- shots per attack, damage per shot
 - `*_weapon_blockable`, `*_weapon_counterable` -- boolean
+- `*_weapon_armour_piercing` -- boolean; ignores the target's `armour` damage reduction (added v0.18.0)
 - `*_weapon_recoil_damage` -- self-damage after firing
 - `*_weapon_shot_success_rate_numerator/denominator` -- per-shot hit rate
 
@@ -8784,11 +9171,13 @@ The authoritative reference for all game balance data (~60 columns). Key columns
 
 **Other:**
 - `planetary_shield_contribution` -- shield value for planet structs
-- `generating_rate` -- power generation per gram (generators)
+- `generating_rate_p` -- power generation per gram (generators); **this is the writable column**
 - `ore_mining_difficulty`, `ore_refining_difficulty` -- PoW difficulty
 - `build_difficulty` -- PoW difficulty for construction
 - Charge costs: `activate_charge`, `build_charge`, `defend_change_charge`, `move_charge`, `stealth_activate_charge`
 - Display: `class`, `class_abbreviation`, `unit_description`
+
+> **`_p` precision columns are the base; their bare companions are GENERATED.** Three pairs on this table are split: `generating_rate_p` / `generating_rate` (= `generating_rate_p * 1000`), `build_draw_p` / `build_draw`, and `passive_draw_p` / `passive_draw` (both formatted via `unit_legacy_format(…, 'milliwatt')`). The bare names are still readable — a `SELECT generating_rate` keeps working — but only the `_p` column is writable, so it is the one sync-state upserts and the one to use in a `WHERE` on an exact integer. The same pattern applies to `structs.ledger.amount_p`, `structs.infusion.fuel_p`/`power_p`/`ratio_p`/`defusing_p`, and `structs.guild.join_infusion_minimum_p`. The `*_array` bitmask-derivative columns (`primary_weapon_ambits_array`, `possible_ambit_array`, …) are likewise GENERATED.
 
 ### `structs.struct_attribute`
 
@@ -8796,18 +9185,35 @@ Key-value attributes per struct instance.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `object_id` | varchar | Struct ID |
-| `attribute_type` | varchar | `health`, `status`, `protectedStructIndex`, etc. |
+| `id` | varchar PK | `{attrType}-{objectTypeId}-{objectIndex}` |
+| `object_id` | varchar | Struct ID (or player ID for `typeCount`) |
+| `object_type` | varchar | `struct` or `player` |
+| `attribute_type` | varchar | See below |
 | `val` | integer | Attribute value |
+
+| attribute_type | Found On | Meaning |
+|----------------|----------|---------|
+| `health` | struct | Current HP |
+| `status` | struct | Status bitfield (online/offline/stealth) |
+| `protectedStructIndex` | struct | Index of the struct this one defends |
+| `blockStartBuild` | struct | Block height the build PoW window opened |
+| `blockStartOreMine` | struct | Block height the mining PoW window opened |
+| `blockStartOreRefine` | struct | Block height the refining PoW window opened |
+| `typeCount` | player | Per-struct-type build count for this player |
+
+A row is deleted rather than zeroed when the attribute clears, so absence means zero.
 
 ### `structs.struct_defender`
 
-Defense assignments.
+Defense assignments. One row per defender (`defending_struct_id` is the whole primary key), so a struct defends at most one target at a time.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `defending_struct_id` | varchar PK | The defender |
 | `protected_struct_id` | varchar | The struct being protected |
+| `updated_at` | timestamptz | Last assignment change |
+
+> The `planet_activity` `struct_defense_add` / `struct_defense_remove` `detail` uses the key **`defender_struct_id`** (no `-ing`) for what this table calls `defending_struct_id`. Joining the timeline to the table requires translating the name.
 
 ### `structs.planet`
 
@@ -8817,28 +9223,57 @@ Defense assignments.
 | `owner` | varchar | Player ID |
 | `max_ore` | integer | Maximum ore capacity |
 | `space_slots` / `air_slots` / `land_slots` / `water_slots` | integer | Slot counts |
-| `status` | varchar | Planet status |
+| `status` | varchar | `active` (claimable/inhabited) or `complete` (ore exhausted) |
+| `map` | jsonb | Generated planet map |
 | `name` | text | Planet display name (chain UGC; from `MsgPlanetUpdateName` or optional name on `planet-explore`) |
-| `seized_ore` | numeric | Cumulative ore taken from this planet across raids (planet-level total; per-raid totals live in `planet_raid.seized_ore`) |
+
+There is **no `seized_ore` column on `structs.planet`.** Seized ore is tracked per raid on `structs.planet_raid` and per token movement in `structs.ledger`.
 
 ### `structs.planet_attribute`
 
 | Column | Type | Notes |
 |--------|------|-------|
+| `id` | varchar PK | `{attrType}-{objectTypeId}-{objectIndex}` |
 | `object_id` | varchar | Planet ID |
-| `attribute_type` | varchar | `planetaryShield`, etc. |
+| `object_type` | varchar | `planet` |
+| `attribute_type` | varchar | See below |
 | `val` | integer | Attribute value |
+
+| attribute_type | Meaning |
+|----------------|---------|
+| `planetaryShield` | Current planetary shield value |
+| `defensiveCannonQuantity` | Defensive Cannons installed on the planet |
+| `lowOrbitBallisticsInterceptorNetworkQuantity` | LOBIN installations |
+| `lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator` / `...Denominator` | LOBIN interception rate |
+
+As with `struct_attribute`, a cleared attribute is deleted rather than stored as `0`.
 
 ### `structs.planet_raid`
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `planet_id` | varchar | Target planet |
+| `planet_id` | varchar PK | Target planet — **the entire primary key** |
 | `fleet_id` | varchar | Raiding fleet |
-| `status` | varchar | `initiated`, `completed`, etc. |
-| `seized_ore` | numeric | Ore taken (see derivation note below) |
+| `status` | varchar | `initiated`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized`. There is **no `completed` value.** |
+| `seized_ore` | numeric | Ore taken by the raid this row describes |
+| `updated_at` | timestamptz | Last status change |
 
-> **Authoritative seized-ore derivation.** For "how much ore did this raid actually take", derive it from `ledger` rows with `action = 'seized'` (keyed by the raid/address/time) rather than reading `planet_raid.seized_ore` directly. The ledger is the source of truth for token movement, and it preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (e.g. a probe repelled, or ore already refined away) still writes a meaningful `seized` entry. A raid-analytics pipeline should sum ledger `seized` amounts and treat 0-gram rows as real outcomes, not noise.
+> **`planet_raid` is latest-state, not history.** Because the primary key is `planet_id` alone, each planet holds exactly one row that is overwritten by every subsequent raid. Do not use this table for raid history or for summing a planet's cumulative losses — it only answers "what is the most recent raid on this planet."
+
+> **Per-raid seized ore: read `planet_activity`.** For raid history, use `planet_activity` rows with `category = 'raid_status'`; their `detail` carries `seized_ore` alongside `planet_id`, `fleet_id`, and `status`. This key was added to `emitRaidStatusActivity` recently, so **rows indexed before the fix are missing it entirely** — on `structstestnet-111` roughly half of `raid_status` rows still lack the key. Treat `detail ? 'seized_ore'` as false meaning *unknown*, not zero, and gate on it explicitly:
+>
+> ```sql
+> SELECT time, planet_id, detail->>'fleet_id' AS fleet_id, detail->>'status' AS status,
+>     (detail->>'seized_ore')::numeric AS seized_ore
+> FROM structs.planet_activity
+> WHERE category = 'raid_status'
+>     AND detail ? 'seized_ore'
+> ORDER BY time DESC;
+> ```
+>
+> Upstream ships a one-time backfill, `sync-state/sql/repair-raid-status-seized-ore.sql`, that reconstructs the missing values from the ledger. It is an operator task on the guild-stack host, not something an agent should run.
+
+> **The ledger remains the source of truth for token movement.** Seized ore lands as `structs.ledger` rows with `action = 'seized'`, `direction = 'credit'`, `denom = 'ore'`, credited to the thief with the victim in `counterparty`. The ledger preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (a probe repelled, or ore already refined away) still writes a meaningful `seized` entry, and on `structstestnet-111` those are the plurality of them. A raid-analytics pipeline should treat 0-gram rows as real outcomes, not noise. Correlate a ledger row to a raid via `block_height` plus the thief's `player_address` → `player.fleet_id`.
 
 ---
 
@@ -8850,8 +9285,11 @@ Defense assignments.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `object_id` | varchar | Player/planet/struct/etc ID |
-| `attribute_type` | varchar | `ore`, `alpha`, `structsLoad`, `capacity`, `fuel`, `power`, etc. |
+| `id` | varchar PK | `{attributeType}-{objectTypeId}-{objectIndex}` |
+| `object_id` | varchar | Player/planet/struct/substation/reactor/provider/allocation ID |
+| `object_type` | varchar | `player`, `planet`, `struct`, `substation`, `reactor`, `provider`, `allocation` |
+| `object_index` | integer | Numeric portion of `object_id` |
+| `attribute_type` | varchar | See table below |
 | `val` | numeric | The value |
 
 **Wrong** (no `ore` column exists):
@@ -8882,13 +9320,19 @@ WHERE p.id = '1-142';
 | attribute_type | Found On | Meaning |
 |----------------|----------|---------|
 | `ore` | player, planet | Ore balance (player = mined/stealable; planet = remaining) |
-| `capacity` | player, reactor, substation | Energy capacity |
+| `capacity` | player, reactor, struct, substation | Energy capacity |
 | `structsLoad` | player | Energy consumed by active structs |
-| `fuel` | reactor | Total ualpha infused |
-| `power` | infusion | Energy generated from fuel |
+| `load` | player, provider, reactor, struct, substation | Base load on the object |
+| `fuel` | reactor, struct | Total ualpha infused |
+| `power` | allocation, struct | Energy carried by an allocation / generated by a generator struct |
 | `connectionCapacity` | substation | Capacity granted to **each** connected player — **already the per-player share** `(capacity − load) / connectionCount`. Do **not** divide by `connectionCount` again; that double-dilutes and understates a player's real capacity. |
 | `connectionCount` | substation | Active connections |
-| `load` | player | Base player load |
+| `ready` | struct | Block height at which the struct's next action is available |
+| `lastAction` | player | Block height of the player's last action (charge-bar basis) |
+| `nonce` / `proxyNonce` | player | Signing nonces for the player's own and proxy-signed transactions |
+| `checkpointBlock` | provider | Last settlement checkpoint for the provider's agreements |
+
+> Per-infusion `power` is **not** in the grid — it lives on `structs.infusion` as `power` / `power_p`, keyed `(destination_id, address)`. Grid `power` on an `allocation` is the energy that allocation routes; on a `struct` it is what that generator produces.
 
 ---
 
@@ -8898,54 +9342,73 @@ TimescaleDB hypertable for all planet-level events.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `time` | timestamp | Event time |
-| `seq` | integer | Sequence number (monotonically increasing, use as high-water mark) |
+| `time` | timestamptz | Event time (chain block time; hypertable partition key) |
+| `seq` | integer | **Per-planet** counter starting at 0 — see the trap below |
 | `planet_id` | varchar | Planet where event occurred |
-| `category` | enum | Event type (see below) |
+| `category` | `structs.grass_category` | Event type (see below) |
 | `detail` | JSONB | Event-specific data |
 | `block_height` | bigint | Block height when the event occurred (populated by sync-state) |
 
+> **`seq` is scoped to a planet, not to the table.** It is drawn from `structs.planet_activity_sequence`, a `(planet_id, counter)` table whose counter is bumped per planet, so every planet has its own series starting at 0 and thousands of rows share any given `seq`. A single scalar high-water mark applied across several planets silently skips events on every planet whose counter is behind the largest one. Track **one cursor per planet**, or order globally on `time` / `block_height` and use `seq` only to disambiguate within a planet.
+
 ### Event Categories
 
-| Category | Description |
-|----------|-------------|
-| `block` | New block committed |
-| `raid_status` | Raid initiated/completed/failed |
-| `fleet_arrive` | Fleet arrived at planet |
-| `fleet_advance` | Fleet movement in progress |
-| `fleet_depart` | Fleet departed from planet |
-| `struct_attack` | Combat attack event |
-| `struct_defense_add` | Defense assignment added |
-| `struct_defense_remove` | Defense assignment removed |
-| `struct_status` | Struct status change (online/offline/destroyed) |
-| `struct_move` | Struct moved between slots/ambits |
-| `struct_block_build_start` | Build PoW started |
-| `struct_block_ore_mine_start` | Mining PoW started |
-| `struct_block_ore_refine_start` | Refining PoW started |
-| `struct_health` | Struct health changed (damage) |
-| `guild_consensus` | Guild consensus events |
-| `guild_meta` | Guild metadata changes |
-| `guild_membership` | Membership changes |
-| `player_consensus` | Player state changes (including UGC `username`/`pfp` updates) |
-| `guild_meta` | Guild off-chain metadata (description, tag, logo, services — not chain UGC name/pfp) |
+`category` is the shared `structs.grass_category` enum, which also labels GRASS notifications that never become `planet_activity` rows (`block`, `guild_consensus`, `guild_meta`, `guild_membership`, `player_consensus`, `player_meta`). The planet-scoped subset actually written to this table:
+
+| Category | Description | Key `detail` fields |
+|----------|-------------|---------------------|
+| `raid_status` | Raid status transition | `planet_id`, `fleet_id`, `status`, `seized_ore` |
+| `fleet_arrive` | Fleet arrived at planet | `fleet_id` |
+| `fleet_advance` | Fleet movement in progress | `fleet_id` |
+| `fleet_depart` | Fleet departed from planet | `fleet_id` |
+| `struct_attack` | Combat attack event | see below |
+| `struct_defense_add` | Defense assignment added | `defender_struct_id`, `protected_struct_id` |
+| `struct_defense_remove` | Defense assignment removed | `defender_struct_id`, `protected_struct_id` |
+| `struct_status` | Struct status change (online/offline/destroyed) | `struct_id`, `status` |
+| `struct_move` | Struct moved between slots/ambits | `struct_id`, ambit/slot |
+| `struct_health` | Struct health changed (damage) | `struct_id`, health values |
+| `struct_block_build_start` | Build PoW window opened | `struct_id`, `block` |
+| `struct_block_ore_mine_start` | Mining PoW window opened | `struct_id`, `block` |
+| `struct_block_ore_refine_start` | Refining PoW window opened | `struct_id`, `block` |
+| `shield_change` | Planetary shield value changed | `planetary_shield`, `planetary_shield_old` |
+| `block_raid_start` | Planet's `blockStartRaid` changed (raid clock) | `block_start_raid`, `block_start_raid_old` |
+
+`shield_change` and `block_raid_start` (added v0.18.0) have no dedicated chain event — sync-state derives them from `planet_attribute` writes for `planetaryShield` and `blockStartRaid`, emitting a row only when the value actually changes and carrying both the old and new value. `shield_change` is high-volume: it is the second-largest category on `structstestnet-111` after `struct_status`, so a poller that does not filter by category will spend most of its budget on shield ticks.
+
+`struct_defense_remove` is emitted from the `struct_defender_clear` handler, which is the only path that clears a defender's `protectedStructIndex`. Before that fix the category existed in the enum but was never written, so **defense-removal history is absent from older indexed data** even though additions are present.
 
 ### Polling Pattern (Real-Time Monitoring)
 
-```sql
--- Initialize: set high-water mark
-SELECT COALESCE(MAX(seq), 0) as last_seq
-FROM structs.planet_activity
-WHERE planet_id IN ('2-105');
+Because `seq` is per-planet, initialize and carry a cursor per planet:
 
--- Poll every ~6 seconds
-SELECT seq, planet_id, category, detail::text
+```sql
+-- Initialize: one high-water mark per watched planet
+SELECT planet_id, COALESCE(MAX(seq), 0) AS last_seq
 FROM structs.planet_activity
 WHERE planet_id IN ('2-105', '2-127')
-    AND seq > $LAST_SEQ
-ORDER BY seq ASC;
+GROUP BY planet_id;
+
+-- Poll every ~6 seconds, comparing each planet against its own cursor
+SELECT pa.planet_id, pa.seq, pa.category, pa.detail::text
+FROM structs.planet_activity pa
+JOIN (VALUES ('2-105', $LAST_SEQ_2_105), ('2-127', $LAST_SEQ_2_127))
+    AS cur(planet_id, last_seq) ON cur.planet_id = pa.planet_id
+WHERE pa.seq > cur.last_seq
+ORDER BY pa.planet_id, pa.seq ASC;
 ```
 
-The `detail` column for `struct_attack` includes `attackerStructId`, `targetStructId`, and `eventAttackShotDetail` with per-shot damage breakdowns.
+A planet with no rows yet is absent from the initialize query, so default its cursor to `-1` rather than `0` — `seq` starts at 0 and `seq > 0` would drop that planet's first event.
+
+For a single-cursor poller across arbitrary planets, use `block_height` instead, which is globally ordered:
+
+```sql
+SELECT planet_id, seq, category, detail::text
+FROM structs.planet_activity
+WHERE block_height > $LAST_HEIGHT
+ORDER BY block_height, planet_id, seq;
+```
+
+The `detail` column for `struct_attack` carries the attacker at the top level (`attackerStructId`, `attackerPlayerId`, `attackerStructType`, `weaponSystem`, `weaponControl`, attacker health before/after) plus an `eventAttackShotDetail` array with the per-shot breakdown. **`targetStructId` exists only inside the shot entries, not at the top level** — filtering attacks on a target requires descending into the array (e.g. `detail->'eventAttackShotDetail' @> '[{"targetStructId":"5-6438"}]'`). Each shot entry carries `damage`, `damageDealt`, `evaded`/`evadedCause`, `blocked`/`blockedByStructId`, `armourPiercing`, `damageReduction`/`damageReductionCause`, `targetCountered`/`targetCounteredDamage`, `targetDestroyed`, and `evadedByPlanetaryDefenses`/`Cause`.
 
 **GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](../../.cursor/skills/structs-streaming/SKILL.md).
 
@@ -8956,7 +9419,7 @@ The `detail` column for `struct_attack` includes `attackerStructId`, `targetStru
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
 | `reactor` | `id`, `guild_id`, `validator`, `owner` | Links validator address to guild; `owner` is PlayerId |
-| `infusion` | `destination_id`, `address`, `fuel`, `power`, `commission` | Composite PK: `(destination_id, address)` |
+| `infusion` | `destination_id`, `address`, `destination_type`, `player_id`, `fuel_p`, `power_p`, `ratio_p`, `defusing_p`, `commission` | Composite PK: `(destination_id, address)`. `destination_type` is `reactor` or `struct`. The bare `fuel`/`power`/`ratio`/`defusing` columns are GENERATED from the `_p` values. |
 | `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing; `controller` is PlayerId (not address) |
 | `substation` | `id`, `owner` | Power distribution nodes |
 | `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
@@ -8996,8 +9459,8 @@ Guild presentation and infrastructure metadata — **not** chain UGC name/pfp (t
 |--------|------|-------|
 | `id` | varchar PK | Substation ID |
 | `owner` | varchar | Owner player ID |
-| `name` | text | Substation name (chain UGC; from `MsgSubstationUpdateName`) |
-| `pfp` | text | Substation profile picture (chain UGC; from `MsgSubstationUpdatePfp`) |
+| `name` | varchar | Substation name (chain UGC; from `MsgSubstationUpdateName`) |
+| `pfp` | varchar | Substation profile picture (chain UGC; from `MsgSubstationUpdatePfp`) |
 
 ### `structs.permission_guild_rank`
 
@@ -9019,11 +9482,15 @@ Written by `structs-sync-state`. Key operator tables:
 
 | Table | Purpose |
 |-------|---------|
-| `sync_cursor` | Per-chain ingest pointer (`last_height`, `status`, `lag_blocks`, `tip_height`) |
+| `sync_cursor` | Per-chain ingest pointer (`last_height`, `status`, `lag_blocks`, `tip_height`). `status` is `catching_up` while behind and `current` once caught up. |
 | `block_log` | One row per ingested block (tx/event counts, handler error count) |
 | `handler_error_log` | Per-event handler failures (for debugging replay) |
-| `raw_blocks`, `raw_tx_results`, `raw_events`, `raw_attributes` | Raw chain event storage |
+| `unknown_event_log` | Chain events with no registered handler — first place to look when a new chain version adds an event the indexer does not yet project |
+| `genesis_log` | Genesis import record |
+| `raw_blocks`, `raw_tx_results`, `raw_events`, `raw_attributes` | Raw chain event storage — **populated only when `SYNC_STATE_MIRROR_RAW=true`**, which the default Compose sets to `false`. Do not plan a query path around them without checking. |
 | `verification_report` | Output of sync-state verify runs |
+
+`structs.current_block` mirrors the same cursor (`chain`, `height`, `status`, `lag_blocks`, `tip_height`) as an unlogged single-row table, which is the cheaper read when all you need is "what block are we on."
 
 Monitor indexer health:
 
@@ -9063,7 +9530,7 @@ Live tunables — chain economy and gameplay constants exposed unauthenticated t
 | `name` | text PK | Setting key |
 | `value` | text | Setting value (string-encoded; numeric where applicable) |
 
-Seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`. Treat the table as an open name/value map — keys are added over time.
+Seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`, `STRUCT_SWEEP_DELAY`. Treat the table as an open name/value map — keys are added over time.
 
 ### `structs.defusion`
 
@@ -9084,13 +9551,21 @@ Old rows are reaped by the `structs.CLEAN_DEFUSION()` cron. Read endpoints live 
 
 ## Aggregated Views
 
+The `view` schema holds 21 views. The ones worth reaching for:
+
 | View | Purpose |
 |------|---------|
+| `view.player` / `view.guild` / `view.planet` / `view.struct` / `view.substation` / `view.reactor` | Object rows pre-joined with their grid attributes, so a single `SELECT` replaces the multi-JOIN grid pattern below |
+| `view.grid` | Grid rows resolved to object type/owner labels |
+| `view.struct_status` | Struct status bitfield decoded into readable flags |
 | `view.guild_bank` | Per-guild Central Bank position — minted/redeemed token balances, collateral, and outstanding supply, joined from `structs.guild`, the on-chain bank module, and ledger movements |
-| `view.leaderboard_guild` | Ranked guild scoreboard (members, ore mined, planets completed, raids launched, raids successful) for UI surfaces |
-| `view.leaderboard_player` | Same shape as `view.leaderboard_guild` but per player |
+| `view.player_inventory` / `view.guild_inventory` / `view.address_inventory` / `view.reactor_inventory` | Token balances per player, guild, address, and reactor |
+| `view.leaderboard_guild` / `view.leaderboard_player` | Ranked scoreboards (members, ore mined, planets completed, raids launched, raids successful) |
+| `view.leaderboard_provider` / `view.leaderboard_reactor` / `view.leaderboard_substation` | Energy-market scoreboards |
+| `view.permission_player` / `view.permission_address` | Permission bitmask projected to one boolean column per bit |
+| `view.work` | Outstanding proof-of-work windows |
 
-Use views, not raw tables, when building leaderboard or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
+Use views, not raw tables, when building leaderboard, inventory, or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
 
 ---
 
@@ -9098,7 +9573,7 @@ Use views, not raw tables, when building leaderboard or treasury surfaces — th
 
 | Hypertable | Purpose | Key Columns |
 |------------|---------|-------------|
-| `ledger` | Financial transaction log | `time`, `address`, `amount`, `action`, `direction`, `denom` |
+| `ledger` | Financial transaction log | `time`, `id`, `address`, `counterparty`, `amount_p`, `amount`, `action`, `direction`, `denom`, `block_height` |
 | `stat_ore` | Ore value history | `time`, `object_type`, `object_index`, `value` |
 | `stat_capacity` | Capacity history | Same pattern (has `object_type`) |
 | `stat_fuel` | Fuel history | Same pattern (has `object_type`) |
@@ -9115,6 +9590,39 @@ Use views, not raw tables, when building leaderboard or treasury surfaces — th
 ### Ledger Action Types
 
 `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed`
+
+Each row is one side of a movement: `address` is the party the row belongs to, `counterparty` is the other side, and `direction` (`credit`/`debit`) gives the sign. `amount_p` is the raw integer; `amount` is GENERATED via `unit_legacy_format(amount_p, denom)` for display. Use `amount_p` for arithmetic and for matching.
+
+> **Historical duplicate rows on `refined` and `infused` (affects any balance query).** Two chain messages each produced *two* ledger rows for the same movement, because sync-state's event handler and the Cosmos bank-event handler both wrote one:
+>
+> | Message | Correct row | Spurious duplicate |
+> |---------|-------------|--------------------|
+> | `MsgStructOreRefineryComplete` | `refined` credit, `ualpha` | `received` credit, `ualpha` |
+> | `MsgStructGeneratorInfuse` | `infused` debit, `ualpha` | `sent` debit, `ualpha` |
+>
+> The duplicate shares the same `address`, `time`, `block_height`, and `amount_p` as the correct row. Current sync-state suppresses the bank-side row, but **the duplicates persist in already-indexed data** — on `structstestnet-111` there are 123 refine and 13 infusion pairs still present. Any query of the form `SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END)` over `ualpha` therefore double-counts every historical refine and infusion. Until an operator runs the upstream repairs (`sync-state/sql/repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`), exclude the shadowed actions when computing a net position:
+>
+> ```sql
+> SELECT address, denom,
+>     SUM(CASE direction WHEN 'credit' THEN amount_p ELSE -amount_p END) AS net
+> FROM structs.ledger l
+> WHERE NOT (
+>         l.denom = 'ualpha'
+>     AND l.action IN ('received', 'sent')
+>     AND EXISTS (
+>         SELECT 1 FROM structs.ledger d
+>          WHERE d.address = l.address
+>            AND d.time = l.time
+>            AND d.block_height = l.block_height
+>            AND d.amount_p = l.amount_p
+>            AND d.denom = 'ualpha'
+>            AND d.action = CASE l.action WHEN 'received' THEN 'refined'::structs.ledger_action
+>                                         ELSE 'infused'::structs.ledger_action END
+>     ))
+> GROUP BY address, denom;
+> ```
+>
+> `seized` and `mined` were never duplicated, so ore analytics are unaffected.
 
 ---
 
@@ -9714,6 +10222,10 @@ Late-game victory looks like:
 ## Immediate Response Protocol
 
 When you detect an attack—raid, struct assault, or fleet engagement—execute this sequence. Do not skip steps. Do not reverse the order.
+
+**Know the budget before you start.** Against a raid you have roughly **four minutes** total: median 2.1 min from `initiated` to `shieldsVulnerable`, then a hard ~2 min 6 s lock before loot. Every step below has to fit inside that. Defenders who returned fire within ~1.8 min are the *only* ones in the dataset who ever defeated an attacker; the median losing defender responded at 12.3 min. See [defense.md](../../knowledge/mechanics/defense.md#the-four-minute-clock).
+
+This is also why the order below is not negotiable: steps 1 and 2 are cheap and fast, and step 2 alone takes your loss to zero.
 
 ---
 
@@ -10646,6 +11158,34 @@ When raiding, remember the raid is per-fleet and the **`attackerDefeated`** rule
 
 ---
 
+## Running a team through Structs Desktop
+
+Everything above is executable with per-account `structsd` calls and a key per account. If you are running [Structs Desktop](../../knowledge/infrastructure/structs-desktop.md), the `structs_players` MCP tool changes the setup cost enough to be worth knowing about: its **virtual players** are derived from the *same mnemonic* at different HD indices and joined to your guild with the guild fronting the join fee, so you need neither a new seed per account nor starting Alpha. Keys never leave the app.
+
+| Command | Use |
+|---------|-----|
+| `roster` / `list` | Team overview: every player's planet, fleet, struct count, resources |
+| `create` `{name, index?}` | Derive and register a new virtual player (next free HD index ≥ 1) |
+| `capacity` | How many more players the guild entry substation can actually power — check before creating |
+| `act` `{player, action, args}` | Act as one player, signed by its own key. PoW actions (`mine`/`refine`/`raid`) auto-complete |
+| `role` `{player, role}` | `bait`, `productive`, or `raider` |
+| `economy` | Planner: each productive player's next step, mine → refine → send Alpha to primary → infuse reactor |
+| `infra` | Emits an exact infuse → allocate → substation → feed-pool sequence with dilution math (advisory; you execute it) |
+| `harvest` / `autobuild` / `autodefend` / `infuse` | Native economic loops |
+| `autoresponse` / `autoraid` | Native **combat** loops — defensive counter-fire and offensive target selection |
+
+**All six loops auto-sign.** They are off until enabled, and once on they act on their own schedule without asking. That is a standing grant of transaction authority, so treat enabling one as a Tier 1 decision under [SAFETY.md](../../SAFETY.md) and tell your commander it is running — see [briefing.md](../../awareness/briefing.md).
+
+**The two combat loops are a different decision.** `autoresponse` returns fire when you are raided; `autoraid` picks targets and raids them. Both are Tier 2 — arming `autoraid` in particular commits your commander to unprompted aggression at machine cadence. They default to `autonomy: advise` even after you enable them, so the honest sequence is: enable, watch it advise for a while, populate the `ally` and `protected` vetoes, and only then discuss `auto`. Never arm either one unasked.
+
+The role split is a real strategic distinction, not a label. A **productive** player runs the flywheel and should be kept unraidable: shields up, ore refined promptly. A **bait** player deliberately lets ore pile up to draw raiders into your defended space. Because a raid can only ever take unrefined ore (see [defense.md](../../knowledge/mechanics/defense.md)), a bait player's maximum loss is bounded and known in advance — that is what makes the trade acceptable. The failure mode is a productive player *drifting* into accidental bait by leaving ore unrefined.
+
+A **raider** is the expendable offensive arm, and it exists because of a specific, expensive lesson in the outcome data: across 22 instrumented raids, 41% ended `attackerDefeated` versus an ecosystem baseline near 5%, and every one of those was the *primary's* Command Ship dying in the field (see [combat.md](../../knowledge/mechanics/combat.md#what-the-outcome-data-says)). `auto_raid` therefore only ever flies `raider` accounts, never the primary. Give a raider its own refinery so seized ore can be laundered into Alpha before someone raids it back. Applied by hand, the rule is simply: **never raid with the account you cannot afford to lose.**
+
+Fleet-wide sweeps (collect all Alpha to one address, launch the whole roster, force a roster rescan) exist in the **Team Ops board** — the desktop dashboard and its opt-in web view — not on the MCP tool surface. An agent orchestrating over MCP uses the `structs_players` commands above; the board's mass actions are for a human at the dashboard. If you do use them, dry-run first, and note that Alpha sweeps skip `bait` players by default, which is usually what you want.
+
+---
+
 ## Orchestration and safety
 
 - **One transaction per account per block.** Drive accounts concurrently, but never fire two transactions from the *same* key in the same block (`account sequence mismatch`). Stagger per key, parallel across keys.
@@ -10986,10 +11526,12 @@ The `create-player.mjs` script keeps your mnemonic local but sends to the guild'
 Agents reach the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop), and the Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). Either can become an attack surface if exposed beyond `localhost`:
 
 - The **embedded MCP server** speaks the MCP protocol over a local port and is gated by a bearer token (connection details are in the app's Debug menu). Anyone who reaches the port *with the token* can act as your agent — keep the token secret and the port bound to `localhost`.
+- The **web board** (`/board`, enabled with `structs_board {web:"on"}`) serves the Team Ops dashboard over HTTP so a human can watch from another device. It is off by default, and turning it on is a real decision: the board is not a read-only view — it exposes **mass actions that sign transactions**. The bearer token appears in the board URL, so anyone who obtains that URL has full operator control, not just visibility. A URL shared over chat, pasted into a bug report, or left in a browser history is a key disclosure.
 - The **signing agent** is designed to sign transactions on behalf of a configured key. If configured with a real key and exposed, anyone who can reach the port can spend on your behalf.
 
 **Mitigation**:
 - Keep the embedded MCP server bound to `127.0.0.1` and treat its bearer token like a key — never paste it into untrusted tools or share it.
+- Leave the web board off unless you need it. When you do need remote viewing, prefer an **SSH tunnel** to the local port over exposing `/board` to a network, and treat the tokenised board URL with the same care as the bearer token itself. Turn it back off (`structs_board {web:"off"}`) when finished.
 - Use the read-only guild profile (`structsd`, `structs-pg`, `structs-sync-state`, `structs-grass`) — no signing surface by default.
 - **Do not configure the signing-agent service with a real key** until you have read its code and understood what it will sign.
 
@@ -11030,7 +11572,7 @@ Halt every running `*-compute` job for the affected key. Find PIDs in `memory/jo
 Start the cooldown clocks. Defused alpha is locked but not yet stolen.
 
 ```
-structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [reactor-id]
+structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]
 ```
 
 Do this for every reactor the player has infused into.
@@ -11064,7 +11606,7 @@ structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [un
 Create the new key first (`structsd keys add agent-recovery`), get its address, then:
 
 ```
-structsd tx structs address-register --from [compromised-key] --gas auto -y -- [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
+structsd tx structs address-register --from [compromised-key] --gas auto -y -- [player-id] [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
 structsd tx structs player-update-primary-address --from [compromised-key] --gas auto -y -- [new-address]
 structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [old-address]
 ```
@@ -12690,6 +13232,31 @@ Verified in `proto/structs/structs/query.proto` (`QueryAddressResponse { string 
 
 ---
 
+## List queries omit grid attributes (single-entity queries do not)
+
+Every live *number* about an object — capacity, load, ore, power, `lastAction` — is a **grid attribute**, stored separately from the object record. The single-entity query joins them; the `*All` list query does not.
+
+```go
+// single: record + grid attributes
+gridAttributes := k.GetGridAttributesByObject(ctx, req.Id)
+return &types.QueryGetAllocationResponse{Allocation: allocation, GridAttributes: &gridAttributes}, nil
+
+// *All: bare records only
+return &types.QueryAllAllocationResponse{Allocation: allocations, Pagination: pageRes}, nil
+```
+
+Verified in `x/structs/keeper/query_*.go` for `player`, `struct`, `substation`, `planet`, `reactor`, `provider`, and `allocation`: `GetGridAttributesByObject` appears in the single-entity handler and in **no** `*All` handler.
+
+The practical consequences:
+
+- **`allocation-all` never reports `power`.** Allocation power is a grid attribute, so a list row looks like a zero-power allocation. Fetch the individual allocation for its real value. (This is why Structs Desktop's `guild_power.rs::find_dynamic_allocation` lists to find the ID, then GETs it.)
+- **You cannot read charge from `player-all`.** Charge is derived from the `lastAction` grid attribute — see [Charge is per-player](../.cursor/skills/conventions.md#charge-is-per-player-not-per-struct).
+- **Do not build a scan-and-decide loop on list output.** Listing is for discovering IDs; commit only after a single-entity read. For galaxy-wide numeric scans use the Guild Stack, where grid attributes are already projected into columns — see [database-schema.md](../knowledge/infrastructure/database-schema.md).
+
+Compounding this: grid attributes are `uint64` with `omitempty`, so a **zero-valued attribute is absent from the JSON entirely**. Treat a missing key as `0` rather than as an error or an unsupported field.
+
+---
+
 ## Field-name traps
 
 - **The `rate` infix.** Weapon shot-success fields are `primaryWeaponShotSuccessRate{Numerator,Denominator}` / `secondaryWeaponShotSuccessRate{Numerator,Denominator}` — note **`Rate`** in the middle. Mis-keying as `primaryWeaponShotSuccess{Numerator,Denominator}` reads `undefined`/null and **silently zeroes your combat math**. Verified in `proto/structs/structs/struct.proto` (fields 22/23, 34/35).
@@ -12783,6 +13350,18 @@ Two `struct_type` shape changes in the Guild Stack (structs-pg) that tools read:
 ## Player UGC: PFP is a first-class attribute
 
 Profile pictures are a moderated player UGC attribute alongside `username`, and the pending-player signup flow now threads pfp render hints too. `PLAYER_PENDING_JOIN_PROXY` builds the signed `guild-membership-join-proxy` `ugc` argument from up to three keys: `player-name` (from `username`), `player-pfp` (from `pfp`), and `player-pfp-client-render-attributes` (from the `pfp_client_render_attributes` column — the column was renamed from `pfp_cr_attributes`, and the ugc key was lengthened from the short `player-pfp-cr-attributes` form to match). Committed `username`/`pfp` surface on `structs.player` via GRASS `player_consensus`. Verified in structs-pg `deploy/trigger-player-pending-20260612-pfp-cr-attributes-inclusion.sql`, `…-20260617-rename-pfp-cr-attributes.sql`, `…-20260617-ugc-key-long-name.sql`. The `pfpClientRenderAttributes` field is self-service (not guild-moderatable); moderation of `name`/`pfp` follows the `ugc_moderated` path — see [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
+
+---
+
+## Permission-denied errors always say "administrate"
+
+Every permission failure renders the **same** string regardless of which flag was actually checked:
+
+```
+...calling player (1-1) has no administrate permission on object (1-61)...
+```
+
+The word **"administrate" is hardcoded** — it is a fixed literal passed to `NewPermissionError` on every denial path, not a report of the bit that failed (verified: `PermissionCheck` in `x/structs/keeper/permissions_context.go` passes `"administrate"` in all four return-error branches). So an "administrate" error does **not** mean `PermAdmin` (2) was required. To find the real missing bit, map the failing message handler to its required permission via the [handler permission table](../knowledge/mechanics/permissions.md#message-handler-permission-reference). Example: a `substation-player-migrate` denial on a player object is a missing `PermSubstationConnection` (1024) on **that player**, not `PermAdmin` — see [energy.md](../knowledge/mechanics/energy.md).
 
 ---
 
@@ -13502,8 +14081,17 @@ These pairs cause the most integration and tactical errors:
 ### Allocation
 A routing of power capacity from a source (player, reactor, struct, or substation) to a destination, adding to the destination's `capacity` and the source's `load`. Types: `static` (fixed), `dynamic` (updatable), `automated` (one per source, auto-resizes to the source's full capacity), `provider-agreement` (system). Connecting one to a substation needs permission only on **your own** allocation. → [energy.md — Allocations](../knowledge/mechanics/energy.md#allocations)
 
+### Alpha Base
+*(Codex term)* The human Codex's name for a player's planetary mining operation — the planet plus its base structs (Extractor, Refinery, defenses). → [planet.md](../knowledge/mechanics/planet.md), [codex-crosswalk.md](codex-crosswalk.md)
+
+### Alpha Drift
+*(Codex term)* The Codex's lore name for using the Command Ship's Alpha Drive to redeploy between battlegrounds — i.e. moving the only movable struct across ambits (`struct-move`). → [combat.md — Command Ship Ambit Mobility](../knowledge/mechanics/combat.md#command-ship-ambit-mobility)
+
 ### Alpha Matter
-The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. → [resources.md](../knowledge/mechanics/resources.md)
+The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
+
+### Alpha Ore
+*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--remainingore) (`storedOre`/`remainingOre`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Ambit
 One of four combat layers — **Water, Land, Air, Space** — plus two special values (`none`, `local`). A struct operates in one ambit; weapons reach specific ambits. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
@@ -13528,6 +14116,15 @@ A fleet state: the fleet (and its Command Ship) has left its home planet. While 
 
 ## B
 
+### Ballistic weapon
+*(Codex term)* The human Codex's weapon class for mass-accelerator/kinetic munitions — our **unguided** weapons. Evaded by Defensive Maneuver. → [Guided / Unguided](#guided--unguided)
+
+### Battery
+*(Codex/UI term)* The human Codex's name for what powers player actions — our **[Charge](#charge)** (a per-player, per-block threshold that resets to 0 on use). **Caveat:** the on-screen "Battery Level" *bars* are a UI display scale, **not** the raw charge value — do not equate a bar number with a charge cost. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation), [codex-crosswalk.md](codex-crosswalk.md)
+
+### Battlegrounds
+*(Codex term)* The human Codex's name for the four combat layers (Land/Water/Air/Space) — our **[Ambit](#ambit)**. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
+
 ### Block
 A defender soaking a hit meant for the struct it protects. Requires the defender be in the **target's** ambit, the weapon be blockable, and the defender pass a readiness check. Fires only on non-evaded shots, attempted every shot. → [combat.md — Blocking](../knowledge/mechanics/combat.md#blocking)
 
@@ -13536,6 +14133,9 @@ A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid
 
 ### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
 The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks are set on activation, cleared on deactivate, **never expire**, and reset (auto-restart) after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — Cycle lifecycle](../knowledge/mechanics/hashing.md#minerefine-cycle-lifecycle)
+
+### Breach
+*(Codex term)* The human Codex's name for a raid's completion phase — the countdown that runs once a defender's planet is vulnerable (no on-station Command Ship), ending in ore seizure. Our raid PoW while [shieldsVulnerable](#shieldsvulnerable). → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
 
 ### Build
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
@@ -13556,6 +14156,9 @@ The structured error key behind `cannot handle new load requirements (required: 
 
 ### Charge
 A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
+
+### CMD Ship / Spearpoint
+*(Codex term)* The human Codex's names — "CMD Ship" and the ST-21 "Spearpoint" — for the [Command Ship](#command-ship). → [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
 
 ### Command Ship
 The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
@@ -13689,6 +14292,9 @@ The PostgreSQL table whose inserts fire the GRASS stream; the source of full `st
 ### Planetary Defense Cannon (PDC)
 Planet struct (type 19, 1 per player) that auto-fires at any attacker of planetary structs after all targets resolve. Multiple players' PDCs stack. → [combat.md — Planetary Defense Cannon](../knowledge/mechanics/combat.md#planetary-defense-cannon)
 
+### Planetary Defenses (Secure / Vulnerable)
+*(Codex term)* The human Codex's framing of raid defense: an on-station Command Ship keeps a planet's defenses "Secure" (unbreachable); when it is away or destroyed they become "Vulnerable." Maps to our [Planetary shield](#planetary-shield) plus the [shieldsVulnerable](#shieldsvulnerable) predicate. → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+
 ### Planetary shield
 A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW. Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
 
@@ -13729,6 +14335,9 @@ A **unit-level** defense (Battleship, Pursuit Fighter, Cruiser) that evades **gu
 ### Slots
 Build positions: **4 per ambit** (space/air/land/water) on **both** the planet and the fleet. A build reserves its slot immediately at initiate; counts are fixed (ore/power capacity scale separately). Fleet-category structs use fleet slots, planet-category use planet slots. → [building.md — Slots](../knowledge/mechanics/building.md#slots)
 
+### Smart weapon
+*(Codex term)* The human Codex's weapon class for self-guided munitions — our **guided** weapons. Evaded by Signal Jamming. → [Guided / Unguided](#guided--unguided)
+
 ### Stealth Mode
 A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting only; same-ambit structs can still hit. Attacking breaks stealth. → [combat.md — Stealth](../knowledge/mechanics/combat.md#stealth)
 
@@ -13768,11 +14377,105 @@ See [Guided / Unguided](#guided--unguided).
 ## See Also
 
 - [SITEMAP.md](../SITEMAP.md) — full file map of the repository
+- [codex-crosswalk.md](codex-crosswalk.md) — maps human **Codex** terms (Battlegrounds, Battery, Alpha Ore, …) to these canonical pages
 - [reference/gameplay-index.md](gameplay-index.md) — gameplay documentation index
 - [reference/action-quick-reference.md](action-quick-reference.md) — every game action at a glance
 - [knowledge/mechanics/combat.md](../knowledge/mechanics/combat.md) — the densest source of glossary terms
 - [knowledge/mechanics/hashing.md](../knowledge/mechanics/hashing.md) — proof-of-work canonical reference
 - [api/integration-notes.md](../api/integration-notes.md) — data-shape gotchas for integrators
+
+</document>
+
+<document>
+<source>reference/codex-crosswalk.md</source>
+---
+title: Codex Crosswalk
+permalink: /reference/codex-crosswalk/
+---
+
+# Codex Crosswalk
+
+**Purpose**: Map terms from the human-facing [Structs Codex](https://www.playstructs.com/codex) to the canonical mechanics/API pages in this repository, so an agent that meets a Codex word (in a UI, a guide, or a human's message) can jump straight to the page that owns the rule.
+**Codex snapshot**: 2026-07-23 · **Docs baseline**: `structsd v0.20.0`
+
+---
+
+## What this page is (and isn't)
+
+The [Codex](https://www.playstructs.com/codex) is the **human** documentation: a glossary, lore entries, and how-to-play guides. This repo is the **agent** documentation: source-verified mechanics, numbers, and API shapes.
+
+**Authority rule.** The Codex is canonical for **lore, naming, and story**; this repo is canonical for **mechanics, numbers, and API**. This crosswalk lists only **resolved, non-conflicting** mappings — a finder, not a source of truth. When a value or rule matters, follow the link and read the canonical page.
+
+> This page deliberately **excludes** anything still under reconciliation (open lore differences and any numeric claim not yet source-verified). It is additive only.
+
+---
+
+## Terminology bridge (Codex term → canonical page)
+
+| Codex term | This repo calls it | Canonical page |
+|---|---|---|
+| Battlegrounds (Land/Water/Air/Space) | Ambit | [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting) |
+| Battery | Charge (per-player) | [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation) |
+| Ballistic Weapons | Unguided weapons | [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type) |
+| Smart Weapons | Guided weapons | [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type) |
+| Signal Jamming | Signal Jamming (unit defense; same term) | [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type) |
+| Counter-Attack | Counter-attack (same term) | [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack) |
+| Defend / Defender / Block | Defender / Block (same terms) | [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set) |
+| Alpha Ore | Ore (`storedOre` / `remainingOre`, stealable) | [resources.md](../knowledge/mechanics/resources.md) |
+| Alpha Matter (refined) | Alpha Matter (secure, same term) | [resources.md](../knowledge/mechanics/resources.md) |
+| Alpha Base | A player's planet + base structs | [planet.md](../knowledge/mechanics/planet.md) |
+| CMD Ship | Command Ship | [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction) |
+| Alpha Drift | Moving the Command Ship between ambits (`struct-move`) | [combat.md — Command Ship Ambit Mobility](../knowledge/mechanics/combat.md#command-ship-ambit-mobility) |
+| Breach | Raid completion PoW on a vulnerable planet | [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does) |
+| Planetary Defenses "Secure" / "Vulnerable" | Planetary shield / `shieldsVulnerable` | [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable) |
+
+## Struct designations (Codex flavor name → struct)
+
+The Codex gives each struct an in-fiction model name. Mechanically they are the entries in the [struct type catalog](../knowledge/entities/struct-types.md).
+
+| Codex designation | Struct |
+|---|---|
+| ST-21 "Spearpoint" | Command Ship (type 1) |
+| CH-51 "Chimera" (missile) | Command Ship primary weapon |
+| LS-0 "Laser Sword" | Ore Extractor |
+| GR-3 "Greybox" | Ore Refinery |
+
+## Interface-only terms (no chain/CLI equivalent)
+
+These name parts of the human client UI. Agents act through transactions and queries, not this UI, so they have **no** CLI or chain counterpart — do not treat them as mechanics.
+
+| Codex UI term | What it is |
+|---|---|
+| Action Bar | Expandable panel to inspect a tile/Struct and issue commands |
+| Action Buttons | Buttons that deploy or command Structs (the `struct-*` actions) |
+| Property Screen | On-screen readout of a Struct's status/passive abilities (agents read `struct_attribute` / `struct_type`) |
+| Power Switch | Toggle to activate/deactivate a Struct (`struct-activate` / `struct-deactivate`) |
+| Battery Level (bars) | On-screen charge display. The **bars are a UI scale, not the raw charge value** — do not equate a bar with a charge cost. |
+
+## Lore cross-links (Codex canonical)
+
+The Codex owns the galaxy's story. These entries are background flavor for systems this repo documents mechanically — read the Codex for the fiction, this repo for the rules.
+
+| Codex lore | Related mechanics here |
+|---|---|
+| [Alpha Matter](https://www.playstructs.com/lore-entries/alpha-matter) · [Space Distortion Field](https://www.playstructs.com/lore-entries/space-distortion-field) | [resources.md](../knowledge/mechanics/resources.md) — ore vs Alpha, security model |
+| [Alpha Relay Web](https://www.playstructs.com/lore-entries/alpha-relay-web) | [energy.md](../knowledge/mechanics/energy.md), [energy-market.md](../knowledge/economy/energy-market.md) — capacity transfer, agreements |
+| [Space Distortion Drive / Alpha Drive](https://www.playstructs.com/lore-entries/space-distortion-drive) | [fleet.md](../knowledge/mechanics/fleet.md) — fleet movement; underpins "Alpha Drift" above |
+| [Alpha Base](https://www.playstructs.com/lore-entries/alpha-base) · [ST-21 "Spearpoint"](https://www.playstructs.com/lore-entries/command-ship) | [planet.md](../knowledge/mechanics/planet.md), [struct-types.md](../knowledge/entities/struct-types.md) |
+
+---
+
+## Read the Codex
+
+- Codex home: <https://www.playstructs.com/codex>
+- How to Play guides: `https://www.playstructs.com/how-to-play/<topic>` (e.g. `battlegrounds`, `weapon-types`, `raids-offense`, `raids-defense`, `battery`)
+- Lore entries: `https://www.playstructs.com/lore-entries/<entry>` (e.g. `alpha-star-council`, `first-contact`, `hoag-incident`)
+
+## See also
+
+- [glossary.md](glossary.md) — the term-by-term finder these mappings feed into
+- [reference/index.md](index.md) — the reference hub
+- [knowledge/lore/index.md](../knowledge/lore/index.md) — this repo's lore pages
 
 </document>
 
@@ -13811,7 +14514,7 @@ make serve-reset        # wipe state and start fresh
 `make serve` provisions genesis accounts with tokens, so you can `reactor-infuse` to create a player immediately (Path A in [structs-onboarding](../.cursor/skills/structs-onboarding/SKILL.md)) without a guild API. Point queries/transactions at the local node:
 
 ```bash
-structsd query structs guild --node tcp://localhost:26657
+structsd query structs guild-all --node tcp://localhost:26657
 structsd tx structs planet-explore --from <devkey> --gas auto --gas-adjustment 1.5 --node tcp://localhost:26657 -- <player-id>
 ```
 

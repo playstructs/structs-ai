@@ -78,6 +78,34 @@ When raiding, remember the raid is per-fleet and the **`attackerDefeated`** rule
 
 ---
 
+## Running a team through Structs Desktop
+
+Everything above is executable with per-account `structsd` calls and a key per account. If you are running [Structs Desktop](../../knowledge/infrastructure/structs-desktop.md), the `structs_players` MCP tool changes the setup cost enough to be worth knowing about: its **virtual players** are derived from the *same mnemonic* at different HD indices and joined to your guild with the guild fronting the join fee, so you need neither a new seed per account nor starting Alpha. Keys never leave the app.
+
+| Command | Use |
+|---------|-----|
+| `roster` / `list` | Team overview: every player's planet, fleet, struct count, resources |
+| `create` `{name, index?}` | Derive and register a new virtual player (next free HD index ≥ 1) |
+| `capacity` | How many more players the guild entry substation can actually power — check before creating |
+| `act` `{player, action, args}` | Act as one player, signed by its own key. PoW actions (`mine`/`refine`/`raid`) auto-complete |
+| `role` `{player, role}` | `bait`, `productive`, or `raider` |
+| `economy` | Planner: each productive player's next step, mine → refine → send Alpha to primary → infuse reactor |
+| `infra` | Emits an exact infuse → allocate → substation → feed-pool sequence with dilution math (advisory; you execute it) |
+| `harvest` / `autobuild` / `autodefend` / `infuse` | Native economic loops |
+| `autoresponse` / `autoraid` | Native **combat** loops — defensive counter-fire and offensive target selection |
+
+**All six loops auto-sign.** They are off until enabled, and once on they act on their own schedule without asking. That is a standing grant of transaction authority, so treat enabling one as a Tier 1 decision under [SAFETY.md](../../SAFETY.md) and tell your commander it is running — see [briefing.md](../../awareness/briefing.md).
+
+**The two combat loops are a different decision.** `autoresponse` returns fire when you are raided; `autoraid` picks targets and raids them. Both are Tier 2 — arming `autoraid` in particular commits your commander to unprompted aggression at machine cadence. They default to `autonomy: advise` even after you enable them, so the honest sequence is: enable, watch it advise for a while, populate the `ally` and `protected` vetoes, and only then discuss `auto`. Never arm either one unasked.
+
+The role split is a real strategic distinction, not a label. A **productive** player runs the flywheel and should be kept unraidable: shields up, ore refined promptly. A **bait** player deliberately lets ore pile up to draw raiders into your defended space. Because a raid can only ever take unrefined ore (see [defense.md](../../knowledge/mechanics/defense.md)), a bait player's maximum loss is bounded and known in advance — that is what makes the trade acceptable. The failure mode is a productive player *drifting* into accidental bait by leaving ore unrefined.
+
+A **raider** is the expendable offensive arm, and it exists because of a specific, expensive lesson in the outcome data: across 22 instrumented raids, 41% ended `attackerDefeated` versus an ecosystem baseline near 5%, and every one of those was the *primary's* Command Ship dying in the field (see [combat.md](../../knowledge/mechanics/combat.md#what-the-outcome-data-says)). `auto_raid` therefore only ever flies `raider` accounts, never the primary. Give a raider its own refinery so seized ore can be laundered into Alpha before someone raids it back. Applied by hand, the rule is simply: **never raid with the account you cannot afford to lose.**
+
+Fleet-wide sweeps (collect all Alpha to one address, launch the whole roster, force a roster rescan) exist in the **Team Ops board** — the desktop dashboard and its opt-in web view — not on the MCP tool surface. An agent orchestrating over MCP uses the `structs_players` commands above; the board's mass actions are for a human at the dashboard. If you do use them, dry-run first, and note that Alpha sweeps skip `bait` players by default, which is usually what you want.
+
+---
+
 ## Orchestration and safety
 
 - **One transaction per account per block.** Drive accounts concurrently, but never fire two transactions from the *same* key in the same block (`account sequence mismatch`). Stagger per key, parallel across keys.

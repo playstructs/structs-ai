@@ -96,4 +96,5 @@ The choice is strategic. Guilds scale; independents specialize. Both are viable.
 - [Alpha Matter](alpha-matter.md) — Token backing, collateral
 - [The Structs](structs-origin.md) — Primary actors in guild operations
 - [Timeline](timeline.md) — Formation of first guilds
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - `schemas/entities.md` — Guild entity definition

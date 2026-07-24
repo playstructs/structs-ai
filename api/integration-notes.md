@@ -131,6 +131,31 @@ Verified in `proto/structs/structs/query.proto` (`QueryAddressResponse { string 
 
 ---
 
+## List queries omit grid attributes (single-entity queries do not)
+
+Every live *number* about an object — capacity, load, ore, power, `lastAction` — is a **grid attribute**, stored separately from the object record. The single-entity query joins them; the `*All` list query does not.
+
+```go
+// single: record + grid attributes
+gridAttributes := k.GetGridAttributesByObject(ctx, req.Id)
+return &types.QueryGetAllocationResponse{Allocation: allocation, GridAttributes: &gridAttributes}, nil
+
+// *All: bare records only
+return &types.QueryAllAllocationResponse{Allocation: allocations, Pagination: pageRes}, nil
+```
+
+Verified in `x/structs/keeper/query_*.go` for `player`, `struct`, `substation`, `planet`, `reactor`, `provider`, and `allocation`: `GetGridAttributesByObject` appears in the single-entity handler and in **no** `*All` handler.
+
+The practical consequences:
+
+- **`allocation-all` never reports `power`.** Allocation power is a grid attribute, so a list row looks like a zero-power allocation. Fetch the individual allocation for its real value. (This is why Structs Desktop's `guild_power.rs::find_dynamic_allocation` lists to find the ID, then GETs it.)
+- **You cannot read charge from `player-all`.** Charge is derived from the `lastAction` grid attribute — see [Charge is per-player](../.cursor/skills/conventions.md#charge-is-per-player-not-per-struct).
+- **Do not build a scan-and-decide loop on list output.** Listing is for discovering IDs; commit only after a single-entity read. For galaxy-wide numeric scans use the Guild Stack, where grid attributes are already projected into columns — see [database-schema.md](../knowledge/infrastructure/database-schema.md).
+
+Compounding this: grid attributes are `uint64` with `omitempty`, so a **zero-valued attribute is absent from the JSON entirely**. Treat a missing key as `0` rather than as an error or an unsupported field.
+
+---
+
 ## Field-name traps
 
 - **The `rate` infix.** Weapon shot-success fields are `primaryWeaponShotSuccessRate{Numerator,Denominator}` / `secondaryWeaponShotSuccessRate{Numerator,Denominator}` — note **`Rate`** in the middle. Mis-keying as `primaryWeaponShotSuccess{Numerator,Denominator}` reads `undefined`/null and **silently zeroes your combat math**. Verified in `proto/structs/structs/struct.proto` (fields 22/23, 34/35).
@@ -224,6 +249,18 @@ Two `struct_type` shape changes in the Guild Stack (structs-pg) that tools read:
 ## Player UGC: PFP is a first-class attribute
 
 Profile pictures are a moderated player UGC attribute alongside `username`, and the pending-player signup flow now threads pfp render hints too. `PLAYER_PENDING_JOIN_PROXY` builds the signed `guild-membership-join-proxy` `ugc` argument from up to three keys: `player-name` (from `username`), `player-pfp` (from `pfp`), and `player-pfp-client-render-attributes` (from the `pfp_client_render_attributes` column — the column was renamed from `pfp_cr_attributes`, and the ugc key was lengthened from the short `player-pfp-cr-attributes` form to match). Committed `username`/`pfp` surface on `structs.player` via GRASS `player_consensus`. Verified in structs-pg `deploy/trigger-player-pending-20260612-pfp-cr-attributes-inclusion.sql`, `…-20260617-rename-pfp-cr-attributes.sql`, `…-20260617-ugc-key-long-name.sql`. The `pfpClientRenderAttributes` field is self-service (not guild-moderatable); moderation of `name`/`pfp` follows the `ugc_moderated` path — see [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
+
+---
+
+## Permission-denied errors always say "administrate"
+
+Every permission failure renders the **same** string regardless of which flag was actually checked:
+
+```
+...calling player (1-1) has no administrate permission on object (1-61)...
+```
+
+The word **"administrate" is hardcoded** — it is a fixed literal passed to `NewPermissionError` on every denial path, not a report of the bit that failed (verified: `PermissionCheck` in `x/structs/keeper/permissions_context.go` passes `"administrate"` in all four return-error branches). So an "administrate" error does **not** mean `PermAdmin` (2) was required. To find the real missing bit, map the failing message handler to its required permission via the [handler permission table](../knowledge/mechanics/permissions.md#message-handler-permission-reference). Example: a `substation-player-migrate` denial on a player object is a missing `PermSubstationConnection` (1024) on **that player**, not `PermAdmin` — see [energy.md](../knowledge/mechanics/energy.md).
 
 ---
 

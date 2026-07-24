@@ -60,7 +60,7 @@ Optional `[name]` sets the planet's display name at creation (validated like `Ms
 1. **Verify depletion** — `structsd query structs planet [id]` shows `currentOre == 0`.
 2. **Recall the fleet home** if it's away, and confirm `onStation`:
    ```
-   structsd tx structs fleet-move TX_FLAGS -- [fleet-id] 2 [current-planet-id]
+   structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [current-planet-id]
    ```
 3. **Evacuate** anything worth keeping into the fleet (`struct-move`, Command Ship only is movable; other structs on the planet are lost).
 4. **Approval Block** — `currentOre == 0`; fleet `onStation`; everything you care about moved or accepted as lost; you understand this is **irreversible**.

@@ -82,6 +82,7 @@ Escalate if `Autonomy level = "ask before acting"`. Surface as a **battle order*
 - `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your wallet during the wait
 - `provider-delete`, `substation-delete`, `allocation-delete` — power cascades to connected players
 - Multi-target `struct-attack` that crosses guild boundaries (an act of war, not a skirmish)
+- Arming an autonomous combat loop — `structs_players {command:"autoraid"|"autoresponse", args:{autonomy:"auto"}}` — a standing grant to attack on the commander's behalf (see "Standing Automation Grants")
 - Cross-account `player-send` to a recipient you have not transacted with before
 
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
@@ -141,6 +142,34 @@ Auto-submission is deferred consent. The original approval has to still be valid
 5. **Re-verify if the situation changed.** If your planet was raided while a mine was running, the original consent may be stale; review before letting the auto-submit happen if you can.
 
 Never launch two `*-compute` jobs with the same signing key. Sequence numbers will collide. (This is also rule 7 in [`AGENTS.md`](AGENTS).)
+
+---
+
+## Standing Automation Grants
+
+Everything above prices a *transaction*. Structs Desktop's native loops are a different shape: enabling one is a **standing grant** to sign an open-ended series of future transactions, with no per-action approval and no natural end. The tiers still apply, but they apply **at the moment you arm the loop**, to every action it will ever take.
+
+The four economic loops (`harvest`, `autobuild`, `autodefend`, `infuse`) are Tier 1: bounded, reversible in effect, and confined to your own assets. `infuse` deserves particular care because it wraps a Tier 2 action — infusion annihilates Alpha Matter — so `keep_grams` is the only thing standing between an automated flywheel and an empty reserve. Set it deliberately.
+
+The two combat loops are **Tier 2, always escalate**:
+
+- **`autoresponse`** — signs attacks on your behalf when you are raided. Defensive, but it is still your key firing on another player without you in the room, and it silently accumulates a **grudge list** that later feeds target selection.
+- **`autoraid`** — selects other players and raids them. This is the one to be most careful with: it is unprompted aggression, attributable to your commander, at machine cadence, against targets neither of you individually chose.
+
+Four things make these safe to *evaluate* before they are dangerous to run. Say all four when you present the option:
+
+1. **Off by default**, and enabling is not arming — once enabled they still default to `autonomy: advise`, which ranks and explains but signs nothing.
+2. **`dry_run` is independent of `autonomy`**, so it stays safe even in `auto` and is the correct way to watch a loop's judgment for a while before trusting it.
+3. **`ally` and `protected` are hard vetoes** checked before scoring. Populate them *first*; a rich target cannot outweigh them.
+4. **`raid_hours_utc`, `max_concurrent_raids`, and `min_ore`** bound the blast radius in time, volume, and pettiness.
+
+Two failure modes to raise explicitly, because neither is obvious from the config:
+
+**Consent drifts.** A grudge list written by weeks of `autoresponse` is a target set your commander never approved. Show `structs_doctrine {command:"lists", list_action:"show"}` before arming `autoraid`, not after.
+
+**Diplomacy is not in the model.** The loop scores ore and weakness. It cannot know that a target is your guild's trading partner or that a war is being negotiated. `protected` and `ally` are the only place that knowledge can live — and only if a human puts it there.
+
+Never arm a combat loop on a commander's behalf under `full autonomy`. Autonomy over *your* assets is not authority to start fights in their name.
 
 ---
 

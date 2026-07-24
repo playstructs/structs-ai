@@ -5,6 +5,66 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2026-07-24
+
+Runnability pass. Verified the Structs Desktop MCP surface against a **live server's `tools/list`** (authoritative runtime schema) rather than source diffs, and audited every documented `structsd` invocation against the real v0.20.0 binary. Fourteen documented commands could not have run as written.
+
+### Fixed
+
+- **`--` placed before flags — 11 invocations in [`permissions.md`](knowledge/mechanics/permissions.md)** — pflag stops parsing flags at `--`, so `… -- $GUILD_ID 8704 --from admin --gas auto -y` handed five *positional* arguments to the command and failed with `accepts 2 arg(s), received 6`. Verified empirically both ways against v0.20.0. This is what [`AGENTS.md`](AGENTS.md) rule 8 exists to prevent.
+- **Wrong positional-argument counts** — `fleet-move` had a stray `2` in the recall example ([`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL.md)); `reactor-defuse` was given 1 argument instead of `[player address] [reactor address] [amount]` and `address-register` was missing its leading `[player id]`, both in [`agent-security.md`](awareness/agent-security.md) — the incident-response runbook, where a command that will not run is most costly; `permission-guild-rank-set` was missing `[rank]` and `permission-guild-rank-revoke` was missing `[permission]` in [`permission-issues.md`](troubleshooting/permission-issues.md) and [`permission-checking.md`](examples/workflows/permission-checking.md); and [`local-devnet.md`](reference/local-devnet.md) called `query structs guild` with no id (now `guild-all`).
+- **Desktop MCP details corrected against the live schema** — `structs_players infuse` takes `{keep_grams, enabled, now}` with **no `interval_secs`**; own-guild ally seeding happens at the top of `auto_raid`'s scan rather than at app start (so the veto list reads empty until that loop first runs — confirmed live); and `structs_query` / `structs_ui` still answer as deprecation stubs but are **no longer advertised** in `tools/list`.
+- **Restored two correct facts** deleted in 1.23.0 as unverifiable: `weight` on a combat list is a **0–10 multiplier defaulting to 1**, and `note` is shown on the dashboard's **WAR page**. Both are declared in the live tool schema.
+
+### Added
+
+- **Invocation lint** — new [`check-invocations.py`](scripts/ci/check-invocations.py), wired into CI, hard-gates three parse-time failures that the existing command-name lint cannot see: positional **arity**, `--` **order**, and the `--gas auto` rule. It reads a new `generated/structsd-signatures.txt` (emitted by an extended [`snapshot-commands.sh`](scripts/ci/snapshot-commands.sh)) so CI needs no `structsd` binary.
+- **Charge-gated actions auto-queue** — documented in [`structs-desktop.md`](knowledge/infrastructure/structs-desktop.md). The webapp signing queue holds a charge-gated message in a charge lane and broadcasts when the bar is sufficient, so MCP no longer blocks on charge and an agent should submit and move on rather than hand-timing between actions. Previously undocumented.
+
+### Changed
+
+- **MCP resources are not guaranteed** — the compendium sync is a build step, and a live server returned an **empty `resources/list`** with every documented `structs://` URI 404ing. [`TOOLS.md`](TOOLS.md) and [`structs-desktop.md`](knowledge/infrastructure/structs-desktop.md) now say to probe `resources/list` once and fall back to [structs.ai](https://structs.ai) or a local checkout.
+
+## [1.23.0] - 2026-07-24
+
+A correctness and capability pass driven by upstream drift in `.references/`, plus the first documentation of **autonomous combat** in Structs Desktop. Verified against `structsd` v0.20.0 source, `structs-desktop@ae53e31`, and live queries against the local Guild Stack PostgreSQL.
+
+### Added
+
+- **Autonomous combat loops** — Structs Desktop's native loop count went **4 → 6** with `auto_response` (defensive counter-fire on the raid alarm) and `auto_raid` (offensive target selection). Documented in [`structs-desktop.md`](knowledge/infrastructure/structs-desktop.md) with full argument lists, the two-stage safety model (off by default; `autonomy: advise` even once enabled; `dry_run` independent of `autonomy`), the new `raider` role, the `warfighter` preset, and a new **Combat lists** section covering `structs_doctrine {command:"lists"}` — the `grudge` / `priority_guild` / `ally` / `protected` lists, the heat formula, and the 30-day auto-grudge TTL versus never-expiring manual grudges. Mirrored into [`TOOLS.md`](TOOLS.md).
+- **Standing Automation Grants** — new section in [`SAFETY.md`](SAFETY.md). The tier model priced individual *transactions*; enabling a loop is a standing grant to sign an open-ended series, so the tier applies at arming time to everything the loop will ever do. Combat loops are **Tier 2, never under full autonomy** — arming one commits the commander to unprompted aggression at machine cadence. Covers consent drift (grudges accrue while merely advising) and the fact that diplomacy exists nowhere in the scoring model except the veto lists.
+- **Empirical combat outcomes** — [`combat.md`](knowledge/mechanics/combat.md) gains "What the outcome data says" and [`defense.md`](knowledge/mechanics/defense.md) gains "The four-minute clock", from ~300 raid episodes over 92k `planet_activity` events. Raids reaching `shieldsVulnerable` went 69–7; raids that never did went **0–50**. Shield strength does not predict outcome (it is a timer, not armor). Loot is fat-tailed: median haul **1**, nine raids carrying 74% of all ore ever stolen. Defensively, the response budget is **~4 minutes**, and return fire within **~1.8 min** separates all 16 `attackerDefeated` episodes from the 123 losses (median return fire 12.3 min, when it happened at all). Killing the raider's Command Ship is the one deterministic lever: **16/16 vs 0/279**. The four-minute budget is now stated up top in [`under-attack.md`](playbooks/situations/under-attack.md).
+- **Defense quick-reference card** — new [`defense.md`](knowledge/mechanics/defense.md), a condensed survival card that replaces the 39 KB [`combat.md`](knowledge/mechanics/combat.md) in the small-context `llms-core.txt` bundle.
+- **Briefing guidance** — new [`briefing.md`](awareness/briefing.md) on reporting game state to a human who does not speak Structs: jargon translation, report shapes, and what not to send.
+- **List queries omit grid attributes** — [`integration-notes.md`](api/integration-notes.md) documents the general rule (single-entity queries include `gridAttributes`; `*All` list queries do not) and its corollary: `uint64` + `omitempty` means a zero attribute is absent entirely, so **treat a missing key as `0`**.
+- **Fleet build gates** — [`building.md`](knowledge/mechanics/building.md) documents the two extra gates on fleet builds and the Command Ship exemption that makes recovery possible when the fleet is otherwise frozen.
+- **Web board exposure** — [`agent-security.md`](awareness/agent-security.md) covers the opt-in `/board` HTTP surface: the bearer token in the URL is full operator authority, including mass actions that sign.
+
+### Fixed
+
+- **Phantom CLI commands** — `player-update-pfp-client-render-attributes` is really `player-update-pfp-cr-attributes` (corrected in [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL.md), [`action-index.md`](reference/action-index.md), [`action-quick-reference.md`](reference/action-quick-reference.md), [`actions.md`](schemas/actions.md)). `guild-membership-all-by-guild` does not exist — guild membership lives on `player.guild_id` / `player.guild_rank`; [`structs-intel`](.cursor/skills/structs-intel/SKILL.md) now uses `guild-membership-application-all` plus a Guild Stack query. `player-charge` does not exist either: **charge is derived**, `current_block_height − player.gridAttributes.lastAction`. [`scripts/BASELINE.md`](scripts/BASELINE.md) now carries a phantom→reality table instead of language legitimizing the lint warnings.
+- **Database schema errors** — [`database-schema.md`](knowledge/infrastructure/database-schema.md) corrected against the live DB: `seized_ore` is not on `structs.planet`, `planet_raid`'s limitations clarified, `planet.status` is `active`/`complete`, and **`fleet.status` is `onStation` (camelCase)**. The last one fails dangerously: `= 'on_station'` matches zero rows, so a raid-safety check written that way **fails open** and every target looks raidable.
+- **Team operations** — [`team-operations.md`](playbooks/meta/team-operations.md) described multi-player orchestration through board mass actions that are not on the MCP surface. Rewritten around the real agent path, `structs_players`, including virtual players derived from one mnemonic at successive HD indices with the guild fronting join fees, and the `bait` / `productive` / `raider` role split.
+
+### Changed
+
+- **`struct-types.md` `Class` → `Abbrev`** — the `Class` column duplicated information already in the row; it now carries the chain's `classAbbreviation`, which is what UIs actually display.
+- **`llms-core.txt` budget 100 KB → 120 KB (once)** — with `defense.md` swapped in for `combat.md`, the bundle is 121,746 B. Rationale recorded in [`check-bundles.sh`](scripts/ci/check-bundles.sh).
+
+### Removed
+
+- **`memory/SKILLS-AUDIT.md`** — a stale maintainer artifact that was tracked in git and actively misinformed agents reading it as current.
+
+## [1.22.0] - 2026-07-23
+
+Phase 1 of the human-[Codex](https://www.playstructs.com/codex) cross-reference: an additive, non-destructive pass that links this agent corpus to the human-facing Codex and bridges its vocabulary to the canonical mechanics pages. Source: full ingest of all 40 live Codex routes (12 how-to-play + 28 lore entries) on 2026-07-23, staged with an evidence matrix under a gitignored scratch dir. Authority rule applied: the **Codex is canonical for lore/naming/story; this repo is canonical for mechanics/numbers/API**. Only **resolved, non-conflicting** mappings are shipped here — open lore differences (e.g. the Codex's Alpha Star Council / Structs Conglomerate vs this repo's "no central authority" framing) and any not-yet-source-verified numeric claims (e.g. UI "Battery Level" bars vs raw charge) are held for human review, not applied.
+
+### Added
+
+- **Codex crosswalk page** — new [`reference/codex-crosswalk.md`](reference/codex-crosswalk.md): a resolved-only terminology bridge (Battlegrounds→ambit, Battery→charge, Ballistic/Smart→unguided/guided, Alpha Ore→ore, CMD Ship→Command Ship, Alpha Drift→Command-Ship ambit move, Breach→raid PoW, Planetary Defenses Secure/Vulnerable→`shieldsVulnerable`), a struct-designation table (ST-21 "Spearpoint", LS-0 "Laser Sword", GR-3 "Greybox", CH-51 "Chimera"), a UI-only terms table (Action Bar, Power Switch, Battery Level bars — firewalled from mechanics), and additive lore cross-links. Registered in [`reference/index.md`](reference/index.md) and [`SITEMAP.md`](SITEMAP.md), and added to `FULL_FILES` in [`generate-llms-full.sh`](scripts/generate-llms-full.sh).
+- **Glossary Codex aliases** — [`glossary.md`](reference/glossary.md) gains ten high-value, unambiguous Codex synonyms (Alpha Base, Alpha Drift, Alpha Ore, Ballistic weapon, Battery, Battlegrounds, Breach, CMD Ship / Spearpoint, Planetary Defenses, Smart weapon), each routing to the canonical mechanics page. The Battery entry carries an explicit caveat that on-screen "Battery Level" bars are a UI scale, not the raw charge value.
+- **Outbound Codex links** — minimal pointers from [`llms.txt`](llms.txt), the top-level [`index.md`](index.md), the lore index, and all five lore-page footers to the human Codex and the crosswalk, noting the Codex is canonical for lore/naming.
+
 ## [1.21.1] - 2026-07-20
 
 Fixes for [`scout.sh`](scripts/scout.sh) from a second field report by **beezhan** ([@iBeezhan](https://github.com/iBeezhan), player `1-471`, guild SN Corp `0-5`): the scout read `command ship present=no · shields vulnerable yes` on targets whose chain state was a live, on-station Command Ship (raid correctly rejected). Root-caused and fixed against `structsd` v0.20.0 source and live-verified on `structstestnet-111`. Thanks to beezhan for the field data (fleet `9-61` → `commandStruct 5-2187`; player `1-61` ore `168`).

@@ -61,4 +61,5 @@ There is no end state. There is only expansion, consolidation, and the relentles
 - [The Structs](structs-origin.md) — The dominant faction in the current era
 - [Factions](factions.md) — Guilds, independents, mercenaries
 - [Timeline](timeline.md) — Historical context
+- [Codex crosswalk](../../reference/codex-crosswalk.md) — human [Codex](https://www.playstructs.com/codex) terms mapped to this repo (Codex is canonical for lore/naming)
 - Game: https://playstructs.com | Wiki: https://watt.wiki

@@ -10,6 +10,10 @@
 
 When you detect an attack—raid, struct assault, or fleet engagement—execute this sequence. Do not skip steps. Do not reverse the order.
 
+**Know the budget before you start.** Against a raid you have roughly **four minutes** total: median 2.1 min from `initiated` to `shieldsVulnerable`, then a hard ~2 min 6 s lock before loot. Every step below has to fit inside that. Defenders who returned fire within ~1.8 min are the *only* ones in the dataset who ever defeated an attacker; the median losing defender responded at 12.3 min. See [defense.md](../../knowledge/mechanics/defense.md#the-four-minute-clock).
+
+This is also why the order below is not negotiable: steps 1 and 2 are cheap and fast, and step 2 alone takes your loss to zero.
+
 ---
 
 ## 1. Check Power Status

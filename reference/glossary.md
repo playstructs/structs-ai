@@ -25,8 +25,17 @@ These pairs cause the most integration and tactical errors:
 ### Allocation
 A routing of power capacity from a source (player, reactor, struct, or substation) to a destination, adding to the destination's `capacity` and the source's `load`. Types: `static` (fixed), `dynamic` (updatable), `automated` (one per source, auto-resizes to the source's full capacity), `provider-agreement` (system). Connecting one to a substation needs permission only on **your own** allocation. → [energy.md — Allocations](../knowledge/mechanics/energy.md#allocations)
 
+### Alpha Base
+*(Codex term)* The human Codex's name for a player's planetary mining operation — the planet plus its base structs (Extractor, Refinery, defenses). → [planet.md](../knowledge/mechanics/planet.md), [codex-crosswalk.md](codex-crosswalk.md)
+
+### Alpha Drift
+*(Codex term)* The Codex's lore name for using the Command Ship's Alpha Drive to redeploy between battlegrounds — i.e. moving the only movable struct across ambits (`struct-move`). → [combat.md — Command Ship Ambit Mobility](../knowledge/mechanics/combat.md#command-ship-ambit-mobility)
+
 ### Alpha Matter
-The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. → [resources.md](../knowledge/mechanics/resources.md)
+The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
+
+### Alpha Ore
+*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--remainingore) (`storedOre`/`remainingOre`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Ambit
 One of four combat layers — **Water, Land, Air, Space** — plus two special values (`none`, `local`). A struct operates in one ambit; weapons reach specific ambits. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
@@ -51,6 +60,15 @@ A fleet state: the fleet (and its Command Ship) has left its home planet. While 
 
 ## B
 
+### Ballistic weapon
+*(Codex term)* The human Codex's weapon class for mass-accelerator/kinetic munitions — our **unguided** weapons. Evaded by Defensive Maneuver. → [Guided / Unguided](#guided--unguided)
+
+### Battery
+*(Codex/UI term)* The human Codex's name for what powers player actions — our **[Charge](#charge)** (a per-player, per-block threshold that resets to 0 on use). **Caveat:** the on-screen "Battery Level" *bars* are a UI display scale, **not** the raw charge value — do not equate a bar number with a charge cost. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation), [codex-crosswalk.md](codex-crosswalk.md)
+
+### Battlegrounds
+*(Codex term)* The human Codex's name for the four combat layers (Land/Water/Air/Space) — our **[Ambit](#ambit)**. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
+
 ### Block
 A defender soaking a hit meant for the struct it protects. Requires the defender be in the **target's** ambit, the weapon be blockable, and the defender pass a readiness check. Fires only on non-evaded shots, attempted every shot. → [combat.md — Blocking](../knowledge/mechanics/combat.md#blocking)
 
@@ -59,6 +77,9 @@ A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid
 
 ### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
 The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks are set on activation, cleared on deactivate, **never expire**, and reset (auto-restart) after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — Cycle lifecycle](../knowledge/mechanics/hashing.md#minerefine-cycle-lifecycle)
+
+### Breach
+*(Codex term)* The human Codex's name for a raid's completion phase — the countdown that runs once a defender's planet is vulnerable (no on-station Command Ship), ending in ore seizure. Our raid PoW while [shieldsVulnerable](#shieldsvulnerable). → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
 
 ### Build
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
@@ -79,6 +100,9 @@ The structured error key behind `cannot handle new load requirements (required: 
 
 ### Charge
 A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
+
+### CMD Ship / Spearpoint
+*(Codex term)* The human Codex's names — "CMD Ship" and the ST-21 "Spearpoint" — for the [Command Ship](#command-ship). → [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
 
 ### Command Ship
 The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
@@ -212,6 +236,9 @@ The PostgreSQL table whose inserts fire the GRASS stream; the source of full `st
 ### Planetary Defense Cannon (PDC)
 Planet struct (type 19, 1 per player) that auto-fires at any attacker of planetary structs after all targets resolve. Multiple players' PDCs stack. → [combat.md — Planetary Defense Cannon](../knowledge/mechanics/combat.md#planetary-defense-cannon)
 
+### Planetary Defenses (Secure / Vulnerable)
+*(Codex term)* The human Codex's framing of raid defense: an on-station Command Ship keeps a planet's defenses "Secure" (unbreachable); when it is away or destroyed they become "Vulnerable." Maps to our [Planetary shield](#planetary-shield) plus the [shieldsVulnerable](#shieldsvulnerable) predicate. → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+
 ### Planetary shield
 A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW. Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
 
@@ -252,6 +279,9 @@ A **unit-level** defense (Battleship, Pursuit Fighter, Cruiser) that evades **gu
 ### Slots
 Build positions: **4 per ambit** (space/air/land/water) on **both** the planet and the fleet. A build reserves its slot immediately at initiate; counts are fixed (ore/power capacity scale separately). Fleet-category structs use fleet slots, planet-category use planet slots. → [building.md — Slots](../knowledge/mechanics/building.md#slots)
 
+### Smart weapon
+*(Codex term)* The human Codex's weapon class for self-guided munitions — our **guided** weapons. Evaded by Signal Jamming. → [Guided / Unguided](#guided--unguided)
+
 ### Stealth Mode
 A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting only; same-ambit structs can still hit. Attacking breaks stealth. → [combat.md — Stealth](../knowledge/mechanics/combat.md#stealth)
 
@@ -291,6 +321,7 @@ See [Guided / Unguided](#guided--unguided).
 ## See Also
 
 - [SITEMAP.md](../SITEMAP.md) — full file map of the repository
+- [codex-crosswalk.md](codex-crosswalk.md) — maps human **Codex** terms (Battlegrounds, Battery, Alpha Ore, …) to these canonical pages
 - [reference/gameplay-index.md](gameplay-index.md) — gameplay documentation index
 - [reference/action-quick-reference.md](action-quick-reference.md) — every game action at a glance
 - [knowledge/mechanics/combat.md](../knowledge/mechanics/combat.md) — the densest source of glossary terms

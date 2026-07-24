@@ -172,26 +172,27 @@ The bearer token is generated on first launch and stored with the app's config. 
 
 | Tool | Purpose |
 |------|---------|
-| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events |
-| `structs_hash` | Manage proof-of-work tasks with ETAs and tune the engine (cpu/gpu/auto, difficulty_start, max_concurrent) |
-| `structs_action` | Execute game actions with preflight checks (explore, build, mine, refine, attack, defend, raid, resync, etc.) |
-| `structs_intel` | Strategic intelligence + perception: whoami, scout, valid_targets, simulate, strike_options, battle_log, ruleset, slot_map, is_active, intents, forecast, economy, timeline, plus raw `query` |
-| `structs_policy` | Standing orders (auto_refine, power_alert, agent_ui, combat orders, watchdog_remediate) |
-| `structs_events` | Long-poll event feed (raids, attacks, fleet moves, completions) so agents react instead of polling |
-| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates; `as` runs as a virtual player |
-| `structs_players` | Manage virtual players (extra players off the same mnemonic, joined to your guild): create / list / roster / state / act-as |
-| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, menus/dialogues/map previews/HUD/prompts) — never signs |
-| `structs_system` | System health, logs, self-tuning: watchdog status, loop liveness, tx-attempt ledger, PoW stats, structured log |
+| `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events. `player_id` defaults to the logged-in player |
+| `structs_hash` | Proof-of-work tasks — `list` / `start` (`task_type` `MINE`, `REFINE`, `BUILD`, `RAID`) / `progress` / `stop` / `config` (`enabled`, `engine` cpu/gpu/auto, `difficulty_start`, `max_concurrent`, `auto_tune`) |
+| `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync` |
+| `structs_intel` | Strategic intelligence + perception. `query` is one of `whoami`, `intents`, `ruleset`, `simulate`, `strike_options`, `what_can_i_build`, `power_forecast`, `economy_status`, `plan_timeline`, `planet_history`, `valid_targets`, `scout`, `battle_log`, `slot_map`, `is_active`, `market`, `metric_trend`, `query` (raw entity reads) |
+| `structs_policy` | Standing orders — `list` / `set` / `remove` / `log` over `auto_refine`, `power_alert`, `combat_alert`, `agent_ui`, `auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`, `rules_of_engagement`, `primary_home_guard`, `board_auto_open`, `watchdog_remediate` |
+| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor` |
+| `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with `abort_if` predicates; `as` runs the chain as a virtual player |
+| `structs_players` | Virtual players and the native automation loops: `list`, `roster`, `create`, `state`, `act`, `capacity`, `role`, `economy`, `infra`, `harvest`, `autobuild`, `autodefend`, `autoresponse`, `autoraid`, `infuse` |
+| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, `component` menus/dialogues/map previews/HUD/prompts) and `web` browser-dashboard control — never signs |
+| `structs_system` | Health, logs, self-tuning — `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed`, `config` |
 | `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
-| `structs_doctrine` | Standing rules of engagement + per-tick executor (advise / auto) |
+| `structs_doctrine` | Standing rules of engagement, per-tick executor, and the persistent combat lists (`set` / `show` / `tick` / `lists`, autonomy advise/auto, presets `turtle` / `economy` / `balanced` / `warfighter`) |
 | `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
 
-Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`; the old names remain only as deprecation stubs.)
+Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`. The old names still answer with a pointer to the replacement, but are no longer advertised — `tools/list` returns exactly the 13 above.)
 
-### Prompts (6)
+### Prompts (7)
 
 | Prompt | Purpose |
 |--------|---------|
+| `getting_started` | Guided first session for a brand-new player: explore → build → mine → refine, with the agent as the tutorial |
 | `structs_first_session` | Orientation for new agents — check dashboard, identify priorities |
 | `structs_game_loop` | One tick: dashboard → assess → plan → execute → verify |
 | `structs_state_assessment` | Deep analysis with risk ratings: power, threats, economy, operations |
@@ -203,9 +204,15 @@ Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/struc
 
 This `structs-ai` compendium is bundled as MCP resources, so an agent can read the docs on demand by URI (e.g. `structs://START.md`, `structs://play/index.md`, `structs://knowledge/mechanics/combat.md`, `structs://reference/index.md`). URIs are derived from the file tree — see the [resource map](knowledge/infrastructure/structs-desktop.md) and [`develop/structs-resources.md`](develop/structs-resources.md).
 
+The sync is a **build step**, so a given build may ship none. A live server checked on 2026-07-24 returned an empty `resources/list` and 404'd every URI above. Call `resources/list` once before relying on it, and fall back to [structs.ai](https://structs.ai) or a local checkout if it is empty.
+
 ### Signing, automation, and co-op
 
-The MCP never holds keys: `structs_action`/`structs_sequence` submit through the app's CosmJS bridge after preflight checks, and the engine never auto-signs outside those gated paths. `structs_sequence` paces action chains to the per-player charge bar with abort predicates; `structs_board` can drive the human's screen for co-op (display/elicitation only — it cannot sign). See [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) for the policy engine, virtual players, hashing, and agent-driven UI.
+The MCP never holds keys: `structs_action`/`structs_sequence` submit through the app's CosmJS bridge after preflight checks, and the engine never auto-signs outside those gated paths. `structs_sequence` paces action chains to the per-player charge bar with abort predicates; `structs_board` can drive the human's screen for co-op (display/elicitation only — it cannot sign). The native automation loops (`structs_players` `harvest` / `autobuild` / `autodefend` / `infuse`) do auto-sign for the players they manage and are **off until you enable them**. Two further loops — `autoresponse` and `autoraid` — auto-sign *combat*: returning fire when raided, and selecting and raiding targets. Both are off by default and, once enabled, still default to `autonomy: advise` (they explain, they do not sign) until you set `autonomy: auto`. Treat arming either as a standing grant to attack other players; see [SAFETY.md](SAFETY.md). See [structs-desktop.md](knowledge/infrastructure/structs-desktop.md) for the policy engine, virtual players, hashing, and agent-driven UI.
+
+### Sharing the board with a remote human
+
+`structs_board {web:"on"}` serves the same Team Ops dashboard as a web page at `http://127.0.0.1:8420/board?token=…` (off by default). The server still binds loopback only, so a remote human reaches it through their own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). The token in that URL is the MCP bearer token and grants **full operator control**, including mass actions that sign transactions — treat it like a password and turn the dashboard off with `structs_board {web:"off"}` when you're done.
 
 ### CLI Fallback
 

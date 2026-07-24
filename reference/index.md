@@ -32,6 +32,7 @@ Look up a rule, a number, or a name. For step-by-step procedures use
 ## Lookups
 
 - [Glossary](glossary.md) — disambiguates tricky terms (ambit enum vs bitmask, block vs counter, …)
+- [Codex crosswalk](codex-crosswalk.md) — maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds, Battery, Alpha Ore, …) to these pages
 - [Action index](action-index.md) · [Action quick reference](action-quick-reference.md)
 - [Local devnet](local-devnet.md)
 
