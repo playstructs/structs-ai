@@ -217,13 +217,13 @@ If the world has changed materially since you launched, the right action may be 
 
 ## Charge Tracker
 
-Charge is a single **per-player** bar (`charge = CurrentBlockHeight - player.lastActionBlock`), shared across all your structs — not a per-struct value. Track the player's last action block and the cost of the next planned action to know when it can fire:
+Charge is a single **per-player** bar (`charge = CurrentBlockHeight − lastAction`), shared across all your structs — not a per-struct value. Live JSON usually exposes `gridAttributes.lastAction`; **if the key is missing, treat it as 0 (full charge)** (`omitempty`). Track the player's last action block and the cost of the next planned action to know when it can fire:
 
 ```markdown
 # Player Charge Status
 
 Player: 5-1
-Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block)
+Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block; missing lastAction ⇒ 0)
 
 | Next planned action | Charge Needed | Ready Block |
 |---------------------|---------------|-------------|

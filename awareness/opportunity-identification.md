@@ -15,9 +15,9 @@
 
 | Check | MCP Tool | Signal |
 |-------|----------|--------|
-| Structs on planet | `structs_intel` (by planet) | No Planetary Defense Cannon, low shield |
-| Planet shield | `structs_intel` or webapp shield endpoint | Low or zero shield health |
-| Stored ore | `structs_intel` (Ore Bunker) | High ore = high reward |
+| Structs on planet | `structs_intel` (by planet) | No Planetary Defense Cannon, low planetary shield value |
+| Planet shield | `structs_intel` | Low shield = faster raid proof (timer), not “HP” |
+| Stored ore | player `gridAttributes.ore` via `structs_intel` / scout | High ore = high reward |
 
 **Caveat**: To complete a raid your fleet must be away and your player online, and the target's shields must be vulnerable — its owner's fleet off-station, or their Command Ship offline/destroyed/non-existent. Confirm the target's vulnerability before committing (see the `structs-combat` skill and `scripts/scout.sh`). An **idle/inactive owner is not automatically a raid opportunity** — a powered Command Ship keeps defending regardless of how long the owner has been away, so verify the live shield predicate rather than reading raidability off inactivity. If the owner is shielded but holds ore, it's a *siege* decision (destroy their Command Ship), weighed against the fleet engagement and your own exposed home — not an opportunistic raid.
 

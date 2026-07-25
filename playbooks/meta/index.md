@@ -8,3 +8,4 @@ title: Meta Strategy
 - [Tempo](tempo) -- Initiative and timing
 - [Economy of Force](economy-of-force) -- Resource allocation across priorities
 - [Reading Opponents](reading-opponents) -- Identifying opponent playstyle
+- [Team Operations](team-operations) -- Multi-player force, charge parallelism, combat loops

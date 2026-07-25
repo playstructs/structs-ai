@@ -9,7 +9,7 @@
 
 | Tier | Name | Meaning | Examples |
 |------|------|----------|----------|
-| 1 | **Survival** | Can I act at all? | Halted, offline, no Command Ship |
+| 1 | **Survival** | Can I act at all? | Offline (load > capacity), no Command Ship |
 | 2 | **Security** | Am I under threat? | Raid in progress, power critical, ore exposed |
 | 3 | **Economy** | Am I producing? | Mining, refining, power generation |
 | 4 | **Expansion** | Am I growing? | Building, exploring, agreements |
@@ -25,9 +25,9 @@
 
 **Survival jumps above everything.**
 
-- Raid in progress → Recall fleet, defend, or cut losses
+- Raid in progress → Restore shields / shoot raider CMD (see [under-attack](../playbooks/situations/under-attack.md)); do not wait to “plan”
 - Power going offline → Deactivate structs or add capacity immediately
-- Player halted → Fix power; no other action possible
+- Offline → Fix power; most other actions are blocked until capacity covers load
 
 ### Power Critical
 
@@ -49,7 +49,7 @@
 ## Decision Flow
 
 ```
-1. Check Survival (halted? offline? Command Ship?)
+1. Check Survival (offline? Command Ship?)
    → If fail: Fix or wait. Stop.
 2. Check Security (raid? power critical? ore exposed?)
    → If fail: Address threat. Stop or loop.

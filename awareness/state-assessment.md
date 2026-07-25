@@ -15,13 +15,13 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
-| Player online | `structs_intel` | `halted === false` |
-| Power status | `structs_intel` | `(capacity + capacitySecondary) - (load + structsLoad) > 0` |
+| Player online | `structs_intel` / `structs_dashboard` | `(load + structsLoad) <= (capacity + capacitySecondary)` — there is no `halted` field |
+| Power status | `structs_intel` | Same inequality; headroom = capacity side − load side |
 | Command Ship | `structs_intel` | Fleet has Command Ship struct, online |
 
 **Power formula**: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If load exceeds capacity, you go offline and most actions are blocked. Use `structs_intel` to model Alpha Matter → Watts conversion before building.
 
-**Critical**: If halted or offline, nothing else matters. Recovery actions are **not** gated by being offline — `struct-deactivate` (single or batch, no charge) and reactor infusion always work, so you can shed load or add capacity to climb back online. Fix power, then resume.
+**Critical**: If offline, nothing else matters. Recovery actions are **not** gated by being offline — `struct-deactivate` (single or batch, no charge) and reactor infusion always work, so you can shed load or add capacity to climb back online. Fix power, then resume.
 
 ---
 
@@ -30,10 +30,10 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
 | Alpha Matter | `structs_intel` | `alphaMatter` or equivalent balance |
-| Ore (unrefined) | `structs_intel` (Ore Bunker, Miner) | Stored ore = liability until refined |
-| Charge | `structs_intel` | Per-player charge bar (CurrentBlockHeight - lastActionBlock) gates attacking, activating, moving, building |
+| Ore (unrefined) | `structs_dashboard` / player `gridAttributes.ore` | Stealable `storedOre` on the **player**, not in the Ore Bunker (bunker only adds planetary shield) |
+| Charge | `structs_dashboard` / player | `charge = blockHeight − lastAction`; a **missing** `lastAction` means 0 → full charge |
 
-**Ore rule**: Ore is stealable. Alpha Matter is not. Refine immediately via `struct-ore-refine-complete`. Unrefined ore = raid target.
+**Ore rule**: Ore is stealable. Alpha Matter is not. Launch refine with `struct-ore-refine-compute` (PoW + auto-complete) as soon as ore lands. Unrefined ore = raid target.
 
 ---
 
@@ -55,7 +55,7 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 |-------|----------|------------------|
 | Fleet status | `structs_intel` | `onStation` vs `away` — raids require fleet away |
 | Command Ship | `structs_intel` | Online, present |
-| Defensive structs | `structs_intel` (filter by planet) | Planetary Defense Cannons, shield health |
+| Defensive structs | `structs_intel` (filter by planet) | PDC, jammers, bunkers; planetary `shield` is a raid-timer value, not HP |
 | Damage potential | `structs_intel` | Model attack outcomes before committing |
 
 **Fleet rule**: Building on planet requires fleet on station. Raiding requires fleet away. Command Ship must be online for both.
@@ -116,5 +116,5 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 - [Threat Detection](threat-detection.md) — What to monitor after assessment
 - [Priority Framework](priority-framework.md) — What to do when multiple issues appear
 - [Game Loop](game-loop.md) — How often to re-assess
-- `systems/power-system.md` — Power mechanics
-- `schemas/entities.md` — Entity definitions
+- [power.md](../knowledge/mechanics/power.md) — Online/offline math
+- [defense.md](../knowledge/mechanics/defense.md) — Raid survival card

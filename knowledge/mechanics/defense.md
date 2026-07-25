@@ -71,7 +71,7 @@ Guided fire at a planetary target faces two independent layers: the target's own
 
 | Status | What it means for you |
 |--------|----------------------|
-| `initiated` | A raider's fleet has arrived. Shields still up. Refine ore now. |
+| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire); finish a refine only if it is already completable. |
 | `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
 | `ongoing` | You restored shields mid-raid. Completion is blocked. |
 | `raidSuccessful` | You lost **all** stored ore. Nothing else. |
@@ -98,7 +98,7 @@ So your entire response budget is **roughly four minutes** from the moment a hos
 
 **Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
 
-None of this displaces refining first. Refining removes the prize entirely and takes the loss to zero even if you lose the fight, so it stays the first move — it simply has to happen inside the same four minutes, not after them.
+**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3); a new refine cannot finish inside four minutes, and partial progress does not shrink loot. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Mid-raid, finish a refine only if it is already completable; otherwise spend the budget on shields and the raider's Command Ship.
 
 One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
 
@@ -106,7 +106,7 @@ One constraint shapes who can shoot: **combat is co-located**. Only your on-stat
 
 ## Under attack right now
 
-Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: the response order is survival-first, and the correct first move is usually to refine or bunker ore rather than to shoot back.
+Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: power → deny prize only if completable → restore shields / shoot the raider Command Ship.
 
 ---
 

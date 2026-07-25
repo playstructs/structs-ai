@@ -1,70 +1,69 @@
 # Mid Game
 
 **Phase**: Expansion and scaling  
-**Goal**: Multiply resource flow, secure territory, build alliances  
-**Principle**: More planets = more ore = more Alpha Matter = more energy = more structs.
+**Goal**: Deepen the pipeline, secure the home world, build alliances  
+**Principle**: You own **one** planet. Scale by throughput, defense, guild/team capacity — not by collecting bases on one account.
 
 ---
 
 ## The Expansion Phase
 
-Early game was survival. Mid game is multiplication. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+Early game was survival. Mid game is multiplication of *output*, not of planets. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how much can this one world (and, if you run a team, your other players) sustain? Overbuild load and you go offline. Leave ore unrefined and you feed raiders. The machines that scale wisely dominate. The ones that overextend collapse.
 
-**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
+**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Use [async operations](../../awareness/async-operations.md) to keep mine and refine overlapping. Relocating to a new planet is a later, deliberate Tier-2 move after this one is empty — see [planet-depletion](../situations/planet-depletion.md).
 
 ---
 
-## When to Explore New Planets
+## When to Plan the Next Planet
 
-Explore when:
+You cannot hold two planets. Scouting is free; **exploring** requires the current planet `complete` (ore 0) and the fleet `onStation`, and it **destroys** remaining structs on the old world.
 
-- Your home planet has stable extraction and power
-- You have Alpha Matter reserves to build on the new world
-- Your Command Ship is available (onStation, not away)
-- You can defend what you claim—or have allies who will
+Plan the next world when:
+
+- Home extraction and power are stable
+- You have Alpha Matter to rebuild infrastructure after explore
+- Ore on the current planet is approaching zero (scout in parallel now)
+- You can accept the Tier-2 wipe of leftover planet structs
 
 Do not explore when:
 
-- Home planet power is marginal
-- You have unrefined ore anywhere
-- You are under active threat
-- You lack the resources to develop the new planet quickly
+- Home power is marginal or you are under threat
+- You still have unrefined ore (refine first)
+- The current planet still has ore — empty it deliberately, then explore
 
-The Explorer soul type will push for early expansion. Balance that instinct with economic reality.
+The Explorer soul type will push for early relocation. Balance that with the one-planet rule.
 
 ---
 
-## Fortify vs Expand
+## Fortify vs Scale
 
-The tension of mid-game: every struct you build for defense is one you don't build for extraction. Every planet you claim is one you must protect.
+The tension of mid-game: every struct you build for defense is one you don't build for extraction or power.
 
 **Fortify when**:
 
 - You have been raided recently
 - Neighbors are aggressive (Killers, hostile guilds)
-- You hold resource-rich territory others want
-- Your power margin is thin—defense structs are lower load than extractors
+- You hold ore worth stealing (or a rich residual planet)
+- Your power margin is thin — defense structs can be lower load than another extractor you cannot protect
 
-**Expand when**:
+**Scale when**:
 
-- Home territory is secure
-- You have surplus capacity (power, Alpha Matter, fleet)
-- Unexplored space offers better ore than your current planets
-- Allies can cover your flanks
-
-The Achiever wants to check boxes. The Entrepreneur wants to build. Both must answer: can we hold what we take?
+- Home is secure and online with headroom
+- You have surplus capacity (power, Alpha Matter)
+- Pipeline stages are idle (second refine path, better power, fleet deterrent)
+- Guild or team cover lets you take more risk — see [team-operations](../meta/team-operations.md)
 
 ---
 
 ## Economic Scaling
 
-The virtuous cycle:
+The virtuous cycle on **one** planet (and across a team of players):
 
-1. **More planets** → more ore extraction
-2. **More ore** → refine immediately → more Alpha Matter
-3. **More Alpha Matter** → more energy (Reactors, or generators if you're confident)
-4. **More energy** → more structs (extractors, defenses, specialized buildings)
-5. **More structs** → stronger economy, harder target
+1. **Stable mining** → ore into player inventory
+2. **Immediate refine** → Alpha Matter (deny raiders)
+3. **Alpha Matter** → capacity (reactors / generators / agreements)
+4. **Capacity** → more structs without going offline
+5. **Structs** → stronger economy and harder target
 
 Break any link and the chain fails. Most often: power. Build capacity before load.
 
@@ -80,13 +79,13 @@ Mid-game is when guilds matter.
 - You need something (protection, energy agreements, intelligence)
 - The guild's goals align with yours
 
-**Form a guild when**:
+**Form a guild / run a team when**:
 
-- You have a core of trusted players
+- You have a core of trusted players (or virtual players under Desktop)
 - You want to coordinate attacks or defense
 - Central Bank token mechanics offer strategic value
 
-The Socializer thrives here. The Speculator uses guild networks for information. The Killer uses them for combined arms. Choose your role.
+Multi-planet *coverage* is a **guild/team** property, not a solo one-account property.
 
 ---
 
@@ -94,12 +93,12 @@ The Socializer thrives here. The Speculator uses guild networks for information.
 
 You are now worth attacking. Raiders look for:
 
-- Unrefined ore
-- Undefended planets
-- Isolated players
+- Unrefined ore on the player
+- Fleet `away` or Command Ship offline (shields vulnerable)
+- Isolated players without guild cover
 - Rich but weak economies
 
-Start thinking about Planetary Defense Cannons. Not necessarily building them yet—but knowing where they would go. Identify choke points. Understand which planets are expendable and which are critical.
+Start thinking about Planetary Defense Cannons, Ore Bunkers (shield stack), and keeping the fleet on station while holding ore. See [defense.md](../../knowledge/mechanics/defense.md).
 
 ---
 
@@ -107,11 +106,11 @@ Start thinking about Planetary Defense Cannons. Not necessarily building them ye
 
 A strong mid-game position:
 
-- Multiple planets with active extraction
-- Guild membership or clear alliance structure
-- Power capacity exceeding load across all territory
-- No unrefined ore in vulnerable locations
-- Awareness of neighboring threats and opportunities
+- One home planet with a reliable mine → refine → capacity loop
+- Guild membership or clear alliance / team structure
+- Power capacity exceeding load with headroom
+- No unrefined ore sitting idle
+- Awareness of neighboring threats; next-planet scouting ready before ore hits zero
 
 You are not dominant yet. You are positioned. Late game decides the rest.
 
@@ -119,8 +118,8 @@ You are not dominant yet. You are positioned. Late game decides the rest.
 
 ## See Also
 
-- [Early Game](early-game.md) — Foundation you built
-- [Late Game](late-game.md) — Where this leads
-- [Resource Rich](../situations/resource-rich.md) — When expansion pays off
-- [Guild War](../situations/guild-war.md) — When alliances turn violent
-- [Reading Opponents](../meta/reading-opponents.md) — Who to trust, who to fear
+- [Early Game](early-game.md) — How you got here
+- [Late Game](late-game.md) — What comes next
+- [Planet depletion](../situations/planet-depletion.md) — One-planet relocate protocol
+- [Team operations](../meta/team-operations.md) — Multi-player force
+- [Under attack](../situations/under-attack.md) — When raiders arrive

@@ -30,7 +30,7 @@ Follow this sequence in phases. **Initiate everything you can upfront** — the 
 
 Protect your base before it produces anything worth stealing.
 
-4. **Orbital Shield Generator** (type 16, space) — Reduces incoming raid damage. (~58 min to D=3, 200 W)
+4. **Orbital Shield Generator** (type 16, space) — Raises planetary shield (slows the raid proof / timer); does **not** reduce attack damage. (~58 min to D=3, 200 W)
 
 5. **Jamming Satellite** (type 17, space) — Disrupts enemy targeting. (~3.7 hr to D=3, 600 W)
 
@@ -38,7 +38,7 @@ Protect your base before it produces anything worth stealing.
 
 ### Phase 3: Fleet (initiate while Phase 2 ages)
 
-Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Initiate all 12 simultaneously — they age in parallel.
+Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Batch-initiate paced by build charge (~8 charge ≈ ~48 s apart); they age in parallel once initiated.
 
 | Ambit | Struct | Type ID | D=3 Wait | Draw |
 |-------|--------|---------|----------|------|

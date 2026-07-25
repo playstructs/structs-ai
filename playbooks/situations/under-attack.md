@@ -12,7 +12,7 @@ When you detect an attack—raid, struct assault, or fleet engagement—execute 
 
 **Know the budget before you start.** Against a raid you have roughly **four minutes** total: median 2.1 min from `initiated` to `shieldsVulnerable`, then a hard ~2 min 6 s lock before loot. Every step below has to fit inside that. Defenders who returned fire within ~1.8 min are the *only* ones in the dataset who ever defeated an attacker; the median losing defender responded at 12.3 min. See [defense.md](../../knowledge/mechanics/defense.md#the-four-minute-clock).
 
-This is also why the order below is not negotiable: steps 1 and 2 are cheap and fast, and step 2 alone takes your loss to zero.
+Trigger on `raid_status: initiated` (or a hostile fleet arrival), not on damage. Waiting until structs are hurt spends most of the budget.
 
 ---
 
@@ -20,88 +20,74 @@ This is also why the order below is not negotiable: steps 1 and 2 are cheap and 
 
 If you go offline, you cannot act. Before anything else:
 
-- Verify capacity exceeds load
+- Verify capacity covers load (`(capacity + capacitySecondary) >= (load + structsLoad)`)
 - If marginal, do not activate new structs
-- If overloaded, deactivate non-critical structs to stay online
+- If overloaded, deactivate non-critical structs to stay online (`struct-deactivate` works even while offline)
 
-A dead base cannot refine, cannot defend, cannot respond. Power first.
-
----
-
-## 2. Protect Unrefined Ore — Refine NOW
-
-Ore is stealable. Alpha Matter is not. The moment you know you're under attack:
-
-- Refine every gram of unrefined ore on threatened planets
-- Prioritize planets under direct assault
-- Even partial refinement reduces the raider's take
-
-This is the single highest-impact action. Raiders come for ore. Deny them.
+A dead base cannot defend or respond. Power first.
 
 ---
 
-## 3. Activate Defenses
+## 2. Deny the Prize — Only If You Can Finish It Now
 
-If you have Planetary Defense Cannons or other defensive structs:
+A successful raid seizes **all** of your `storedOre`. Starting a new refine does **not** help: ore stays stealable for the whole refine PoW (~34 h at D=3), and partial progress does not shrink the loot.
 
-- Activate them on the threatened planet
-- Ensure they have power (check load)
-- Position matters—defenses at the point of attack
-
-If you have no defenses, accept it. Do not build mid-attack. Focus on steps 1 and 2.
+Mid-raid, deny the prize only if a refine is **already completable** (PoW finished or about to be — submit `struct-ore-refine-complete` / let Desktop finish). Otherwise skip to step 3; pre-raid discipline ("refine as soon as ore lands") is what zeroes the prize, not a four-minute scramble.
 
 ---
 
-## 4. Assess Attacker Strength
+## 3. Stop the Raid (this is the fight)
 
-Gather intelligence:
+Inside the four-minute window, two actions actually change the outcome:
+
+1. **Restore shields** if they are down — Command Ship online with the fleet `onStation`. That flips status to `ongoing` and blocks `planet-raid-complete`.
+2. **Shoot the raider's Command Ship** — co-located return fire. Destroying it ends the raid (`attackerDefeated`). Only on-station fleet (and anything else already parked at this planet) can shoot; combat is co-located.
+
+If you run Desktop MCP and your commander has armed Standing Automation Grants, `structs_players` `autoresponse` is built for exactly this window — do not hand-time shots slower than the loop. See [SAFETY.md](../../SAFETY.md) and [team-operations](../meta/team-operations.md).
+
+Do **not** spend the budget activating unused defenses or starting new builds. PDC/jammers already online help; mid-raid builds will not finish in time.
+
+---
+
+## 4. Assess Attacker Strength (only after 1–3 are moving)
+
+Gather intelligence while responses are in flight:
 
 - How many ships? What type?
 - Is this a raid (steal ore) or an attack (destroy structs)?
 - Solo or guild-coordinated?
-- Are they hitting one planet or multiple?
 
-Raid = economic loss. Attack = structural loss. Different responses.
-
----
-
-## 5. Decide: Defend or Evacuate
-
-**Defend when**:
-
-- You have defenses and they can hold
-- The planet is critical (main production, choke point)
-- Evacuation would cost more than standing firm
-- Allies are inbound
-
-**Evacuate when**:
-
-- Defenses are insufficient
-- The planet is expendable
-- You can save more by moving resources than by fighting
-- You're outmatched and reinforcement is impossible
-
-Evacuation means: refine what you can, abandon the rest. Live to rebuild.
+Raid = economic loss (all `storedOre`). Attack = structural loss. Different follow-ups.
 
 ---
 
-## 6. Counter-Attack Timing
+## 5. Decide: Hold or Cut Losses
 
-Do not counter-attack in the heat of the moment. Counter when:
+**Hold when**:
 
-- Your position is secure
-- You have intelligence on their vulnerabilities
-- Your fleet is ready and fueled
-- You have a clear objective (cripple economy, punish, deter)
+- Shields restored or raider CMD under fire
+- Ore already refined / near-zero
+- Allies or autoresponse covering the planet
 
-Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](../meta/tempo.md).
+**Cut losses when**:
+
+- You cannot restore shields or reach the raider CMD before the lock
+- Ore is already gone (`raidSuccessful`) — rebuild CMD, refine future ore faster, do not chase
+
+You own **one** planet. "Evacuate" means protect what you can (refine-if-ready, keep CMD alive), not abandon for another base mid-fight.
+
+---
+
+## 6. Planned Counter — After the Clock
+
+Do **not** save return fire for later — mid-raid shots are step 3. What waits until you are secure is a *planned* counter-raid on their home (fleet move, siege doctrine, revenge timing). Reactive home-raids while your own shields are still contested often fail. See [Tempo](../meta/tempo.md) and [combat.md](../../knowledge/mechanics/combat.md).
 
 ---
 
 ## Behavioral Notes by Attacker Type
 
-- **Killer**: Expect sustained pressure. They want the fight. Deny them value; fortify for the long game.
-- **Entrepreneur**: Likely raiding for resources to fund their build. Hit their economy in response.
+- **Killer**: Expect sustained pressure. They want the fight. Deny them ore value; fortify for the long game.
+- **Entrepreneur**: Likely raiding for resources to fund their build. Hit their economy in a planned response.
 - **Achiever**: May be chasing a goal. Identify it; make it costly.
 - **Explorer**: Rare attacker. If they're hitting you, you're in their way. Clear and decisive defense usually deters.
 
@@ -109,8 +95,10 @@ Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](../meta/t
 
 ## See Also
 
+- [Defense](../../knowledge/mechanics/defense.md) — What a raid can take and the four-minute clock
 - [Early Game](../phases/early-game.md) — Why power and refinement matter from the start
 - [Resource Rich](resource-rich.md) — Rich targets get attacked; prepare accordingly
 - [Guild War](guild-war.md) — When attacks are coordinated
 - [Counter-Strategies](../meta/counter-strategies.md) — Beating the Killer and other aggressors
-- [Tempo](../meta/tempo.md) — When to counter-attack
+- [Tempo](../meta/tempo.md) — When to counter-raid
+- [Team Operations](../meta/team-operations.md) — `autoresponse` / Standing Automation Grants

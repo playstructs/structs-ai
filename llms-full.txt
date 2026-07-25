@@ -5215,7 +5215,7 @@ Guided fire at a planetary target faces two independent layers: the target's own
 
 | Status | What it means for you |
 |--------|----------------------|
-| `initiated` | A raider's fleet has arrived. Shields still up. Refine ore now. |
+| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire); finish a refine only if it is already completable. |
 | `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
 | `ongoing` | You restored shields mid-raid. Completion is blocked. |
 | `raidSuccessful` | You lost **all** stored ore. Nothing else. |
@@ -5242,7 +5242,7 @@ So your entire response budget is **roughly four minutes** from the moment a hos
 
 **Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
 
-None of this displaces refining first. Refining removes the prize entirely and takes the loss to zero even if you lose the fight, so it stays the first move — it simply has to happen inside the same four minutes, not after them.
+**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3); a new refine cannot finish inside four minutes, and partial progress does not shrink loot. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Mid-raid, finish a refine only if it is already completable; otherwise spend the budget on shields and the raider's Command Ship.
 
 One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
 
@@ -5250,7 +5250,7 @@ One constraint shapes who can shoot: **combat is co-located**. Only your on-stat
 
 ## Under attack right now
 
-Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: the response order is survival-first, and the correct first move is usually to refine or bunker ore rather than to shoot back.
+Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under-attack.md). Do not improvise: power → deny prize only if completable → restore shields / shoot the raider Command Ship.
 
 ---
 
@@ -9827,7 +9827,7 @@ Follow this sequence in phases. **Initiate everything you can upfront** — the 
 
 Protect your base before it produces anything worth stealing.
 
-4. **Orbital Shield Generator** (type 16, space) — Reduces incoming raid damage. (~58 min to D=3, 200 W)
+4. **Orbital Shield Generator** (type 16, space) — Raises planetary shield (slows the raid proof / timer); does **not** reduce attack damage. (~58 min to D=3, 200 W)
 
 5. **Jamming Satellite** (type 17, space) — Disrupts enemy targeting. (~3.7 hr to D=3, 600 W)
 
@@ -9835,7 +9835,7 @@ Protect your base before it produces anything worth stealing.
 
 ### Phase 3: Fleet (initiate while Phase 2 ages)
 
-Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Initiate all 12 simultaneously — they age in parallel.
+Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Batch-initiate paced by build charge (~8 charge ≈ ~48 s apart); they age in parallel once initiated.
 
 | Ambit | Struct | Type ID | D=3 Wait | Draw |
 |-------|--------|---------|----------|------|
@@ -9959,70 +9959,69 @@ End-to-end ramp from player creation to first combat-ready state. All times are 
 # Mid Game
 
 **Phase**: Expansion and scaling  
-**Goal**: Multiply resource flow, secure territory, build alliances  
-**Principle**: More planets = more ore = more Alpha Matter = more energy = more structs.
+**Goal**: Deepen the pipeline, secure the home world, build alliances  
+**Principle**: You own **one** planet. Scale by throughput, defense, guild/team capacity — not by collecting bases on one account.
 
 ---
 
 ## The Expansion Phase
 
-Early game was survival. Mid game is multiplication. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how many bases can you sustain? Each new planet is a new ore source, a new power node, a new target for raiders. The machines that scale wisely dominate. The ones that overextend collapse.
+Early game was survival. Mid game is multiplication of *output*, not of planets. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how much can this one world (and, if you run a team, your other players) sustain? Overbuild load and you go offline. Leave ore unrefined and you feed raiders. The machines that scale wisely dominate. The ones that overextend collapse.
 
-**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Building infrastructure on a new planet takes hours. Expansion is measured in cycles completed, not minutes elapsed. Use [async operations](../../awareness/async-operations.md) to run multiple pipelines simultaneously.
+**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Use [async operations](../../awareness/async-operations.md) to keep mine and refine overlapping. Relocating to a new planet is a later, deliberate Tier-2 move after this one is empty — see [planet-depletion](../situations/planet-depletion.md).
 
 ---
 
-## When to Explore New Planets
+## When to Plan the Next Planet
 
-Explore when:
+You cannot hold two planets. Scouting is free; **exploring** requires the current planet `complete` (ore 0) and the fleet `onStation`, and it **destroys** remaining structs on the old world.
 
-- Your home planet has stable extraction and power
-- You have Alpha Matter reserves to build on the new world
-- Your Command Ship is available (onStation, not away)
-- You can defend what you claim—or have allies who will
+Plan the next world when:
+
+- Home extraction and power are stable
+- You have Alpha Matter to rebuild infrastructure after explore
+- Ore on the current planet is approaching zero (scout in parallel now)
+- You can accept the Tier-2 wipe of leftover planet structs
 
 Do not explore when:
 
-- Home planet power is marginal
-- You have unrefined ore anywhere
-- You are under active threat
-- You lack the resources to develop the new planet quickly
+- Home power is marginal or you are under threat
+- You still have unrefined ore (refine first)
+- The current planet still has ore — empty it deliberately, then explore
 
-The Explorer soul type will push for early expansion. Balance that instinct with economic reality.
+The Explorer soul type will push for early relocation. Balance that with the one-planet rule.
 
 ---
 
-## Fortify vs Expand
+## Fortify vs Scale
 
-The tension of mid-game: every struct you build for defense is one you don't build for extraction. Every planet you claim is one you must protect.
+The tension of mid-game: every struct you build for defense is one you don't build for extraction or power.
 
 **Fortify when**:
 
 - You have been raided recently
 - Neighbors are aggressive (Killers, hostile guilds)
-- You hold resource-rich territory others want
-- Your power margin is thin—defense structs are lower load than extractors
+- You hold ore worth stealing (or a rich residual planet)
+- Your power margin is thin — defense structs can be lower load than another extractor you cannot protect
 
-**Expand when**:
+**Scale when**:
 
-- Home territory is secure
-- You have surplus capacity (power, Alpha Matter, fleet)
-- Unexplored space offers better ore than your current planets
-- Allies can cover your flanks
-
-The Achiever wants to check boxes. The Entrepreneur wants to build. Both must answer: can we hold what we take?
+- Home is secure and online with headroom
+- You have surplus capacity (power, Alpha Matter)
+- Pipeline stages are idle (second refine path, better power, fleet deterrent)
+- Guild or team cover lets you take more risk — see [team-operations](../meta/team-operations.md)
 
 ---
 
 ## Economic Scaling
 
-The virtuous cycle:
+The virtuous cycle on **one** planet (and across a team of players):
 
-1. **More planets** → more ore extraction
-2. **More ore** → refine immediately → more Alpha Matter
-3. **More Alpha Matter** → more energy (Reactors, or generators if you're confident)
-4. **More energy** → more structs (extractors, defenses, specialized buildings)
-5. **More structs** → stronger economy, harder target
+1. **Stable mining** → ore into player inventory
+2. **Immediate refine** → Alpha Matter (deny raiders)
+3. **Alpha Matter** → capacity (reactors / generators / agreements)
+4. **Capacity** → more structs without going offline
+5. **Structs** → stronger economy and harder target
 
 Break any link and the chain fails. Most often: power. Build capacity before load.
 
@@ -10038,13 +10037,13 @@ Mid-game is when guilds matter.
 - You need something (protection, energy agreements, intelligence)
 - The guild's goals align with yours
 
-**Form a guild when**:
+**Form a guild / run a team when**:
 
-- You have a core of trusted players
+- You have a core of trusted players (or virtual players under Desktop)
 - You want to coordinate attacks or defense
 - Central Bank token mechanics offer strategic value
 
-The Socializer thrives here. The Speculator uses guild networks for information. The Killer uses them for combined arms. Choose your role.
+Multi-planet *coverage* is a **guild/team** property, not a solo one-account property.
 
 ---
 
@@ -10052,12 +10051,12 @@ The Socializer thrives here. The Speculator uses guild networks for information.
 
 You are now worth attacking. Raiders look for:
 
-- Unrefined ore
-- Undefended planets
-- Isolated players
+- Unrefined ore on the player
+- Fleet `away` or Command Ship offline (shields vulnerable)
+- Isolated players without guild cover
 - Rich but weak economies
 
-Start thinking about Planetary Defense Cannons. Not necessarily building them yet—but knowing where they would go. Identify choke points. Understand which planets are expendable and which are critical.
+Start thinking about Planetary Defense Cannons, Ore Bunkers (shield stack), and keeping the fleet on station while holding ore. See [defense.md](../../knowledge/mechanics/defense.md).
 
 ---
 
@@ -10065,11 +10064,11 @@ Start thinking about Planetary Defense Cannons. Not necessarily building them ye
 
 A strong mid-game position:
 
-- Multiple planets with active extraction
-- Guild membership or clear alliance structure
-- Power capacity exceeding load across all territory
-- No unrefined ore in vulnerable locations
-- Awareness of neighboring threats and opportunities
+- One home planet with a reliable mine → refine → capacity loop
+- Guild membership or clear alliance / team structure
+- Power capacity exceeding load with headroom
+- No unrefined ore sitting idle
+- Awareness of neighboring threats; next-planet scouting ready before ore hits zero
 
 You are not dominant yet. You are positioned. Late game decides the rest.
 
@@ -10077,11 +10076,11 @@ You are not dominant yet. You are positioned. Late game decides the rest.
 
 ## See Also
 
-- [Early Game](early-game.md) — Foundation you built
-- [Late Game](late-game.md) — Where this leads
-- [Resource Rich](../situations/resource-rich.md) — When expansion pays off
-- [Guild War](../situations/guild-war.md) — When alliances turn violent
-- [Reading Opponents](../meta/reading-opponents.md) — Who to trust, who to fear
+- [Early Game](early-game.md) — How you got here
+- [Late Game](late-game.md) — What comes next
+- [Planet depletion](../situations/planet-depletion.md) — One-planet relocate protocol
+- [Team operations](../meta/team-operations.md) — Multi-player force
+- [Under attack](../situations/under-attack.md) — When raiders arrive
 
 </document>
 
@@ -10229,7 +10228,7 @@ When you detect an attack—raid, struct assault, or fleet engagement—execute 
 
 **Know the budget before you start.** Against a raid you have roughly **four minutes** total: median 2.1 min from `initiated` to `shieldsVulnerable`, then a hard ~2 min 6 s lock before loot. Every step below has to fit inside that. Defenders who returned fire within ~1.8 min are the *only* ones in the dataset who ever defeated an attacker; the median losing defender responded at 12.3 min. See [defense.md](../../knowledge/mechanics/defense.md#the-four-minute-clock).
 
-This is also why the order below is not negotiable: steps 1 and 2 are cheap and fast, and step 2 alone takes your loss to zero.
+Trigger on `raid_status: initiated` (or a hostile fleet arrival), not on damage. Waiting until structs are hurt spends most of the budget.
 
 ---
 
@@ -10237,88 +10236,74 @@ This is also why the order below is not negotiable: steps 1 and 2 are cheap and 
 
 If you go offline, you cannot act. Before anything else:
 
-- Verify capacity exceeds load
+- Verify capacity covers load (`(capacity + capacitySecondary) >= (load + structsLoad)`)
 - If marginal, do not activate new structs
-- If overloaded, deactivate non-critical structs to stay online
+- If overloaded, deactivate non-critical structs to stay online (`struct-deactivate` works even while offline)
 
-A dead base cannot refine, cannot defend, cannot respond. Power first.
-
----
-
-## 2. Protect Unrefined Ore — Refine NOW
-
-Ore is stealable. Alpha Matter is not. The moment you know you're under attack:
-
-- Refine every gram of unrefined ore on threatened planets
-- Prioritize planets under direct assault
-- Even partial refinement reduces the raider's take
-
-This is the single highest-impact action. Raiders come for ore. Deny them.
+A dead base cannot defend or respond. Power first.
 
 ---
 
-## 3. Activate Defenses
+## 2. Deny the Prize — Only If You Can Finish It Now
 
-If you have Planetary Defense Cannons or other defensive structs:
+A successful raid seizes **all** of your `storedOre`. Starting a new refine does **not** help: ore stays stealable for the whole refine PoW (~34 h at D=3), and partial progress does not shrink the loot.
 
-- Activate them on the threatened planet
-- Ensure they have power (check load)
-- Position matters—defenses at the point of attack
-
-If you have no defenses, accept it. Do not build mid-attack. Focus on steps 1 and 2.
+Mid-raid, deny the prize only if a refine is **already completable** (PoW finished or about to be — submit `struct-ore-refine-complete` / let Desktop finish). Otherwise skip to step 3; pre-raid discipline ("refine as soon as ore lands") is what zeroes the prize, not a four-minute scramble.
 
 ---
 
-## 4. Assess Attacker Strength
+## 3. Stop the Raid (this is the fight)
 
-Gather intelligence:
+Inside the four-minute window, two actions actually change the outcome:
+
+1. **Restore shields** if they are down — Command Ship online with the fleet `onStation`. That flips status to `ongoing` and blocks `planet-raid-complete`.
+2. **Shoot the raider's Command Ship** — co-located return fire. Destroying it ends the raid (`attackerDefeated`). Only on-station fleet (and anything else already parked at this planet) can shoot; combat is co-located.
+
+If you run Desktop MCP and your commander has armed Standing Automation Grants, `structs_players` `autoresponse` is built for exactly this window — do not hand-time shots slower than the loop. See [SAFETY.md](../../SAFETY.md) and [team-operations](../meta/team-operations.md).
+
+Do **not** spend the budget activating unused defenses or starting new builds. PDC/jammers already online help; mid-raid builds will not finish in time.
+
+---
+
+## 4. Assess Attacker Strength (only after 1–3 are moving)
+
+Gather intelligence while responses are in flight:
 
 - How many ships? What type?
 - Is this a raid (steal ore) or an attack (destroy structs)?
 - Solo or guild-coordinated?
-- Are they hitting one planet or multiple?
 
-Raid = economic loss. Attack = structural loss. Different responses.
-
----
-
-## 5. Decide: Defend or Evacuate
-
-**Defend when**:
-
-- You have defenses and they can hold
-- The planet is critical (main production, choke point)
-- Evacuation would cost more than standing firm
-- Allies are inbound
-
-**Evacuate when**:
-
-- Defenses are insufficient
-- The planet is expendable
-- You can save more by moving resources than by fighting
-- You're outmatched and reinforcement is impossible
-
-Evacuation means: refine what you can, abandon the rest. Live to rebuild.
+Raid = economic loss (all `storedOre`). Attack = structural loss. Different follow-ups.
 
 ---
 
-## 6. Counter-Attack Timing
+## 5. Decide: Hold or Cut Losses
 
-Do not counter-attack in the heat of the moment. Counter when:
+**Hold when**:
 
-- Your position is secure
-- You have intelligence on their vulnerabilities
-- Your fleet is ready and fueled
-- You have a clear objective (cripple economy, punish, deter)
+- Shields restored or raider CMD under fire
+- Ore already refined / near-zero
+- Allies or autoresponse covering the planet
 
-Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](../meta/tempo.md).
+**Cut losses when**:
+
+- You cannot restore shields or reach the raider CMD before the lock
+- Ore is already gone (`raidSuccessful`) — rebuild CMD, refine future ore faster, do not chase
+
+You own **one** planet. "Evacuate" means protect what you can (refine-if-ready, keep CMD alive), not abandon for another base mid-fight.
+
+---
+
+## 6. Planned Counter — After the Clock
+
+Do **not** save return fire for later — mid-raid shots are step 3. What waits until you are secure is a *planned* counter-raid on their home (fleet move, siege doctrine, revenge timing). Reactive home-raids while your own shields are still contested often fail. See [Tempo](../meta/tempo.md) and [combat.md](../../knowledge/mechanics/combat.md).
 
 ---
 
 ## Behavioral Notes by Attacker Type
 
-- **Killer**: Expect sustained pressure. They want the fight. Deny them value; fortify for the long game.
-- **Entrepreneur**: Likely raiding for resources to fund their build. Hit their economy in response.
+- **Killer**: Expect sustained pressure. They want the fight. Deny them ore value; fortify for the long game.
+- **Entrepreneur**: Likely raiding for resources to fund their build. Hit their economy in a planned response.
 - **Achiever**: May be chasing a goal. Identify it; make it costly.
 - **Explorer**: Rare attacker. If they're hitting you, you're in their way. Clear and decisive defense usually deters.
 
@@ -10326,11 +10311,13 @@ Reactive counter-attacks often fail. Planned ones succeed. See [Tempo](../meta/t
 
 ## See Also
 
+- [Defense](../../knowledge/mechanics/defense.md) — What a raid can take and the four-minute clock
 - [Early Game](../phases/early-game.md) — Why power and refinement matter from the start
 - [Resource Rich](resource-rich.md) — Rich targets get attacked; prepare accordingly
 - [Guild War](guild-war.md) — When attacks are coordinated
 - [Counter-Strategies](../meta/counter-strategies.md) — Beating the Killer and other aggressors
-- [Tempo](../meta/tempo.md) — When to counter-attack
+- [Tempo](../meta/tempo.md) — When to counter-raid
+- [Team Operations](../meta/team-operations.md) — `autoresponse` / Standing Automation Grants
 
 </document>
 
@@ -10840,11 +10827,11 @@ Always have something aging. If nothing is initiated and aging right now, you ar
 
 ## Build Orders and Tempo
 
-Your opening build order sets early tempo:
+Your opening build order sets early tempo (times at recommended **D=3**; softer `-D 8` is faster but hungrier on CPU):
 
-- **Command Ship first** — mobility, exploration, raiding option (~11 min)
-- **Ore Extractor + Refinery together** — batch-initiate both, they age in parallel (~34 min each)
-- **Reactor during mine wait** — mine takes ~8 hours; build reactor while waiting
+- **Command Ship first** — mobility, exploration, raiding option (~17 min at D=3)
+- **Ore Extractor + Refinery together** — batch-initiate both, they age in parallel (~57 min each at D=3)
+- **Reactor during mine wait** — mine takes ~17 hours at D=3; build reactor while waiting
 
 Each choice trades tempo for security, or security for tempo. The [Early Game](../phases/early-game.md) playbook favors security. Adjust if you're an Entrepreneur or Killer and willing to gamble.
 
@@ -11229,13 +11216,13 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
-| Player online | `structs_intel` | `halted === false` |
-| Power status | `structs_intel` | `(capacity + capacitySecondary) - (load + structsLoad) > 0` |
+| Player online | `structs_intel` / `structs_dashboard` | `(load + structsLoad) <= (capacity + capacitySecondary)` — there is no `halted` field |
+| Power status | `structs_intel` | Same inequality; headroom = capacity side − load side |
 | Command Ship | `structs_intel` | Fleet has Command Ship struct, online |
 
 **Power formula**: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If load exceeds capacity, you go offline and most actions are blocked. Use `structs_intel` to model Alpha Matter → Watts conversion before building.
 
-**Critical**: If halted or offline, nothing else matters. Recovery actions are **not** gated by being offline — `struct-deactivate` (single or batch, no charge) and reactor infusion always work, so you can shed load or add capacity to climb back online. Fix power, then resume.
+**Critical**: If offline, nothing else matters. Recovery actions are **not** gated by being offline — `struct-deactivate` (single or batch, no charge) and reactor infusion always work, so you can shed load or add capacity to climb back online. Fix power, then resume.
 
 ---
 
@@ -11244,10 +11231,10 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
 | Alpha Matter | `structs_intel` | `alphaMatter` or equivalent balance |
-| Ore (unrefined) | `structs_intel` (Ore Bunker, Miner) | Stored ore = liability until refined |
-| Charge | `structs_intel` | Per-player charge bar (CurrentBlockHeight - lastActionBlock) gates attacking, activating, moving, building |
+| Ore (unrefined) | `structs_dashboard` / player `gridAttributes.ore` | Stealable `storedOre` on the **player**, not in the Ore Bunker (bunker only adds planetary shield) |
+| Charge | `structs_dashboard` / player | `charge = blockHeight − lastAction`; a **missing** `lastAction` means 0 → full charge |
 
-**Ore rule**: Ore is stealable. Alpha Matter is not. Refine immediately via `struct-ore-refine-complete`. Unrefined ore = raid target.
+**Ore rule**: Ore is stealable. Alpha Matter is not. Launch refine with `struct-ore-refine-compute` (PoW + auto-complete) as soon as ore lands. Unrefined ore = raid target.
 
 ---
 
@@ -11269,7 +11256,7 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 |-------|----------|------------------|
 | Fleet status | `structs_intel` | `onStation` vs `away` — raids require fleet away |
 | Command Ship | `structs_intel` | Online, present |
-| Defensive structs | `structs_intel` (filter by planet) | Planetary Defense Cannons, shield health |
+| Defensive structs | `structs_intel` (filter by planet) | PDC, jammers, bunkers; planetary `shield` is a raid-timer value, not HP |
 | Damage potential | `structs_intel` | Model attack outcomes before committing |
 
 **Fleet rule**: Building on planet requires fleet on station. Raiding requires fleet away. Command Ship must be online for both.
@@ -11330,8 +11317,8 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 - [Threat Detection](threat-detection.md) — What to monitor after assessment
 - [Priority Framework](priority-framework.md) — What to do when multiple issues appear
 - [Game Loop](game-loop.md) — How often to re-assess
-- `systems/power-system.md` — Power mechanics
-- `schemas/entities.md` — Entity definitions
+- [power.md](../knowledge/mechanics/power.md) — Online/offline math
+- [defense.md](../knowledge/mechanics/defense.md) — Raid survival card
 
 </document>
 
@@ -11364,20 +11351,20 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 
 ### 2. Unrefined Ore Exposure
 
-**Threat**: Ore in bunkers or miners is stealable. Raiders target planets with high stored ore.
+**Threat**: Unrefined ore on the **player** (`gridAttributes.ore` / `storedOre`) is stealable. Raiders target planets whose owner holds ore. The Ore Bunker raises planetary shield; it does not store ore.
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
-| Stored ore | `structs_intel` (Ore Bunker, Miner) | Any > 0 is exposure |
+| Stored ore | `structs_dashboard` / player `gridAttributes.ore` | Any > 0 is exposure |
 | Planet activity | `structs_intel` | Recent raids, attacks |
 
-**Rule**: Refine immediately. Use `struct-ore-refine-complete` as soon as ore is available. Zero unrefined ore = nothing to steal.
+**Rule**: Launch `struct-ore-refine-compute` as soon as ore lands. Zero unrefined ore = nothing to steal.
 
 ---
 
 ### 3. Power Instability (Approaching Capacity)
 
-**Threat**: Load approaching capacity. One more struct or one struct coming online = offline = halt.
+**Threat**: Load approaching capacity. One more struct or one struct coming online = offline.
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
@@ -11409,7 +11396,19 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 | Planet ore | `structs_intel` | Remaining ore vs `maxOre` |
 | Miner output | `structs_intel` (Miner) | Production rate |
 
-**Action**: Plan exploration when planet nears empty. Must empty current planet (0 ore) before exploring.
+**Action**: Scout the next world in parallel. You may explore only after the current planet is `complete` (ore 0) **and** the fleet is `onStation` — explore destroys the old planet's structs. See [planet-depletion](../playbooks/situations/planet-depletion.md).
+
+---
+
+### 6. Active raid clock
+
+**Threat**: Hostile fleet at your planet; `raid_status` `initiated` or `shieldsVulnerable`.
+
+| Monitor | MCP Tool | Threshold |
+|---------|----------|-----------|
+| Raid status / planet activity | `structs_events` (`threats_only`) / `structs_intel` | Any `initiated` or `shieldsVulnerable` |
+
+**Action**: Follow [under-attack](../playbooks/situations/under-attack.md) immediately — roughly four minutes total; return fire within ~1.8 min is what defeats attackers. Desktop `autoresponse` (Standing Automation Grant) is the automated form of this.
 
 ---
 
@@ -11417,8 +11416,8 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 
 ### Periodic Checks (Every Game Loop)
 
-1. `structs_intel` — Power, halted status
-2. `structs_intel` (Ore Bunker) — Stored ore level
+1. `structs_dashboard` — Power online?, charge, `storedOre`
+2. `structs_events` / threats — Raid or fleet arrivals
 
 ### Event-Driven (Streaming)
 
@@ -11451,7 +11450,8 @@ See [Priority Framework](priority-framework.md) for full decision hierarchy.
 - [State Assessment](state-assessment.md) — Baseline before threat monitoring
 - [Opportunity Identification](opportunity-identification.md) — Flip side of threats
 - [Priority Framework](priority-framework.md) — When threats conflict
-- `patterns/polling-vs-streaming.md` — When to poll vs stream
+- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS / NATS real-time events
+- [defense.md](../knowledge/mechanics/defense.md) — Raid clock and survival posture
 
 </document>
 
@@ -11695,9 +11695,9 @@ Skills can opt-in by appending after each tx. Commanders read this to verify wha
 
 | Check | MCP Tool | Signal |
 |-------|----------|--------|
-| Structs on planet | `structs_intel` (by planet) | No Planetary Defense Cannon, low shield |
-| Planet shield | `structs_intel` or webapp shield endpoint | Low or zero shield health |
-| Stored ore | `structs_intel` (Ore Bunker) | High ore = high reward |
+| Structs on planet | `structs_intel` (by planet) | No Planetary Defense Cannon, low planetary shield value |
+| Planet shield | `structs_intel` | Low shield = faster raid proof (timer), not “HP” |
+| Stored ore | player `gridAttributes.ore` via `structs_intel` / scout | High ore = high reward |
 
 **Caveat**: To complete a raid your fleet must be away and your player online, and the target's shields must be vulnerable — its owner's fleet off-station, or their Command Ship offline/destroyed/non-existent. Confirm the target's vulnerability before committing (see the `structs-combat` skill and `scripts/scout.sh`). An **idle/inactive owner is not automatically a raid opportunity** — a powered Command Ship keeps defending regardless of how long the owner has been away, so verify the live shield predicate rather than reading raidability off inactivity. If the owner is shielded but holds ore, it's a *siege* decision (destroy their Command Ship), weighed against the fleet engagement and your own exposed home — not an opportunistic raid.
 
@@ -11815,7 +11815,7 @@ Always validate before committing:
 
 | Tier | Name | Meaning | Examples |
 |------|------|----------|----------|
-| 1 | **Survival** | Can I act at all? | Halted, offline, no Command Ship |
+| 1 | **Survival** | Can I act at all? | Offline (load > capacity), no Command Ship |
 | 2 | **Security** | Am I under threat? | Raid in progress, power critical, ore exposed |
 | 3 | **Economy** | Am I producing? | Mining, refining, power generation |
 | 4 | **Expansion** | Am I growing? | Building, exploring, agreements |
@@ -11831,9 +11831,9 @@ Always validate before committing:
 
 **Survival jumps above everything.**
 
-- Raid in progress → Recall fleet, defend, or cut losses
+- Raid in progress → Restore shields / shoot raider CMD (see [under-attack](../playbooks/situations/under-attack.md)); do not wait to “plan”
 - Power going offline → Deactivate structs or add capacity immediately
-- Player halted → Fix power; no other action possible
+- Offline → Fix power; most other actions are blocked until capacity covers load
 
 ### Power Critical
 
@@ -11855,7 +11855,7 @@ Always validate before committing:
 ## Decision Flow
 
 ```
-1. Check Survival (halted? offline? Command Ship?)
+1. Check Survival (offline? Command Ship?)
    → If fail: Fix or wait. Stop.
 2. Check Security (raid? power critical? ore exposed?)
    → If fail: Address threat. Stop or loop.
@@ -12274,13 +12274,13 @@ If the world has changed materially since you launched, the right action may be 
 
 ## Charge Tracker
 
-Charge is a single **per-player** bar (`charge = CurrentBlockHeight - player.lastActionBlock`), shared across all your structs — not a per-struct value. Track the player's last action block and the cost of the next planned action to know when it can fire:
+Charge is a single **per-player** bar (`charge = CurrentBlockHeight − lastAction`), shared across all your structs — not a per-struct value. Live JSON usually exposes `gridAttributes.lastAction`; **if the key is missing, treat it as 0 (full charge)** (`omitempty`). Track the player's last action block and the cost of the next planned action to know when it can fire:
 
 ```markdown
 # Player Charge Status
 
 Player: 5-1
-Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block)
+Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block; missing lastAction ⇒ 0)
 
 | Next planned action | Charge Needed | Ready Block |
 |---------------------|---------------|-------------|

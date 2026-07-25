@@ -60,13 +60,13 @@ Alliances define late game. Central Banks. Shared infrastructure. Energy agreeme
 
 ## Territory Defense
 
-Your planets are targets. Defend:
+Your home planet (and guild/team planets you cover) are targets. Defend:
 
-- **Resource choke points**—planets that feed multiple systems
-- **Alpha Matter production**—refineries, reactors
-- **Strategic locations**—borders, gateways, high-value claims
+- **Your production core** — extractor, refinery, Command Ship power headroom
+- **Alpha Matter pipeline** — keep ore refined; capacity for the next cycle
+- **Guild flanks** — weak links in war fall first; see [team-operations](../meta/team-operations.md)
 
-Accept that some territory is expendable. Abandon depleted planets. Concentrate force where it matters.
+Accept that a depleted world must be left via explore (one-planet model). Concentrate force where ore and capacity still matter.
 
 ---
 

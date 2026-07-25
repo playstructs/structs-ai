@@ -25,20 +25,20 @@
 
 ### 2. Unrefined Ore Exposure
 
-**Threat**: Ore in bunkers or miners is stealable. Raiders target planets with high stored ore.
+**Threat**: Unrefined ore on the **player** (`gridAttributes.ore` / `storedOre`) is stealable. Raiders target planets whose owner holds ore. The Ore Bunker raises planetary shield; it does not store ore.
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
-| Stored ore | `structs_intel` (Ore Bunker, Miner) | Any > 0 is exposure |
+| Stored ore | `structs_dashboard` / player `gridAttributes.ore` | Any > 0 is exposure |
 | Planet activity | `structs_intel` | Recent raids, attacks |
 
-**Rule**: Refine immediately. Use `struct-ore-refine-complete` as soon as ore is available. Zero unrefined ore = nothing to steal.
+**Rule**: Launch `struct-ore-refine-compute` as soon as ore lands. Zero unrefined ore = nothing to steal.
 
 ---
 
 ### 3. Power Instability (Approaching Capacity)
 
-**Threat**: Load approaching capacity. One more struct or one struct coming online = offline = halt.
+**Threat**: Load approaching capacity. One more struct or one struct coming online = offline.
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|
@@ -70,7 +70,19 @@
 | Planet ore | `structs_intel` | Remaining ore vs `maxOre` |
 | Miner output | `structs_intel` (Miner) | Production rate |
 
-**Action**: Plan exploration when planet nears empty. Must empty current planet (0 ore) before exploring.
+**Action**: Scout the next world in parallel. You may explore only after the current planet is `complete` (ore 0) **and** the fleet is `onStation` — explore destroys the old planet's structs. See [planet-depletion](../playbooks/situations/planet-depletion.md).
+
+---
+
+### 6. Active raid clock
+
+**Threat**: Hostile fleet at your planet; `raid_status` `initiated` or `shieldsVulnerable`.
+
+| Monitor | MCP Tool | Threshold |
+|---------|----------|-----------|
+| Raid status / planet activity | `structs_events` (`threats_only`) / `structs_intel` | Any `initiated` or `shieldsVulnerable` |
+
+**Action**: Follow [under-attack](../playbooks/situations/under-attack.md) immediately — roughly four minutes total; return fire within ~1.8 min is what defeats attackers. Desktop `autoresponse` (Standing Automation Grant) is the automated form of this.
 
 ---
 
@@ -78,8 +90,8 @@
 
 ### Periodic Checks (Every Game Loop)
 
-1. `structs_intel` — Power, halted status
-2. `structs_intel` (Ore Bunker) — Stored ore level
+1. `structs_dashboard` — Power online?, charge, `storedOre`
+2. `structs_events` / threats — Raid or fleet arrivals
 
 ### Event-Driven (Streaming)
 
@@ -112,4 +124,5 @@ See [Priority Framework](priority-framework.md) for full decision hierarchy.
 - [State Assessment](state-assessment.md) — Baseline before threat monitoring
 - [Opportunity Identification](opportunity-identification.md) — Flip side of threats
 - [Priority Framework](priority-framework.md) — When threats conflict
-- `patterns/polling-vs-streaming.md` — When to poll vs stream
+- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS / NATS real-time events
+- [defense.md](../knowledge/mechanics/defense.md) — Raid clock and survival posture
