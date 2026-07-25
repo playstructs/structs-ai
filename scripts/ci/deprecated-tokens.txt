@@ -15,3 +15,10 @@ struct-ore-miner-compute
 #   Real commands: `planet-raid-compute` and `planet-raid-complete`.
 struct-ore-raid-compute
 struct-ore-raid-complete
+# Phantom queries / paths — never existed on v0.20.0 (see BASELINE.md).
+# Allowlisted only in BASELINE.md / CHANGELOG.md via lint-commands SKIP.
+player-charge
+guild-membership-all-by-guild
+struct-all-by-planet
+player_halted
+/structs/player_halted

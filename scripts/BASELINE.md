@@ -97,13 +97,10 @@ Structs Desktop bundles this repo as MCP resources. Investigated
   `scout.sh`, `watch-defense.mjs`) and SAFETY audit paths depend on it. Keep as-is.
 - `.env` / mnemonics — never read, exported, or committed. Preflight only detects presence.
 
-## Known truth issues to fix before restructure (Phase 1)
+## Known truth issues (Phase 1) — RESOLVED
 
-1. "Transaction fees come from energy" (`play-structs`, `TOOLS.md`, `knowledge/economy/energy-market.md`)
-   contradicts source-referenced `knowledge/mechanics/transactions.md` (pure Structs gameplay
-   messages are free via the free-gas ante meter; no `ualpha`, no energy spent as a fee).
-2. Stale command name `struct-ore-refinery-complete` in `schemas/actions.md`,
-   `awareness/threat-detection.md`, `awareness/state-assessment.md`, `reference/action-index.md`,
-   `reference/action-quick-reference.md`.
-3. `-D 1` vs `-D 3` proof-of-work default inconsistency between `AGENTS.md`/`README` and
-   `play-structs`.
+These were fixed before/during the 2026-07 review loops; kept here so they are not re-opened:
+
+1. ~~Transaction fees from energy~~ — gameplay msgs are free-gas; see `transactions.md` / energy-market.
+2. ~~`struct-ore-refinery-complete`~~ — deprecated-token gate; real name is `struct-ore-refine-*`.
+3. ~~`-D 1` vs `-D 3` contradiction~~ — intentional: `play-structs` uses gentle `-D 1`; conventions/AGENTS recommend `-D 3` for parallel ops.

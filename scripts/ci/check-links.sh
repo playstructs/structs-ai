@@ -14,7 +14,7 @@ BROKEN=0
 find . -type f -name '*.md' \
   -not -path './.references/*' -not -path './.git/*' \
   -not -path './structs-webapp/*' -not -path './structs-desktop/*' \
-  -not -path './vendor/*' -not -path './.review/*' \
+  -not -path './vendor/*' -not -path './.review/*' -not -path './_site/*' \
   -not -path '*/node_modules/*' -not -name 'CHANGELOG.md' -print | while IFS= read -r f; do
   dir="$(dirname "$f")"
   grep -oE '\]\(([^)]+)\)' "$f" 2>/dev/null | sed -E 's/^\]\(//; s/\)$//' | while IFS= read -r target; do

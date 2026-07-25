@@ -17,7 +17,7 @@ Common env vars (see [`lib.sh`](lib.sh)): `STRUCTSD` (binary), `STRUCTS_NODE` (R
 | [`assess.sh`](assess.sh) | One-shot state snapshot: power headroom, unrefined ore, charge, planet ore, fleet status | `scripts/assess.sh 1-42` |
 | [`power-budget.sh`](power-budget.sh) | Capacity vs load + "can I afford this struct?" | `scripts/power-budget.sh 1-42 --type 14` |
 | [`scout.sh`](scout.sh) | Raid go/no-go: shield vulnerability (Command Ship status), stealable ore, defenders | `scripts/scout.sh 2-117 [--raw]` |
-| [`job-status.sh`](job-status.sh) | Summarize background PoW jobs in `memory/jobs/` (alive / finished / dead) | `scripts/job-status.sh` |
+| [`job-status.sh`](job-status.sh) | Summarize background PoW jobs in `memory/jobs/` (alive / finished / dead) | `scripts/job-status.sh` (run from repo root) |
 | [`watch-defense.mjs`](watch-defense.mjs) | Live GRASS alerts: raids against you, attacks, Command Ship going offline | `node scripts/watch-defense.mjs structs.planet.2-117` |
 | [`check-drift.sh`](check-drift.sh) | Flag documented game constants that drift from the live chain / source | `scripts/check-drift.sh` |
 | [`generate-llms-full.sh`](generate-llms-full.sh) | Regenerate `llms-full.txt` / `llms-core.txt` from canonical docs | `scripts/generate-llms-full.sh` |

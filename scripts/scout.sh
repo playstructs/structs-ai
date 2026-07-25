@@ -113,7 +113,7 @@ fi
 
 # Owner activity: lastAction is a block height. Compare to current height (best
 # effort) so a dormant owner is visible and not mistaken for a vulnerable one.
-last_action="$(jget "$owner_json" '(.Player // .player // .).lastAction // .lastAction')"
+last_action="$(jget "$owner_json" '(.gridAttributes // .GridAttributes // {}).lastAction // (.gridAttributes // .GridAttributes // {}).last_action')"
 current_height="$(${STRUCTSD} status 2>/dev/null | jq -r '.sync_info.latest_block_height // .SyncInfo.latest_block_height // empty' 2>/dev/null || true)"
 idle_desc=""
 if [[ -n "$last_action" && "$last_action" =~ ^[0-9]+$ ]]; then

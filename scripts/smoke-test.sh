@@ -12,7 +12,7 @@ ok() { echo "  ok: $1"; }
 bad() { echo "  FAIL: $1" >&2; FAIL=1; }
 
 echo "== Harness entry files =="
-for f in AGENTS.md SAFETY.md SOUL.md USER.md COMMANDER.md IDENTITY.md TOOLS.md OPENCLAW.md START.md README.md index.md; do
+for f in AGENTS.md SAFETY.md SOUL.md USER.md COMMANDER.md IDENTITY.md TOOLS.md OPENCLAW.md START.md QUICKSTART.md README.md index.md; do
   [ -f "$f" ] && ok "$f present" || bad "$f missing"
 done
 

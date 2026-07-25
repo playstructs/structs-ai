@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Generate the tiered LLM context bundles:
 #   llms-start.txt  — minimal safe orientation/router   (target <= 30 KB)
-#   llms-core.txt   — common play capabilities           (target <= 100 KB)
+#   llms-core.txt   — common play capabilities           (target <= 120 KB / 122880 B)
 #   llms-full.txt   — the complete canonical corpus      (not the default)
 #
 # DRY the source, not the presentation: bundles are concatenations of canonical
@@ -25,8 +25,8 @@ START_FILES=(
 # CORE: common play capabilities to get established safely. Deep references
 # (hashing, building internals, full combat, onboarding detail) live in
 # llms-full.txt and the linked pages. Core carries the *quick cards* instead:
-# power.md for the online/offline math and defense.md for the survival rules,
-# not the full energy/combat systems.
+# power.md + defense.md quick cards, plus energy.md (capacity math agents need
+# constantly). Full combat/hashing stay in llms-full.txt.
 #
 # Budget: the largest remaining entries are struct-types.md (~17 KB) and
 # SAFETY.md (~14 KB). Both are load-bearing — struct-types is the build-decision

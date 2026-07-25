@@ -32,7 +32,8 @@ PLACEHOLDERS="command [command]"
 
 GREP_EXCL=(--include='*.md'
   --exclude-dir=.references --exclude-dir=.git --exclude-dir=structs-webapp
-  --exclude-dir=structs-desktop --exclude-dir=node_modules --exclude-dir=archive)
+  --exclude-dir=structs-desktop --exclude-dir=node_modules --exclude-dir=archive
+  --exclude-dir=.review --exclude-dir=vendor)
 
 # --- Check 1 (WARNING only): CLI invocations that don't resolve in the snapshot ---
 WARN=0
@@ -50,11 +51,17 @@ while IFS= read -r line; do
 done < <(grep -rInE 'structsd (tx|query) structs[[:space:]]+[a-z]' "${GREP_EXCL[@]}" . 2>/dev/null)
 [ "$WARN" -gt 0 ] && echo "($WARN invocation warning(s) — informational, not failing)"
 
-# --- Check 2: deprecated tokens must not appear ---
+# --- Check 2: deprecated tokens must not appear as live guidance ---
+# Explanatory hits are allowed when the same line clearly marks the name as
+# phantom / absent (so BASELINE-style teaching and integration-notes caveats pass).
 while IFS= read -r tok; do
   [ -z "$tok" ] && continue
   case "$tok" in \#*) continue;; esac
-  hits="$(grep -rInF "$tok" "${GREP_EXCL[@]}" --exclude=BASELINE.md . 2>/dev/null | grep -v '^scripts/ci/deprecated-tokens.txt')"
+  hits="$(grep -rInF "$tok" "${GREP_EXCL[@]}" \
+    --exclude=BASELINE.md --exclude=CHANGELOG.md . 2>/dev/null \
+    | grep -v '^scripts/ci/deprecated-tokens.txt' \
+    | grep -vE 'does not exist|do not exist|no such|there is no|never existed|Phantom|phantom|Not a query|no CLI form|WRONG CLI|removed from the module|absent from|purged' \
+    || true)"
   if [ -n "$hits" ]; then
     echo "FAIL [deprecated token '$tok']:" >&2
     echo "$hits" >&2

@@ -39,6 +39,7 @@ const ALERT = new Set([
   "struct_status",
   "struct_health",
   "fleet_arrive",
+  "fleet_depart", // leaving home drops shields — same priority as arrivals
 ]);
 
 function isCommandShipDown(ev) {

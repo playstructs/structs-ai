@@ -12,6 +12,14 @@ defaults:
       path: ""
     values:
       layout: default
+  # `.cursor/skills/` is the canonical source for Cursor's skill loader, but on the
+  # web it is a byte-identical duplicate of `/skills/`. Keep the pages reachable so
+  # `.cursor/...` links in AGENTS.md resolve, but stop advertising them to crawlers —
+  # the layout already canonicalises them to their `/skills/` twin.
+  - scope:
+      path: ".cursor"
+    values:
+      sitemap: false
 
 include:
   - llms.txt
@@ -38,7 +46,11 @@ exclude:
   - .references
   - .structsd-version
   - scripts
+  # Bare `node_modules` only matches the repo root; the skills mirror carries its own
+  # nested copy, which is git-ignored in production but would otherwise be published
+  # (and sitemapped) by a local build.
   - node_modules
+  - "**/node_modules"
   - "*.sh"
   - Gemfile
   - Gemfile.lock

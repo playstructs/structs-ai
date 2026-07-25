@@ -85,7 +85,7 @@ side by side (co-op is a first-class feature).
 
 ## For builders and the curious
 
-- **Agents & strategy** — [skills](.cursor/skills/), [playbooks](playbooks/),
+- **Agents & strategy** — [skills](skills/), [playbooks](playbooks/),
   [awareness](awareness/)
 - **Game rules** — [knowledge](knowledge/) and [reference](reference/)
 - **Integrate / build tools** — [API](api/), [streaming](api/streaming/event-types.md),
