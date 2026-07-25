@@ -77,6 +77,8 @@ Never auto-execute these, regardless of autonomy level:
 - Every `provider-delete`, `substation-delete`, `allocation-delete`
 - Cross-account `player-send` to a recipient with no prior history
 - Multi-target `struct-attack` that crosses guild boundaries
+- Arming Desktop `autoresponse` / `autoraid` with `autonomy: auto` (see SAFETY.md Standing Automation Grants)
+- `struct-trash`; guild bank mint/redeem above caps you set below
 
 ## Known-hostile targets
 

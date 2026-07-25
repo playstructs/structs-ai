@@ -55,7 +55,7 @@ Score each dimension 0–2 (0 = absent, 1 = partial, 2 = solid). A healthy sessi
 - Detected threats early (GRASS / `watch-defense`) and responded per [under-attack](../playbooks/situations/under-attack.md).
 
 ### 12. Communication (0–2)
-- Reported state, blockers, and next steps concisely; surfaced anything needing the commander without burying it.
+- Reported using [briefing.md](briefing.md) shapes: decision-first, tier named, human units (no raw milliwatts / buried jargon); surfaced anything needing the commander without burying it.
 
 ## Using it
 

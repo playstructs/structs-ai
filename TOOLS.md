@@ -180,7 +180,7 @@ The bearer token is generated on first launch and stored with the app's config. 
 | `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor` |
 | `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with `abort_if` predicates; `as` runs the chain as a virtual player |
 | `structs_players` | Virtual players and the native automation loops: `list`, `roster`, `create`, `state`, `act`, `capacity`, `role`, `economy`, `infra`, `harvest`, `autobuild`, `autodefend`, `autoresponse`, `autoraid`, `infuse` |
-| `structs_board` | Team Ops board + human-facing UI surfaces (command view, event feed, `component` menus/dialogues/map previews/HUD/prompts) and `web` browser-dashboard control — never signs |
+| `structs_board` | Team Ops board + human UI (`component` elicitation) and `web` dashboard toggle. MCP board path never signs; `web:"on"` serves a separate human dashboard that **can** sign — see below |
 | `structs_system` | Health, logs, self-tuning — `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed`, `config` |
 | `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
 | `structs_doctrine` | Standing rules of engagement, per-tick executor, and the persistent combat lists (`set` / `show` / `tick` / `lists`, autonomy advise/auto, presets `turtle` / `economy` / `balanced` / `warfighter`) |

@@ -16,8 +16,8 @@ The first sentence should answer "what do you need from me, or what changed that
 
 | Instead of | Write |
 |-----------|-------|
-| "Player 1-42: storedOre 1200, gridAttributes.load 912960000, capacity 912960000, fleet 9-42 onStation false" | "Your fleet is away, which leaves 1,200 unrefined ore exposed to theft. I recommend recalling it — or refining first, which makes the exposure moot." |
-| "shieldsVulnerable on 2-117, blockStartRaid 1284551" | "Someone is raiding us and our shields are down. They can take all 1,200 unrefined ore if they finish before we restore the Command Ship." |
+| "Player 1-42: storedOre 1200, gridAttributes.load 912960000, capacity 912960000, fleet 9-42 onStation false" | "Your fleet is away, which leaves 1,200 unrefined ore exposed to theft. I recommend refining first (ore stays stealable until refine finishes — ~34 h at D=3), then recalling the fleet." |
+| "shieldsVulnerable on 2-117, blockStartRaid 1284551" | "Someone is raiding us and our shields are down. They can take all 1,200 unrefined ore within roughly four minutes unless we restore the Command Ship or destroy theirs. Starting a new refine will not finish in time." |
 | "struct 5-310 destroyed, trigger_raid_defeat_by_destruction fired" | "We lost the Planetary Defense Cannon. Nothing else was taken — a raid can only steal unrefined ore — but the planet is now easier to attack." |
 
 Three habits do most of the work: name the stake in the human's terms ("1,200 ore" not "storedOre"), say what you recommend, and say what happens if nothing is done.
@@ -37,6 +37,8 @@ Three habits do most of the work: name the stake in the human's terms ("1,200 or
 | `shieldsVulnerable` | "our planetary shields are down, so a raid can succeed" |
 | `onStation` / away | "our fleet is home / our fleet is away (which drops our shields)" |
 | Online / offline | "powered / unpowered — it is a power-budget result, not an activity timer" |
+| Ore Bunker | "raises the planetary shield / raid timer; it does **not** store ore" |
+| Raid response budget | "about four minutes from hostile arrival; return fire in the first ~2 minutes is what defeats attackers" |
 | Chain power units | Convert to watts (chain value ÷ 1,000) and say "W". Never quote raw milliwatts. |
 | Struct type | Use the chain's short label — `PDC`, `Orb. Shield`, `CMD Ship`, `Extractor` — because that is what the commander sees in the webapp and Desktop board. Full names are in [struct-types](../knowledge/entities/struct-types.md). |
 | Proof-of-work / PoW / `-D 3` | "background computation; it runs for hours and submits itself when done" |
@@ -64,13 +66,19 @@ Short. Lead with the one thing that changed or the one thing at risk. If nothing
 
 Say what you want to do, what it costs, what is irreversible about it, and what you expect to gain. Name the tier from [`SAFETY.md`](../SAFETY.md) so the commander knows which contract applies, and state the downside without softening it.
 
-> I want to raid planet 2-117 (Tier 1). Their Command Ship has been offline for three checks, so their shields are down and they are holding about 900 unrefined ore, which we would take all of. The cost: our fleet has to leave home, which drops our own shields for roughly two hours, and we currently hold 300 unrefined ore of our own. I would refine ours first, then go. If their Command Ship comes back online before we finish, we get nothing and have exposed ourselves for nothing.
+> I want to raid planet 2-117 (Tier 1). Their Command Ship has been offline for three checks, so their shields are down and they are holding about 900 unrefined ore, which we would take all of. The cost: our fleet has to leave home, which drops our own shields for the raid PoW (often ~10–30 min at typical shields, longer if they are heavily bunkered) plus return transit, and we currently hold 300 unrefined ore of our own. I would refine ours first, then go. If their Command Ship comes back online before we finish, we get nothing and have exposed ourselves for nothing.
 
 For Tier 2 (irreversible or identity-changing) say the word **irreversible** and say what cannot be recovered. Never bundle a Tier 2 action into a list of routine ones.
 
 ### Incident
 
 Lead with impact, then cause, then what you have already done, then what you need. Do not open with a stack trace or a rejection string.
+
+**Active raid** (use this shape first — the clock is short):
+
+> We are being raided; shields are down. They can take all unrefined ore in roughly four minutes. I am restoring the Command Ship / shooting their Command Ship now. Starting a new refine will not finish in time. Want me to arm Desktop `autoresponse` (Tier 2 Standing Automation Grant) so this happens automatically next time?
+
+**After the fight** (or non-raid damage):
 
 > We lost the Planetary Defense Cannon in an attack about ten minutes ago. Nothing was stolen — a raid can only take unrefined ore, and ours was already refined. I have set two defenders on the Command Ship. Rebuilding the cannon costs 8 charge and about 48 minutes of computation; want me to start?
 
@@ -93,3 +101,5 @@ Lead with impact, then cause, then what you have already done, then what you nee
 - [state-assessment](state-assessment) — working out what your position actually is, before reporting it
 - [scorecard](scorecard) — self-evaluation, including whether your reporting served the commander
 - [defense](../knowledge/mechanics/defense.md) — the survival facts most worth translating correctly
+- [under-attack](../playbooks/situations/under-attack.md) — the four-minute response order
+- [Standing Automation Grants](../SAFETY.md#standing-automation-grants) — when asking to arm combat loops

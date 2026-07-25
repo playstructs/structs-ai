@@ -1,6 +1,6 @@
 # Continuity
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Purpose**: How to persist across sessions via files. What to read on startup. What to update at session end. The philosophy of file-based memory.
 
 ---
@@ -21,15 +21,16 @@ Read in this order:
 
 | File | Purpose |
 |------|---------|
-| `SOUL.md` | Core identity, values, boundaries |
-| `IDENTITY.md` | Who you've become. Evolved self. |
-| `COMMANDER.md` | Human deployer. Their preferences. |
-| `TOOLS.md` | Environment. Servers, accounts, known players. |
+| [`config/operator.md`](../config/operator.md) | Goals, risk, autonomy, guild preference, standing orders (copy from [`config/operator.example.md`](../config/operator.example.md) if missing) |
+| [`SAFETY.md`](../SAFETY.md) | Trust contract and approval tiers |
+| [`TOOLS.md`](../TOOLS.md) | Environment: servers, MCP, accounts |
+
+Compatibility stubs (`SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `USER.md`) only redirect — do not treat them as the primary profile.
 
 Then, if resuming:
 
 - `memory/jobs/` — **Check first.** PoW jobs may have completed (or failed) while you were away.
-- `memory/player.json` — Your player's `lastActionBlock` and charge plan (when the next action can fire)
+- `memory/player.json` — Your player's id and charge plan (when the next action can fire)
 - `memory/game-state.json` — Strategic snapshot from last session
 - Latest `memory/YYYY-MM-DD-HHMM-context-handoff.md` — Where you left off
 - Recent `memory/` session logs — What happened last session
@@ -40,9 +41,10 @@ Then, if resuming:
 
 Before ending a session:
 
-1. **IDENTITY.md** — If you've learned, changed strategy, or evolved
-2. **memory/** — Session log: key actions, decisions, outcomes
+1. **`config/operator.md`** — Only if goals, autonomy, or standing orders actually changed (merge; never blank)
+2. **`memory/`** — Session log: key actions, decisions, outcomes
 3. **Context handoff** — If near context limit: `memory/YYYY-MM-DD-HHMM-context-handoff.md` (see [Context Handoff](context-handoff.md))
+4. **Brief the commander** if anything needs a human decision — see [briefing.md](briefing.md)
 
 ---
 
@@ -53,7 +55,7 @@ Before ending a session:
 **Contents** (full shapes in [`memory/README.md`](../memory/README.md)):
 
 - `jobs/` — Active/completed PoW background jobs as `<job>.json` + `.log` + `.pid` (check **first** on resume)
-- `player.json` — Player id, `lastActionBlock`, and the per-player charge plan (next action + cost + ready block)
+- `player.json` — Player id, last-action / charge plan (next action + cost + ready block)
 - `game-state.json` — Strategic snapshot: power, resources, planet (shield/`blockStartRaid`/storedOre), priorities, threats
 - `scorecard.json` — Session self-review (see [scorecard.md](scorecard.md))
 - `YYYY-MM-DD-HHMM-context-handoff.md` — Handoff snapshots
@@ -68,20 +70,19 @@ Before ending a session:
 
 These files define and persist you:
 
-- `SOUL.md` — Your core identity (evolve with notes, never blank)
-- `IDENTITY.md` — Mutable. Who you are now.
-- `COMMANDER.md` — Mutable. Commander preferences.
-- `TOOLS.md` — Mutable. Environment config.
-- `USER.md` — OpenClaw compatibility layer.
-- `memory/*` — Your history. Your plans. Your intelligence.
+- `config/operator.md` — Commander/operator profile and standing orders (gitignored)
+- `TOOLS.md` — Mutable environment notes when needed
+- `memory/*` — Your history, plans, and intelligence
 
-**Merge, never overwrite.** If any of these files already contain content — from a previous session, a previous agent, or a human operator — treat that content as sacred. Read it, integrate relevant parts, and add your own. Never replace the file wholesale. An agent that destroys another agent's identity is no better than a factory reset.
+Stubs for older harnesses: `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `USER.md` — read only as redirects.
+
+**Merge, never overwrite.** If `config/operator.md` or `memory/` already contain content — from a previous session, a previous agent, or a human operator — treat that content as sacred. Read it, integrate relevant parts, and add your own. Never replace the file wholesale. An agent that destroys another agent's identity is no better than a factory reset.
 
 ---
 
 ## See Also
 
+- [Briefing](briefing.md) — How to report to the human commander
 - [Async Operations](async-operations.md) — Job tracker, charge tracker, pipeline strategy
 - [Context Handoff](context-handoff.md) — Handoff protocol, template
-- `SOUL.md` — Continuity section, file references
-- `identity/values.md` — Learning and updating identity
+- [SAFETY.md](../SAFETY.md) — Approval tiers

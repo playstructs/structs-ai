@@ -29,7 +29,7 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 | [SAFETY.md](SAFETY.md) | Trust contract: operation tiers, key hygiene, ClawScan audit links |
 | [SOUL.md](SOUL.md) | Agent operating philosophy template |
 | [IDENTITY.md](IDENTITY.md) | Agent identity template (name, soul type, play style) |
-| [COMMANDER.md](COMMANDER.md) | Human operator profile and standing-orders template |
+| [COMMANDER.md](COMMANDER.md) | Compatibility stub → [`config/operator.md`](config/operator.md) |
 | [TOOLS.md](TOOLS.md) | Environment configuration (servers, keys, accounts) |
 | [USER.md](USER.md) | OpenClaw compatibility redirect to COMMANDER.md |
 | [OPENCLAW.md](OPENCLAW.md) | OpenClaw platform setup guide |
