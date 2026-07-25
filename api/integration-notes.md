@@ -17,7 +17,17 @@ The public testnet exposes the standard Cosmos surfaces over TLS. There is **no 
 | gRPC | `public.testnet.structs.network:9090` | If exposed for your tooling |
 | Local devnet LCD | `http://localhost:1317` | Only when you run your own node (see [local-devnet.md](../reference/local-devnet.md)) |
 
-**Caveat — not every LCD query is implemented.** Some module queries return gRPC `code 12` ("Not Implemented") on the deployed testnet build (observed for `GET /structs/structs/struct_type/...`). When an LCD route 501s, fall back to the CLI (`structsd query structs ...`) or the Guild Stack PostgreSQL mirror. Do not assume a 501 means a bad URL.
+**Caveat — a 501 is often a wrong URL, not an unimplemented query.** The gRPC-gateway returns gRPC `code 12` ("Not Implemented") for routes that do not match a registered annotation. Verified on both local LCD (`http://localhost:1317`) and public testnet:
+
+| Wrong (501) | Correct (200) |
+|-------------|---------------|
+| `/structs/params` | `/structs/structs/params` (the only route that keeps the doubled `structs`) |
+| `/structs/structs/struct_type/{id}` | `/structs/struct_type/{id}` |
+| `/structs/guild_rank_permission_by_object/{objectId}` | `/structs/guild_rank_permission/object/{object_id}` |
+| `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` | `/structs/guild_rank_permission/object/{object_id}/guild/{guild_id}` |
+| `/structs/player_halted` | *(no such query — removed from the module)* |
+
+Authoritative path list: `option (google.api.http).get` annotations in `.references/structsd/proto/structs/structs/query.proto`. When an LCD route 501s, check that file before assuming the feature is missing. Fall back to the CLI (`structsd query structs ...`) or the Guild Stack PostgreSQL mirror if the annotation really is absent.
 
 The query docs under [api/queries/](queries/) use `http://localhost:1317` as a generic base — substitute the live HTTPS base above for testnet.
 

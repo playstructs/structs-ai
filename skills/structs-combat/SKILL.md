@@ -1,6 +1,6 @@
 ---
 name: structs-combat
-description: Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed.
+description: "Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed."
 level: core
 domain: combat
 ---

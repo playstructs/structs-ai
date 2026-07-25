@@ -13,7 +13,7 @@
 | Method | Path | Description | Auth | Paginated |
 |--------|------|-------------|------|-----------|
 | GET | `/blockheight` | Get current block height | No | No |
-| GET | `/structs/params` | Get module parameters | No | No |
+| GET | `/structs/structs/params` | Get module parameters | No | No |
 
 ---
 
@@ -46,7 +46,7 @@ Returns the current block height of the blockchain.
 
 ### Get Module Parameters
 
-`GET /structs/params`
+`GET /structs/structs/params`
 
 Returns the current module parameters for the Structs module.
 

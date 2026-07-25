@@ -14,7 +14,6 @@
 |--------|------|-------------|------|-----------|
 | GET | `/structs/player/{id}` | Get player by ID | No | No |
 | GET | `/structs/player` | List all players | No | Yes |
-| GET | `/structs/player_halted` | List all halted players | No | No |
 
 ---
 
@@ -76,19 +75,6 @@ Returns a paginated list of all players.
 |------|------|----------|--------|-------------|
 | `pagination.key` | string | No | - | Pagination key |
 | `pagination.limit` | integer | No | - | Page size |
-
-#### Response
-
-- **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/player.md` (array)
-
----
-
-### List All Halted Players
-
-`GET /structs/player_halted`
-
-Returns a list of all halted players.
 
 #### Response
 

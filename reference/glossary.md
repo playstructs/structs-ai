@@ -55,6 +55,12 @@ A weapon property (Battleship primary) that ignores the target's damage reductio
 ### attackerDefeated
 A raid status: the raiding fleet's own Command Ship was destroyed while away, so the fleet is defeated and sent home. The result of [trigger_raid_defeat_by_destruction](#trigger_raid_defeat_by_destruction). → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
 
+### autoraid
+A Structs Desktop native loop (`structs_players` command) that scores reachable players and dispatches a `raider` virtual player to raid them. Off until enabled; defaults to `autonomy: advise`. Arming `autonomy: auto` is a Tier-2 standing grant — see [Standing Automation Grants](#standing-automation-grants). → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
+
+### autoresponse
+A Structs Desktop native loop (`structs_players` command) that reacts to a raid alarm: identifies the attacker, records a grudge, optionally refines threatened ore, and can fire co-located shooters at the raider's Command Ship. Off until enabled; defaults to `autonomy: advise`. Even in advise mode it accumulates grudges that later feed `autoraid`. → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
+
 ### away
 A fleet state: the fleet (and its Command Ship) has left its home planet. While away, you cannot build/mine at home, **and your home planet's shields are vulnerable**. Required to raid. → [fleet.md](../knowledge/mechanics/fleet.md)
 
@@ -81,6 +87,9 @@ The per-operation clocks that drive proof-of-work difficulty. Build's clock is o
 ### Breach
 *(Codex term)* The human Codex's name for a raid's completion phase — the countdown that runs once a defender's planet is vulnerable (no on-station Command Ship), ending in ore seizure. Our raid PoW while [shieldsVulnerable](#shieldsvulnerable). → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
 
+### Briefing
+How an agent reports Structs state to a human who does not speak the jargon: lead with the decision, translate vocabulary, date the claim. Distinct from a [context handoff](../awareness/context-handoff.md) (which briefs your future self). → [briefing.md](../awareness/briefing.md)
+
 ### Build
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
 
@@ -100,6 +109,9 @@ The structured error key behind `cannot handle new load requirements (required: 
 
 ### Charge
 A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
+
+### classAbbreviation
+The chain's short label for a struct type (`CMD Ship`, `PDC`, `Orb. Shield`, …). The webapp and Desktop board render these, so use them when naming a struct to a human. Distinct from `class`, which is identical to the type name for every current type. → [struct-types.md](../knowledge/entities/struct-types.md)
 
 ### CMD Ship / Spearpoint
 *(Codex term)* The human Codex's names — "CMD Ship" and the ST-21 "Spearpoint" — for the [Command Ship](#command-ship). → [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
@@ -282,6 +294,9 @@ Build positions: **4 per ambit** (space/air/land/water) on **both** the planet a
 ### Smart weapon
 *(Codex term)* The human Codex's weapon class for self-guided munitions — our **guided** weapons. Evaded by Signal Jamming. → [Guided / Unguided](#guided--unguided)
 
+### Standing Automation Grants
+Enabling a Structs Desktop native loop is not a single transaction — it is a standing grant to sign an open-ended series. Economic loops (`harvest`, `autobuild`, `autodefend`, `infuse`) are Tier 1; combat loops (`autoresponse`, `autoraid`) are Tier 2 and must not run under full autonomy without an explicit commander decision. → [SAFETY.md — Standing Automation Grants](../SAFETY.md)
+
 ### Stealth Mode
 A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting only; same-ambit structs can still hit. Attacking breaks stealth. → [combat.md — Stealth](../knowledge/mechanics/combat.md#stealth)
 
@@ -315,6 +330,11 @@ A Command Ship property: when a Command Ship is destroyed **while away from home
 
 ### Unguided
 See [Guided / Unguided](#guided--unguided).
+
+## W
+
+### warfighter
+A `structs_doctrine` preset that bundles max defense with both autonomous combat loops armed but advising (`autonomy: advise`). Explicit fields override the preset. → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
 
 ---
 

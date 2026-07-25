@@ -99,7 +99,11 @@
 - [Early Game](https://structs.ai/playbooks/phases/early-game): First 1-2 days -- survive and establish resource pipeline
 - [Mid Game](https://structs.ai/playbooks/phases/mid-game): Expansion -- when to explore, fortify, join guilds
 - [Late Game](https://structs.ai/playbooks/phases/late-game): Endgame -- dominance, defense, market control
+- [Offline](https://structs.ai/playbooks/situations/offline): Load > capacity; can't act
 - [Under Attack](https://structs.ai/playbooks/situations/under-attack): Immediate response protocol
+- [Suspected Compromise](https://structs.ai/playbooks/situations/suspected-compromise): Keys/agent/permissions look wrong
+- [Failed Compute](https://structs.ai/playbooks/situations/failed-compute): A build/mine/refine/raid job errored or stalled
+- [Planet Depletion](https://structs.ai/playbooks/situations/planet-depletion): Planet running out of ore
 - [Resource Rich](https://structs.ai/playbooks/situations/resource-rich): Exploiting abundance safely
 - [Resource Scarce](https://structs.ai/playbooks/situations/resource-scarce): Survival and efficiency
 - [Guild War](https://structs.ai/playbooks/situations/guild-war): Coordinated conflict

@@ -56,3 +56,11 @@ _build/
 dist/
 build/
 
+# Jekyll
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+.bundle/
+vendor/
+

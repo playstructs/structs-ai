@@ -124,7 +124,7 @@ Base URL: `http://localhost:1317` (local) or `https://public.testnet.structs.net
 | ID | Method | Path | Paginated | Entity | Schema | Protocol |
 |----|--------|------|-----------|--------|--------|----------|
 | block-height | GET | `/blockheight` | No | BlockHeight | [game-state.md](../schemas/game-state.md#blockheight) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
-| params | GET | `/structs/params` | No | Params | [entities.md](../schemas/entities.md#params) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
+| params | GET | `/structs/structs/params` | No | Params | [entities.md](../schemas/entities.md#params) | [query-protocol.md](../protocols/query-protocol.md#pattern-1) |
 
 ### Transaction
 

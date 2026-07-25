@@ -271,8 +271,8 @@ Response schema: `schemas/entities.md#Address[]`
 | GET | `/structs/permission` | List all permissions | Yes |
 | GET | `/structs/permission/object/{objectId}` | Get permissions by object | No |
 | GET | `/structs/permission/player/{playerId}` | Get permissions by player | No |
-| GET | `/structs/guild_rank_permission_by_object/{objectId}` | Get guild rank permissions by object | Yes |
-| GET | `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` | Get guild rank permissions by object and guild | No |
+| GET | `/structs/guild_rank_permission/object/{object_id}` | Get guild rank permissions by object | Yes |
+| GET | `/structs/guild_rank_permission/object/{object_id}/guild/{guild_id}` | Get guild rank permissions by object and guild | No |
 
 **`GET /structs/permission/{permissionId}`** (`permission-by-id`)
 
@@ -298,7 +298,7 @@ Response schema: `schemas/entities.md#Permission[]`
 
 Response schema: `schemas/entities.md#Permission[]`
 
-**`GET /structs/guild_rank_permission_by_object/{objectId}`** (`guild-rank-permission-by-object`)
+**`GET /structs/guild_rank_permission/object/{object_id}`** (`guild-rank-permission-by-object`)
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -308,7 +308,7 @@ Response schema: `schemas/entities.md#Permission[]`
 
 Response schema: Guild rank permission records array
 
-**`GET /structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}`** (`guild-rank-permission-by-object-and-guild`)
+**`GET /structs/guild_rank_permission/object/{object_id}/guild/{guild_id}`** (`guild-rank-permission-by-object-and-guild`)
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -322,7 +322,7 @@ Response schema: Guild rank permission records array (at most 24 records)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/blockheight` | Get current block height |
-| GET | `/structs/params` | Get module parameters |
+| GET | `/structs/structs/params` | Get module parameters |
 
 **`GET /blockheight`** (`block-height`)
 
@@ -336,7 +336,7 @@ Response schema: `schemas/entities.md#BlockHeight`
 }
 ```
 
-**`GET /structs/params`** (`params`)
+**`GET /structs/structs/params`** (`params`)
 
 Response schema: `schemas/entities.md#Params`
 

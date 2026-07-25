@@ -145,7 +145,11 @@ Strategic thinking and tactical guides.
 
 | File | Situation |
 |------|-----------|
+| [offline.md](playbooks/situations/offline.md) | Load > capacity; can't act |
 | [under-attack.md](playbooks/situations/under-attack.md) | Immediate response protocol |
+| [suspected-compromise.md](playbooks/situations/suspected-compromise.md) | Keys/agent/permissions look wrong |
+| [failed-compute.md](playbooks/situations/failed-compute.md) | A build/mine/refine/raid job errored or stalled |
+| [planet-depletion.md](playbooks/situations/planet-depletion.md) | Planet running out of ore |
 | [resource-rich.md](playbooks/situations/resource-rich.md) | Exploiting abundance safely |
 | [resource-scarce.md](playbooks/situations/resource-scarce.md) | Survival and efficiency |
 | [guild-war.md](playbooks/situations/guild-war.md) | Coordinated conflict |
@@ -370,6 +374,7 @@ Quick-lookup indexes.
 |------|-------|
 | [glossary.md](reference/glossary.md) | Lexical index — every key term with a definition and a link to its canonical page |
 | [codex-crosswalk.md](reference/codex-crosswalk.md) | Maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds, Battery, Alpha Ore, …) to canonical pages |
+| [local-devnet.md](reference/local-devnet.md) | Local Guild Stack / chain endpoints for development and review |
 | [action-quick-reference.md](reference/action-quick-reference.md) | All game actions at a glance |
 | [action-index.md](reference/action-index.md) | Action index |
 | [api-quick-reference.md](reference/api-quick-reference.md) | API endpoint quick lookup |

@@ -43,7 +43,7 @@
 
 - **Key Fields**: id, capacity, load, charge, storedOre, playerOnline, guildRank
 - **Relationships**: Owns Planet, Struct, Fleet, Reactor, Substation, Provider; Member of Guild
-- **Query Patterns**: byId `/structs/player/{id}` | all `/structs/player` | halted `/structs/player_halted`
+- **Query Patterns**: byId `/structs/player/{id}` | all `/structs/player`
 - **Code**: `x/structs/types/player.pb.go`, `x/structs/keeper/player_cache.go`
 - **Split Schema**: [player.md](../schemas/entities/player.md) | **Minimal**: [player-essential.md](../schemas/minimal/player-essential.md)
 

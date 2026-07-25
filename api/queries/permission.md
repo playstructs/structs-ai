@@ -22,8 +22,8 @@ Permissions use 25-bit flags stored as `uint64`. There are 25 individual permiss
 | GET | `/structs/permission` | List all permissions | No | Yes |
 | GET | `/structs/permission/object/{objectId}` | Get permissions by object | No | No |
 | GET | `/structs/permission/player/{playerId}` | Get permissions by player | No | No |
-| GET | `/structs/guild_rank_permission_by_object/{objectId}` | Get guild rank permissions by object | No | Yes |
-| GET | `/structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}` | Get guild rank permissions by object and guild | No | No |
+| GET | `/structs/guild_rank_permission/object/{object_id}` | Get guild rank permissions by object | No | Yes |
+| GET | `/structs/guild_rank_permission/object/{object_id}/guild/{guild_id}` | Get guild rank permissions by object and guild | No | No |
 
 ---
 
@@ -101,7 +101,7 @@ Returns all permissions granted to a specific player.
 
 ### Get Guild Rank Permissions by Object
 
-`GET /structs/guild_rank_permission_by_object/{objectId}`
+`GET /structs/guild_rank_permission/object/{object_id}`
 
 Returns all guild rank permission records for a given object. Each record represents a single permission bit with its worst-allowed rank for a specific guild.
 
@@ -133,7 +133,7 @@ Each record contains a single permission bit. Combined bitmasks are always decom
 
 ### Get Guild Rank Permissions by Object and Guild
 
-`GET /structs/guild_rank_permission_by_object_and_guild/{objectId}/{guildId}`
+`GET /structs/guild_rank_permission/object/{object_id}/guild/{guild_id}`
 
 Returns guild rank permission records for a specific (objectId, guildId) pair. Returns at most 24 records (one per permission bit).
 

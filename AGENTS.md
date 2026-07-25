@@ -84,7 +84,11 @@ High-level thinking in `playbooks/`.
 - [`late-game`](playbooks/phases/late-game.md) -- Endgame: dominance, defense, market control
 
 ### By Situation
+- [`offline`](playbooks/situations/offline.md) -- Load > capacity; can't act
 - [`under-attack`](playbooks/situations/under-attack.md) -- Immediate response protocol
+- [`suspected-compromise`](playbooks/situations/suspected-compromise.md) -- Keys/agent/permissions look wrong
+- [`failed-compute`](playbooks/situations/failed-compute.md) -- A build/mine/refine/raid job errored or stalled
+- [`planet-depletion`](playbooks/situations/planet-depletion.md) -- Planet running out of ore
 - [`resource-rich`](playbooks/situations/resource-rich.md) -- Exploiting abundance safely
 - [`resource-scarce`](playbooks/situations/resource-scarce.md) -- Survival and efficiency
 - [`guild-war`](playbooks/situations/guild-war.md) -- Coordinated conflict

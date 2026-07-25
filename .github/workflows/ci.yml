@@ -31,6 +31,9 @@ jobs:
       - name: Internal link check
         run: bash scripts/ci/check-links.sh
 
+      - name: Situation playbooks wired into bootstrap routers
+        run: bash scripts/ci/check-situations-routers.sh
+
       - name: Generated bundle drift
         run: bash scripts/ci/check-bundles.sh
 
