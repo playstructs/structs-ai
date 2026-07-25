@@ -124,7 +124,7 @@ GRASS carries game-level events. Tendermint WS carries chain events (txs, blocks
 | invalidSignature | 3 | Invalid signature |
 | insufficientGas | 4 | Insufficient gas |
 | invalidMessage | 5 | Invalid message |
-| playerHalted | 6 | Player is halted (offline) |
+| playerHalted | 6 | Player is offline (offline) |
 | insufficientCharge | 7 | Insufficient charge |
 | invalidLocation | 8 | Invalid location |
 | invalidTarget | 9 | Invalid target |

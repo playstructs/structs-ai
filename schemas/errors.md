@@ -23,7 +23,7 @@
 | 3 | INVALID_SIGNATURE | error | Transaction signature is invalid | re-sign transaction | yes | -- |
 | 4 | INSUFFICIENT_GAS | error | Insufficient gas for transaction | increase gas limit | yes | -- |
 | 5 | INVALID_MESSAGE | error | Message format is invalid | validate message format | no | -- |
-| 6 | PLAYER_HALTED | error | Player is halted (offline) | wait for player online | no | check player status, wait for player online |
+| 6 | PLAYER_OFFLINE | error | Player offline: `(load+structsLoad) > (capacity+capacitySecondary)` | restore capacity or shed load | no | There is no `halted` field — query player power attributes |
 | 7 | INSUFFICIENT_CHARGE | error | Player has insufficient charge (per-player bar, not per-struct) | wait for charge | no | check player charge, wait for charge |
 | 8 | INVALID_LOCATION | error | Location is invalid or inaccessible | validate location | no | -- |
 | 9 | INVALID_TARGET | error | Target is invalid or not attackable | validate target | no | -- |
@@ -60,7 +60,7 @@
 
 **Retryable**: 1 (GENERAL_ERROR), 3 (INVALID_SIGNATURE), 4 (INSUFFICIENT_GAS), 500 (INTERNAL_SERVER_ERROR), timeout (REQUEST_TIMEOUT), network (NETWORK_ERROR)
 
-**Not retryable**: 0 (SUCCESS), 2 (INSUFFICIENT_FUNDS), 5 (INVALID_MESSAGE), 6 (PLAYER_HALTED), 7 (INSUFFICIENT_CHARGE), 8 (INVALID_LOCATION), 9 (INVALID_TARGET), 400 (BAD_REQUEST), 404 (ENTITY_NOT_FOUND)
+**Not retryable**: 0 (SUCCESS), 2 (INSUFFICIENT_FUNDS), 5 (INVALID_MESSAGE), 6 (PLAYER_OFFLINE), 7 (INSUFFICIENT_CHARGE), 8 (INVALID_LOCATION), 9 (INVALID_TARGET), 400 (BAD_REQUEST), 404 (ENTITY_NOT_FOUND)
 
 ---
 

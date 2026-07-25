@@ -260,8 +260,8 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 ### Player Requirements
 
 **Player Online**:
-- Player must not be halted
-- Check: `GET /structs/player/{id}` → `player.halted === false`
+- Player must be online (capacity covers load)
+- Check: `GET /structs/player/{id}` → `player online via capacity/load`
 
 **Sufficient Resources**:
 - Player must have required resources
@@ -448,8 +448,8 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 
 ### Common Errors
 
-**Player Halted** (code: 6):
-- Player is offline/halted
+**Player Offline** (code: 6):
+- Player is offline (load exceeds capacity)
 - **Action**: Wait for player to come online
 
 **Insufficient Funds** (code: 2):

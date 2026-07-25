@@ -390,7 +390,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
     },
     {
       "check": "GET /structs/player/{playerId}",
-      "condition": "player.halted == false",
+      "condition": "player online via capacity/load",
       "ifFalse": "abort"
     }
   ],
@@ -427,8 +427,8 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
   "requirements": {
     "playerOnline": {
       "check": "GET /structs/player/{playerId}",
-      "condition": "player.halted == false",
-      "error": "PLAYER_HALTED"
+      "condition": "player online via capacity/load",
+      "error": "PLAYER_OFFLINE"
     },
     "sufficientResources": {
       "check": "GET /structs/player/{playerId}",
@@ -487,7 +487,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
     "3": "INVALID_SIGNATURE",
     "4": "INSUFFICIENT_GAS",
     "5": "INVALID_MESSAGE",
-    "6": "PLAYER_HALTED",
+    "6": "PLAYER_OFFLINE",
     "7": "INSUFFICIENT_CHARGE",
     "8": "INVALID_LOCATION",
     "9": "INVALID_TARGET"
@@ -505,10 +505,10 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
       "retry": false,
       "fallback": "wait for resources"
     },
-    "PLAYER_HALTED": {
+    "PLAYER_OFFLINE": {
       "action": "log",
       "retry": false,
-      "fallback": "wait for player online"
+      "fallback": "restore capacity or shed load until online"
     },
     "INSUFFICIENT_CHARGE": {
       "action": "log",

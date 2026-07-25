@@ -121,7 +121,7 @@ Confirm Alpha Matter was not returned (undelegation cancelled).
 
 | Error | Code | Description | Recovery | Retry |
 |-------|------|-------------|----------|-------|
-| Player Halted | `PLAYER_HALTED` | Player is offline (halted) | Wait for player to come online | Yes (30s delay) |
+| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
 | Not Undelegating | `INVALID_STATE` | Reactor is not in undelegating state | Check reactor delegation status -- must be `undelegating` | No |
 | Already Active | `INVALID_STATE` | Reactor already has active delegation | No action needed -- delegation is already active | No |
 | Transaction Failed | `GENERAL_ERROR` | Transaction failed to broadcast or execute | Check transaction response for error details | Yes (5s delay) |

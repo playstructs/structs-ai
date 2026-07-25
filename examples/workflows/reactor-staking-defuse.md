@@ -147,7 +147,7 @@ Confirm Alpha Matter was returned to player after undelegation period.
 
 | Error | Code | Description | Recovery | Retry |
 |-------|------|-------------|----------|-------|
-| Player Halted | `PLAYER_HALTED` | Player is offline (halted) | Wait for player to come online | Yes (30s delay) |
+| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
 | No Active Delegation | `INVALID_STATE` | Reactor has no active delegation to undelegate | Check reactor delegation status | No |
 | Insufficient Delegation Amount | `INSUFFICIENT_FUNDS` | Requested defuse amount exceeds delegation amount | Reduce defuse amount to match delegation amount | Yes |
 | Migrating State | `INVALID_STATE` | Reactor is in migrating state, cannot defuse | Wait for migration to complete | Yes (check migration status) |

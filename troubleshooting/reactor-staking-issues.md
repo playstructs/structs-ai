@@ -17,19 +17,19 @@ This guide helps troubleshoot issues with reactor staking and validation delegat
 
 **Symptom**: `reactor-infuse` transaction broadcasts but delegation doesn't occur
 
-**Cause**: Player is halted (offline)
+**Cause**: Player is offline (offline)
 
 **Diagnosis**:
 1. Query player status: `GET /structs/player/{playerId}`
 2. Check `player.online == true`
-3. If `false`, player is halted
+3. If `false`, player is offline
 
 **Solution**:
 1. Wait for player to come online
 2. Verify `player.online == true`
 3. Retry `reactor-infuse` action
 
-**Reference**: `dependencies/energy-production.md`, `schemas/errors.md#/PLAYER_HALTED`
+**Reference**: `dependencies/energy-production.md`, `schemas/errors.md#/PLAYER_OFFLINE`
 
 ---
 
@@ -195,7 +195,7 @@ This guide helps troubleshoot issues with reactor staking and validation delegat
 ### Common Error Codes
 
 - **Code 2**: `INSUFFICIENT_FUNDS` - Not enough Alpha Matter
-- **Code 6**: `PLAYER_HALTED` - Player is offline
+- **Code 6**: `PLAYER_OFFLINE` - Player is offline
 - **Code 7**: `INSUFFICIENT_CHARGE` - Not enough charge (if applicable)
 - **Code 1**: `GENERAL_ERROR` - General error (retryable)
 

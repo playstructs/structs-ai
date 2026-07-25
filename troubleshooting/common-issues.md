@@ -165,12 +165,12 @@ This document describes common issues AI agents encounter and how to resolve the
 
 **Symptom**: Transaction broadcasts but planet ownership unchanged
 
-**Cause**: Player is halted (offline)
+**Cause**: Player is offline (offline)
 
 **Diagnosis**:
 1. Query player status
 2. Check if player.online == true
-3. If not, player is halted
+3. If not, player is offline
 
 **Solution**:
 1. Wait for player to come online

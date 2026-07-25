@@ -1,292 +1,51 @@
 # Combat Bot Example
 
-**Version**: 1.1.0
-**Category**: Gameplay
-**Purpose**: Scout targets, assemble forces, and execute attacks
+**Version**: 2.0.0  
+**Category**: Gameplay  
+**Purpose**: Point agents at the real combat/raid procedures (the previous fictional “planet capture” API is retired)
 
 ---
 
-## Overview
+## Important corrections
 
-This bot implements three combat workflows: a full attack sequence for capturing enemy planets, a raid workflow for stealing resources, and a defense workflow for protecting owned planets. Each workflow includes prerequisite verification, execution, and post-combat actions.
+- **You cannot capture or transfer planet ownership by attacking.** Attacks damage/destroy structs. Raids steal **all** of a player's unrefined ore (`storedOre` / `gridAttributes.ore`) and nothing else.
+- **One Command Ship per player** (build limit 1). Fleet status is `onStation` / `away`.
+- **Shields gate raids**: `planet-raid-complete` needs the defender vulnerable (fleet away, or Command Ship offline/destroyed). See [defense.md](../knowledge/mechanics/defense.md).
+- Prefer live tools: Desktop `structs_intel` / `structs_action` / `structs_strike`, or CLI in the combat skill — not invented `chart` / `planetaryBattleship` payloads.
 
-## Attack Workflow
+---
 
-### Step 1: Scout Target
+## Canonical workflows
 
-Chart the enemy planet to assess its defenses and ownership.
+| Goal | Follow |
+|------|--------|
+| Scout / go-no-go | [`structs-combat` skill](../.cursor/skills/structs-combat/SKILL.md) + [`structs-intel`](../.cursor/skills/structs-intel/SKILL.md); transcript [02-raid-go-no-go](transcripts/02-raid-go-no-go.md) |
+| Attack / siege / raid | [combat.md](../knowledge/mechanics/combat.md) — destroy defender CMD to open `shieldsVulnerable`, then raid PoW |
+| Defend under raid | [under-attack](../playbooks/situations/under-attack.md) — ≈4-minute budget; shoot raider CMD; restore shields |
+| Team / autoresponse | [team-operations](../playbooks/meta/team-operations.md) + SAFETY Standing Automation Grants |
 
-Request:
+---
 
-```json
-{
-  "action": "chart",
-  "planetId": "enemy-planet-id"
-}
-```
+## Minimal raid checklist (attacker)
 
-Expected response:
+1. Confirm target holds meaningful `storedOre` and is (or can be made) shield-vulnerable.
+2. Refine **your** ore first — leaving home drops **your** shields.
+3. `fleet-move` → strip blockers → destroy defender Command Ship if needed → `planet-raid-compute -D 3` when `blockStartRaid != 0`.
+4. Return home; refine seized ore immediately.
+5. Verify with queries / dashboard — broadcast ≠ success.
 
-```json
-{
-  "status": "charted",
-  "revealed": {
-    "defenses": [
-      { "type": "planetaryDefenseCannon", "count": 1 }
-    ],
-    "structs": [
-      { "type": "planetaryBattleship", "count": 1 }
-    ],
-    "ownership": {
-      "claimed": true,
-      "owner": "enemy-player-id"
-    }
-  }
-}
-```
+---
 
-### Step 2: Assess Combat Requirements
+## Minimal defense checklist
 
-Evaluate the enemy defenses and determine the required forces.
+1. Stay online (capacity ≥ load).
+2. If a refine is already completable, finish it; otherwise do **not** start a new 34h refine mid-raid.
+3. Restore Command Ship online + fleet `onStation`, and/or destroy the raider's Command Ship within ~1.8 minutes.
+4. Brief the commander if arming `autoresponse` (Tier 2).
 
-```json
-{
-  "enemyDefenses": {
-    "defenseCannon": 1,
-    "battleships": 1
-  },
-  "requiredForces": {
-    "commandShips": 2,
-    "powerNeeded": 100000
-  },
-  "risk": "medium"
-}
-```
+---
 
-### Step 3: Prepare Forces
+## See Also
 
-Verify that the player has sufficient power and forces.
-
-Request:
-
-```json
-{
-  "action": "queryPower",
-  "playerId": "self"
-}
-```
-
-Expected response:
-
-```json
-{
-  "powerStatus": {
-    "availableCapacity": 200000,
-    "playerOnline": true
-  }
-}
-```
-
-Both `sufficientPower` and `forcesReady` must be true before proceeding.
-
-### Step 4: Execute Attack
-
-Launch the attack with verified forces.
-
-Request:
-
-```json
-{
-  "action": "attack",
-  "type": "attack",
-  "target": "enemy-planet-id",
-  "structs": ["command-ship-1", "command-ship-2"],
-  "verify": {
-    "playerOnline": true,
-    "sufficientPower": true,
-    "structsOnline": true,
-    "validTarget": true
-  }
-}
-```
-
-Expected response (victory):
-
-```json
-{
-  "status": "resolved",
-  "outcome": {
-    "victory": true,
-    "alphaMatterGained": 5,
-    "unitsDestroyed": ["enemy-battleship-1"],
-    "resourcesLost": {
-      "ore": 0
-    }
-  },
-  "battleDetails": {
-    "counterAttack": {
-      "note": "One counter-attack per struct-attack invocation (not per shot). Counter fires before block resolution. Counter fires even on evaded shots."
-    },
-    "eventAttackShotDetail": [
-      {
-        "targetStructId": "5-3",
-        "targetStructType": 3,
-        "targetPlayerId": "1-22",
-        "evaded": false,
-        "blocked": false,
-        "blockedByStructId": "",
-        "damageDealt": 2,
-        "damage": 2,
-        "targetDestroyed": false,
-        "targetCountered": false,
-        "targetCounteredDamage": 0
-      },
-      {
-        "targetStructId": "5-3",
-        "targetStructType": 3,
-        "targetPlayerId": "1-22",
-        "evaded": true,
-        "blocked": false,
-        "blockedByStructId": "",
-        "damageDealt": 0,
-        "damage": 0,
-        "targetDestroyed": false,
-        "targetCountered": false,
-        "targetCounteredDamage": 0
-      }
-    ]
-  }
-}
-```
-
-Combat resolution order: counter-attack → evasion check → block check → damage. The live `struct_attack` event nests per-projectile rows under `eventAttackShotDetail[]` (this is the actual field name — not `shotDetails`), with the attacker context flat at the top of `detail`. `targetPlayerId` is at the shot level. See [api/integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema) for the full field list.
-
-### Step 5: Secure Captured Planet
-
-After a successful attack, build defenses on the captured planet.
-
-```json
-{
-  "action": "build",
-  "structType": "planetaryDefenseCannon",
-  "locationType": 1,
-  "locationId": "enemy-planet-id",
-  "slot": "space"
-}
-```
-
-## Raid Workflow
-
-Raids steal resources from enemy planets without capturing them. The fleet must be moved away from station before raiding.
-
-### Step 1: Move Fleet
-
-Move the fleet away from station to enable raiding.
-
-Request:
-
-```json
-{
-  "action": "moveFleet",
-  "fleetId": "fleet-id",
-  "status": "away"
-}
-```
-
-Verify that the fleet is away and the Command Ship is online before proceeding.
-
-### Step 2: Execute Raid
-
-Launch the raid against the target planet.
-
-Request:
-
-```json
-{
-  "action": "raid",
-  "type": "raid",
-  "target": "target-planet-id",
-  "fleetId": "fleet-id",
-  "verify": {
-    "playerOnline": true,
-    "fleetAway": true,
-    "commandShipOnline": true,
-    "proofOfWork": true
-  }
-}
-```
-
-Expected response (victory):
-
-```json
-{
-  "status": "raidComplete",
-  "outcome": {
-    "status": "victory",
-    "victory": true,
-    "oreStolen": 10,
-    "alphaMatterGained": 0
-  }
-}
-```
-
-### Possible Raid Outcomes
-
-**Victory**: The attacker successfully completed the raid and gained resources.
-
-**Defeat**: The attacker lost the raid and gained no resources.
-
-**Attacker Retreated**: The attacker retreated from the raid. No resources are gained or lost, and the fleet remains intact. The fleet can immediately be used for another raid attempt.
-
-When the attacker retreats:
-1. Query the fleet to confirm it is intact
-2. Confirm no resources were transferred
-3. Decide whether to attempt another raid
-
-For a detailed retreat workflow, see [examples/workflows/raid-attacker-retreated.md](workflows/raid-attacker-retreated.md).
-
-## Defense Workflow
-
-### Step 1: Build Defenses
-
-Build defensive structures on the planet.
-
-```json
-{
-  "action": "build",
-  "structType": "planetaryDefenseCannon",
-  "locationType": 1,
-  "locationId": "planet-id",
-  "slot": "space"
-}
-```
-
-### Step 2: Monitor for Attacks
-
-Periodically query the planet to detect incoming attacks.
-
-```json
-{
-  "action": "queryPlanet",
-  "planetId": "planet-id"
-}
-```
-
-### Step 3: Respond Automatically
-
-Defensive structures fire automatically when the planet is attacked. No manual intervention is required.
-
-## Error Handling
-
-**Insufficient power**: Convert Alpha Matter to Watts before attempting combat operations.
-
-**Fleet not away**: Move the fleet away from station before initiating a raid. Raids require the fleet to be in the "away" status.
-
-**Command Ship offline**: Activate the Command Ship before any combat operations. Both attacks and raids require the Command Ship to be online.
-
-## Cross-References
-
-- Action quick reference: [reference/action-quick-reference.md](../reference/action-quick-reference.md)
-- Raid retreat workflow: [examples/workflows/raid-attacker-retreated.md](workflows/raid-attacker-retreated.md)
-- Gameplay protocol: [protocols/gameplay-protocol.md](../protocols/gameplay-protocol.md)
-- Error handling: [protocols/error-handling.md](../protocols/error-handling.md)
+- [03-combat-and-raid transcript](transcripts/03-combat-and-raid.md)
+- [SAFETY.md](../SAFETY.md) — battle orders and combat-loop grants

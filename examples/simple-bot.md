@@ -91,7 +91,7 @@ Triggered when the player has sufficient resources. This is a two-step build pro
 
 **Precondition checks** (abort if any fail):
 
-1. Player must not be halted (`state.player.halted == false`)
+1. Player must be online (`(load + structsLoad) <= (capacity + capacitySecondary)`)
 2. Player must have at least 1,000,000 Alpha Matter
 3. Player must own at least one planet
 
@@ -137,7 +137,7 @@ Triggered when the player has sufficient resources. This is a two-step build pro
 |-------|--------|-------|
 | `404` (Not Found) | Log the error | No |
 | `500` (Server Error) | Retry with exponential backoff | Up to 3 attempts |
-| `PLAYER_HALTED` | Wait until the player comes online | N/A |
+| `PLAYER_OFFLINE` | Wait until the player comes online | N/A |
 | `INSUFFICIENT_RESOURCES` | Wait until resources are available | N/A |
 
 For retryable server errors, the bot uses exponential backoff starting at 1 second, doubling each attempt up to a maximum of 3 retries.

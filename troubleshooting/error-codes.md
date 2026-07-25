@@ -68,11 +68,11 @@ This document provides quick reference for error codes and their meanings. For c
 
 ### Player Status Errors
 - **Code**: 6
-- **Name**: PLAYER_HALTED
-- **Description**: Player is halted (offline)
+- **Name**: PLAYER_OFFLINE
+- **Description**: Player is offline (offline)
 - **Action**: Wait for player online
 - **Retryable**: No
-- **Requires**: Check player status, wait for player online
+- **Requires**: Check player status, restore capacity or shed load until online
 
 ---
 

@@ -37,7 +37,7 @@ This pattern provides detailed implementation strategies for retrying failed API
 **Never Retry** (will always fail):
 - `INSUFFICIENT_FUNDS` (code: 2)
 - `INVALID_MESSAGE` (code: 5)
-- `PLAYER_HALTED` (code: 6)
+- `PLAYER_OFFLINE` (code: 6)
 - `INSUFFICIENT_CHARGE` (code: 7)
 - `INVALID_LOCATION` (code: 8)
 - `INVALID_TARGET` (code: 9)
@@ -324,9 +324,9 @@ class CircuitBreaker {
     "beforeRetry": [
       "Query player charge level",
       "Verify charge >= required amount",
-      "Check player is not halted"
+      "Check player is online (capacity covers load)"
     ],
-    "retryIf": "charge >= required AND player.halted === false"
+    "retryIf": "charge >= required AND player online via capacity/load"
   }
 }
 ```

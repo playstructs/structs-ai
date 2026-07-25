@@ -106,7 +106,7 @@ Migration completes automatically when joining guild or changing destination.
 
 | Error | Code | Description | Recovery | Retry |
 |-------|------|-------------|----------|-------|
-| Player Halted | `PLAYER_HALTED` | Player is offline (halted) | Wait for player to come online | Yes (30s delay) |
+| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
 | No Active Delegation | `INVALID_STATE` | Reactor has no active delegation to migrate | Check reactor delegation status | No |
 | Already Migrating | `INVALID_STATE` | Reactor is already in migrating state | Wait for current migration to complete | No |
 | Transaction Failed | `GENERAL_ERROR` | Transaction failed to broadcast or execute | Check transaction response for error details | Yes (5s delay) |

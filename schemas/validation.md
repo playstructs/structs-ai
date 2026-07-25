@@ -232,7 +232,7 @@ Standalone validators for common field types.
 
 | Endpoint | Required Fields |
 |----------|----------------|
-| `/structs/player/{id}` | Player, gridAttributes, playerInventory, halted |
+| `/structs/player/{id}` | Player, gridAttributes, playerInventory (online = capacity vs load) |
 | `/structs/planet/{id}` | Planet, gridAttributes, planetAttributes |
 | `/structs/guild/{id}` | Guild |
 | `/api/player/{player_id}` | player |
@@ -261,7 +261,7 @@ Validation requirements for `MsgStructBuild`.
 
 | Check ID | Name | Query | Field | Expected | Condition | Message |
 |----------|------|-------|-------|----------|-----------|---------|
-| player-online | Player Online | `GET /structs/player/{playerId}` | halted | false | | Player must be online (not halted) |
+| player-online | Player Online | `GET /structs/player/{playerId}` | capacity/load | load side ≤ capacity side | | Player must be online |
 | command-ship-online | Command Ship Online | `GET /structs/fleet/{fleetId}` | | | locationType = planet | Command Ship must be built and online in fleet |
 | fleet-on-station | Fleet On Station | `GET /structs/fleet/{fleetId}` | status | onStation | locationType = planet | Fleet must be on station (not away) |
 | sufficient-power | Sufficient Power | `GET /structs/player/{playerId}` | gridAttributes.power | | | Must have sufficient power capacity |
@@ -283,8 +283,9 @@ Validation requirements for `MsgPlanetExplore`.
 
 | Check ID | Name | Query | Field | Expected | Message |
 |----------|------|-------|-------|----------|---------|
-| current-planet-empty | Current Planet Empty | `GET /structs/planet/{currentPlanetId}` | gridAttributes.ore | 0 | Current planet must have 0 ore before exploring new planet |
-| player-online | Player Online | `GET /structs/player/{playerId}` | halted | false | Player must be online |
+| current-planet-empty | Current Planet Empty | `GET /structs/planet/{currentPlanetId}` | `remainingOre` / status | `0` / `complete` | Current planet must be depleted before exploring |
+| fleet-on-station | Fleet On Station | `GET /structs/fleet/{fleetId}` | status | `onStation` | Fleet must be home (not away) |
+| player-online | Player Online | `GET /structs/player/{playerId}` | capacity/load | load ≤ capacity | Player must be online |
 
 #### Post-Action Verification
 
@@ -376,12 +377,12 @@ Attempting to explore new planet while current planet has ore.
 
 **Diagnosis**:
 1. Query current planet: `GET /structs/planet/{planetId}`
-2. Check `gridAttributes.ore`
-3. Verify ore amount is 0
+2. Check `remainingOre` and status (`complete` when depleted)
+3. Confirm fleet `status` is `onStation`
 
 **Solution**:
-1. Mine all ore from current planet
-2. Verify ore = 0
+1. Mine all ore from current planet until `remainingOre` is 0 / status `complete`
+2. Recall fleet if away
 3. Then explore new planet
 
 ---

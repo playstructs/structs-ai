@@ -47,7 +47,7 @@ The Query Protocol defines how AI agents should query game state from the Struct
       "player": {...},
       "gridAttributes": {...},
       "playerInventory": {...},
-      "halted": false
+      "/* online: (load+structsLoad) <= (capacity+capacitySecondary) */"
     }
   }
 }

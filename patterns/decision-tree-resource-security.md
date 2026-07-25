@@ -50,19 +50,19 @@ flowchart TD
 
 ## Security Workflow
 
-The core security principle is simple: **never leave ore unrefined**. Ore can be stolen during raids, but Alpha Matter cannot.
+The core security principle is simple: **never leave player `storedOre` / `gridAttributes.ore` unrefined**. Ore can be stolen during raids, but Alpha Matter cannot. Ore Bunkers raise planetary shield; they do **not** hold ore.
 
-1. **Check for stored ore** -- If any ore is stored on a planet, it is vulnerable to theft during raids.
-2. **Refine immediately** -- Convert all stored ore to Alpha Matter as the highest priority action. This eliminates the theft risk entirely.
-3. **Verify refinement** -- Confirm that Alpha Matter is available after the refinement process. If not, investigate the failure.
-4. **Evaluate Watts needs** -- Once Alpha Matter is secured, decide whether to convert some to Watts (energy) based on operational needs. Always maintain a 20-30% Alpha Matter reserve.
-5. **Mining cycle** -- When no ore is stored, mine from the planet and immediately refine the result. If no ore is available to mine, explore new planets or wait for extraction cycles.
+1. **Check for stored ore** -- Query the **player** (`gridAttributes.ore`). Planet `remainingOre` is unmined and not raidable.
+2. **Refine immediately** -- Launch `struct-ore-refine-compute` as soon as ore lands (not mid-raid unless already completable).
+3. **Verify refinement** -- Confirm Alpha Matter increased / ore went to zero after completion.
+4. **Evaluate Watts needs** -- Once Alpha Matter is secured, decide whether to infuse reactors/generators. Always maintain a reserve.
+5. **Mining cycle** -- When no ore is stored, mine from the planet and refine the result. When the planet is empty, follow planet-depletion (one-planet explore).
 
 ## Principles
 
-- Always refine ore to Alpha Matter immediately after mining
-- Never leave ore unrefined on a planet -- it is vulnerable to raids
-- Maintain a 20-30% Alpha Matter reserve at all times
+- Always refine player ore to Alpha Matter immediately after mining
+- Never leave unrefined ore on the player while shields are down
+- Maintain an Alpha Matter reserve
 - Ore can be stolen; Alpha Matter cannot
 
 ## Related Documentation

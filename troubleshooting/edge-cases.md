@@ -284,18 +284,18 @@ This document documents edge cases and gotchas that AI agents should be aware of
 **Issue**: Player online status may change between checks
 
 **Details**:
-- Player status can change from online to offline (halted)
+- Player status can change from online to offline (load exceeds capacity)
 - Status check may pass but action fails due to status change
 - Must verify status immediately before action
 - Status may change during action execution
 
 **Implications**:
 - Check player status immediately before actions
-- Handle `PLAYER_HALTED` errors gracefully
+- Handle `PLAYER_OFFLINE` errors gracefully
 - Retry actions after player comes online
 - Don't cache player status for critical operations
 
-**Reference**: `schemas/errors.md#/PLAYER_HALTED`, `troubleshooting/common-issues.md`
+**Reference**: `schemas/errors.md#/PLAYER_OFFLINE`, `troubleshooting/common-issues.md`
 
 ---
 

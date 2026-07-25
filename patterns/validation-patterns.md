@@ -61,7 +61,7 @@ This document describes validation patterns for AI agents interacting with Struc
     "commandShipBuilt": "Check fleet for Command Ship struct",
     "commandShipOnline": "Command Ship status must be 'online' (not just materialized)",
     "fleetOnStation": "Fleet status must be 'onStation' (not 'away')",
-    "playerOnline": "Player must be online (not halted)"
+    "playerOnline": "player must be online (capacity covers load)"
   }
 }
 ```

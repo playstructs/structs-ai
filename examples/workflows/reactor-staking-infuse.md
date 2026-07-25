@@ -130,7 +130,7 @@ Confirm Alpha Matter was deducted from player.
 
 | Error | Code | Description | Recovery | Retry |
 |-------|------|-------------|----------|-------|
-| Player Halted | `PLAYER_HALTED` | Player is offline (halted) | Wait for player to come online | Yes (30s delay) |
+| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
 | Insufficient Alpha Matter | `INSUFFICIENT_FUNDS` | Player does not have enough Alpha Matter | Mine and refine more Alpha Matter | No |
 | Reactor Not Found | `ENTITY_NOT_FOUND` | Reactor does not exist | Verify reactor ID is correct | No |
 | Invalid Delegation Status | `INVALID_STATE` | Reactor is in migrating state | Wait for migration to complete or cancel defusion | Yes (check migration status) |

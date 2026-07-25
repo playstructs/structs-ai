@@ -141,7 +141,7 @@ Player structure for player state management.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| GetPlayerCharge | uint64 | Get player's current charge. Formula: `charge = CurrentBlockHeight - LastActionBlock` |
+| GetPlayerCharge | uint64 | Get player's current charge. Formula: `charge = CurrentBlockHeight - lastAction` (missing lastAction ⇒ 0 ⇒ full charge) |
 | DischargePlayer | void | Discharge player (update last action block) |
 | AttemptPlanetExplore | void | Attempt to explore new planet |
 

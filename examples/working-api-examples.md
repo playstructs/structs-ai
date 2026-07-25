@@ -37,7 +37,7 @@ Response:
   },
   "gridAttributes": {},
   "playerInventory": {},
-  "halted": false
+  // online derived from capacity/load — no halted field
 }
 ```
 

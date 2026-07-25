@@ -50,7 +50,7 @@
 |---------|----------|
 | byId | `/structs/player/{id}` |
 | all | `/structs/player` |
-| halted | `/structs/player_halted` |
+| online (derived) | `structsd query structs player [id]` — `(load+structsLoad) <= (capacity+capacitySecondary)`; there is no `halted` field or `player_halted` query |
 
 ### Planet
 
@@ -409,10 +409,10 @@
 | availableCapacity | integer | milliwatts | -- | Available power capacity. Formula: `(Capacity + CapacitySecondary) - (Load + StructsLoad)` |
 | allocatableCapacity | integer | milliwatts | -- | Allocatable capacity (primary capacity only). Formula: `Capacity - Load` |
 | playerOnline | boolean | -- | -- | Player online status. Formula: `(Load + StructsLoad) <= (Capacity + CapacitySecondary)` |
-| lastActionBlock | integer | -- | -- | Block height of last action |
-| charge | integer | -- | -- | Current charge (blocks since last action). Formula: `CurrentBlockHeight - LastActionBlock` |
+| lastActionBlock | integer | -- | -- | Block height of last action (`gridAttributes.lastAction` in live JSON). **Missing key ⇒ 0 ⇒ full charge** (`omitempty`) |
+| charge | integer | -- | -- | Current charge (blocks since last action). Formula: `CurrentBlockHeight - lastAction` (missing lastAction ⇒ 0) |
 | storedOre | integer | ore | -- | Raw ore stored by player (can be stolen in raids). Separate from refined Alpha Matter. |
-| halted | boolean | -- | -- | Whether player is halted (disabled) |
+| *(removed)* | — | No `halted` field; online = `(load+structsLoad) <= (capacity+capacitySecondary)` |
 | nonce | integer | -- | -- | Nonce for randomness generation (increments with each use) |
 | username | string | -- | -- | Player display name (UGC; see `knowledge/mechanics/ugc-moderation.md`). Set via `MsgPlayerUpdateName`. |
 | pfp | string | -- | -- | Profile picture reference (opaque content id or allow-listed URL). Set via `MsgPlayerUpdatePfp`. |
@@ -476,7 +476,7 @@
 | id | string | entity-id | `^9-[0-9]+$` | Unique fleet identifier. Type 9 = Fleet. |
 | ownerId | string | entity-id | `^1-[0-9]+$` | Player who owns this fleet. Type 1 = Player. |
 | slots | array[string] | entity-id | `^5-[0-9]+$` | Structs in this fleet (array of Struct IDs) |
-| status | string | enum | `station`, `away` | Fleet status (station = on planet, away = raiding) |
+| status | string | enum | `onStation`, `away` | Fleet status (onStation = home, away = raiding/elsewhere) |
 | canMove | boolean | -- | -- | Whether fleet can move (readiness check) |
 
 **Fleet Movement Requirements** (`canMove`):

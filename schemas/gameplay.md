@@ -241,11 +241,11 @@ Struct sweeping has a block-based delay. Planet/fleet back references for slots 
 | Struct Type | Passive Draw | Build Draw | Description |
 |-------------|-------------|------------|-------------|
 | Command Ship | 50,000 | 50,000 | Command Ship power requirements |
-| Planetary Battleship | 135,000 | 135,000 | Planetary Battleship power requirements |
+| Battleship (fleet) | 135,000 | 135,000 | Fleet Battleship draw (mW) |
 | Ore Extractor | 500,000 | 500,000 | Ore Extractor -- high power needed |
 | Ore Refinery | 500,000 | 500,000 | Ore Refinery -- high power needed |
 | Planetary Defense Cannon | 600,000 | 600,000 | Planetary Defense Cannon power requirements |
-| Ore Bunker | 200,000 | 200,000 | Ore Bunker power requirements |
+| Ore Bunker | 750,000 | 750,000 | Raises planetary shield (raid timer); does **not** store ore |
 
 ---
 

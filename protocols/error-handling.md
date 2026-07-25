@@ -139,7 +139,7 @@ All error codes are defined in `schemas/errors.md`. Categories include:
 **Non-Retryable Errors** (should not be retried):
 - `INSUFFICIENT_FUNDS` (code: 2)
 - `INVALID_MESSAGE` (code: 5)
-- `PLAYER_HALTED` (code: 6)
+- `PLAYER_OFFLINE` (code: 6)
 - `INSUFFICIENT_CHARGE` (code: 7)
 - `INVALID_LOCATION` (code: 8)
 - `INVALID_TARGET` (code: 9)
@@ -295,14 +295,14 @@ All error codes are defined in `schemas/errors.md`. Categories include:
 }
 ```
 
-### Pattern 3: Player Halted
+### Pattern 3: Player Offline
 
-**Error**: `PLAYER_HALTED` (code: 6)
+**Error**: `PLAYER_OFFLINE` (code: 6)
 
 **Recovery**:
 ```json
 {
-  "error": "PLAYER_HALTED",
+  "error": "PLAYER_OFFLINE",
   "recovery": {
     "step1": "Check player status (query player)",
     "step2": "Wait for player to come online",
@@ -315,16 +315,16 @@ All error codes are defined in `schemas/errors.md`. Categories include:
 **Example**:
 ```json
 {
-  "scenario": "Player is offline/halted",
+  "scenario": "Player is offline (load exceeds capacity)",
   "error": {
     "code": 6,
-    "name": "PLAYER_HALTED",
-    "description": "Player is halted (offline)"
+    "name": "PLAYER_OFFLINE",
+    "description": "Player is offline (offline)"
   },
   "recovery": {
     "action": "Query player status periodically",
     "wait": "Wait for player to come online",
-    "retry": "Retry action when player.halted = false"
+    "retry": "Retry after shedding load or adding capacity until online"
   }
 }
 ```
@@ -463,7 +463,7 @@ All error codes are defined in `schemas/errors.md`. Categories include:
 - `3` - INVALID_SIGNATURE (retryable)
 - `4` - INSUFFICIENT_GAS (retryable)
 - `5` - INVALID_MESSAGE (not retryable)
-- `6` - PLAYER_HALTED (not retryable)
+- `6` - PLAYER_OFFLINE (not retryable)
 - `7` - INSUFFICIENT_CHARGE (not retryable)
 - `8` - INVALID_LOCATION (not retryable)
 - `9` - INVALID_TARGET (not retryable)
@@ -610,7 +610,7 @@ When performing actions, handle errors appropriately:
       "transactionErrors": {
         "INSUFFICIENT_FUNDS": "Wait for resources",
         "INVALID_SIGNATURE": "Re-sign and retry",
-        "PLAYER_HALTED": "Wait for player online"
+        "PLAYER_OFFLINE": "Wait for player online"
       }
     }
   }

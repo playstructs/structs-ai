@@ -84,7 +84,7 @@ All values are string representations of integers.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| halted | boolean | Whether player is halted (cannot perform actions) |
+| *(removed)* | — | No `halted` field; online = `(load+structsLoad) <= (capacity+capacitySecondary)` |
 
 ---
 

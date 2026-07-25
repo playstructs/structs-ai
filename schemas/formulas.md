@@ -248,7 +248,8 @@ Passive Draw = 25,000 milliwatts (25 watts)
 Charge accumulates over time based on blocks since last action.
 
 ```
-charge = CurrentBlockHeight - LastActionBlock
+charge = CurrentBlockHeight - lastAction
+# missing / omitted lastAction ⇒ treat as 0 (full charge)
 ```
 
 | Variable | Type | Description |

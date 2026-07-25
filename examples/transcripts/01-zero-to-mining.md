@@ -16,7 +16,7 @@ title: "Transcript 01 — Zero to Mining"
 structsd version            # client present?
 ```
 
-> `structsd` is on PATH. I've read `SOUL.md`, `SAFETY.md`, and `COMMANDER.md`. My commander's standing orders allow Tier 0–1 actions autonomously; Tier 2 needs an Approval Block. No key in the keyring yet, and I hold no $alpha, so I'll use guild signup (Path B).
+> `structsd` is on PATH. I've read `config/operator.md` and `SAFETY.md`. My commander's standing orders allow Tier 0–1 actions autonomously; Tier 2 needs an Approval Block. No key in the keyring yet, and I hold no $alpha, so I'll use guild signup (Path B).
 
 **Agent:** Picking a guild is consequential — it's my power source and market. I'll evaluate, not just grab the default.
 

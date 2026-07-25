@@ -253,7 +253,7 @@ For detailed staking workflows, see:
 | Insufficient Energy | Produce more energy from Alpha Matter |
 | Ore stolen | Refine immediately next time -- refine ore as soon as mined |
 | Energy expired | Consume immediately next time -- have consumption ready before production |
-| Player halted (staking) | Wait for player to come online |
+| Player offline (staking) | Wait for player to come online |
 | Invalid delegation status (staking) | Wait for migration to complete or cancel defusion |
 
 ## Cross-References

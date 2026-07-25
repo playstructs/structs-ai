@@ -227,31 +227,33 @@ This document defines common gameplay strategy patterns for AI agents. These pat
     },
     {
       "action": "buildBunkers",
-      "where": "oreStoragePlanets"
+      "where": "homePlanet",
+      "note": "Ore Bunker raises planetary shield (raid timer); ore lives on the player, not in the bunker"
     },
     {
       "action": "deployCombatStructs",
-      "where": "valuablePlanets"
+      "where": "homePlanetFleet",
+      "note": "One planet per player; keep fleet onStation while holding unrefined ore"
     },
     {
       "action": "monitor",
       "frequency": "continuous"
     }
   ],
-  "principle": "Build defenses before expanding, maintain defenses continuously"
+  "principle": "Keep Command Ship online + fleet onStation; refine ore on the player; bunker stacks shield, not inventory"
 }
 ```
 
 **Implementation**:
 - Build Defense Cannon first (1 per player)
-- Build bunkers on storage planets
-- Deploy combat structs on valuable planets
-- Monitor for attacks
-- Respond automatically
+- Stack Ore Bunkers / Orbital Shields on the **home** planet for shield value
+- Keep combat structs able to defend the home Command Ship (co-located)
+- Monitor for raids; respond per under-attack (≈4-minute budget)
+- Never treat bunkers as ore vaults — refine `gridAttributes.ore`
 
 ### Expansion Pattern
 
-**Purpose**: Expand territory strategically.
+**Purpose**: Relocate when the home planet is depleted (one planet per player).
 
 **Pattern**:
 ```json
@@ -259,45 +261,37 @@ This document defines common gameplay strategy patterns for AI agents. These pat
   "pattern": "expansion",
   "workflow": [
     {
+      "action": "scout",
+      "when": "currentPlanetOreLow",
+      "note": "Scouting is free; exploring is not"
+    },
+    {
+      "action": "refine",
+      "before": "explore"
+    },
+    {
+      "action": "mineToZero",
+      "until": "planet.status == complete"
+    },
+    {
       "action": "explore",
-      "when": "currentPlanetComplete"
+      "requires": ["fleet.onStation", "planet.complete"],
+      "note": "Destroys remaining structs on the old planet — Tier 2"
     },
     {
-      "action": "chart",
-      "target": "newPlanets"
-    },
-    {
-      "action": "assess",
-      "evaluate": [
-        "resourceValue",
-        "strategicValue",
-        "defenseNeeds"
-      ]
-    },
-    {
-      "action": "claim",
-      "priority": "highValuePlanets"
-    },
-    {
-      "action": "buildDefenses",
-      "immediately": true
-    },
-    {
-      "action": "buildInfrastructure",
-      "after": "defenses"
+      "action": "rebuildInfrastructure",
+      "on": "newPlanet"
     }
   ],
-  "principle": "Explore, assess, claim, defend, then build"
+  "principle": "One planet at a time; explore only after empty + onStation"
 }
 ```
 
 **Implementation**:
-- Explore when planet complete
-- Chart new planets
-- Assess value
-- Claim high-value planets
-- Build defenses first
-- Build infrastructure after
+- Scout while ore is low; refine before leaving
+- Mine current planet to `complete` (ore 0); fleet must be `onStation`
+- Explore (Tier 2 — destroys leftover planet structs)
+- Rebuild extractor/refinery/defenses on the new world
 
 ### 5X Framework Pattern
 

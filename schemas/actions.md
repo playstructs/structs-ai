@@ -24,7 +24,7 @@
 
 | Requirement | Description |
 |-------------|-------------|
-| playerOnline | Player must be online (not halted) |
+| playerOnline | player must be online (capacity covers load) |
 | sufficientResources | Player must have sufficient resources |
 | sufficientCharge | Acting player must have sufficient charge (charge is a single per-player bar, not per-struct) |
 | proofOfWork | Action requires proof-of-work computation |

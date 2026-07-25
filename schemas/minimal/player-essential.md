@@ -21,13 +21,13 @@ Minimal player schema for simple lookups and basic operations. Use this for ID f
 | planetId | string | entity-id | `^2-[0-9]+$` | No | Planet ID if player owns a planet, empty string if not. |
 | fleetId | string | entity-id | `^9-[0-9]+$` | No | Fleet ID if player owns a fleet, empty string if not. |
 | substationId | string | entity-id | `^4-[0-9]+$` | No | Substation ID if connected, empty string if not. |
-| halted | boolean | -- | -- | No | Whether player is halted (cannot perform actions). |
+| *(removed)* | — | No `halted` field; online = `(load+structsLoad) <= (capacity+capacitySecondary)` |
 
 ## Use Cases
 
 - Check if player exists
 - Verify player ID format
-- Check basic player status (halted, guild membership)
+- Check basic player status (online via capacity/load, guild membership)
 - Find player's planet/fleet/substation IDs
 - Quick player lookup
 

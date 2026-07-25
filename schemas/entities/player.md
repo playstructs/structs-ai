@@ -58,7 +58,7 @@ Grid position and resource attributes. All values are string representations of 
 
 | Field | Type | Description |
 |-------|------|-------------|
-| halted | boolean | Whether player is halted (cannot perform actions) |
+| *(removed)* | — | No `halted` field; online = `(load+structsLoad) <= (capacity+capacitySecondary)` |
 
 ## Relationships
 
