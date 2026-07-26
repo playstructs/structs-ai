@@ -35,7 +35,7 @@ In priority order. The first two are worth more than everything below them combi
 2. **Keep the Command Ship online and the fleet on station.** Keeps shields up. Watch capacity headroom, because a brownout takes the Command Ship down as surely as an attack does.
 3. **Assign same-ambit defenders** to the Command Ship — those are the only ones that can *block* damage aimed at it.
 4. **Spread cross-ambit defenders** for counter coverage against attackers your same-ambit structs cannot reach.
-5. **Build an Ore Bunker** if ore must sit unrefined, and a **Planetary Defense Cannon** (1 per player) for automatic return fire.
+5. **Ore Bunker** (raises planetary shield / raid PoW — does not vault ore) and a **PDC** (1 per player) for automatic return fire.
 
 ---
 
@@ -88,9 +88,9 @@ A destroyed Command Ship **can be rebuilt**, and doing so shuts the window — s
 From ~300 raid episodes reconstructed out of `planet_activity` (92k events, 2026-03 → 2026-07), the defensive game is decided almost immediately:
 
 - Median time from `initiated` to `shieldsVulnerable` is **2.1 minutes**.
-- The vulnerable → loot lock is a hard **22 blocks ≈ 2 min 6 s**.
+- Time from vulnerable to a cheap D=3 proof scales with planetary shield (base 25 ≈ **~22 blocks / ~2 min**; stacked bunkers stretch this).
 
-So your entire response budget is **roughly four minutes** from the moment a hostile fleet arrives. Two consequences follow, and they are the difference between the two outcomes you actually care about:
+So at a typical unbunkered base your response budget is **roughly four minutes** from hostile arrival. Two consequences follow:
 
 **React to the alarm, not to damage.** Trigger on `raid_status: initiated`. Waiting until you see structs taking damage spends most of the budget.
 

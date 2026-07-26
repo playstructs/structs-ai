@@ -195,8 +195,8 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 
 | Role | Units |
 |------|-------|
-| Resource extraction | Ore Extractor, Ore Refinery, Ore Bunker |
-| Defense | Planetary Defense Cannon, Orbital Shield Generator, Jamming Satellite |
+| Resource extraction | Ore Extractor, Ore Refinery |
+| Defense | PDC, Orbital Shield, Jamming Satellite, Ore Bunker (shield only) |
 | Power generation | Field Generator, Continental Power Plant, World Engine |
 
 ---
@@ -205,8 +205,8 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 
 | Requirement | Notes |
 |-------------|-------|
-| Power | BuildDraw + PassiveDraw available; see [power.md](../mechanics/power.md) |
-| Resources | Alpha Matter for build cost |
+| Power | BuildDraw at initiate; PassiveDraw at complete/activate — see [power.md](../mechanics/power.md) |
+| Resources | Charge + power only (no Alpha build cost) |
 | Location | Correct ambit per `possibleAmbit`; slot 0-3 |
 | Fleet on station | For planet building |
 | Command Ship online | For planet building |

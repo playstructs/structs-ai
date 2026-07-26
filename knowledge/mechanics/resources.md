@@ -74,7 +74,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 |----------|-----------|
 | Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
 | Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
-| Shield + stealth during refine | Reduces raid success, costs power |
+| Raise planetary shield (bunkers/OSG) while holding ore | Slows raid PoW if already vulnerable; does not vault ore or shrink loot |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |
 

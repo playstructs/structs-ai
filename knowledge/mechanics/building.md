@@ -20,8 +20,8 @@
 | Requirement | Description |
 |-------------|-------------|
 | Player online | Sufficient power (see [power.md](power.md)) |
-| Power capacity | BuildDraw + PassiveDraw available |
-| Resources | Sufficient Alpha Matter |
+| Power capacity | **BuildDraw** headroom at initiate (PassiveDraw is checked at complete/activate — not both at once) |
+| Resources | Builds cost charge + power, **not** Alpha Matter |
 | Valid location | Correct slot type (space/air/land/water) |
 | Fleet on station | Required for planet building, and for building on the fleet itself |
 | Command Ship online | Required for planet building |
@@ -193,7 +193,7 @@ Read `status` as flags, not an enum: the Online bit (`status & 4`) is what gates
 1. Player online
 2. Command Ship online (if building on planet)
 3. Fleet onStation (if building on planet)
-4. Sufficient power capacity (BuildDraw + PassiveDraw)
+4. Sufficient power capacity for **BuildDraw** (PassiveDraw comes later at complete)
 5. Available slots (correct type: space/air/land/water)
 6. Per-player build limits (most planet structs and the Command Ship are 1 per player; Orbital Shield Generator, Ore Bunker, and fleet structs are unlimited)
 
@@ -234,7 +234,7 @@ Every planet and every fleet has **4 slots per ambit** — 4 each for space, air
 
 - A build **reserves its slot immediately** at `struct-build-initiate` — even while the struct is still materializing (before its proof-of-work completes). The slot stays occupied for the whole build.
 - A struct's position is exposed as `location_type` (planet/fleet), `operating_ambit`, and `slot` (0-3).
-- Slot counts are **fixed at 4 per ambit**. Ore-storage capacity (Ore Bunker) and power capacity (generators) scale separately — they do **not** add build slots.
+- Slot counts are **fixed at 4 per ambit**. Ore Bunkers raise planetary shield (raid PoW); generators raise power. Neither adds build slots.
 - After destruction a slot can still read occupied for a few blocks (see **StructSweepDelay** above).
 
 Building into a full ambit fails with `struct slot unavailable` / `struct slot already occupied`. Verify free slots before initiating (it's check 5 in the validation order below).

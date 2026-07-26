@@ -1159,7 +1159,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 |----------|-----------|
 | Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
 | Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
-| Shield + stealth during refine | Reduces raid success, costs power |
+| Raise planetary shield (bunkers/OSG) while holding ore | Slows raid PoW if already vulnerable; does not vault ore or shrink loot |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |
 
@@ -1236,15 +1236,15 @@ If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes 
 
 ## Struct power requirements
 
-Each struct needs `BuildDraw` while building **and** `PassiveDraw` once online (both must fit available capacity). Examples (watts):
+Initiate reserves **BuildDraw** only; complete removes it then applies **PassiveDraw**. They are sequential, not summed — peak for a type is `max(Build, Passive)` (equal for all current types). Examples (watts):
 
-| Struct | Build | Passive | Total while building |
-|--------|-------|---------|----------------------|
-| Ore Extractor | 500 W | 500 W | 1,000 W |
-| Planetary Defense Cannon | 600 W | 600 W | 1,200 W |
-| Ore Bunker | 750 W | 750 W | 1,500 W |
+| Struct | BuildDraw | PassiveDraw |
+|--------|-----------|--------------|
+| Ore Extractor | 500 W | 500 W |
+| Planetary Defense Cannon | 600 W | 600 W |
+| Ore Bunker | 750 W | 750 W |
 
-Build draw is temporary and releases when the build completes. Full per-struct draws and build limits: [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
+Full draws: [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
 
 ---
 
@@ -1489,7 +1489,7 @@ In priority order. The first two are worth more than everything below them combi
 2. **Keep the Command Ship online and the fleet on station.** Keeps shields up. Watch capacity headroom, because a brownout takes the Command Ship down as surely as an attack does.
 3. **Assign same-ambit defenders** to the Command Ship — those are the only ones that can *block* damage aimed at it.
 4. **Spread cross-ambit defenders** for counter coverage against attackers your same-ambit structs cannot reach.
-5. **Build an Ore Bunker** if ore must sit unrefined, and a **Planetary Defense Cannon** (1 per player) for automatic return fire.
+5. **Ore Bunker** (raises planetary shield / raid PoW — does not vault ore) and a **PDC** (1 per player) for automatic return fire.
 
 ---
 
@@ -1542,9 +1542,9 @@ A destroyed Command Ship **can be rebuilt**, and doing so shuts the window — s
 From ~300 raid episodes reconstructed out of `planet_activity` (92k events, 2026-03 → 2026-07), the defensive game is decided almost immediately:
 
 - Median time from `initiated` to `shieldsVulnerable` is **2.1 minutes**.
-- The vulnerable → loot lock is a hard **22 blocks ≈ 2 min 6 s**.
+- Time from vulnerable to a cheap D=3 proof scales with planetary shield (base 25 ≈ **~22 blocks / ~2 min**; stacked bunkers stretch this).
 
-So your entire response budget is **roughly four minutes** from the moment a hostile fleet arrives. Two consequences follow, and they are the difference between the two outcomes you actually care about:
+So at a typical unbunkered base your response budget is **roughly four minutes** from hostile arrival. Two consequences follow:
 
 **React to the alarm, not to damage.** Trigger on `raid_status: initiated`. Waiting until you see structs taking damage spends most of the budget.
 
@@ -1773,8 +1773,8 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 
 | Role | Units |
 |------|-------|
-| Resource extraction | Ore Extractor, Ore Refinery, Ore Bunker |
-| Defense | Planetary Defense Cannon, Orbital Shield Generator, Jamming Satellite |
+| Resource extraction | Ore Extractor, Ore Refinery |
+| Defense | PDC, Orbital Shield, Jamming Satellite, Ore Bunker (shield only) |
 | Power generation | Field Generator, Continental Power Plant, World Engine |
 
 ---
@@ -1783,8 +1783,8 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 
 | Requirement | Notes |
 |-------------|-------|
-| Power | BuildDraw + PassiveDraw available; see [power.md](../mechanics/power.md) |
-| Resources | Alpha Matter for build cost |
+| Power | BuildDraw at initiate; PassiveDraw at complete/activate — see [power.md](../mechanics/power.md) |
+| Resources | Charge + power only (no Alpha build cost) |
 | Location | Correct ambit per `possibleAmbit`; slot 0-3 |
 | Fleet on station | For planet building |
 | Command Ship online | For planet building |

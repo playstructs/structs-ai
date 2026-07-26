@@ -31,15 +31,15 @@ If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes 
 
 ## Struct power requirements
 
-Each struct needs `BuildDraw` while building **and** `PassiveDraw` once online (both must fit available capacity). Examples (watts):
+Initiate reserves **BuildDraw** only; complete removes it then applies **PassiveDraw**. They are sequential, not summed — peak for a type is `max(Build, Passive)` (equal for all current types). Examples (watts):
 
-| Struct | Build | Passive | Total while building |
-|--------|-------|---------|----------------------|
-| Ore Extractor | 500 W | 500 W | 1,000 W |
-| Planetary Defense Cannon | 600 W | 600 W | 1,200 W |
-| Ore Bunker | 750 W | 750 W | 1,500 W |
+| Struct | BuildDraw | PassiveDraw |
+|--------|-----------|--------------|
+| Ore Extractor | 500 W | 500 W |
+| Planetary Defense Cannon | 600 W | 600 W |
+| Ore Bunker | 750 W | 750 W |
 
-Build draw is temporary and releases when the build completes. Full per-struct draws and build limits: [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
+Full draws: [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
 
 ---
 

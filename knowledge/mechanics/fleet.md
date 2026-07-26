@@ -80,7 +80,7 @@ Fleets do **not** auto-return on a timer. For raids, you have until one of the a
 
 | Property | Value |
 |----------|-------|
-| Power requirement | 50,000 W |
+| Power requirement | 50 W (`PassiveDraw` 50,000 mW) |
 | Location type | Fleet only (locationType = 2) |
 | Initial grant | New players receive a Command Ship at creation (may start offline if insufficient power) |
 | Common mistake | Trying to build Command Ship on planet -- must be in fleet |
