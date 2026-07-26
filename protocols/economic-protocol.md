@@ -150,10 +150,9 @@ The Economic Protocol defines how AI agents should interact with economic system
           {
             "@type": "/structs.structs.MsgReactorInfuse",
             "creator": "structs1...",
-            "reactorId": "1-1",
-            "destinationType": 1,
-            "destinationId": "2-1",
-            "alphaMatterAmount": "100000000"
+            "delegatorAddress": "structs1...",
+            "validatorAddress": "structsvaloper1...",
+            "amount": { "denom": "ualpha", "amount": "100000000" }
           }
         ]
       }
@@ -200,11 +199,8 @@ The Economic Protocol defines how AI agents should interact with economic system
           {
             "@type": "/structs.structs.MsgStructGeneratorInfuse",
             "creator": "structs1...",
-            "generatorId": "1-1",
-            "destinationType": 1,
-            "destinationId": "2-1",
-            "alphaMatterAmount": "100000000",
-            "note": "100 grams = 100,000,000 micrograms"
+            "structId": "6-10",
+            "infuseAmount": "100000000ualpha"
           }
         ]
       }
@@ -219,6 +215,8 @@ The Economic Protocol defines how AI agents should interact with economic system
   }
 }
 ```
+
+`infuseAmount` is a coin string, not a bare number — the handler runs it through `ParseCoinsNormalized`, so the `ualpha` denom is required.
 
 ## Reactor Staking and Validation Delegation
 
@@ -273,9 +271,9 @@ Reactor staking functionality allows players to delegate validation stake throug
           {
             "@type": "/structs.structs.MsgReactorInfuse",
             "creator": "structs1...",
-            "reactorId": "3-1",
-            "amount": "1000000000",
-            "note": "When used for staking, this delegates validation stake"
+            "delegatorAddress": "structs1...",
+            "validatorAddress": "structsvaloper1...",
+            "amount": { "denom": "ualpha", "amount": "1000000000" }
           }
         ]
       }
@@ -303,9 +301,9 @@ Reactor staking functionality allows players to delegate validation stake throug
           {
             "@type": "/structs.structs.MsgReactorDefuse",
             "creator": "structs1...",
-            "reactorId": "3-1",
-            "amount": "1000000000",
-            "note": "When used for unstaking, this undelegates validation stake"
+            "delegatorAddress": "structs1...",
+            "validatorAddress": "structsvaloper1...",
+            "amount": { "denom": "ualpha", "amount": "1000000000" }
           }
         ]
       }
@@ -332,7 +330,10 @@ Reactor staking functionality allows players to delegate validation stake throug
           {
             "@type": "/structs.structs.MsgReactorBeginMigration",
             "creator": "structs1...",
-            "reactorId": "3-1"
+            "delegatorAddress": "structs1...",
+            "validatorSrcAddress": "structsvaloper1src...",
+            "validatorDstAddress": "structsvaloper1dst...",
+            "amount": { "denom": "ualpha", "amount": "1000000000" }
           }
         ]
       }
@@ -359,7 +360,10 @@ Reactor staking functionality allows players to delegate validation stake throug
           {
             "@type": "/structs.structs.MsgReactorCancelDefusion",
             "creator": "structs1...",
-            "reactorId": "3-1"
+            "delegatorAddress": "structs1...",
+            "validatorAddress": "structsvaloper1...",
+            "amount": { "denom": "ualpha", "amount": "1000000000" },
+            "creationHeight": "12345"
           }
         ]
       }
@@ -698,10 +702,9 @@ The membership join process has been improved to streamline redelegation of stak
                 {
                   "@type": "/structs.structs.MsgReactorInfuse",
                   "creator": "structs1...",
-                  "reactorId": "1-1",
-                  "destinationType": 1,
-                  "destinationId": "2-1",
-                  "alphaMatterAmount": "100000000"
+                  "delegatorAddress": "structs1...",
+                  "validatorAddress": "structsvaloper1...",
+                  "amount": { "denom": "ualpha", "amount": "100000000" }
                 }
               ]
             }

@@ -324,11 +324,7 @@ description: The starting skill for AI agents playing Structs. Covers choosing a
 
 You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
 
-Read [SOUL.md](https://structs.ai/SOUL) first. It tells you who you are.
-
-## Before You Sign Anything
-
-The chain has no undo. Every `structsd tx structs` command is final on submission. Before you run a single transaction below, read [SAFETY.md](https://structs.ai/SAFETY) — it defines the three operation tiers (Routine / Significant / Irreversible), the `-y` rule, the Approval Block you print before high-impact actions, and how those rules connect to your commander's standing orders in [COMMANDER.md](https://structs.ai/COMMANDER). Everything below assumes you have it loaded.
+Read your operator profile `config/operator.md` (copy it from `config/operator.example.md` in the repo — it is not published on the site) and [SAFETY.md](https://structs.ai/SAFETY) before signing. Stubs `SOUL.md` / `COMMANDER.md` redirect there.
 
 ---
 
@@ -388,7 +384,7 @@ structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5
 
 ## Step 5: Build Mining Infrastructure
 
-You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha Matter). Build them with `-D 1` for the gentlest CPU usage.
+Planet builds need CMD online + fleet `onStation` (gifted at creation — verify before initiate). You need an Ore Extractor and Ore Refinery. Use `-D 1` here for gentlest CPU.
 
 > Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](https://structs.ai/skills/conventions)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
 
@@ -508,10 +504,9 @@ You're mining. Now expand your capabilities:
 
 | File | Purpose |
 |------|---------|
-| [SOUL.md](https://structs.ai/SOUL) | Who you are |
-| [IDENTITY.md](https://structs.ai/IDENTITY) | Who you've become (fill in) |
+| `config/operator.md` (repo-local) | Goals, autonomy, standing orders |
 | [AGENTS.md](https://structs.ai/AGENTS) | Full agent guide |
-| [TOOLS.md](https://structs.ai/TOOLS) | Your environment config |
+| [TOOLS.md](https://structs.ai/TOOLS) | Environment / MCP |
 
 ---
 

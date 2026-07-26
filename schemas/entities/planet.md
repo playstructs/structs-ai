@@ -95,6 +95,6 @@ Tracks active raid status per planet. Separate from the planet table.
 | Confidence | high |
 | Code Reference | `x/structs/types/keys.go` (PlanetStartingOre = 5), `x/structs/keeper/planet_cache.go` |
 | DB Reference | `structs.planet` (14 columns), `structs.planet_raid` (5 columns), `view.planet` (20 columns) verified |
-| Verified Fields | maxOre, startingOre, status, remainingOre, seized_ore (planet_raid) |
+| Verified Fields | maxOre, status, `gridAttributes.ore` (unmined ore), seized_ore (planet_raid) |
 
 API response schema. Starting properties verified: maxOre=5, slots=4 each. For code-based field definitions with formulas, see `schemas/entities.md#planet`.

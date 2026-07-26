@@ -195,9 +195,25 @@ Two lifetime rules matter. **Auto-recorded grudges expire after 30 days; manuall
 Grudges accumulating on their own is worth understanding *before* you arm `auto_raid`: `auto_response` writes them whenever it observes an attack, including while it is merely advising. By the time you turn the offensive loop on, the list may already describe a target set you never explicitly chose. Read it with `{list_action:"show"}` first.
 
 ### Team Ops dashboard and web board
-The Team Ops window is a multi-page command center: **Ops** (the same board `structs_board` renders), **Fleet** (roster with per-player detail — including buried planet ore and estimated seconds to the next mine/refine completion — plus mass actions: `sweep_alpha`, `launch_players`, `set_role`, `force_scan`), **Energy** (guild reactor/substation power plus per-player supply/demand margins, worst first), **Work** (PoW queue, loop health, tx ledger, hash config), **Tx** (signing-queue snapshot and lane mutation via the `txq_bridge`), **Grass** (live GRASS event stream), **Config** (policies, loops, hash, doctrine presets, web-board toggle), and **Map**.
+The Team Ops window is a multi-page command center (nav labels in the live board):
 
-`structs_board {web:"on"}` additionally serves those same pages over HTTP at `/board` on the MCP port so a remote human can drive the dashboard from a browser; `{web:"status"}` returns the shareable URL and `{web:"off"}` stops serving. It is opt-in and every route 404s until enabled. Authentication is the MCP bearer token, handed over once as `?token=` and swapped for an HttpOnly cookie. The server binds `127.0.0.1` only, so remote access goes through the operator's own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). Because the web path bypasses the native window guard, **the token is full operator authority** — including mass actions that sign transactions. Web writes push the same audit entries into the event feed as native ones.
+| Page | What it shows / does |
+|------|----------------------|
+| **Ops** | Same at-a-glance board `structs_board` renders (agent board path) |
+| **Armada** (Fleet) | Roster + per-player detail (buried planet ore, ETA to next mine/refine) + mass actions: `sweep_alpha`, `launch_players`, `set_role`, `force_scan` |
+| **Energy** | Guild reactor/substation power + per-player supply/demand margins (worst first) |
+| **Work** | PoW queue, loop health, tx ledger, hash config |
+| **Tx** | Signing-queue snapshot and lane mutation via `txq_bridge` |
+| **Grass** | Live GRASS event stream |
+| **War** | Doctrine combat lists (grudge / priority / ally / protected) |
+| **Config** | Policies, loops, hash, doctrine presets, web-board toggle, role pfps |
+| **Inventory** | Per-player balances + transfer preview/execute (guild denom labels from config) |
+| **Diagnostics** | Health bundle for the local stack |
+| **Map** | Planet map renderer |
+
+Those pages are backed by **Tauri / web-board commands** in `board_pages.rs` (`mcp_roster`, `mcp_energy`, `mcp_inventory`, `mcp_war_bundle`, `mcp_config_*`, `mcp_tx_*`, …). They are **not** additional MCP tools — `tools/list` is still the 13 tools above. Agents keep using `structs_board` / `structs_players` / `structs_doctrine`; humans drive the richer pages in the native window or over the web board.
+
+`structs_board {web:"on"}` serves those same pages over HTTP at `/board` on the MCP port so a remote human can drive the dashboard from a browser; `{web:"status"}` returns the shareable URL and `{web:"off"}` stops serving. It is opt-in and every route 404s until enabled. Authentication is the MCP bearer token, handed over once as `?token=` and swapped for an HttpOnly cookie. The server binds `127.0.0.1` only, so remote access goes through the operator's own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). Because the web path bypasses the native window guard, **the token is full operator authority** — including mass actions that sign transactions. Web writes push the same audit entries into the event feed as native ones. Native mutating dashboard commands are gated to the `board` window label (`require_board`); the web path reuses the same handlers after bearer auth.
 
 ### Event feed
 Combat reaches `structs_events` as `struct_health` (with `health`/`health_old` and `struct_id`) and `struct_status`, alongside `shield_change`, `struct_block_build_start`, `fleet_arrive`/`fleet_depart`, `raid_status`, `player_consensus`, and `lastAction`. There is **no `struct_attack` category in the feed** — for your own attack outcomes use `structs_intel {query:"battle_log"}`. Actions you submitted come back as `tx_settled` receipts carrying the real tx hash, chain code, and succeeded/dropped status.
@@ -221,8 +237,14 @@ MCP actions never hold keys. `structs_action` validates preconditions, Rust emit
 ### Notifications
 Native OS alerts fire off NATS WebSocket events, filtered to your planet/fleet: raid alerts, structs under attack, enemy fleet incoming/departed, your fleet moved, mining/refining/build started, struct status changed, Alpha Matter transfer, power alert. macOS uses `UNUserNotificationCenter` (needs a signed `.app`); Windows/Linux use `notify-rust`.
 
-### Guild configuration
-The app connects to a guild's infrastructure via stored configs (`guildApi`, `reactorApi`, `clientWs`, `grassNatsWs`); it supports multiple guild configs with one active at a time. A default config ships for new players.
+### Guild configuration + directory
+Configs live in app data as `guild_configs.json` (multiple entries, one `is_active`). Fields: `guild_id`, `name`, `guild_tag`, `guild_api`, `reactor_api`, `client_ws`, `grass_nats_ws`, optional `endpoint`, `source` (`seed` / `chain` / `user`), `last_refreshed`, and `denoms` (cosmetic guild-token names by exponent for Inventory).
+
+**Discovery** (`guild_directory`): crawls `GET {reactor}/structs/guild` for each guild’s on-chain `endpoint` document (guild.json), then upserts infrastructure URLs. Endpoint bodies are untrusted UGC — size-capped, schema-validated, fetched with a **cookie-less** client so the guild session cookie never leaks to arbitrary hosts (see [agent-security.md](../../awareness/agent-security.md)).
+
+**Shared vs per-guild:** every guild is on the same testnet chain. Discovery **pins** `reactor_api` / `client_ws` to the public node (`https://public.testnet.structs.network` / matching RPC ws) rather than adopting each guild’s self-declared LCD/RPC (those are inconsistent). Only `guild_api` and `grass_nats_ws` are genuinely per-guild. Default/onboarding guild id is `0-5` (SN Corp). User-managed entries are not overwritten by discovery URL refreshes.
+
+Switching active guild reloads the frontend against the new config; a cooldown + LCD backstop guard against reload loops when a player migrates mid-session.
 
 ---
 

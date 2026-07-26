@@ -85,7 +85,7 @@ If the address already holds $alpha tokens, delegate to a reactor (validator). T
 3. Run (CLI will prompt; review on the prompt as well):
 
    ```
-   structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -- [your-address] [reactor-address] [amount]
+   structsd tx structs reactor-infuse --from [key-name] --gas auto --gas-adjustment 1.5 -- [your-address] [validator-address] [amount]ualpha
    ```
 
 4. Poll until player exists: `structsd query structs address [your-address]` — repeat every 10 seconds until player ID is not `1-0`.
@@ -149,7 +149,7 @@ node .cursor/skills/structs-onboarding/scripts/create-player.mjs \
   --pfp-client-render-attributes '{"theme":"dark"}'
 ```
 
-`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-cr-attributes -- [player-id] '[json]'` (it's an owner-only field — not guild-moderatable).
+`--pfp-client-render-attributes` (optional) is an owner-supplied JSON object (max 512 bytes; no chain-enforced schema) of client render hints. The official webapp convention is 5 layer indices `{head, neck, body, arms, background}` — see [ugc-moderation.md](https://structs.ai/knowledge/mechanics/ugc-moderation#official-webapp-client-convention-the-5-layer-avatar). It is forwarded only when the guild API supports it; older guild APIs ignore the field. You can always set it later with `structsd tx structs player-update-pfp-cr-attributes --from [key] --gas auto -- [player-id] '[json]'` (it's an owner-only field — not guild-moderatable).
 
 The script will:
 1. Validate `--username`, `--pfp`, and `--pfp-client-render-attributes` locally against the chain's UGC validators (NFC, length, allowed character set, allowed pfp schemes; render-attributes must be a ≤512-byte JSON object — same rules as `x/structs/types/ugc.go`). Invalid input is rejected before any network call. See `knowledge/mechanics/ugc-moderation.md` for the full rule set.
@@ -321,7 +321,7 @@ Values are combined: 6 = land + water, 30 = all ambits. Check `possibleAmbit` be
 | Show address | `structsd keys show [name] -a` |
 | Discover player | `structsd query structs address [address]` |
 | Query player | `structsd query structs player [id]` |
-| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -- [player-addr] [reactor-addr] [amount]` |
+| Reactor infuse | `structsd tx structs reactor-infuse --from [key] --gas auto -- [player-addr] [validator-addr] [amount]ualpha` |
 | Create player (guild signup) | `node .cursor/skills/structs-onboarding/scripts/create-player.mjs --guild-id "..." --guild-api "..." --reactor-api "..." [--mnemonic "..."] [--username "..."] [--pfp "..."] [--pfp-client-render-attributes "{...}"]` |
 | Explore planet | `structsd tx structs planet-explore --from [key] --gas auto -- [player-id]` |
 | Initiate build | `structsd tx structs struct-build-initiate --from [key] --gas auto -- [player-id] [struct-type-id] [operating-ambit] [slot]` |
@@ -355,7 +355,7 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - **Signup succeeds but player never appears** — Re-run the script with the same `--mnemonic` to resume polling. The guild may be slow to process. If it still fails after 120s, the guild's proxy may be down.
 - **Signup returns `resource_already_exists`** — This is **idempotent success, not an error**. The address has already joined the guild. `create-player.mjs` detects this and falls through to polling for the existing player; if you call the signup endpoint directly, treat `{resource_already_exists}` the same way (adopt the existing player via `structsd query structs address [your-address]`).
 - **"address is not registered as a player"** — The signing key exists (and may even be funded) but has never been onboarded, so the ante handler rejects every `/structs.structs.*` game message (code 2010). Complete Step 2 (Path A or Path B) first; only plain bank sends work before registration. Confirm with `structsd query structs address [address]` returning a `playerId` other than `1-0`.
-- **"insufficient resources"** — Check player Alpha Matter balance.
+- **"capacity_exceeded"** — Not enough power headroom for BuildDraw/PassiveDraw; infuse or deactivate first.
 - **"fleet not on station"** — Wait for fleet or move fleet before planet builds.
 - **"invalid slot"** — Use slot 0-3 per ambit; check planet structs for occupancy.
 - **"power overload"** — Not enough capacity to activate. Add power sources or connect to a substation with more capacity.

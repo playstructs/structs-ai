@@ -5,11 +5,13 @@ title: Mechanics
 # Mechanics
 
 - [Combat](combat) -- Damage, evasion, raids, weapon systems
+- [Defense](defense) -- Survival card: raid loot, shields, minimum posture
 - [Permissions](permissions) -- 25-bit permission flags, guild rank permissions, UGC moderation hook, handler reference
 - [Transactions](transactions) -- Free vs paid messages, ante handler routing, gas mechanics
 - [UGC Moderation](ugc-moderation) -- Decentralized name/pfp moderation philosophy, validation rules, audit events
 - [Resources](resources) -- Ore, Alpha Matter, energy conversions
-- [Power](power) -- Capacity, load, online status formulas
+- [Power](power) -- Capacity, load, online status formulas (quick card)
+- [Energy](energy) -- Full energy system: units, infusion, substations, allocations, brownout
 - [Building](building) -- Construction, proof-of-work, struct states
 - [Hashing](hashing) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
 - [Fleet](fleet) -- Ships, movement, on-station vs away

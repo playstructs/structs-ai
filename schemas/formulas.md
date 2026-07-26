@@ -400,7 +400,7 @@ alphaMatter = 1,000,000 micrograms per ore
 Initial ore amount for all planets.
 
 ```
-startingOre = 5 (fixed for all planets)
+maxOre = 5 (fixed for all planets; chain constant PlanetStartingOre)
 ```
 
 ---

@@ -31,7 +31,7 @@ The [Codex](https://www.playstructs.com/codex) is the **human** documentation: a
 | Signal Jamming | Signal Jamming (unit defense; same term) | [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type) |
 | Counter-Attack | Counter-attack (same term) | [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack) |
 | Defend / Defender / Block | Defender / Block (same terms) | [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set) |
-| Alpha Ore | Ore (`storedOre` / `remainingOre`, stealable) | [resources.md](../knowledge/mechanics/resources.md) |
+| Alpha Ore | Ore (player `storedOre`, stealable; planet `gridAttributes.ore`, not) | [resources.md](../knowledge/mechanics/resources.md) |
 | Alpha Matter (refined) | Alpha Matter (secure, same term) | [resources.md](../knowledge/mechanics/resources.md) |
 | Alpha Base | A player's planet + base structs | [planet.md](../knowledge/mechanics/planet.md) |
 | CMD Ship | Command Ship | [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction) |

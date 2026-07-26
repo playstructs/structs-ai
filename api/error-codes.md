@@ -28,8 +28,8 @@
 | 3 | INVALID_SIGNATURE | error | Yes | Re-sign transaction | Verify signature generation, re-sign with correct private key |
 | 4 | INSUFFICIENT_GAS | error | Yes | Increase gas limit | Estimate gas requirements, increase gas limit in transaction |
 | 5 | INVALID_MESSAGE | error | No | Validate message format | Check message structure against schema, verify all required fields |
-| 6 | PLAYER_HALTED | error | No | Wait for player online | Check player status, wait for player to come online |
-| 7 | INSUFFICIENT_CHARGE | error | No | Wait for charge to accumulate | Check charge levels, wait for charge to regenerate |
+| 6 | PLAYER_OFFLINE | error | No | Restore capacity or shed load | No `halted` field — online is `(load+structsLoad) ≤ (capacity+secondary)`. Wire codespace is often **1152** (`ErrPlayerOffline`), not literal `6` |
+| 7 | INSUFFICIENT_CHARGE | error | No | Wait for charge to accumulate | Charge = height − `gridAttributes.lastAction`. Wire codespace often **1200** |
 | 8 | INVALID_LOCATION | error | No | Validate location | Check location format and validity |
 | 9 | INVALID_TARGET | error | No | Validate target | Check target format and validity |
 | 1900 | OBJECT_NOT_FOUND | error | No | Verify resource ID | Consensus Network returns 200 with error code, not 404. Check response.code field. |
@@ -116,11 +116,13 @@ Consensus Network errors are returned with HTTP 200 but with a non-zero `code` f
 
 ```json
 {
-  "code": 6,
-  "message": "codespace structs code 6: player halted",
+  "code": 1152,
+  "message": "codespace structs code 1152: player is offline",
   "details": []
 }
 ```
+
+Codes **1–9** in the table above are a simplified agent schema. Raw ABCI logs use module codespace IDs (e.g. offline **1152**, insufficient charge **1200**). There is no live `player halted` / code-6 halt path.
 
 ---
 

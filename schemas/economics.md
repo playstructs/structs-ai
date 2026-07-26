@@ -18,7 +18,7 @@
 | Refinement required | yes |
 | Refines to | Alpha Matter |
 
-Raw material mined from planets. Once mined and held in a player's inventory (`storedOre`), it can be stolen by raiders. Unmined ore on planets (`remainingOre`) is not stealable. Must be refined to Alpha Matter before secure use.
+Raw material mined from planets. Once mined and held in a player's inventory (`storedOre`), it can be stolen by raiders. Unmined ore on planets (the planet's `gridAttributes.ore`) is not stealable. Must be refined to Alpha Matter before secure use.
 
 ### Conversion
 

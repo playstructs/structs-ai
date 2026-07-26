@@ -16,7 +16,7 @@ Three compose variants exist:
 |---------|------|---------|
 | Guild node | `compose.yaml` | Standard deployment: chain node, sync-state indexer, PG, GRASS/NATS, webapp, Struct Control SPA, TSA, crawler |
 | Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no sync-state/webapp) |
-| Guild + Discord | `compose-discord.yaml` | Standard + Discord bot integration |
+| Guild + Discord | `compose-discord.yaml` | Discord-oriented topology: `structsd-indexer-config` + `structs-proxy` + `structs-discord`; **no** `structs-sync-state` / `structs-control` (not “standard + bot”) |
 
 **Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (v0.20.0).
 
@@ -166,7 +166,7 @@ The `structs-grass` service bridges PostgreSQL change notifications to NATS:
 - Game events (attacks, fleet moves, raids, builds) flow through this bridge
 - Categories come from the shared `structs.grass_category` enum, which spans both planet-scoped timeline rows and notifications that never land in `planet_activity` (`block`, `guild_consensus`, `guild_membership`, `player_meta`, …)
 - Player/guild UGC updates surface as `player_consensus` / `guild_meta` categories (not `player_meta`)
-- `shield_change` is the highest-volume planet-scoped category after `struct_status`; subscribe selectively
+- `shield_change` is high-volume but usually ranks below `struct_status` / `struct_health` / build & defense events; subscribe selectively
 - `consensus` and `healthcheck` subjects fire constantly as baseline traffic
 
 `structs-grass` declares no dependency on `structs-nats`, so starting it by name does not bring NATS up. Launch both if you want events to reach subscribers.

@@ -426,7 +426,7 @@ Everything above is derivable from the source. It is also confirmed by outcomes:
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen -- not unmined ore on the planet (`remainingOre`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
+- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen -- not unmined ore on the planet (its `gridAttributes.ore`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Block does NOT fire on evaded shots. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.

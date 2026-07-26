@@ -35,7 +35,7 @@ A routing of power capacity from a source (player, reactor, struct, or substatio
 The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Alpha Ore
-*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--remainingore) (`storedOre`/`remainingOre`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
+*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--planet-ore) (player `storedOre`; unmined ore is the planet's `gridAttributes.ore`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Ambit
 One of four combat layers — **Water, Land, Air, Space** — plus two special values (`none`, `local`). A struct operates in one ambit; weapons reach specific ambits. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
@@ -94,7 +94,7 @@ How an agent reports Structs state to a human who does not speak the jargon: lea
 Constructing a struct: `struct-build-initiate` starts the clock, then a proof-of-work `struct-build-compute` completes and auto-activates it. → [building.md](../knowledge/mechanics/building.md)
 
 ### BuildDraw / PassiveDraw
-A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw`). Stated in watts; the chain stores milliwatts (×1,000). Both must fit your capacity. → [energy.md](../knowledge/mechanics/energy.md), [struct-types.md](../knowledge/entities/struct-types.md#complete-struct-type-table)
+A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw`). Stated in watts; the chain stores milliwatts (×1,000). **Sequential, not summed:** initiate needs BuildDraw headroom only; complete then applies PassiveDraw. Peak for equal draws is one draw, not 2×. → [building.md](../knowledge/mechanics/building.md), [power.md](../knowledge/mechanics/power.md), [struct-types.md](../knowledge/entities/struct-types.md#complete-struct-type-table)
 
 ### Build limit
 The per-player cap on how many of a struct type you can own. Most planet structs and the Command Ship are 1; Orbital Shield Generator, Ore Bunker, and fleet combat structs are unlimited. Exceeding it raises [capacity_exceeded](#capacity_exceeded). → [building.md — Struct Limits](../knowledge/mechanics/building.md#struct-limits-per-player)
@@ -234,8 +234,8 @@ The two PoW fields on a `*-complete` message: `nonce` (the value found by brute 
 ### onStation
 A fleet state: the fleet is at its home planet, so the Command Ship defends it (shields up). → [fleet.md](../knowledge/mechanics/fleet.md)
 
-### Ore (storedOre / remainingOre)
-`storedOre` is mined, stealable ore held by a player (the only raid loot). `remainingOre` is unmined ore on the planet. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
+### Ore (storedOre / planet ore)
+`storedOre` is mined, stealable ore held by a player (the only raid loot) — on the wire it is the player's `gridAttributes.ore`. Unmined ore is the *planet's* `gridAttributes.ore`; there is no `remainingOre` field on either. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
 
 ## P
 

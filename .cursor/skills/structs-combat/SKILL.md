@@ -50,7 +50,7 @@ Use `scripts/scout.sh [planet-id]` for a structured read, then decide by mode:
 ### Defense doctrine
 
 - **Keep your Command Ship online and your fleet on station — always.** That combination makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice" — or "I sent my fleet off to raid and left my own shields down." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you). Treat raiding with your own fleet as a deliberate trade: while it's away, your home is exposed.
-- **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate.
+- **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate. Mid-raid: do **not** start a new refine (~34h); only finish one already completable — see [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](https://structs.ai/skills/structs-production/SKILL)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
 
@@ -177,7 +177,7 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 |--------|-------------|
 | Attack | `structsd tx structs struct-attack TX_FLAGS -- [struct-id] [target-ids] [weapon-system]` |
 | Raid compute (PoW + auto-complete) | `structsd tx structs planet-raid-compute -D 3 TX_FLAGS_APPROVED -- [fleet-id]` |
-| Raid complete (manual, rare) | `structsd tx structs planet-raid-complete TX_FLAGS -- [fleet-id]` |
+| Raid complete (manual, rare) | `structsd tx structs planet-raid-complete TX_FLAGS -- [fleet-id] [proof] [nonce]` |
 | Fleet move | `structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]` |
 | Defense set / clear | `structsd tx structs struct-defense-set \| struct-defense-clear TX_FLAGS -- [defender-id] [protected-id]` |
 | Stealth on / off | `structsd tx structs struct-stealth-activate \| struct-stealth-deactivate TX_FLAGS -- [struct-id]` |

@@ -99,7 +99,7 @@ The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is fa
 | Struct detail | `structsd query structs struct [id]` |
 | Guild | `structsd query structs guild [id]` / `guild-all` |
 | Guild members | Guild Stack: `select id, guild_rank from player where guild_id='[guild-id]'` (no `structsd` CLI equivalent — membership is a field on the player, not a separate record) |
-| Pending guild applications | `structsd query structs guild-membership-application [id]` / `guild-membership-application-all` |
+| Pending guild applications | `structsd query structs guild-membership-application [guild-id] [player-id]` / `guild-membership-application-all` |
 | Reactor | `structsd query structs reactor [id]` / `reactor-all` |
 | Provider / market | `structsd query structs provider [id]` / `provider-all` |
 | Fleet | `structsd query structs fleet [id]` |

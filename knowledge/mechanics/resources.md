@@ -8,7 +8,7 @@
 
 | Resource | Unit | Stealable | Refinement | Location |
 |----------|------|-----------|------------|----------|
-| Alpha Ore (unmined) | grams | No | Required | Planet (`remainingOre`) — extracted by Ore Extractor |
+| Alpha Ore (unmined) | grams | No | Required | Planet (`gridAttributes.ore`) — extracted by Ore Extractor |
 | Alpha Ore (mined) | grams | **Yes** | Required | Player inventory (`storedOre`) — stolen in raids |
 | Alpha Matter | grams | No | Output | Player inventory (on-chain) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
@@ -66,7 +66,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `gridAttributes.ore` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -86,7 +86,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 | State | Location | Stealable | Action |
 |-------|----------|-----------|--------|
-| Unmined ore (`remainingOre`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
+| Unmined ore (planet `gridAttributes.ore`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
 | Mined ore (`storedOre`) | Player | **Yes** | Refine immediately — this is what raiders steal |
 | Alpha Matter | Player | No | Secure — cryptographically bound to owner |
 

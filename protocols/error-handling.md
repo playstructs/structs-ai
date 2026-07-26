@@ -288,7 +288,7 @@ All error codes are defined in `schemas/errors.md`. Categories include:
     "description": "Player has insufficient charge (charge is per-player, not per-struct)"
   },
   "recovery": {
-    "action": "Query player charge level (CurrentBlockHeight - player.lastActionBlock)",
+    "action": "Query player charge level (CurrentBlockHeight - gridAttributes.lastAction)",
     "wait": "Monitor charge until sufficient",
     "retry": "Retry the action when charge >= required"
   }

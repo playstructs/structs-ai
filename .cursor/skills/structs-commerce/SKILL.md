@@ -57,7 +57,7 @@ Only the **controlling** player can delete/transfer an allocation (`--controller
    structsd tx structs provider-create TX_FLAGS -- [substation-id] [rate] [access-policy] [provider-penalty] [consumer-penalty] [cap-min] [cap-max] [dur-min] [dur-max]
    ```
    Pricing/policy heuristics: `rate` `1uguild.0-N` (drives guild-token demand) or a `ualpha` rate; `access-policy` `open-market` (max reach), `guild-market` (members at/above a rank — grant via `permission-guild-rank-set [provider-id] [guild-id] 262144 [rank]`), or `closed-market` (explicit PermProviderOpen only); penalties `0` initially to lower friction; cap/dur ranges wide (e.g. `1000`–`1000000000` / `100`–`1000000`).
-5. **Monitor & withdraw**: `structsd query structs provider [id]`; `provider-withdraw-balance TX_FLAGS -- [provider-id]`. Earnings drip from the provider's collateral (escrow) to its earnings address as blocks pass.
+5. **Monitor & withdraw**: `structsd query structs provider [id]`; `provider-withdraw-balance TX_FLAGS -- [provider-id] [destination-address]`. Earnings drip from the provider's collateral (escrow) to its earnings address as blocks pass.
 
 ## Procedure — buy energy (agreement)
 
@@ -77,7 +77,7 @@ Only the **controlling** player can delete/transfer an allocation (`--controller
 ```
 structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha TX_FLAGS
 ```
-Validator address is `structsvaloper1...` (from `structsd query structs reactor [id]`, `validator` field) — not the reactor ID. Commission locks at infusion. Unstake: `reactor-defuse [reactor-id]` (cooldown); `reactor-cancel-defusion` to re-stake during cooldown; `reactor-begin-migration [player-addr] [src-val] [dest-val] [amount]` to move stake (verify the destination — no undo).
+Validator address is `structsvaloper1...` (from `structsd query structs reactor [id]`, `validator` field) — not the reactor ID. Commission locks at infusion. Unstake: `reactor-defuse [your-address] [validator-address] [amount]ualpha` (cooldown); `reactor-cancel-defusion [your-address] [validator-address] [amount]ualpha [creation-height]` to re-stake during cooldown; `reactor-begin-migration [player-addr] [src-val] [dest-val] [amount]ualpha` to move stake (verify the destination — no undo).
 
 ## Procedure — guild Central Bank & transfers
 

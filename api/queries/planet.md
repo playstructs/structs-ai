@@ -53,11 +53,22 @@ Returns a single planet by its entity ID.
     "space": ["", "", "", ""],
     "air": ["", "", "", ""],
     "land": ["", "", "", ""],
-    "water": ["", "", "", ""]
+    "water": ["", "", "", ""],
+    "status": "active"
   },
-  "map": {}
+  "gridAttributes": {
+    "ore": "5",
+    "capacity": "0",
+    "load": "0",
+    "structsLoad": "0"
+  },
+  "planetAttributes": {
+    "planetaryShield": "25"
+  }
 }
 ```
+
+Remaining ore is `gridAttributes.ore` (cap is `Planet.maxOre`). There is no top-level `map` on this query.
 
 ---
 

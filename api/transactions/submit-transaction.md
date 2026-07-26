@@ -40,11 +40,12 @@ All game actions are submitted through this endpoint. See `schemas/actions.md` f
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgStructBuild",
+        "@type": "/structs.structs.MsgStructBuildInitiate",
         "creator": "structs1...",
-        "structType": "1",
-        "locationType": 1,
-        "locationId": "2-1"
+        "playerId": "1-11",
+        "structTypeId": "1",
+        "operatingAmbit": "land",
+        "slot": "0"
       }
     ]
   }

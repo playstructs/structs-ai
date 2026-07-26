@@ -51,7 +51,7 @@ online         = (load + structsLoad) <= (capacity + capacitySecondary)
 - `capacity` — your own generation (infusions); the only part you can allocate out.
 - `capacitySecondary` — received from a substation you're connected to.
 - `load` — power you've allocated to others.
-- `structsLoad` — sum of `passiveDraw` of your online structs.
+- `structsLoad` — player passive (25,000 mW) + sum of `passiveDraw` of your online structs.
 
 Units are milliwatts (1 W = 1,000 mW; 1 ualpha = 1 mW).
 
@@ -65,9 +65,9 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID).
 3. Infuse (CLI prompts — review validator, commission, amount):
    ```
-   structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha TX_FLAGS
+   structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
    ```
-   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion (`reactor-defuse [reactor-id]`) starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes.
+   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same three arguments as infusion (`reactor-defuse -- [your-address] [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes during that cooldown.
 4. Verify: re-query player; capacity increased.
 
 ## Procedure — generator infusion (Tier 2, irreversible)
@@ -75,7 +75,7 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha TX_FLAGS
+structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha
 ```
 
 Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g.
@@ -109,10 +109,11 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount]ualpha TX_FLAGS` |
-| Reactor defuse / cancel | `structsd tx structs reactor-defuse \| reactor-cancel-defusion TX_FLAGS -- [reactor-id]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-val] [dest-val] [amount] TX_FLAGS` |
-| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha TX_FLAGS` |
+| Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |
+| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
 | Allocation create / update / delete | `structsd tx structs allocation-create --allocation-type [t] TX_FLAGS -- [source-id] [power]` (and `allocation-update`/`allocation-delete -- [allocation-id] ...`) |
 | Substation create / delete | `structsd tx structs substation-create \| substation-delete TX_FLAGS -- ...` |
 | Substation allocation connect/disconnect | `structsd tx structs substation-allocation-connect \| disconnect TX_FLAGS -- [sub-id] [alloc-id]` |

@@ -25,10 +25,10 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 |------|---------|
 | [README.md](README.md) | Project overview, setup instructions |
 | [AGENTS.md](AGENTS.md) | Agent guide — start here |
-| [QUICKSTART.md](QUICKSTART.md) | Fast-path onboarding for new players |
+| [QUICKSTART.md](QUICKSTART.md) | Compatibility stub → [`START.md`](START.md) |
 | [SAFETY.md](SAFETY.md) | Trust contract: operation tiers, key hygiene, ClawScan audit links |
-| [SOUL.md](SOUL.md) | Agent operating philosophy template |
-| [IDENTITY.md](IDENTITY.md) | Agent identity template (name, soul type, play style) |
+| [SOUL.md](SOUL.md) | Compatibility stub → [`START.md`](START.md) / operator profile |
+| [IDENTITY.md](IDENTITY.md) | Compatibility stub → `memory/` + [`config/operator.md`](config/operator.example.md) |
 | [COMMANDER.md](COMMANDER.md) | Compatibility stub → [`config/operator.md`](config/operator.md) |
 | [TOOLS.md](TOOLS.md) | Environment configuration (servers, keys, accounts) |
 | [USER.md](USER.md) | OpenClaw compatibility redirect to COMMANDER.md |
@@ -177,7 +177,7 @@ How to read the board and maintain continuity.
 | [agent-security.md](awareness/agent-security.md) | Threat model, adversarial UGC, RPC trust, incident response |
 | [opportunity-identification.md](awareness/opportunity-identification.md) | Find advantages |
 | [priority-framework.md](awareness/priority-framework.md) | Survival > Security > Economy > Expansion > Dominance |
-| [game-loop.md](awareness/game-loop.md) | Assess → Plan → Act → Verify → Repeat |
+| [game-loop.md](awareness/game-loop.md) | Check Jobs → Assess → Plan → Initiate → Dispatch → Verify → Repeat |
 | [async-operations.md](awareness/async-operations.md) | Background PoW, pipeline pattern, job tracking |
 | [briefing.md](awareness/briefing.md) | Report game state to a human commander: jargon translation, report shapes, what not to send |
 | [context-handoff.md](awareness/context-handoff.md) | Save state when context runs low |

@@ -55,11 +55,19 @@ Returns a single player by their entity ID.
     "fleetId": "11-11",
     "guildRank": "101"
   },
-  "gridAttributes": {},
-  "playerInventory": {},
-  "halted": false
+  "gridAttributes": {
+    "capacity": "50000000",
+    "load": "0",
+    "structsLoad": "50000000",
+    "connectionCapacity": "0",
+    "lastAction": "12345",
+    "ore": "0"
+  },
+  "playerInventory": {}
 }
 ```
+
+There is no `halted` field. Online = `(load + structsLoad) ≤ (capacity + connected substation connectionCapacity)`. Charge = current height − `gridAttributes.lastAction`.
 
 ---
 

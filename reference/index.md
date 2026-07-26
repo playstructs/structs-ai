@@ -16,7 +16,7 @@ Look up a rule, a number, or a name. For step-by-step procedures use
 
 ## Mechanics
 
-- [Combat](../knowledge/mechanics/combat.md) · [Building](../knowledge/mechanics/building.md) · [Hashing / proof-of-work](../knowledge/mechanics/hashing.md)
+- [Combat](../knowledge/mechanics/combat.md) · [Defense](../knowledge/mechanics/defense.md) · [Building](../knowledge/mechanics/building.md) · [Hashing / proof-of-work](../knowledge/mechanics/hashing.md)
 - [Energy](../knowledge/mechanics/energy.md) · [Power](../knowledge/mechanics/power.md) · [Resources](../knowledge/mechanics/resources.md)
 - [Transactions & fees](../knowledge/mechanics/transactions.md) · [Permissions](../knowledge/mechanics/permissions.md) · [UGC moderation](../knowledge/mechanics/ugc-moderation.md)
 - [Fleet](../knowledge/mechanics/fleet.md) · [Planet](../knowledge/mechanics/planet.md)

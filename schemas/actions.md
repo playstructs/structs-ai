@@ -658,14 +658,14 @@ This action abstracts validation undelegation. Reactor staking is managed at the
         "@type": "/structs.structs.MsgStructGeneratorInfuse",
         "creator": "structs1...",
         "structId": "20-1",
-        "infuseAmount": "100000000"
+        "infuseAmount": "100000000ualpha"
       }
     ]
   }
 }
 ```
 
-Note: `infuseAmount` is in micrograms (100 grams = 100,000,000 micrograms).
+Note: `infuseAmount` is a coin string in micrograms (100 grams = 100,000,000 micrograms). The `ualpha` denom is required — the handler parses the field with `ParseCoinsNormalized` and rejects a bare number.
 
 ---
 

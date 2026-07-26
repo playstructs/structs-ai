@@ -429,8 +429,8 @@
 | id | string | entity-id | `^2-[0-9]+$` | -- | Unique planet identifier. Type 2 = Planet. |
 | ownerId | string | entity-id | `^1-[0-9]+$` | -- | Player who owns this planet. Type 1 = Player. |
 | status | string | enum | `active`, `complete` | -- | Planet status (active = has ore, complete = depleted) |
-| remainingOre | integer | ore | -- | -- | Remaining ore on planet |
-| startingOre | integer | ore | -- | 5 | Initial ore amount (all planets start with 5) |
+| gridAttributes.ore | integer | ore | -- | -- | Unmined ore remaining. A **grid attribute**, not a `Planet` field — there is no `remainingOre` on the wire. |
+| maxOre | integer | ore | -- | 5 | Ore capacity; every planet starts at 5 (`PlanetStartingOre`). There is no `startingOre` field. |
 | spaceSlots | integer | -- | -- | 4 | Number of space slots available |
 | airSlots | integer | -- | -- | 4 | Number of air slots available |
 | landSlots | integer | -- | -- | 4 | Number of land slots available |

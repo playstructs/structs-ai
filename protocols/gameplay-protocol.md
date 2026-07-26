@@ -97,15 +97,9 @@ This protocol defines how AI agents interact with Structs gameplay mechanics. It
 
 **Purpose**: Monitor and manage power capacity and consumption.
 
-**Query Format**:
-```json
-{
-  "action": "queryPower",
-  "playerId": "structs1..."
-}
-```
+**Query**: `GET /structs/player/{playerId}` — read `gridAttributes` (`capacity`, `load`, `structsLoad`, `connectionCapacity`). There is no `queryPower` LCD action.
 
-**Response Format**:
+**Derived power status** (conceptual; not a wire response):
 ```json
 {
   "powerStatus": {
@@ -113,32 +107,22 @@ This protocol defines how AI agents interact with Structs gameplay mechanics. It
     "capacitySecondary": 0,
     "load": 500000,
     "structsLoad": 500000,
-    "availableCapacity": 0,
-    "allocatableCapacity": 500000,
     "playerOnline": true
   },
   "requirements": {
     "playerOnline": "(load + structsLoad) <= (capacity + capacitySecondary)",
-    "offline": "(load + structsLoad) > (capacity + capacitySecondary)"
-  },
-  "warning": {
-    "nearCapacity": false,
-    "offlineRisk": false
+    "offline": "(load + structsLoad) > (capacity + capacitySecondary)",
+    "note": "capacitySecondary is connected substation connectionCapacity — not an LCD gridAttributes key"
   }
 }
 ```
 
-**Power Conversion Protocol**:
+**Infuse (not “convertPower”)**: use `MsgReactorInfuse` (validator + `ualpha` Coin) or `MsgStructGeneratorInfuse` (`structId` + `infuseAmount`). There is no `convertPower` message.
 ```json
 {
-  "action": "convertPower",
+  "action": "MsgReactorInfuse",
   "method": "reactor",
-  "alphaMatterAmount": 100,
-  "verify": {
-    "alphaMatterAvailable": 100,
-    "method": "reactor",
-    "expectedOutput": 100
-  }
+  "amount": { "denom": "ualpha", "amount": "100000000" }
 }
 ```
 

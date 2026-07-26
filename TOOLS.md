@@ -188,6 +188,8 @@ The bearer token is generated on first launch and stored with the app's config. 
 
 Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`. The old names still answer with a pointer to the replacement, but are no longer advertised — `tools/list` returns exactly the 13 above.)
 
+The Desktop **Command Center** pages (Armada, Energy, Work, Tx, War, Inventory, Config, …) use internal Tauri/`web_board` handlers (`board_pages.rs`) — they are not extra MCP tools. Multi-guild infra switching is app-side (`guild_config` + `guild_directory` discovery); agents do not get a separate guild-config tool.
+
 ### Prompts (7)
 
 | Prompt | Purpose |
@@ -229,7 +231,7 @@ Common pitfalls when using `structsd` directly:
 | **`--` separator** | Entity IDs like `3-1` or `4-5` are parsed as flags by the Cobra CLI parser | Place `--` after all flags and before positional args: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10` |
 | **reactor-infuse address** | Takes the **validator address** (`structsvaloper1...`), not the reactor ID (`3-1`) | Look up the reactor's `validator` field first: `structsd query structs reactor [id]` |
 | **Amount denomination** | Amounts must include the denomination suffix | Use `60000000ualpha` not `60000000`. Same for guild tokens: `100uguild.0-1` |
-| **provider-withdraw-balance** | Positional arg is the provider ID, which contains a dash | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id]` |
+| **provider-withdraw-balance** | Takes two positional args: provider ID (contains a dash) and the destination address for the earnings | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id] [destination-address]` |
 | **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |
 | **Sequence mismatch** | Two transactions from the same account at the same time | Wait ~6 seconds between transactions from the same key |
 | **TX fees** | Players don't need Alpha tokens to pay gas fees | Pure Structs gameplay messages are free (dedicated free-gas meter, no `ualpha` fee) — see [transactions](knowledge/mechanics/transactions.md). Still pass `--gas auto`. Being online/powered gates *acting*; it is not a per-tx fee |

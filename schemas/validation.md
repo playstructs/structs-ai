@@ -283,7 +283,7 @@ Validation requirements for `MsgPlanetExplore`.
 
 | Check ID | Name | Query | Field | Expected | Message |
 |----------|------|-------|-------|----------|---------|
-| current-planet-empty | Current Planet Empty | `GET /structs/planet/{currentPlanetId}` | `remainingOre` / status | `0` / `complete` | Current planet must be depleted before exploring |
+| current-planet-empty | Current Planet Empty | `GET /structs/planet/{currentPlanetId}` | `gridAttributes.ore` / status | `0` / `complete` | Current planet must be depleted before exploring |
 | fleet-on-station | Fleet On Station | `GET /structs/fleet/{fleetId}` | status | `onStation` | Fleet must be home (not away) |
 | player-online | Player Online | `GET /structs/player/{playerId}` | capacity/load | load ≤ capacity | Player must be online |
 
@@ -377,11 +377,11 @@ Attempting to explore new planet while current planet has ore.
 
 **Diagnosis**:
 1. Query current planet: `GET /structs/planet/{planetId}`
-2. Check `remainingOre` and status (`complete` when depleted)
+2. Check the planet's `gridAttributes.ore` and status (`complete` when depleted)
 3. Confirm fleet `status` is `onStation`
 
 **Solution**:
-1. Mine all ore from current planet until `remainingOre` is 0 / status `complete`
+1. Mine all ore from current planet until `gridAttributes.ore` is 0 / status `complete`
 2. Recall fleet if away
 3. Then explore new planet
 

@@ -49,7 +49,7 @@
 
 ### Planet
 
-- **Key Fields**: id, ownerId, status, remainingOre, startingOre
+- **Key Fields**: id, ownerId, status, maxOre, `gridAttributes.ore` (unmined ore)
 - **Relationships**: Owned by Player; Contains Struct, Reactor, Substation; Has PlanetAttribute
 - **Query Patterns**: byId `/structs/planet/{id}` | all `/structs/planet` | byPlayer `/structs/planet_by_player/{playerId}` | attributes `/structs/planet_attribute/{planetId}/{attributeType}` | allAttributes `/structs/planet_attribute`
 - **Starting Properties**: maxOre 5, spaceSlots 4, airSlots 4, landSlots 4, waterSlots 4

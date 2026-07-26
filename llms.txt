@@ -96,6 +96,7 @@
 
 ## Strategy -- Playbooks
 
+- [Play (crisis & task router)](https://structs.ai/play/): What's wrong / what do I want → skill or playbook; [error index](https://structs.ai/play/errors)
 - [Early Game](https://structs.ai/playbooks/phases/early-game): First 1-2 days -- survive and establish resource pipeline
 - [Mid Game](https://structs.ai/playbooks/phases/mid-game): Expansion -- when to explore, fortify, join guilds
 - [Late Game](https://structs.ai/playbooks/phases/late-game): Endgame -- dominance, defense, market control

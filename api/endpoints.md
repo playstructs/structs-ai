@@ -40,15 +40,22 @@ All query endpoints use the Consensus Network REST API (`http://localhost:1317` 
 Response schema: `schemas/entities.md#Player`
 
 ```json
-// Example request: GET /structs/player/1
+// Example request: GET /structs/player/1-11
 // Example response:
 {
-  "player": {...},
-  "gridAttributes": {...},
-  "playerInventory": {...},
-  "halted": false
+  "Player": {...},
+  "gridAttributes": {
+    "capacity": "...",
+    "load": "...",
+    "structsLoad": "...",
+    "connectionCapacity": "...",
+    "lastAction": "..."
+  },
+  "playerInventory": {...}
 }
 ```
+
+No `halted` field — online is capacity vs load (see [integration-notes.md](integration-notes.md)).
 
 **`GET /structs/player`** (`player-list`)
 
@@ -364,11 +371,12 @@ Response schema: `schemas/responses.md#TransactionResponse`
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgStructBuild",
+        "@type": "/structs.structs.MsgStructBuildInitiate",
         "creator": "structs1...",
-        "structType": "1",
-        "locationType": 1,
-        "locationId": "1-1"
+        "playerId": "1-11",
+        "structTypeId": "1",
+        "operatingAmbit": "land",
+        "slot": "0"
       }
     ]
   }

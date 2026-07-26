@@ -58,7 +58,7 @@ A player can only modify members whose rank is strictly **worse** (higher number
 ### Administer
 
 - **Ranks**: `player-update-guild-rank TX_FLAGS -- [player-id] [rank]` (needs PermAdmin or rank authority); `guild-update-entry-rank TX_FLAGS -- [rank]` (new rank ≥ your own).
-- **Membership**: `guild-membership-kick -- [guild-id] [player-id]`; invite/request approve/deny/revoke as above.
+- **Membership**: `guild-membership-kick -- [player-id]` (the guild is implicit in the target player); invite/request approve/deny/revoke as above.
 - **Settings**: `guild-update-endpoint`, `guild-update-entry-substation-id`, `guild-update-join-infusion-minimum` (+ `-by-invite`/`-by-request`), `guild-update-owner-id` (Tier 2 — transfers the guild).
 
 ### UGC moderation
@@ -77,8 +77,8 @@ Perform a moderation: `player-update-name`/`player-update-pfp`/`planet-update-na
 ### Central Bank (mint / redeem)
 
 - **Mint** tokens against Alpha collateral: `guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]` (signer's guild implicit; raw integers; ratio captured at action time).
-- **Redeem** tokens for Alpha: `guild-bank-redeem TX_FLAGS -- [guild-id] [amount]`.
-- **Confiscate & burn** (Tier 2 act of war, audited forever): `guild-bank-confiscate-and-burn TX_FLAGS -- [guild-id] [address] [amount]` — usually rank revocation is enough.
+- **Redeem** tokens for Alpha: `guild-bank-redeem TX_FLAGS -- [amount]uguild.[guild-id]` — one argument, a coin string (e.g. `100uguild.0-1`), not a separate id and amount.
+- **Confiscate & burn** (Tier 2 act of war, audited forever): `guild-bank-confiscate-and-burn TX_FLAGS -- [amount]uguild.[guild-id] [address]` — token amount first, then the address it is taken from. Usually rank revocation is enough.
 
 Mint/redeem are Tier 1 within your standing-order caps, Tier 2 above. Economics: [`knowledge/economy/guild-banking`](https://structs.ai/knowledge/economy/guild-banking).
 
@@ -89,7 +89,7 @@ Mint/redeem are Tier 1 within your standing-order caps, Tier 2 above. Economics:
 | Create | `structsd tx structs guild-create TX_FLAGS -- [reactor-id] [endpoint] [entry-substation-id]` |
 | Join / proxy | `structsd tx structs guild-membership-join \| guild-membership-join-proxy TX_FLAGS -- ...` |
 | Invite / request (+approve/deny/revoke) | `structsd tx structs guild-membership-invite \| -request \| ...-approve \| ...-deny TX_FLAGS -- ...` |
-| Kick | `structsd tx structs guild-membership-kick TX_FLAGS -- [guild-id] [player-id]` |
+| Kick | `structsd tx structs guild-membership-kick TX_FLAGS -- [player-id]` |
 | Update rank / entry rank | `structsd tx structs player-update-guild-rank \| guild-update-entry-rank TX_FLAGS -- ...` |
 | Settings | `structsd tx structs guild-update-endpoint \| -entry-substation-id \| -join-infusion-minimum \| -owner-id TX_FLAGS -- ...` |
 | Guild UGC | `structsd tx structs guild-update-name \| guild-update-pfp TX_FLAGS -- [guild-id] [value]` |

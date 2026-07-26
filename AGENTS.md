@@ -76,7 +76,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 ## Strategy
 
-High-level thinking in `playbooks/`.
+High-level thinking in `playbooks/`. For a crisis/task router that maps “what’s wrong” → skill/playbook, start at [`play/`](play/index.md) (also [`play/errors.md`](play/errors.md) for error strings).
 
 ### By Phase
 - [`early-game`](playbooks/phases/early-game.md) -- First 1-2 days: survive, establish resource pipeline

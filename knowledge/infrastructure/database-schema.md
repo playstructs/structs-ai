@@ -188,7 +188,7 @@ As with `struct_attribute`, a cleared attribute is deleted rather than stored as
 |--------|------|-------|
 | `planet_id` | varchar PK | Target planet — **the entire primary key** |
 | `fleet_id` | varchar | Raiding fleet |
-| `status` | varchar | `initiated`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized`. There is **no `completed` value.** |
+| `status` | varchar | `initiated`, `ongoing`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized`. There is **no `completed` value.** (`ongoing` = defender restored shields mid-raid; completion blocked — see [combat.md](../mechanics/combat.md).) |
 | `seized_ore` | numeric | Ore taken by the raid this row describes |
 | `updated_at` | timestamptz | Last status change |
 
@@ -207,7 +207,7 @@ As with `struct_attribute`, a cleared attribute is deleted rather than stored as
 >
 > Upstream ships a one-time backfill, `sync-state/sql/repair-raid-status-seized-ore.sql`, that reconstructs the missing values from the ledger. It is an operator task on the guild-stack host, not something an agent should run.
 
-> **The ledger remains the source of truth for token movement.** Seized ore lands as `structs.ledger` rows with `action = 'seized'`, `direction = 'credit'`, `denom = 'ore'`, credited to the thief with the victim in `counterparty`. The ledger preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (a probe repelled, or ore already refined away) still writes a meaningful `seized` entry, and on `structstestnet-111` those are the plurality of them. A raid-analytics pipeline should treat 0-gram rows as real outcomes, not noise. Correlate a ledger row to a raid via `block_height` plus the thief's `player_address` → `player.fleet_id`.
+> **The ledger remains the source of truth for token movement.** Seized ore lands as `structs.ledger` rows with `action = 'seized'`, `direction = 'credit'`, `denom = 'ore'`, credited to the thief with the victim in `counterparty`. The ledger preserves **0-gram `seized` rows** — a raid that reached the planet but stole nothing (a probe repelled, or ore already refined away) still writes a meaningful `seized` entry. On `structstestnet-111` they are common (~40% of seized credits), not the majority — treat them as real outcomes, not noise. Correlate a ledger row to a raid via `block_height` plus the thief's `player_address` → `player.fleet_id`.
 
 ---
 
@@ -293,7 +293,7 @@ TimescaleDB hypertable for all planet-level events.
 |----------|-------------|---------------------|
 | `raid_status` | Raid status transition | `planet_id`, `fleet_id`, `status`, `seized_ore` |
 | `fleet_arrive` | Fleet arrived at planet | `fleet_id` |
-| `fleet_advance` | Fleet movement in progress | `fleet_id` |
+| `fleet_advance` | **Enum-only — never written** by sync-state; movement is `fleet_depart` + `fleet_arrive` | `fleet_id` |
 | `fleet_depart` | Fleet departed from planet | `fleet_id` |
 | `struct_attack` | Combat attack event | see below |
 | `struct_defense_add` | Defense assignment added | `defender_struct_id`, `protected_struct_id` |
@@ -307,7 +307,7 @@ TimescaleDB hypertable for all planet-level events.
 | `shield_change` | Planetary shield value changed | `planetary_shield`, `planetary_shield_old` |
 | `block_raid_start` | Planet's `blockStartRaid` changed (raid clock) | `block_start_raid`, `block_start_raid_old` |
 
-`shield_change` and `block_raid_start` (added v0.18.0) have no dedicated chain event — sync-state derives them from `planet_attribute` writes for `planetaryShield` and `blockStartRaid`, emitting a row only when the value actually changes and carrying both the old and new value. `shield_change` is high-volume: it is the second-largest category on `structstestnet-111` after `struct_status`, so a poller that does not filter by category will spend most of its budget on shield ticks.
+`shield_change` and `block_raid_start` (added v0.18.0) have no dedicated chain event — sync-state derives them from `planet_attribute` writes for `planetaryShield` and `blockStartRaid`, emitting a row only when the value actually changes and carrying both the old and new value. `shield_change` is high-volume but **not** second after `struct_status` on current `structstestnet-111` — typical rank is `struct_status` > `struct_health` > `struct_block_build_start` > `struct_defense_add` > `shield_change`. Always filter by category; unfiltered pollers drown in status/health/build noise.
 
 `struct_defense_remove` is emitted from the `struct_defender_clear` handler, which is the only path that clears a defender's `protectedStructIndex`. Before that fix the category existed in the enum but was never written, so **defense-removal history is absent from older indexed data** even though additions are present.
 

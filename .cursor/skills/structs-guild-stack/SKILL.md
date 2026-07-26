@@ -228,7 +228,8 @@ SELECT pl.id AS planet, pl.name, p.id AS owner, p.username,
     g_ore.val AS ore,
     COALESCE(pa_shield.val, 0) AS shield,
     f.status AS fleet_status,
-    cs.is_destroyed AS command_destroyed
+    cs.is_destroyed AS command_destroyed,
+    COALESCE(vs.online, false) AS command_online
 FROM structs.player p
 JOIN structs.planet pl ON pl.id = p.planet_id
 JOIN structs.grid g_ore ON g_ore.object_id = p.id AND g_ore.attribute_type = 'ore'
@@ -236,11 +237,12 @@ LEFT JOIN structs.planet_attribute pa_shield ON pa_shield.object_id = pl.id
     AND pa_shield.attribute_type = 'planetaryShield'
 LEFT JOIN structs.fleet f ON f.id = p.fleet_id
 LEFT JOIN structs.struct cs ON cs.id = f.command_struct
+LEFT JOIN view.struct_status vs ON vs.struct_id = cs.id
 WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
-A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status` and `command_destroyed` columns are for; a target with `fleet_status = 'onStation'` and a live Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status`, `command_destroyed`, and `command_online` columns are for; a target with `fleet_status = 'onStation'` and a live online Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
 
 `fleet.status` values are **camelCase**: `onStation` and `away`. `WHERE f.status = 'on_station'` matches nothing and silently makes every target look raidable.
 
@@ -288,9 +290,9 @@ WHERE block_height > $LAST_HEIGHT
 ORDER BY block_height, planet_id, seq;
 ```
 
-Watch for `fleet_arrive`, `raid_status`, and `struct_attack`. Filter by category rather than pulling everything: `struct_status` and `shield_change` together dominate row volume, and `shield_change` fires on every shield tick.
+Watch for `fleet_arrive`, `raid_status`, and `struct_attack`. Filter by category rather than pulling everything: `struct_status`, `struct_health`, and build/defense events dominate volume; `shield_change` is also high-volume but usually not #2.
 
-`raid_status` `detail` carries `planet_id`, `fleet_id`, `status`, and `seized_ore`. Status values are `initiated`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized` — there is no `completed`. On data indexed before the recent indexer fix the `seized_ore` key is **absent rather than zero**, so read it as `detail ? 'seized_ore'` before trusting a value.
+`raid_status` `detail` carries `planet_id`, `fleet_id`, `status`, and `seized_ore`. Status values are `initiated`, `ongoing`, `shieldsVulnerable`, `raidSuccessful`, `attackerRetreated`, `attackerDefeated`, `demilitarized` — there is no `completed`. On data indexed before the recent indexer fix the `seized_ore` key is **absent rather than zero**, so read it as `detail ? 'seized_ore'` before trusting a value.
 
 ### Sync-State Health
 

@@ -72,11 +72,12 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgStructBuild",
+        "@type": "/structs.structs.MsgStructBuildInitiate",
         "creator": "structs1abc...",
-        "structType": "1",
-        "locationType": 1,
-        "locationId": "1-1"
+        "playerId": "1-11",
+        "structTypeId": "1",
+        "operatingAmbit": "land",
+        "slot": "0"
       }
     ],
     "memo": "",
@@ -114,17 +115,19 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
   "body": {
     "messages": [
       {
-        "@type": "/structs.structs.MsgStructBuild",
+        "@type": "/structs.structs.MsgStructBuildInitiate",
         "creator": "structs1abc...",
-        "structType": "1",
-        "locationType": 1,
-        "locationId": "1-1"
+        "playerId": "1-11",
+        "structTypeId": "1",
+        "operatingAmbit": "land",
+        "slot": "0"
       },
       {
         "@type": "/structs.structs.MsgReactorInfuse",
         "creator": "structs1abc...",
-        "reactorId": "3-1",
-        "allocation": "..."
+        "delegatorAddress": "structs1abc...",
+        "validatorAddress": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "100000000" }
       }
     ],
     "memo": "",
@@ -172,11 +175,12 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
     "body": {
       "messages": [
         {
-          "@type": "/structs.structs.MsgStructBuild",
+          "@type": "/structs.structs.MsgStructBuildInitiate",
           "creator": "structs1abc...",
-          "structType": "1",
-          "locationType": 1,
-          "locationId": "1-1"
+          "playerId": "1-11",
+          "structTypeId": "1",
+          "operatingAmbit": "land",
+          "slot": "0"
         }
       ],
       "memo": ""
@@ -342,7 +346,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
 
 ```json
 {
-  "action": "MsgStructBuild",
+  "action": "MsgStructBuildInitiate",
   "steps": [
     "1. Build transaction",
     "2. Sign transaction",
@@ -359,7 +363,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
 
 ```json
 {
-  "action": "MsgStructBuild",
+  "action": "MsgStructBuildInitiate",
   "followUp": {
     "action": "MsgStructBuildComplete",
     "waitFor": "struct in building state",
@@ -369,7 +373,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
 ```
 
 **Example Flow**:
-1. Submit `MsgStructBuild`
+1. Submit `MsgStructBuildInitiate`
 2. Wait for confirmation
 3. Query struct state (wait for building state)
 4. Compute proof-of-work
@@ -406,12 +410,12 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
 {
   "actions": [
     {
-      "@type": "/structs.structs.MsgStructBuild",
-      ...
+      "@type": "/structs.structs.MsgStructBuildInitiate",
+      "...": "playerId, structTypeId, operatingAmbit, slot"
     },
     {
       "@type": "/structs.structs.MsgReactorInfuse",
-      ...
+      "...": "delegatorAddress, validatorAddress, amount (Coin)"
     }
   ],
   "submit": "single transaction"
@@ -438,7 +442,7 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
     "sufficientCharge": {
       "check": "GET /structs/player/{playerId}",
       "condition": "player.charge >= required",
-      "note": "charge is a single per-player bar (CurrentBlockHeight - player.lastActionBlock), not per-struct",
+      "note": "charge is a single per-player bar (CurrentBlockHeight - gridAttributes.lastAction), not per-struct",
       "error": "INSUFFICIENT_CHARGE"
     },
     "validLocation": {

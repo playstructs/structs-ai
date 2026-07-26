@@ -23,7 +23,7 @@ P='(.Player // .player // .)'
 G='(.gridAttributes // .GridAttributes // {})'
 
 capacity="$(jget "$player_json" "$G.capacity" 0)"
-capacity_sec="$(jget "$player_json" "$G.capacitySecondary // $G.capacity_secondary" 0)"
+capacity_sec="$(secondary_capacity "$player_json")"
 load="$(jget "$player_json" "$G.load" 0)"
 structs_load="$(jget "$player_json" "$G.structsLoad // $G.structs_load" 0)"
 ore="$(jget "$player_json" "$G.ore" 0)"
@@ -52,7 +52,8 @@ fi
 planet_ore="?"; fleet_status="?"
 if [[ -n "$planet_id" ]]; then
   planet_json="$(q planet "$planet_id" || true)"
-  planet_ore="$(jget "$planet_json" '(.Planet // .planet // .).remainingOre // (.Planet // .planet // .).remaining_ore' "?")"
+  # Unmined ore is a grid attribute on the planet, not a Planet field.
+  planet_ore="$(jget "$planet_json" '(.gridAttributes // .GridAttributes // {}).ore' "?")"
 fi
 if [[ -n "$fleet_id" ]]; then
   fleet_json="$(q fleet "$fleet_id" || true)"
@@ -79,7 +80,7 @@ if [[ "$ore" =~ ^[0-9]+$ ]] && (( ore > 0 )); then
 else
   printf '  %-20s %s\n' "unrefined ore" "$ore"
 fi
-printf '  %-20s %s\n' "planet ore left" "$planet_ore ${C_DIM}(remainingOre)${C_RST}"
+printf '  %-20s %s\n' "planet ore left" "$planet_ore ${C_DIM}(planet gridAttributes.ore)${C_RST}"
 printf '  %-20s %s\n' "fleet"           "$fleet_id  status=$fleet_status"
 echo
 echo "${C_DIM}  Priority order: Survival > Security > Economy > Expansion > Dominance (awareness/priority-framework.md).${C_RST}"

@@ -31,7 +31,7 @@ Three habits do most of the work: name the stake in the human's terms ("1,200 or
 | Entity ID like `1-42`, `2-117` | Name the thing: "your player", "your home planet". Keep the ID in parentheses only if the commander may need to look it up. |
 | `storedOre` / ore | "unrefined ore — **stealable**" |
 | Alpha Matter | "refined Alpha — **safe from theft**" |
-| `remainingOre` | "ore still in the ground (also safe)" |
+| planet `gridAttributes.ore` | "ore still in the ground (also safe)" |
 | Charge | "action budget; it refills on its own at 1 per block, about 6 seconds" |
 | Ambit | "the layer a struct fights in: space, air, land, or water" |
 | `shieldsVulnerable` | "our planetary shields are down, so a raid can succeed" |

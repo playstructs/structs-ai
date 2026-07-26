@@ -7,13 +7,13 @@ domain: building
 
 # Structs Building
 
-Building turns Alpha Matter into capability: extractors/refineries (production), generators (power), and combat/defense structs. The mechanics are simple — initiate, prove the work, it auto-activates — so the skill that matters is **deciding what to build, in what order, with the power to run it.** Every online struct draws power continuously; build something you can't power and it can't come online.
+Building turns **power headroom + charge** into capability: extractors/refineries (production), generators (power), and combat/defense structs. Alpha Matter funds *power/infusion/trade*, not the build tx itself. The mechanics are simple — initiate, prove the work, it auto-activates — so the skill that matters is **deciding what to build, in what order, with the power to run it.**
 
 Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge bar, one-tx-at-a-time) are in [`conventions.md`](https://structs.ai/skills/conventions).
 
 ## When to use it
 
-- You have Alpha Matter and want more infrastructure or military.
+- You have power headroom (and Alpha to infuse if you need more capacity) and want more infrastructure or military.
 - Starting out and need the first base (Command Ship → extractor → refinery → power).
 - Adding defense (shields, defenders, PDC) ahead of a refine window or a threat.
 - Repositioning the Command Ship, assigning defenders, or stealthing a unit.
@@ -29,7 +29,7 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 4. **Defense before your first big refine** — at least one shield struct; keep the Command Ship online.
 5. **Expand** — more defense (Ore Bunkers/OSGs are unlimited now), then military.
 
-**Always pre-check power.** Before initiating, confirm `availableCapacity ≥ struct.buildDraw + struct.passiveDraw`. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to project headroom-after-activation in one call. If it won't fit, raise capacity first or the struct will materialize but never come online.
+**Always pre-check power.** Initiate needs headroom for **BuildDraw only**; complete then applies **PassiveDraw** (sequential — not summed). For equal draws (all current types), peak = one draw, not 2×. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to project PassiveDraw after activation. If it won't fit, raise capacity first or the struct will materialize but never come online.
 
 **Advanced considerations**:
 - **Defense scaling**: Orbital Shield Generator and Ore Bunker are **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else is 1 per player.
@@ -38,8 +38,8 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 
 ## Procedure
 
-1. **Pre-check** — player online; enough Alpha; valid open slot (0-3 per ambit, correct ambit for the type); for planet builds: Command Ship online and fleet `onStation`. Run `scripts/power-budget.sh` to confirm headroom.
-2. **Initiate** (CLI prompts — review type, ambit, slot, Alpha cost). `[operating-ambit]` is a lowercase string `space`/`air`/`land`/`water`, not a bitmask:
+1. **Pre-check** — player online (capacity covers load); BuildDraw headroom; valid open slot (0-3 per ambit, correct ambit for the type); for planet builds: Command Ship online and fleet `onStation`. Run `scripts/power-budget.sh` to confirm headroom.
+2. **Initiate** (CLI prompts — review type, ambit, slot; builds cost charge + power, not Alpha). `[operating-ambit]` is a lowercase string `space`/`air`/`land`/`water`, not a bitmask:
    ```
    structsd tx structs struct-build-initiate TX_FLAGS -- [player-id] [struct-type-id] [operating-ambit] [slot]
    ```
@@ -65,7 +65,7 @@ Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entit
 | Other fleet combat (IDs 2-13) | 3 | unlimited | ambit-locked; Battleship primary is armour-piercing |
 | Ore Extractor / Refinery | 6 | 1 each | the production pipeline |
 | Orbital Shield Generator | 6 | **unlimited** | shield-only → stack it |
-| Ore Bunker | 6 | **unlimited** | shields + protects stored ore |
+| Ore Bunker | 6 | **unlimited** | raises planetary shield (raid PoW); does **not** vault ore |
 | Jamming Satellite / PDC | 6 | 1 each | shield + active defense |
 | Field Generator | 8 | 1 | `armour` (DR 1); 2 kW/g |
 | Continental Power Plant | 10 | 1 | `armour` (DR 1); 5 kW/g |
@@ -93,7 +93,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 - **Stealth (Stealth Bomber, Submersible):** `struct-stealth-activate` / `struct-stealth-deactivate` (2 charge to activate).
 - **Deactivate / re-activate:** `struct-deactivate` frees its power (free, and works even while you're offline — a recovery lever); `struct-activate` brings it back (2 charge, requires you online). Deactivate many at once with `struct-deactivate-batch -- [id1,id2,...]` (up to 65). Taking an Extractor/Refinery offline halts your pipeline (Tier 1).
 - **Trash (Tier 2, IRREVERSIBLE):** `struct-trash TX_FLAGS -- [struct-id]` permanently destroys a **built** struct you own to free its slot (costs 8 charge, same as building it). There is no undo and nothing is refunded. To abort an **unfinished** build instead, use `struct-build-cancel`.
-- **Generator infuse (Tier 2, IRREVERSIBLE):** `struct-generator-infuse TX_FLAGS -- [struct-id] [amount]`. Alpha Matter is annihilated into energy — no defusion, and a raided generator takes the infused matter with it. Always escalate; confirm the generator's defense posture first. See [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL).
+- **Generator infuse (Tier 2, IRREVERSIBLE):** `struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha`. Alpha Matter is annihilated into energy — no defusion, and a raided generator takes the infused matter with it. Always escalate; confirm the generator's defense posture first. See [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL).
 
 ## Commands reference
 
@@ -101,7 +101,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 |--------|-------------|
 | Initiate | `structsd tx structs struct-build-initiate TX_FLAGS -- [player-id] [type-id] [ambit] [slot]` |
 | Compute (PoW + complete + activate) | `structsd tx structs struct-build-compute -D 3 TX_FLAGS_APPROVED -- [struct-id]` |
-| Complete (manual, rare) | `structsd tx structs struct-build-complete TX_FLAGS -- [struct-id]` |
+| Complete (manual, rare) | `structsd tx structs struct-build-complete TX_FLAGS -- [struct-id] [proof] [nonce]` |
 | Cancel | `structsd tx structs struct-build-cancel TX_FLAGS -- [struct-id]` |
 | Activate / Deactivate | `structsd tx structs struct-activate \| struct-deactivate TX_FLAGS -- [struct-id]` |
 | Deactivate (batch, ≤65) | `structsd tx structs struct-deactivate-batch TX_FLAGS -- [id1,id2,...]` |
@@ -109,7 +109,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 | Move (CMD ship) | `structsd tx structs struct-move TX_FLAGS -- [cmd-ship-id] [ambit] [slot] [location]` |
 | Defense set / clear | `structsd tx structs struct-defense-set \| struct-defense-clear TX_FLAGS -- [defender-id] [protected-id]` |
 | Stealth on / off | `structsd tx structs struct-stealth-activate \| struct-stealth-deactivate TX_FLAGS -- [struct-id]` |
-| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]` |
+| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
 
 `TX_FLAGS` / `TX_FLAGS_APPROVED` per [`conventions.md`](https://structs.ai/skills/conventions). **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
 
@@ -124,7 +124,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "required charge X but player had Y" | Per-player charge bar too low | Wait; space actions by their cost (see conventions) |
-| "insufficient resources" | Not enough Alpha Matter | Mine + refine first ([structs-production](https://structs.ai/skills/structs-production/SKILL)) |
+| "capacity_exceeded" / power errors | BuildDraw or PassiveDraw won't fit | Infuse / deactivate / wait ([structs-energy](https://structs.ai/skills/structs-energy/SKILL)) |
 | "power overload" / won't go online | Capacity < load + draw | Raise capacity or deactivate something ([structs-energy](https://structs.ai/skills/structs-energy/SKILL)) |
 | "fleet not on station" | Fleet away | Recall via `fleet-move` |
 | "Command Ship required" | CMD ship offline/missing | Build or re-activate it first |

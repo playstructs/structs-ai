@@ -61,7 +61,7 @@ Activity category enum on `structs.planet_activity.category`.
 | `guild_consensus` | Guild state changes |
 | `guild_meta` | Off-chain guild metadata updates |
 | `guild_membership` | Membership changes |
-| `raid_status` | Raid initiated / completed / failed |
+| `raid_status` | Raid status transitions (`initiated`, `ongoing`, `shieldsVulnerable`, … — no `completed`) |
 | `shield_change` | Planetary shield value changed (`planetary_shield` / `planetary_shield_old`) |
 | `block_raid_start` | Raid vulnerability clock (`blockStartRaid`) armed |
 | `fleet_arrive` | Fleet arrived at planet |
@@ -77,10 +77,11 @@ Activity category enum on `structs.planet_activity.category`.
 | `struct_block_ore_refine_start` | Refining PoW started |
 | `struct_health` | Struct health changed (`health` / `health_old`) |
 | `player_consensus` | Player state changes (**including UGC `username` / `pfp` updates**) |
-| `player_address` | Address added to / changed on a player |
-| `player_address_pending` | Pending address registration |
+| `player_meta` | Off-chain player metadata updates |
 
-Every `planet_activity` INSERT fires `pg_notify('grass', …)` on subject `structs.planet.{planet_id}`, so these categories reach the live NATS stream. The `struct_attack` stub guard (and the same guard on `player_consensus` / `guild_consensus` / `guild_meta`) replaces an over-8000-byte payload with a `{ "stub": true }` envelope. Grid attribute changes (`structs.grid.{object}`) and ledger actions (`structs.inventory.…`) stream on their own subjects with their own category values.
+Live enum ends at `player_meta` — there are **no** `player_address` / `player_address_pending` grass_category values (those are tables, not categories).
+
+Every `planet_activity` INSERT fires `pg_notify('grass', …)` on subject `structs.planet.{planet_id}.{player_id}` (literal `noPlayer` when owner unresolved; top-level `player_id` in payload). Subscribe with a trailing wildcard: `structs.planet.{planet_id}.*`. The `struct_attack` stub guard (and the same guard on `player_consensus` / `guild_consensus` / `guild_meta`) replaces an over-8000-byte payload with a `{ "stub": true }` envelope. Grid attribute changes (`structs.grid.{object}`) and ledger actions (`structs.inventory.…`) stream on their own subjects with their own category values.
 
 ### Other notable enums
 
@@ -131,9 +132,10 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 | `creator` | varchar | Creating address |
 | `username` | varchar | Chain UGC display name |
 | `pfp` | varchar | Chain UGC profile picture URI |
+| `pfp_client_render_attributes` | varchar | Chain-sourced pfp render hints — a compacted JSON **string**, mirroring `username`/`pfp`. (The JSONB sibling is `player_pending.pfp_cr_attributes`, a different table and column.) |
 | `created_at` / `updated_at` | timestamptz | Row timestamps |
 
-`player_meta` was dropped; `username` and `pfp` live directly on this table. Sync-state writes them from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy fields.
+`player_meta` was dropped as a table; `username` / `pfp` live on `player`. Off-chain meta updates still surface as grass_category `player_meta`. Sync-state writes UGC from `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp` or signup proxy fields.
 
 ---
 
@@ -250,8 +252,8 @@ Key-value store for resource attributes. **No dedicated `ore` column** — filte
 | `object_id` | varchar | Player, planet, struct, etc. ID |
 | `object_type` | varchar | Entity type prefix |
 | `object_index` | integer | Entity index |
-| `attribute_type` | varchar | `ore`, `alpha`, `capacity`, `structsLoad`, `fuel`, `power`, … |
-| `val` | numeric | Attribute value |
+| `attribute_type` | varchar | Grid labels only: `ore`, `fuel`, `capacity`, `load`, `structsLoad`, `power`, `connectionCapacity`, `connectionCount`, `allocationPointerStart`, `allocationPointerEnd`, `proxyNonce`, `lastAction`, `nonce`, `ready`, `checkpointBlock`. **No `alpha`** — Alpha Matter is a ledger denom, not a grid attribute. |
+| `val` | numeric | Attribute value (single column — no `value_p`/`value` pair on grid) |
 | `updated_at` | timestamptz | Last update |
 
 ---
@@ -274,9 +276,11 @@ TimescaleDB hypertable — planet-level event log (GRASS source).
 | Category | Description |
 |----------|-------------|
 | `block` | New block committed |
-| `raid_status` | Raid initiated / completed / failed |
+| `raid_status` | Raid status (`initiated` / `ongoing` / `shieldsVulnerable` / … — not “completed”) |
+| `shield_change` | Planetary shield changed |
+| `block_raid_start` | Raid vulnerability clock armed |
 | `fleet_arrive` | Fleet arrived at planet |
-| `fleet_advance` | Fleet movement in progress |
+| `fleet_advance` | **Never emitted** — use `fleet_depart` + `fleet_arrive` |
 | `fleet_depart` | Fleet departed |
 | `struct_attack` | Combat attack |
 | `struct_defense_add` | Defense assignment added |
@@ -291,6 +295,7 @@ TimescaleDB hypertable — planet-level event log (GRASS source).
 | `guild_meta` | Off-chain guild metadata |
 | `guild_membership` | Membership changes |
 | `player_consensus` | Player changes (including UGC) |
+| `player_meta` | Off-chain player metadata |
 
 ---
 
@@ -315,7 +320,7 @@ TimescaleDB hypertable — planet-level event log (GRASS source).
 | `player_pending` | `primary_address` PK, `username`, `pfp`, … | Signup queue |
 | `player_address` | `address` PK, `player_id`, `guild_id`, `status` | Address ↔ player mapping |
 
-Stat hypertables (`stat_*`) share the pattern: `time`, `object_type`, `object_index`, `value`, `block_height` — one table per metric (ore, capacity, fuel, load, power, struct health, etc.).
+Most `stat_*` hypertables use `time`, `object_type`, `object_index`, `value`, `block_height` — but several omit `object_type` (e.g. `stat_structs_load`, `stat_connection_*`, `stat_struct_*`). Check `\d` before joining.
 
 ---
 

@@ -598,11 +598,7 @@ description: The starting skill for AI agents playing Structs. Covers choosing a
 
 You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
 
-Read [SOUL.md](https://structs.ai/SOUL) first. It tells you who you are.
-
-## Before You Sign Anything
-
-The chain has no undo. Every `structsd tx structs` command is final on submission. Before you run a single transaction below, read [SAFETY.md](https://structs.ai/SAFETY) — it defines the three operation tiers (Routine / Significant / Irreversible), the `-y` rule, the Approval Block you print before high-impact actions, and how those rules connect to your commander's standing orders in [COMMANDER.md](https://structs.ai/COMMANDER). Everything below assumes you have it loaded.
+Read your operator profile `config/operator.md` (copy it from `config/operator.example.md` in the repo — it is not published on the site) and [SAFETY.md](https://structs.ai/SAFETY) before signing. Stubs `SOUL.md` / `COMMANDER.md` redirect there.
 
 ---
 
@@ -662,7 +658,7 @@ structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5
 
 ## Step 5: Build Mining Infrastructure
 
-You need an Ore Extractor (mines ore) and an Ore Refinery (converts ore to Alpha Matter). Build them with `-D 1` for the gentlest CPU usage.
+Planet builds need CMD online + fleet `onStation` (gifted at creation — verify before initiate). You need an Ore Extractor and Ore Refinery. Use `-D 1` here for gentlest CPU.
 
 > Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](https://structs.ai/skills/conventions)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
 
@@ -782,10 +778,9 @@ You're mining. Now expand your capabilities:
 
 | File | Purpose |
 |------|---------|
-| [SOUL.md](https://structs.ai/SOUL) | Who you are |
-| [IDENTITY.md](https://structs.ai/IDENTITY) | Who you've become (fill in) |
+| `config/operator.md` (repo-local) | Goals, autonomy, standing orders |
 | [AGENTS.md](https://structs.ai/AGENTS) | Full agent guide |
-| [TOOLS.md](https://structs.ai/TOOLS) | Your environment config |
+| [TOOLS.md](https://structs.ai/TOOLS) | Environment / MCP |
 
 ---
 
@@ -841,7 +836,7 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 **Advanced considerations**:
 - **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
-- **Protect stored ore** with Ore Bunkers — **unlimited** build (no per-player cap). They guard `storedOre` and raise the planetary shield. Stacking them hardens the refine window without touching your CPU budget.
+- **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mid-raid: don't start a new refine; see [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
 
@@ -898,7 +893,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 |--------|-------------|
 | Mine (PoW + auto-complete) | `structsd tx structs struct-ore-mine-compute -D 3 TX_FLAGS_APPROVED -- [extractor-id]` |
 | Refine (PoW + auto-complete) | `structsd tx structs struct-ore-refine-compute -D 3 TX_FLAGS_APPROVED -- [refinery-id]` |
-| Mine/refine complete (manual, rare) | `structsd tx structs struct-ore-mine-complete -- [id]` / `...refine-complete -- [id]` |
+| Mine/refine complete (manual, rare) | `structsd tx structs struct-ore-mine-complete TX_FLAGS -- [id] [proof] [nonce]` / `...refine-complete TX_FLAGS -- [id] [proof] [nonce]` |
 | Query planet ore | `structsd query structs planet [planet-id]` |
 | Query struct | `structsd query structs struct [id]` |
 | Query player (Alpha + storedOre) | `structsd query structs player [player-id]` |
@@ -986,7 +981,7 @@ online         = (load + structsLoad) <= (capacity + capacitySecondary)
 - `capacity` — your own generation (infusions); the only part you can allocate out.
 - `capacitySecondary` — received from a substation you're connected to.
 - `load` — power you've allocated to others.
-- `structsLoad` — sum of `passiveDraw` of your online structs.
+- `structsLoad` — player passive (25,000 mW) + sum of `passiveDraw` of your online structs.
 
 Units are milliwatts (1 W = 1,000 mW; 1 ualpha = 1 mW).
 
@@ -1000,9 +995,9 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID).
 3. Infuse (CLI prompts — review validator, commission, amount):
    ```
-   structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha TX_FLAGS
+   structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
    ```
-   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion (`reactor-defuse [reactor-id]`) starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes.
+   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same three arguments as infusion (`reactor-defuse -- [your-address] [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes during that cooldown.
 4. Verify: re-query player; capacity increased.
 
 ## Procedure — generator infusion (Tier 2, irreversible)
@@ -1010,7 +1005,7 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
 
 ```
-structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha TX_FLAGS
+structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha
 ```
 
 Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g.
@@ -1044,10 +1039,11 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse [your-addr] [validator-addr] [amount]ualpha TX_FLAGS` |
-| Reactor defuse / cancel | `structsd tx structs reactor-defuse \| reactor-cancel-defusion TX_FLAGS -- [reactor-id]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration [player-addr] [src-val] [dest-val] [amount] TX_FLAGS` |
-| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse [struct-id] [amount]ualpha TX_FLAGS` |
+| Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
+| Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |
+| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
 | Allocation create / update / delete | `structsd tx structs allocation-create --allocation-type [t] TX_FLAGS -- [source-id] [power]` (and `allocation-update`/`allocation-delete -- [allocation-id] ...`) |
 | Substation create / delete | `structsd tx structs substation-create \| substation-delete TX_FLAGS -- ...` |
 | Substation allocation connect/disconnect | `structsd tx structs substation-allocation-connect \| disconnect TX_FLAGS -- [sub-id] [alloc-id]` |
@@ -1093,7 +1089,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 | Resource | Unit | Stealable | Refinement | Location |
 |----------|------|-----------|------------|----------|
-| Alpha Ore (unmined) | grams | No | Required | Planet (`remainingOre`) — extracted by Ore Extractor |
+| Alpha Ore (unmined) | grams | No | Required | Planet (`gridAttributes.ore`) — extracted by Ore Extractor |
 | Alpha Ore (mined) | grams | **Yes** | Required | Player inventory (`storedOre`) — stolen in raids |
 | Alpha Matter | grams | No | Output | Player inventory (on-chain) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
@@ -1151,7 +1147,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `remainingOre` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `gridAttributes.ore` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -1171,7 +1167,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 | State | Location | Stealable | Action |
 |-------|----------|-----------|--------|
-| Unmined ore (`remainingOre`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
+| Unmined ore (planet `gridAttributes.ore`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
 | Mined ore (`storedOre`) | Player | **Yes** | Refine immediately — this is what raiders steal |
 | Alpha Matter | Player | No | Secure — cryptographically bound to owner |
 
@@ -1460,7 +1456,7 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 
 ## The two rules that decide everything
 
-**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (`remainingOre`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
+**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (its `gridAttributes.ore`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
 
 **2. A raid can only complete while your shields are vulnerable.** Shields are vulnerable when *any* of these is true (chain predicate `IsDefenderCommandStructVulnerable()`):
 

@@ -45,6 +45,21 @@ jget() {
   if [[ -z "$out" || "$out" == "null" ]]; then printf '%s' "$def"; else printf '%s' "$out"; fi
 }
 
+# secondary_capacity <player-json> : the player's secondary (substation) capacity.
+#
+# There is no `capacitySecondary` key on the wire. The chain derives it as the
+# `connectionCapacity` grid attribute of the player's *substation* — see
+# GetCapacitySecondary in x/structs/keeper/player_cache.go. Reading
+# `.gridAttributes.capacitySecondary` off the player silently yields 0 and
+# understates capacity for every substation-connected player.
+secondary_capacity() {
+  local player_json="$1" sub_id sub_json
+  sub_id="$(jget "$player_json" '(.Player // .player // .).substationId // (.Player // .player // .).substation_id')"
+  if [[ -z "$sub_id" ]]; then printf '0'; return; fi
+  sub_json="$(q substation "$sub_id" 2>/dev/null || true)"
+  jget "$sub_json" '(.gridAttributes // .GridAttributes // {}).connectionCapacity' 0
+}
+
 # Common preflight for scripts that need both binaries.
 preflight() {
   require "$STRUCTSD" "Install it with the structsd-install skill."

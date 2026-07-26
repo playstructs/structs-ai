@@ -39,7 +39,7 @@ player_json="$(q player "$PLAYER_ID")"
 G='(.gridAttributes // .GridAttributes // {})'
 
 capacity="$(jget "$player_json" "$G.capacity" 0)"
-capacity_sec="$(jget "$player_json" "$G.capacitySecondary // $G.capacity_secondary" 0)"
+capacity_sec="$(secondary_capacity "$player_json")"
 load="$(jget "$player_json" "$G.load" 0)"
 structs_load="$(jget "$player_json" "$G.structsLoad // $G.structs_load" 0)"
 
@@ -52,7 +52,7 @@ headroom=$((cap_total - load_total))
 
 echo "${C_CYN}== Power budget: player $PLAYER_ID ==${C_RST}"
 printf '  %-28s %s\n' "capacity" "$capacity"
-printf '  %-28s %s\n' "capacitySecondary" "$capacity_sec"
+printf '  %-28s %s\n' "capacitySecondary" "$capacity_sec ${C_DIM}(substation connectionCapacity)${C_RST}"
 printf '  %-28s %s\n' "load" "$load"
 printf '  %-28s %s\n' "structsLoad" "$structs_load"
 printf '  %-28s %s\n' "total capacity" "$cap_total"
