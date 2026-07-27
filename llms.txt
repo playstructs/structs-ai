@@ -52,6 +52,7 @@
 - [Intel](https://structs.ai/skills/structs-intel/SKILL): Full query catalog, scouting, intelligence persistence to memory/intel/
 - [Streaming](https://structs.ai/skills/structs-streaming/SKILL): GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools
 - [Guild Stack](https://structs.ai/skills/structs-guild-stack/SKILL): **(Advanced)** Local guild node with PostgreSQL, sub-second queries, real-time monitoring
+- [Structs UI](https://structs.ai/skills/structs-ui/SKILL): **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI -- the design system the game itself is built with
 
 ## Knowledge -- Lore
 
@@ -127,6 +128,32 @@
 - [Context Handoff](https://structs.ai/awareness/context-handoff): Save state when context runs low
 - [Continuity](https://structs.ai/awareness/continuity): Persist across sessions
 - [Scorecard](https://structs.ai/awareness/scorecard): Self-evaluation rubric -- grade judgment and process before and after a session
+
+## Build -- Interfaces (SUI design system)
+
+- [Building with SUI](https://structs.ai/develop/ui/): Orientation, the five design rules, the scaling decision. Start here for any dashboard, form, menu or HUD
+- [Tokens](https://structs.ai/develop/ui/tokens): Every colour, spacing, dimension and z-index token, plus typography and the tokens people expect but that do not exist
+- [Icons](https://structs.ai/develop/ui/icons): The two icon systems -- 67 tinting glyph icons and 29 fixed-colour sprite icons, both inventories complete
+- [Components](https://structs.ai/develop/ui/components): Required DOM shape for every component, the modifier reference, and what SUI does not provide
+- [Runtime](https://structs.ai/develop/ui/runtime): The four optional SUI behaviours, how to load them without breaking, and the upstream bugs in each
+- [Gotchas](https://structs.ai/develop/ui/gotchas): Global centre alignment, flex overflow, root-absolute assets, alert severity, and the known-defects table
+- [Patterns](https://structs.ai/develop/ui/patterns): Keeping a multi-page console coherent -- helper kits, list reconciliation, verification, the pre-ship checklist
+- [Recipes](https://structs.ai/develop/ui/recipes): Dashboard, form, menu and HUD assembled end to end
+- [SUI inventory](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md): Machine-extracted ground truth -- every token, icon, class and modifier, regenerated from structs-webapp (repo only; `generated/` is not published to the site)
+
+## Build -- Clients
+
+- [Building a Structs client](https://structs.ai/develop/client/): The three-channel architecture -- REST for bulk reads, GRASS for live deltas, RPC for writes
+- [State and data](https://structs.ai/develop/client/state-and-data): GameState, factories, the string-number precision trap, the REST client and event bus
+- [Actions and signing](https://structs.ai/develop/client/actions-and-signing): Wallet, protobuf registry, the dual-lane queue, charge gating, avoiding sequence mismatch
+- [Work and proof-of-work](https://structs.ai/develop/client/work-and-pow): Hash input format, difficulty decay, worker orchestration, restoring work from the server
+- [Real-time with GRASS](https://structs.ai/develop/client/realtime-grass): NATS connection, the listener contract, all 26 listeners, and what the stream will not do
+- [Rendering entities](https://structs.ai/develop/client/rendering-entities): PFP layer compositing, struct art, the Lottie lifecycle, the animation event queue
+- [The map](https://structs.ai/develop/client/map): Ambit stack, tile grid, fog of war, picture-in-picture
+- [Extending Structs Desktop](https://structs.ai/develop/client/desktop-extensions): Adding an MCP tool or board page, serving SUI over HTTP, agent UI directives
+- [The repositories](https://structs.ai/develop/repos): Which repo to read for what, and which wins when they disagree
+- [Frontend architecture](https://structs.ai/develop/frontend-architecture): The webapp's MVVM layer, router, build -- and what to copy versus what not to
+- [Maintenance](https://structs.ai/develop/maintenance): How the build docs are kept true as upstream moves
 
 ## Optional
 

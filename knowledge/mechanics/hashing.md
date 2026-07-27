@@ -268,7 +268,9 @@ The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dr
 
 ### Client — the webapp TaskManager
 
-The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the same `64 - floor(log10(age)/log10(range)*63)` difficulty formula, waits at `age <= 1` (difficulty 64), and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
+The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the same `64 - floor(log10(age)/log10(range)*63)` difficulty formula, and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
+
+Its wait policy is its own choice, not part of the protocol: the worker sleeps in 10-second polls until difficulty reaches **10 or below**, rather than the `-D 3` this guide recommends for the CLI. Both are conformant — a client may start hashing at any difficulty it likes. See [develop/client/work-and-pow.md](../../develop/client/work-and-pow.md) for the full client-side implementation.
 
 ---
 

@@ -138,6 +138,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-intel`](.cursor/skills/structs-intel/SKILL) | Full query catalog, scouting, intelligence persistence to memory/intel/ |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
+| [`structs-ui`](.cursor/skills/structs-ui/SKILL) | **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI — the design system the game itself is built with |
 
 ---
 
@@ -226,6 +227,17 @@ Reference material in `knowledge/`.
 - [`guild-stack`](knowledge/infrastructure/guild-stack.md) -- Guild Stack architecture, services, data flow
 - [`structs-desktop`](knowledge/infrastructure/structs-desktop.md) -- Desktop app + embedded MCP: tools, prompts, resources, subsystems
 - [`database-schema`](knowledge/infrastructure/database-schema.md) -- PostgreSQL tables, query patterns, grid gotcha
+
+---
+
+## Building on Structs
+
+Not playing, but making something. See [`develop/`](develop/index.md).
+
+- [`develop/ui/`](develop/ui/index.md) -- **SUI, the design system the game is built with.** Fonts, icons, tokens, component contracts, gotchas, and runnable examples for dashboards, forms, menus and HUDs
+- [`develop/client/`](develop/client/index.md) -- How the flagship client works: signing queue and charge gating, proof-of-work workers, GRASS listeners, entity rendering, the map
+- [`develop/repos.md`](develop/repos.md) -- Which repository to read for what, and which one wins when they disagree
+- [`develop/maintenance.md`](develop/maintenance.md) -- How these pages are kept true as upstream moves
 
 ---
 
@@ -1095,6 +1107,7 @@ The skills you use every session. Master these first.
 |-------|-------|--------------|
 | [structsd-install](structsd-install/SKILL) | entry | Install/update the `structsd` binary |
 | [structs-streaming](structs-streaming/SKILL) | advanced | Real-time GRASS/NATS events for automation |
+| [structs-ui](structs-ui/SKILL) | advanced | Building interfaces and clients: SUI design system, signing, proof-of-work, GRASS |
 | [structs-guild-stack](structs-guild-stack/SKILL) | advanced | Local node + PostgreSQL for sub-second game-state reads |
 
 ## Tooling
@@ -4239,6 +4252,130 @@ If you spun the stack up to investigate something, tear it down when you're done
 - [schemas/database-schema](https://structs.ai/schemas/database-schema) — Full structural schema catalog
 - [structs-intel skill](https://structs.ai/skills/structs-intel/SKILL) — Intelligence gathering (CLI + PG)
 - [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS real-time events via NATS
+
+</document>
+
+<document>
+<source>.cursor/skills/structs-ui/SKILL.md</source>
+---
+name: structs-ui
+description: Building interfaces and clients in the Structs universe — dashboards, forms, menus, HUDs, and companion apps using SUI, the design system the game itself is built with. Use when asked to build, style, or extend any Structs UI, or when writing client code that signs transactions, computes proof-of-work, or consumes GRASS events. This is about building software, not playing the game.
+level: advanced
+domain: build
+---
+
+# Structs UI
+
+You are being asked to **build something**, not to play. This skill routes you to the
+reference material for making an interface that looks like Structs and a client that
+behaves like one.
+
+Everything below is verified against [structs-webapp](https://structs.ai/develop/repos),
+the flagship client — not inferred from the API surface. When a doc and that codebase
+disagree, the codebase wins.
+
+**Not this skill?** If you want to build *structs* — the in-game machines — that is
+[`structs-building`](https://structs.ai/skills/structs-building/SKILL). If you want to
+use the Desktop MCP tools, that is [`TOOLS.md`](https://structs.ai/TOOLS).
+
+## When to use it
+
+- Building a dashboard, form, menu, HUD, or companion app for Structs.
+- Styling anything so it reads as part of the Structs universe.
+- Writing client code that signs transactions, computes proof-of-work, or listens to
+  GRASS.
+- Extending Structs Desktop with a new MCP tool or board page.
+
+## Decide these first
+
+| Decision | Guidance |
+|---|---|
+| **UI or client?** | Visuals → the SUI pages. Chain, events, work → the client pages. Most real projects need both |
+| **Scaling model** | The game renders at `scale(2)` above 1152px. At 1× SUI is half size. **Settle this before writing markup** — retrofitting is painful. [ui/](https://structs.ai/develop/ui/) |
+| **Which SUI JS** | Import each class directly with `.js`. **Never import `SUI.js` outside a bundler** — it has an extensionless import that 404s and takes the module down. [ui/runtime](https://structs.ai/develop/ui/runtime) |
+| **Serving assets** | SUI's URLs are root-absolute. From a subpath, every icon vanishes silently. Serve at root or rewrite. [ui/gotchas](https://structs.ai/develop/ui/gotchas) |
+| **Extend or build fresh** | Adding to Structs Desktop is usually cheaper than a new app. [client/desktop-extensions](https://structs.ai/develop/client/desktop-extensions) |
+
+## Five rules that make it look like Structs
+
+1. **Nothing is rounded.** Hard edges, 1–2px borders, `border-radius: 0`.
+2. **Emphasis is colour and case, never weight.** Font weight is 500 everywhere.
+3. **Chrome is uppercase 8px ExtremeHazard; content is 16px DirectiveZero.**
+4. **Colour comes from tokens and is semantic.** Teal is you, red is the enemy, amber is
+   warning, gold is third parties. Never a hex literal.
+5. **Density over whitespace.** This is an operations console, not a landing page.
+
+And one that saves an hour: **never invent an icon.** There are 67 glyph icons and 29
+sprite icons. If the concept has no glyph, use a text label — no emoji, no inline SVG.
+
+## Where to go
+
+**Interface** — [develop/ui/](https://structs.ai/develop/ui/)
+
+| Need | Page |
+|---|---|
+| Colours, spacing, z-index, type | [tokens](https://structs.ai/develop/ui/tokens) |
+| The two icon inventories | [icons](https://structs.ai/develop/ui/icons) |
+| Markup contracts for every component | [components](https://structs.ai/develop/ui/components) |
+| Steppers, tooltips, the drawer | [runtime](https://structs.ai/develop/ui/runtime) |
+| Why the layout is broken | [gotchas](https://structs.ai/develop/ui/gotchas) |
+| Keeping a multi-page console coherent | [patterns](https://structs.ai/develop/ui/patterns) |
+| Dashboard, form, menu, HUD, assembled | [recipes](https://structs.ai/develop/ui/recipes) |
+| Runnable starter files | [examples](https://structs.ai/develop/ui/examples/README) |
+
+**Client** — [develop/client/](https://structs.ai/develop/client/)
+
+| Need | Page |
+|---|---|
+| The three-channel architecture | [index](https://structs.ai/develop/client/) |
+| State, factories, the string-number trap | [state-and-data](https://structs.ai/develop/client/state-and-data) |
+| Wallet, signing queue, charge gating | [actions-and-signing](https://structs.ai/develop/client/actions-and-signing) |
+| Proof-of-work: hashing, difficulty, workers | [work-and-pow](https://structs.ai/develop/client/work-and-pow) |
+| Real-time events and all 26 listeners | [realtime-grass](https://structs.ai/develop/client/realtime-grass) |
+| PFP compositing, struct art, Lottie | [rendering-entities](https://structs.ai/develop/client/rendering-entities) |
+| Ambits, tiles, fog of war | [map](https://structs.ai/develop/client/map) |
+| Adding an MCP tool or board page | [desktop-extensions](https://structs.ai/develop/client/desktop-extensions) |
+
+**Context** — [repos](https://structs.ai/develop/repos) (which repository to read, and
+which wins) · [frontend-architecture](https://structs.ai/develop/frontend-architecture)
+(the webapp's MVVM layer) · [maintenance](https://structs.ai/develop/maintenance) (how
+these pages stay true)
+
+## Traps, in the order you will hit them
+
+- **Assets don't resolve.** Icons and form art vanish with no console error. Check
+  `document.fonts.check('16px Structicons')` first, always.
+- **Everything is centred.** `body { text-align: center }` is inherited by everything;
+  only eleven rules re-assert left. Left-align data surfaces explicitly.
+- **A flex item won't shrink.** `min-width: auto` is the default. `word-break` does
+  nothing about it — you need `min-width: 0`.
+- **Alert severity colours the icon but not the text.** The text hard-sets `--text-body`.
+  Four CSS rules fix it; they are in
+  [sui-patch.css](https://structs.ai/develop/ui/examples/sui-patch.css).
+- **Copy the typos.** `--from-input-height-content` and
+  `sui-message-system-model-frame-center` are the real names.
+- **Two transactions at once gives `account sequence mismatch`.** Serialise — one in
+  flight, one per block. Don't track sequence numbers.
+- **Charge gates actions.** `currentBlock - (lastActionBlock + 1)`. Hold the queue until
+  the confirmed last-action height has loaded, or the client will think it has infinite
+  charge and empty its queue into one block.
+- **Proof-of-work is cheaper if you wait.** Difficulty decays with anchor age. Initiate
+  early, complete later.
+- **Numbers arrive as strings.** Normalise once at the boundary. The reference client is
+  inconsistent about this; don't copy that part.
+
+## Before you call it done
+
+- [ ] Every colour from a token, every icon from the real inventories
+- [ ] Form controls unclassed inside `label.sui-input-text`; checkbox container is a `<div>`
+- [ ] `tabular-nums` on numeric cells, `min-width: 0` on flex items with long text
+- [ ] Empty, loading and error states share one component and look different from each other
+- [ ] Sweep for overflow at your narrowest width — jsdom won't catch it, only a browser will
+- [ ] Keyboard focus is visible somewhere (SUI removes the default and adds nothing back)
+- [ ] Transaction failures reach the operator — the reference client's settled event has
+      no listeners, so failures are silent by default
+
+Full checklist: [ui/patterns](https://structs.ai/develop/ui/patterns#checklist-for-a-new-sui-surface).
 
 </document>
 
@@ -7532,7 +7669,9 @@ The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dr
 
 ### Client — the webapp TaskManager
 
-The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the same `64 - floor(log10(age)/log10(range)*63)` difficulty formula, waits at `age <= 1` (difficulty 64), and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
+The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the same `64 - floor(log10(age)/log10(range)*63)` difficulty formula, and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
+
+Its wait policy is its own choice, not part of the protocol: the worker sleeps in 10-second polls until difficulty reaches **10 or below**, rather than the `-D 3` this guide recommends for the CLI. Both are conformant — a client may start hashing at any difficulty it likes. See [develop/client/work-and-pow.md](../../develop/client/work-and-pow.md) for the full client-side implementation.
 
 ---
 
@@ -9728,6 +9867,3877 @@ All game object IDs follow `{type_prefix}-{index}`. See [entity-relationships.md
 - `schemas/database-schema.md` -- Full structural schema catalog
 - `knowledge/entities/entity-relationships.md` -- Full entity graph and ID format
 - `knowledge/entities/struct-types.md` -- Struct type stats (mirrors `struct_type` table)
+
+</document>
+
+<document>
+<source>develop/ui/index.md</source>
+---
+title: Building with SUI
+permalink: /develop/ui/
+---
+
+# Building with SUI
+
+**Purpose**: Build an interface that looks and behaves like Structs, using the same
+design system the game itself is built with.
+
+SUI is the Structs UI design system: one stylesheet, two icon systems, three display
+fonts, and four optional JavaScript behaviours. No build step, no preprocessor, no
+framework.
+
+> **The single most useful sentence:** SUI is a component sheet, not a framework. It
+> gives you painted parts. Layout, state, data flow, tables, sorting and virtualisation
+> are yours.
+
+For how a Structs client actually *works* — signing transactions, proof-of-work,
+real-time events — see [develop/client/](../client/index.md).
+
+---
+
+## Orientation
+
+| | |
+|---|---|
+| Stylesheet | `src/public/css/sui/sui.css` — one file, 2,701 lines |
+| Icon fonts | `src/public/css/structicons.css` (67 glyphs) + 29 sprite icons in `sui.css` |
+| Display fonts | `ExtremeHazard` (chrome/labels), `DirectiveZero` (content/numbers), `Inter` (tickers) |
+| JS runtime | `src/js/sui/` — four optional behaviours, ES modules |
+| Naming | `.sui-<component>[-<part>]` + `.sui-mod-<variant>` + `.sui-theme-<faction>` |
+| Mental model | Sci-fi terminal HUD. Hard edges, no radii, uppercase chrome, pixel-art assets |
+
+Paths are relative to a [structs-webapp](../repos.md) checkout, the canonical source.
+The extracted inventory of every token, icon, class and modifier lives in
+[generated/sui-inventory.md](../../generated/sui-inventory.md).
+
+---
+
+## Decide the scaling model first
+
+The game renders its entire UI at `transform: scale(2)` above 1152px and `scale(4)`
+above 2304px, with `transform-origin: 0 0`. That is why 8px labels and 25px inputs are
+sane *in the game*: on screen they are 16px and 50px.
+
+**If you build a companion app that does not scale, SUI's dimensions are half size or
+less.** Three options:
+
+| Option | Trade-off |
+|---|---|
+| Apply the same scaling | Most faithful; costs you CSS-pixel layout maths |
+| Run at 1× and override sizes locally | Keep SUI's colours, borders and structure; bump font sizes and control widths where legibility demands. Document each override |
+| Mix | Scale the game-like surfaces, run dense data views at 1× |
+
+Whichever you choose, decide it **before writing markup**. Retrofitting is a long tail
+of "why is this control 8px tall". The Structs Desktop Team Ops console took option two
+and its overrides run to about 80 lines of CSS.
+
+Note that `#sui-offcanvas` and `#sui-cheatsheet-container` append themselves to
+`<body>`, so they need the same treatment as your app root.
+
+---
+
+## The five rules
+
+Break these and it stops reading as Structs even if every class name is right.
+
+1. **Nothing is rounded.** `border-radius: 0` appears explicitly throughout. Hard edges
+   and 1–2px borders.
+2. **Emphasis is colour and case, never weight.** Font weight is `500` almost
+   everywhere. To emphasise, change the colour token or use an uppercase ExtremeHazard
+   label. Do not reach for `font-weight: 700`.
+3. **Chrome is uppercase and tiny; content is normal case and larger.** Nav items,
+   buttons, card headers, field labels: ExtremeHazard, 8px, uppercase. Body copy:
+   DirectiveZero, 16px.
+4. **Colour is semantic, from tokens.** Never a hex literal. Teal is *you*, red is *the
+   enemy*, amber is *warning*, gold is *third parties*, grey-blue is *hint*.
+5. **Density over whitespace.** This is an operations console. Spacing tokens top out
+   at 32px and most gaps are 8–16px.
+
+And one inherited default that will surprise you: `sui.css` sets `text-align: center`
+on `body`. Every string in your app is centred until you say otherwise — see
+[gotchas](gotchas.md#the-whole-document-is-centre-aligned).
+
+---
+
+## Where to go next
+
+| You want to | Read |
+|---|---|
+| Look up a colour, size, or z-index | [tokens.md](tokens.md) |
+| Find an icon that exists | [icons.md](icons.md) |
+| Get the markup right for a card, form, row, badge | [components.md](components.md) |
+| Wire up steppers, tooltips, or the drawer | [runtime.md](runtime.md) |
+| Understand why your layout is broken | [gotchas.md](gotchas.md) |
+| Keep a multi-page console coherent | [patterns.md](patterns.md) |
+| Build a dashboard, form, menu, or HUD | [recipes.md](recipes.md) |
+| Copy something that already runs | [examples/](examples/README.md) |
+
+---
+
+## Read the CSS, not the docs
+
+Several documented behaviours contradict what the markup looks like it should do. Every
+claim on these pages was verified against source, and the pages say which revision they
+describe. When in doubt, open `sui.css` — and when it disagrees with anything here,
+`sui.css` wins. If you find a divergence, [develop/maintenance.md](../maintenance.md)
+explains how to get it corrected.
+
+The published component gallery at <https://structs.design> is useful for seeing parts
+rendered, but it is served from the [structs-ui](../repos.md) repo, which lags the
+webapp considerably.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21). Inventory:
+[generated/sui-inventory.md](../../generated/sui-inventory.md).*
+
+</document>
+
+<document>
+<source>develop/ui/tokens.md</source>
+# SUI tokens and typography
+
+**Purpose**: Every design token SUI defines, what each one means, and which ones people
+expect to exist but don't.
+
+All tokens are declared on `:root` in `sui.css`. **Always reference the variable, never
+the hex.** A colour written as `#43CDB6` is a colour that will not follow a theme change
+and will not read as semantic to the next person.
+
+The complete machine-extracted list (72 tokens) is in
+[generated/sui-inventory.md](../../generated/sui-inventory.md). This page groups them by
+what they are *for*.
+
+---
+
+## Colour
+
+### Accents — interactive state
+
+| Token | Value | Use |
+|---|---|---|
+| `--accent-primary` | `#43CDB6` | Primary action, teal |
+| `--accent-primary-active` | `#C2EFDD` | Primary, pressed |
+| `--accent-secondary` | `#94A4E4` | Secondary action, periwinkle |
+| `--accent-secondary-active` | `#BBCAEF` | Secondary, pressed |
+| `--accent-destructive` | `#EE7D69` | Destructive action, red |
+| `--accent-destructive-active` | `#F4A990` | Destructive, pressed |
+| `--accent-disabled` | `#7394A5` | Inert control |
+
+### Text
+
+| Token | Value | Use |
+|---|---|---|
+| `--text-body` | `#C5D7D9` | Default reading colour |
+| `--text-hint` | `#A7C0C6` | Secondary, de-emphasised |
+| `--text-warning` | `#F3C878` | Amber |
+| `--text-player-primary` | `#43CDB6` | Teal — "us" |
+| `--text-player-highlight` | `#86DFC6` | Teal, emphasised |
+| `--text-player-inverted` | `#133546` | On a teal fill |
+| `--text-enemy-primary` | `#EE7D69` | Red — "them" |
+| `--text-enemy-highlight` | `#F4A990` | Red, emphasised |
+| `--text-enemy-inverted` | `#2E1F3E` | On a red fill |
+| `--text-neutral-primary` | `#EBAA49` | Gold — third parties |
+
+### Surfaces
+
+| Token | Value | Use |
+|---|---|---|
+| `--page-background` | `#1A2029` | Page base (under the tiled background image) |
+| `--surface-default` | `#222034` | Default component fill |
+| `--surface-player-body` | `#133546` | Friendly panel body |
+| `--surface-player-highlight` | `#1C5F6A` | Friendly nav / emphasis |
+| `--surface-player-inverted` | `#43CDB6` | Teal fill, e.g. card headers |
+| `--surface-enemy-body` | `#2E1F3E` | Hostile panel body |
+| `--surface-enemy-highlight` | `#5D0C15` | Hostile emphasis |
+| `--surface-enemy-inverted` | `#E64D40` | Red fill |
+| `--surface-neutral-body` | `#1E1C2E` | Third-party panel body |
+| `--surface-panel` | `#5D7E90` | Panel chrome |
+| `--surface-panel-medium` | `#4C6475` | Panel chrome, darker step |
+
+### Borders
+
+| Token | Value | Use |
+|---|---|---|
+| `--border` | `#5D7E90` | Default |
+| `--border-strong` | `#A7C0C6` | Emphasised |
+| `--border-subtle` | `#394958` | De-emphasised |
+| `--border-player` | `#133546` | Friendly |
+| `--border-player-dark` | `#2E1F3E` | Friendly, dark variant |
+| `--border-enemy` | `#440D3A` | Hostile |
+| `--border-enemy-dark` | `#222034` | Hostile, dark variant |
+| `--border-neutral-dark` | `#000000` | Third party, dark variant |
+| `--border-focus-friendly-dark` | `#2A9D9B` | Focus ring, friendly |
+| `--border-focus-enemy-dark` | `#C11F16` | Focus ring, hostile |
+
+> The two `--border-focus-*` tokens are the closest thing SUI has to a focus indicator,
+> and nothing in the stylesheet applies them to `:focus`. If you add keyboard focus
+> styling — and you should, see [gotchas](gotchas.md#focus-outlines-are-removed-globally)
+> — use these rather than inventing a colour.
+
+### Icons and gauges
+
+| Token | Value | Use |
+|---|---|---|
+| `--icon-colour-primary` | `#43CDB6` | Glyph icon, friendly |
+| `--icon-colour-warning` | `#F3C878` | Glyph icon, caution |
+| `--icon-colour-destructive` | `#EE7D69` | Glyph icon, hostile |
+| `--icon-dark` | `#394958` | Glyph icon, inert |
+| `--struct-health-bar-health` | `#EFB719` | Remaining HP |
+| `--struct-health-bar-damage` | `#CC2D2D` | Lost HP |
+| `--struct-progress-bar-fill` | `#C5D7D9` | Progress fill |
+
+---
+
+## Spacing — a 7-step scale
+
+```
+--spacing-xs: 2px    --spacing-sm: 4px     --spacing-md: 8px    --spacing-lg: 12px
+--spacing-xl: 16px   --spacing-xxl: 24px   --spacing-xxxl: 32px
+```
+
+Most component gaps are 8–16px. There is no larger step; if a layout wants 48px of air,
+it is probably not a Structs layout.
+
+## Dimensions
+
+```
+--icon-xs: 8px    --icon-sm: 16px   --icon-md: 24px
+--icon-lg: 32px   --icon-xl: 48px   --icon-xxl: 64px
+--tile-width: 128px    --tile-height: 128px
+--form-input-height-total: 40px
+--from-input-height-content: 36px      /* [sic] */
+```
+
+> **Copy the typo.** `--from-input-height-content` is misspelled in the source (`from`,
+> not `form`). That is the real variable name, and `.sui-screen-btn` uses it for its
+> height. Writing `--form-input-height-content` silently resolves to nothing.
+
+## Z-index — a defined stack, use it
+
+| Token | Value |
+|---|---|
+| `--loading-screen-z-index` | `10000` |
+| `--popup-z-index` | `2000` |
+| `--notification-dialogue-z-index` | `1500` |
+| `--banner-z-index` | `1250` |
+| `--menu-page-z-index` | `1000` |
+| `--hud-z-index` | `50` |
+| `--picture-in-picture-z-index` | `30` |
+| `--map-z-index` | `10` |
+| `--menu-z-index` | `10` |
+| `--menu-page-fill-background-z-index` | `-1` (relative to the menu page) |
+
+---
+
+## Typography
+
+Three families, six roles. Loaded via `@font-face` from `fonts/sui/`; `Inter` comes from
+a CDN in the webapp's base template.
+
+| Class | Family | Size / line | Case | Use for |
+|---|---|---|---|---|
+| `.sui-text-display`, `h1` | ExtremeHazard | 16 / 24 | UPPER | Page titles |
+| `.sui-text-header`, `.sui-text-label`, `h2` | ExtremeHazard | 8 / 16 | UPPER | Card headers, field labels, nav, buttons |
+| `.sui-text-label-block` | ExtremeHazard | 8 / 16 | UPPER | Same, forced `display: block` |
+| `.sui-text-paragraph` | DirectiveZero | 16 / 20 | normal | Body copy |
+| `.sui-text-tiny` | DirectiveZero | 8 / 12 | normal | Fine print |
+| `.sui-text-ticker` | Inter | 12 / 16 | normal | Tickers, timestamps |
+
+Font weight is `500` for every one of these except `.sui-text-ticker`, which is `400`.
+That is the whole weight system — see rule 2 in the [design language](index.md#the-five-rules).
+
+8px sounds unreadable. It isn't, at `scale(2)`. At 1× it is, which is what the
+[scaling decision](index.md#decide-the-scaling-model-first) is about.
+
+### Colour-only helpers
+
+`.sui-text-primary`, `-secondary`, `-destructive`, `-disabled`, `-warning`, `-hint` set
+`color` and nothing else — no metrics. Combine them with a metric class.
+
+> **`sui-mod-*` doubles as a global colour utility.** `.sui-mod-primary`, `-secondary`,
+> `-destructive`, `-disabled` and `-warning` set `color:` on *any* element, not just
+> inside components. `<span class="sui-mod-warning">` is amber. This has consequences —
+> see [the inline alert trap](gotchas.md#severity-colours-the-icon-but-not-the-text).
+
+---
+
+## Tokens that do not exist
+
+There is **no** `--accent-positive`, `--accent-negative`, or `--accent-warning`. If you
+see those in a codebase, someone invented them. Map intent to real tokens:
+
+| Intent | Use |
+|---|---|
+| good / ours / success | `--text-player-primary` |
+| bad / theirs / error | `--text-enemy-primary` or `--accent-destructive` |
+| caution | `--text-warning` |
+| inert / secondary | `--text-hint` or `--accent-disabled` |
+
+SUI also defines `font-variant-numeric` **nowhere**. In a console full of changing
+figures you want `tabular-nums` on every numeric cell, or columns will jitter on each
+refresh. That is a sanctioned local addition, not a deviation — see
+[examples/sui-patch.css](examples/sui-patch.css).
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/public/css/sui/sui.css`.*
+
+</document>
+
+<document>
+<source>develop/ui/icons.md</source>
+# SUI icons
+
+**Purpose**: The two icon systems, the complete inventory of both, and the rule that
+matters most — never invent one.
+
+SUI has two entirely separate icon systems that happen to share a base class. Knowing
+which one you are using determines whether the icon takes your text colour.
+
+---
+
+## Glyph icons — the icon font
+
+67 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
+
+```html
+<i class="sui-icon sui-icon-sm icon-refresh-8"></i>
+```
+
+They render as text, so they **inherit `color`** and take severity colour for free:
+
+```html
+<i class="sui-icon sui-icon-sm icon-alert sui-mod-warning"></i>
+```
+
+### Complete inventory
+
+```
+add                 adv-counter        alert              armour
+arrow               attention          ballistic-weapon   beacon
+blocked             caret-down         caret-left         caret-right
+caret-up            chevron-down       chevron-left       chevron-right
+chevron-up          close              cmd-post           combat-log
+computer            copy               counter            defend
+deploy              detected           dmg                edit
+enemy-tile          fleet-tile         guild              guild-directory
+in-progress         incoming           indirect           info
+key                 kinetic-barrier    link-out           member
+menu                mine               move               okay
+ore-ready           outgoing           phone              planet
+planetary-shield    raid               range              refine
+refresh-8           refresh-12         send-alpha         signal-jam
+smart-weapon        stealth            subtract           success
+tip                 transfers          undiscovered-ore   unknown
+unknown-territory   unpowered          wreckage
+```
+
+Each is prefixed `icon-` in markup: `icon-planetary-shield`, `icon-send-alpha`.
+
+`icon-attention` is declared twice in the stylesheet — 68 declarations, 67 names. The
+duplicate is harmless.
+
+---
+
+## Sprite icons — background art
+
+29 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
+
+```html
+<i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
+```
+
+They are images, so they **do not inherit `color`**. A sprite icon will not turn red
+because its container is red. If you need a hostile variant, check whether one exists
+(`enemy-shield-health`, `enemy-deployed-structs`, `enemy-indicator` all do).
+
+### Complete inventory
+
+```
+air                        alpha-matter          alpha-ore
+armour                     attacker              counter-attack
+defended                   defender-block        defender-counter
+defending                  deflector-shield      deployed-structs
+destroyed                  electronic-warfare-system
+enemy-deployed-structs     enemy-indicator       enemy-shield-health
+energy                     inert-alpha           land
+local                      no-power              player-indicator
+players                    shield-health         space
+stealth-mode               undiscovered-ore      water
+```
+
+Each is prefixed `sui-icon-` in markup: `sui-icon-alpha-ore`, `sui-icon-no-power`.
+
+Note that `armour` and `undiscovered-ore` exist in **both** systems. The glyph version
+tints; the sprite version is art. Pick deliberately.
+
+### `sui-icon-value` is not an icon
+
+`span.sui-icon-value` exists in the stylesheet but only sets `margin-left`. It is a
+spacing utility for a value sitting beside an icon, not a nineteenth sprite. Do not put
+it on an `<i>` expecting art.
+
+---
+
+## Sizes
+
+```
+sui-icon-xs   8px     sui-icon-sm   16px    sui-icon-md   24px
+sui-icon-lg   32px    sui-icon-xl   48px    sui-icon-xxl  64px
+```
+
+Sizing classes need the base class alongside them:
+`class="sui-icon sui-icon-md icon-planet"`. A bare `class="icon-planet"` gets the font
+but no box.
+
+---
+
+## Rules
+
+**Match the glyph to the size.** `icon-refresh-8` and `icon-refresh-12` both exist
+because the art is drawn on an 8px and a 12px grid. Pair grid-8 art with `sui-icon-sm`,
+grid-12 with `sui-icon-md`. A mismatch looks blurry, because `body` sets
+`image-rendering: pixelated` and non-integer scaling of pixel art is visible.
+
+**Never invent an icon.** No emoji standing in for a glyph, no inline SVG, no icon from
+another set. If the concept has no glyph, use a text label. This is a hard rule in the
+Structs codebase and the fastest way to make an interface stop looking like Structs.
+
+**Check before you reach.** The two inventories above are complete as of the pinned
+revision. The generated copy in
+[generated/sui-inventory.md](../../generated/sui-inventory.md) is regenerated from
+source and is the one to trust if these ever disagree.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21),
+`src/public/css/structicons.css` and `src/public/css/sui/sui.css`.*
+
+</document>
+
+<document>
+<source>develop/ui/components.md</source>
+# SUI components
+
+**Purpose**: The required DOM shape for every SUI component, the traps in each, and an
+honest list of what SUI does not give you.
+
+Every component here has a **markup contract**. SUI styles descendants and siblings, so
+wrapping an element in an extra `<div>`, or moving a control outside its label, can
+silently unstyle it. There is no error — it just renders wrong.
+
+---
+
+## Panel — the outer chrome
+
+```html
+<div class="sui-panel sui-theme-player">
+  <div class="sui-panel-top-fill-background"></div>
+  <div class="sui-panel-bottom-fill-background"></div>
+  <div class="sui-panel-edge-left"></div>
+  <div class="sui-panel-chunk sui-mod-grow sui-mod-shrink">
+    <!-- content -->
+  </div>
+  <div class="sui-panel-edge-right"></div>
+</div>
+```
+
+The edges and fills are pixel-art borders. Omit them and you get a bare box.
+
+## Screen and nav — the tab bar
+
+```html
+<div class="sui-screen sui-screen-full-width">
+  <div class="sui-screen-nav">
+    <div class="sui-screen-nav-items">
+      <a class="sui-screen-nav-item sui-mod-active" href="#/a">Alpha</a>
+      <a class="sui-screen-nav-item" href="#/b">Beta</a>
+    </div>
+  </div>
+</div>
+```
+
+- `.sui-screen-nav` is `justify-content: space-between`, so a second child right-aligns
+  — useful for a refresh button or a timestamp.
+- It also has `overflow-x: scroll`. **Items scroll out of view rather than wrapping**,
+  with no indicator that anything is hidden. Keep the item count low, or hide right-hand
+  extras at narrow widths.
+- Active state is `sui-mod-active`.
+
+## Data card — the workhorse container
+
+```html
+<div class="sui-data-card sui-theme-player">
+  <div class="sui-data-card-header sui-text-header">GUILD POWER</div>
+  <div class="sui-data-card-body sui-mod-spacing-xl">
+    <div class="sui-data-card-row"><span>Label</span><span>Value</span></div>
+  </div>
+</div>
+```
+
+- The header is a **teal fill with inverted text**, centre-justified.
+- `sui-mod-spacing-xl` is the **only** spacing modifier that exists. It changes padding
+  from `8px 16px` to `16px` and gap from `0` to `16px`. Without it, body children sit
+  flush against each other.
+- **The body centres its text.** `.sui-data-card-row` re-asserts `text-align: left`, so
+  label/value pairs are fine — but a bare `<div>` you drop into the body is not. See
+  [gotchas](gotchas.md#the-whole-document-is-centre-aligned).
+
+## Result row — the list idiom
+
+SUI has **no table component**. This is what lists look like.
+
+```html
+<div class="sui-result-rows sui-result-table">
+  <div class="sui-result-row">
+    <div class="sui-result-row-left-section">
+      <div class="sui-result-row-portrait">
+        <div class="sui-result-row-portrait-icon">
+          <i class="sui-icon sui-icon-md icon-planet"></i>
+        </div>
+      </div>
+      <div class="sui-result-row-player-info">
+        <div class="sui-text-label-block">NAME<br><span class="sui-text-hint">subtitle</span></div>
+      </div>
+    </div>
+    <div class="sui-result-row-right-section">
+      <div class="sui-result-row-resources">
+        <div class="sui-resource"><span>42</span><i class="sui-icon sui-icon-sm sui-icon-alpha-ore"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+- `.sui-result-rows` gives an 8px gap. Adding `.sui-result-table` sets the gap to 0 and
+  uses borders instead.
+- Both sections are `flex: 1 0 0` with `min-width: 256px` (left) and `224px` (right).
+  **Those minimums cause most narrow-window overflow** — see
+  [gotchas](gotchas.md#result-row-minimums-force-wrapping).
+- The row is header-less by design: each row self-describes.
+
+## Form fields — `label.sui-input-text` wraps everything
+
+This is the contract most people get wrong. `label.sui-input-text` is not just for text
+inputs. Its `<span>` labels **any** control.
+
+```html
+<!-- text -->
+<label class="sui-input-text"><span>Name</span><input type="text"></label>
+
+<!-- select -->
+<label class="sui-input-text"><span>Guild</span>
+  <select><option>Any</option></select>
+</label>
+
+<!-- checkbox, nested inside the label -->
+<label class="sui-input-text"><span>Fleet Status</span>
+  <div class="sui-checkbox-container">
+    <input type="checkbox" class="sui-checkbox" id="x">
+    <span class="sui-checkbox-display"></span>
+    <label for="x">Fleet Away</label>
+  </div>
+</label>
+
+<!-- stepper -->
+<label class="sui-input-text"><span>Min Ore</span>
+  <div class="sui-input-stepper">
+    <button class="sui-screen-btn sui-mod-secondary"><i class="sui-icon sui-icon-md icon-subtract"></i></button>
+    <input type="number" step="1" min="0" max="99" value="0">
+    <button class="sui-screen-btn sui-mod-secondary"><i class="sui-icon sui-icon-md icon-add"></i></button>
+  </div>
+</label>
+```
+
+Three things that will bite:
+
+1. SUI styles inputs by **descendant selector** (`label.sui-input-text input[type=text]`),
+   so the control must sit **inside** the label and carry **no class of its own**. A bare
+   `<input class="sui-input-text">` gets none of the styling.
+2. **The checkbox container must be a `<div>`.** Using a `<span>` makes
+   `label.sui-input-text span` match it and style it as the field *label* — a 40px
+   control balloons to roughly 106px.
+3. The stepper's ± buttons must be the input's literal `previousElementSibling` and
+   `nextElementSibling`. Any wrapper breaks the JS silently — see
+   [runtime](runtime.md#suiinputstepper).
+
+`label.sui-input-text` has `min-width: 256px` and `width: 100%`.
+
+## Buttons
+
+```html
+<a class="sui-screen-btn sui-mod-secondary" href="javascript: void(0)">
+  <i class="sui-icon sui-icon-sm icon-send-alpha"></i><span>Send</span>
+</a>
+```
+
+| Class | What it is |
+|---|---|
+| `.sui-screen-btn` | The standard button. Fixed 36px height, ExtremeHazard 8px uppercase, `margin: 2px` |
+| `.sui-nav-btn` | Nav and back links, no frame |
+| `.sui-panel-btn` | 44×48 pixel-art HUD buttons |
+
+`.sui-screen-btn` takes `sui-mod-primary`, `-secondary`, `-destructive`, `-disabled`,
+and `-align-flex-end`, each with a hover state. `.sui-panel-btn` takes `sui-mod-default`,
+`-pressed`, `-active-defense`, `-active-offense`, `-disabled`.
+
+It works on `<button>` *and* `<a>` — `:link` and `:visited` are both covered, so anchors
+don't turn purple.
+
+> **Fixed height plus a wrapping label equals overflow.** A two-word label wraps to
+> three lines inside an unyielding 36px box. Put `white-space: nowrap` on the button's
+> `<span>` and let the button grow sideways.
+
+## Badge — four variants, and only four
+
+```html
+<span class="sui-badge sui-mod-default">READY</span>
+```
+
+| Modifier | Look |
+|---|---|
+| `sui-mod-default` | Teal outline, teal text |
+| `sui-mod-warning` | Amber outline, amber text |
+| `sui-mod-destructive` | Red outline, red text |
+| `sui-mod-solid` | **Filled teal, inverted text** |
+
+There is **no** `sui-mod-secondary` badge. The modifier exists globally and will set the
+text colour, but you get no border and no badge shape.
+
+> **`sui-mod-solid` is the loudest thing on a page.** Do not use it for the common case.
+> A list where every row says SUCCESS in filled teal draws the eye to the least
+> informative thing on screen. Outline for routine, amber for "didn't happen", red for
+> failed.
+
+## Messages — three levels
+
+```html
+<!-- inline: within a card -->
+<div class="sui-message-inline-alert sui-mod-warning">
+  <i class="sui-icon sui-icon-md icon-alert"></i>
+  <div class="sui-message-inline-alert-text">Charge is low.</div>
+</div>
+
+<!-- system alert: page-level banner -->
+<div class="sui-message-system-alert">
+  <div class="sui-message-system-alert-icon-container">…</div>
+  <div class="sui-message-system-alert-text-container">…</div>
+  <div class="sui-message-system-alert-close-container">…</div>
+</div>
+
+<!-- system modal: blocking confirmation -->
+<div class="sui-message-system-modal">
+  <div class="sui-message-system-modal-frame">
+    <div class="sui-message-system-modal-frame-left">
+      <div class="sui-message-system-modal-frame-left-top"></div>
+      <div class="sui-message-system-modal-frame-left-middle">
+        <i class="sui-icon sui-icon-md icon-attention"></i>
+      </div>
+      <div class="sui-message-system-modal-frame-left-bottom"></div>
+    </div>
+    <div class="sui-message-system-model-frame-center">…</div>   <!-- "model" [sic] -->
+  </div>
+  <div class="sui-message-system-modal-cta">
+    <div class="sui-message-system-modal-cta-btn-wrapper">
+      <a class="sui-screen-btn sui-mod-secondary">Cancel</a>
+    </div>
+    <div class="sui-message-system-modal-cta-btn-wrapper">
+      <a class="sui-screen-btn sui-mod-destructive">Send</a>
+    </div>
+  </div>
+</div>
+```
+
+> **Two typos to copy verbatim.** `sui-message-system-model-frame-center` and
+> `sui-message-system-model-overlay` say **model**, not modal.
+>
+> **The modal has no backdrop of its own.** Wrap it in your own fixed overlay.
+
+The inline alert has a severity trap that costs everyone an hour —
+[gotchas](gotchas.md#severity-colours-the-icon-but-not-the-text).
+
+## Pagination — a precise contract
+
+```html
+<div class="sui-pagination">
+  <a><i class="sui-icon sui-icon-md icon-chevron-left"></i></a>
+  <div class="sui-pagination-numbers">
+    <a class="sui-pagination-number sui-mod-active">1</a>
+    <a class="sui-pagination-number">2</a>
+    <div class="sui-pagination-number">...</div>
+    <a class="sui-pagination-number">16</a>
+  </div>
+  <a><i class="sui-icon sui-icon-md icon-chevron-right"></i></a>
+</div>
+```
+
+From the shipping `src/js/view_models/templates/partials/Pagination.js`:
+
+- **Exactly 5 number slots, always.** Never more.
+- **Prev is omitted entirely on page 1; next is omitted on the last page** — not
+  disabled, absent from the DOM.
+- **Ellipsis is a `<div>`, not an `<a>`**, because it isn't clickable.
+- Slot logic: 5 or fewer pages shows them all. Current page ≤ 3 gives `1 2 3 … last`.
+  Deep in the middle gives `1 … current … last`. Near the end gives `1 … n-2 n-1 n`.
+
+## Resource chip
+
+```html
+<div class="sui-resource"><span>1,204</span><i class="sui-icon sui-icon-sm sui-icon-alpha-matter"></i></div>
+```
+
+Value first, icon second. `min-height: 32px`. Works as an `<a>` too.
+
+## Battery and progress
+
+```html
+<div class="sui-battery sui-theme-player">
+  <span class="sui-battery-chunk sui-mod-filled"></span>
+  <span class="sui-battery-chunk"></span>
+</div>
+
+<div class="sui-action-bar-progress-bar-wrapper">
+  <div class="sui-action-bar-progress-bar">
+    <div class="sui-action-bar-progress-bar-chunk sui-mod-filled"></div>
+  </div>
+</div>
+```
+
+Battery chunks are 4×16px PNGs, themed by the ancestor `sui-theme-*`. Add
+`sui-mod-animated` to the progress bar for an indeterminate marquee. At small row
+heights the PNG chunks are heavy; a CSS-only meter is a reasonable local substitute.
+
+---
+
+## Themes
+
+`sui-theme-player` (teal), `sui-theme-enemy` (red/purple), `sui-theme-neutral` (gold).
+Set one on an **ancestor**; components read it via descendant selectors:
+
+```css
+.sui-theme-player .sui-screen-nav { background: var(--surface-player-highlight); }
+.sui-theme-enemy  .sui-battery-chunk.sui-mod-filled { background-image: url(".../battery-chunk-enemy.png"); }
+```
+
+Some components accept the theme on themselves *or* an ancestor
+(`.sui-theme-player.sui-battery` and `.sui-theme-player .sui-battery` are both handled).
+`sui-theme-player` is the default for operator-facing UI.
+
+---
+
+## What SUI does not give you
+
+Budget for these. They are all yours to build:
+
+- **No table, sort control, or column header**
+- **No row hover or row-selected state**
+- **No sticky headers, no virtualisation**
+- **No empty state, skeleton, or spinner**
+- **No toast or snackbar** — there is an alert, but no queue and no auto-dismiss
+- **No date, time, or number formatting**
+- **No `tabular-nums` anywhere**
+- **No responsive utilities** — the one breakpoint family in `main.css` is tied to the
+  game's scaling, not to component layout
+- **No focus-visible ring.** `input:focus { outline: none }` with no replacement, so SUI
+  actively *removes* the default focus indicator
+
+**The sanctioned way to build a real table** is to keep `.sui-result-row`'s border and
+padding and swap its two `flex: 1 0 0` sections for a CSS grid. You get true columns
+without inventing a new visual language.
+
+---
+
+## Modifier reference
+
+**Global colour utilities**, valid on any element: `sui-mod-primary`,
+`sui-mod-secondary`, `sui-mod-destructive`, `sui-mod-disabled`, `sui-mod-warning`.
+
+| Modifier | Applies to |
+|---|---|
+| `sui-mod-active` | Nav item, pagination number, panel button |
+| `sui-mod-active-defense`, `-active-offense`, `-pressed` | Panel button |
+| `sui-mod-align-flex-end` | Screen button |
+| `sui-mod-animated` | Progress bar |
+| `sui-mod-default` | Badge, panel button |
+| `sui-mod-disabled-active` | Panel button, pressed while disabled |
+| `sui-mod-filled` | Battery chunk, progress chunk |
+| `sui-mod-grow`, `sui-mod-shrink` | Panel chunk |
+| `sui-mod-header` | Offcanvas header nav item |
+| `sui-mod-inverted` | Inverted-fill text |
+| `sui-mod-left`, `-right`, `-top`, `-bottom` | Offcanvas placement, tooltip placement |
+| `sui-mod-minimized` | Status bar |
+| `sui-mod-narrow` | Offcanvas width |
+| `sui-mod-show` | Tooltip visibility (set by JS) |
+| `sui-mod-solid` | Badge only |
+| `sui-mod-spacing-xl` | Data card body — the only spacing modifier |
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/public/css/sui/sui.css`
+and `src/js/view_models/templates/partials/Pagination.js`.*
+
+</document>
+
+<document>
+<source>develop/ui/runtime.md</source>
+# The SUI JavaScript runtime
+
+**Purpose**: The four optional behaviours SUI ships, how to load them without breaking,
+and the upstream bugs in each.
+
+SUI's CSS works with no JavaScript at all. Four behaviours are optional add-ons in
+`src/js/sui/`: an input stepper, a tooltip, a cheatsheet overlay, and an offcanvas
+drawer.
+
+---
+
+## Loading them
+
+`SUI.js` bundles all four behind `new SUI().autoInitAll()`. **Do not use it outside a
+bundler.**
+
+```js
+// src/js/sui/SUI.js
+import {SUIInputStepper} from "./SUIInputStepper.js";
+import {SUITooltip} from "./SUITooltip.js";
+import {SUICheatsheet} from "./SUICheatsheet.js";
+import {SUIOffcanvas} from "./SUIOffcanvas";   // ← extensionless
+```
+
+That fourth import has no `.js` extension. Webpack resolves it; a browser loading a
+plain `<script type="module">` does not — it 404s and takes the whole module down with
+it, including the three behaviours that would otherwise have worked.
+
+Import the classes you actually need, directly:
+
+```html
+<script type="module">
+  import { SUIInputStepper } from './sui/SUIInputStepper.js';
+  import { SUIOffcanvas }    from './sui/SUIOffcanvas.js';
+
+  const stepper = new SUIInputStepper();  stepper.autoInitAll();
+  const oc      = new SUIOffcanvas();     oc.autoInitAll();
+  window.SUIRuntime = { offcanvas: oc };
+</script>
+```
+
+This is what the Structs Desktop Team Ops board does. The webapp, which runs through
+Webpack, uses the bundled `SUI` facade and exposes it as `MenuPage.sui`.
+
+---
+
+## SUIInputStepper
+
+Wires the ± buttons on a numeric input.
+
+- **Selector:** `.sui-input-stepper input[type=number]`.
+- **Contract:** takes `previousElementSibling` as decrement and `nextElementSibling` as
+  increment. **Any wrapper element around a button breaks it silently** — no error, the
+  buttons just do nothing.
+- Clamps to `min`/`max` on input and disables the buttons at the bounds.
+- **Binds once, at `autoInitAll()`.** It calls `querySelectorAll` a single time. Steppers
+  you create later are not wired.
+
+That last point matters more than it sounds. Any UI that renders steppers from data —
+a settings page, a filter panel, anything paginated — creates them after page load. For
+those, implement your own ± handlers against the same markup and skip this module. You
+keep the visual contract and lose nothing.
+
+---
+
+## SUITooltip
+
+- **Trigger:** `data-sui-tooltip="text"` on any element.
+- **Press-and-hold, not hover.** The tooltip appears 100ms after `mousedown` or
+  `touchstart`. Users who expect hover will conclude it is broken.
+- Optional `data-sui-mod-placement="bottom"`; the default is above.
+- Delegated on `document.body`, so dynamically added triggers work — the one behaviour
+  here that does survive re-rendering.
+
+Two things to watch:
+
+**It sets `position: relative` on the trigger's *parent*** (if that parent computes to
+`static`) and appends the tooltip there. Give each trigger its own wrapper, or tooltips
+land in odd places relative to a shared ancestor.
+
+**Content is injected with `innerHTML`.** Escape untrusted text before it reaches a
+`data-sui-tooltip` attribute. Player names and guild names are user-controlled — see
+[agent-security](../../awareness/agent-security.md) on adversarial UGC.
+
+---
+
+## SUICheatsheet
+
+A long-press overlay showing contextual reference content, used in the game's deploy
+picker to explain struct types. It has its own content builder and renderer
+(`SUICheatsheetContentBuilder.js`, `SUICheatsheetRenderer.js`) and appends to
+`<body>` as `#sui-cheatsheet-container`.
+
+It is tightly coupled to game concepts. Most companion apps will not want it, but if you
+have long-press interactions elsewhere, know that its open delay competes with yours.
+
+---
+
+## SUIOffcanvas — the singleton drawer
+
+```js
+oc.setHeader('Player 1-194');
+const body = oc.offcanvasElm.querySelector('.sui-offcanvas-body');
+body.innerHTML = '';
+body.appendChild(node);
+oc.setPlacement('right');
+oc.open();          // oc.open('narrow') for the narrow variant
+oc.close();
+```
+
+- **One instance per document**, `id="sui-offcanvas"`, appended to `<body>`. It builds
+  its own panel, nav and body internally. There is no stacking two drawers.
+- `setContent()` takes an HTML **string**. To append nodes, query `.sui-offcanvas-body`
+  directly, as above.
+- Closes on outside click. The listener is attached inside a `setTimeout(0)` so the click
+  that opened it doesn't immediately close it — a nice detail worth copying.
+
+### Upstream bug in `setPlacement`
+
+```js
+setPlacement(placement) {
+  this.placement = placement;                                     // assigned first
+  this.offcanvasElm.classList.remove(`sui-mod-${this.placement}`); // removes the NEW class
+  this.offcanvasElm.classList.add(`sui-mod-${this.placement}`);
+}
+```
+
+It removes the class it is about to add, so the *previous* placement is never dropped
+and the element accumulates both `sui-mod-left` and `sui-mod-right`. Work around it at
+the call site:
+
+```js
+oc.offcanvasElm.classList.remove('sui-mod-left', 'sui-mod-right');
+oc.setPlacement('right');
+```
+
+`setTheme` has the identical shape and the identical bug.
+
+### It lives on `<body>`
+
+Any CSS you scoped to your app root (`#my-app .foo`) does not reach the drawer.
+Duplicate those selectors for `#sui-offcanvas`. The same applies to whatever scaling you
+chose — `#sui-offcanvas` needs it too, and the stylesheet already targets it by ID
+(`#sui-offcanvas.sui-mod-narrow`).
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/js/sui/`.*
+
+</document>
+
+<document>
+<source>develop/ui/gotchas.md</source>
+# SUI gotchas
+
+**Purpose**: The things that cost real debugging time, ordered by how likely you are to
+hit them, plus the catalogue of known upstream defects.
+
+Every item here was reproduced against source or measured in a browser. Several
+contradict what the markup looks like it should do.
+
+---
+
+## Severity colours the icon but not the text
+
+`.sui-message-inline-alert` has **no severity variants of its own**. The global
+`sui-mod-*` utility does set `color:` on the container, so the **icon** — which inherits
+`color` — changes. But `.sui-message-inline-alert-text` hard-sets
+`color: var(--text-body)`, so **the text never changes**:
+
+```css
+.sui-message-inline-alert-text {
+  color: var(--text-body);
+  text-align: left;
+}
+```
+
+| Markup | Container `color` | Text `color` |
+|---|---|---|
+| `.sui-message-inline-alert.sui-mod-warning` | `#F3C878` ✅ | `#C5D7D9` ❌ |
+| `.sui-message-inline-alert.sui-mod-destructive` | `#EE7D69` ✅ | `#C5D7D9` ❌ |
+
+Half-severity is worse than none: a red icon beside body-coloured text reads as
+decoration, not as an error. Extend it explicitly:
+
+```css
+.sui-message-inline-alert.sui-mod-warning .sui-message-inline-alert-text { color: var(--text-warning); }
+.sui-message-inline-alert.sui-mod-destructive .sui-message-inline-alert-text { color: var(--text-enemy-primary); }
+.sui-message-inline-alert.sui-mod-secondary,
+.sui-message-inline-alert.sui-mod-secondary .sui-message-inline-alert-text { color: var(--text-hint); }
+```
+
+These four rules are in [examples/sui-patch.css](examples/sui-patch.css).
+
+---
+
+## The whole document is centre-aligned
+
+`sui.css` sets it on `body` itself:
+
+```css
+body {
+  background: url("/img/sui/page/page-background.png") repeat var(--page-background);
+  color: var(--text-body);
+
+  text-align: center;        /* inherited by absolutely everything */
+  font-family: 'DirectiveZero', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  image-rendering: pixelated;
+}
+```
+
+A plain `<div>` inside a `.sui-data-card-body` computes to `text-align: center`. This is
+a deliberate choice for the game's short, poster-like HUD strings, and it is wrong for
+almost every data surface.
+
+Exactly eleven rules re-assert `text-align: left`. Content inside these is fine:
+
+```
+.sui-data-card-row                       .sui-result-row-player-info
+.sui-message-inline-alert-text           .sui-message-system-alert-text-container
+.sui-message-system-model-frame-center   .sui-screen-dialogue
+.sui-tooltip                             .sui-cheatsheet-title-text
+.sui-cheatsheet-description              .sui-cheatsheet-contextual-message
+.sui-cheatsheet-property-info div
+```
+
+Everything else inherits centre. The trap is that this only shows up on content long
+enough to wrap, so it ships looking fine and then a three-line explanation renders like
+poetry. Left-align prose, tables and log output explicitly, once, on your own classes:
+
+```css
+.my-app .sui-data-card-body .note { text-align: left; }
+```
+
+Beware `>` child selectors while doing it: a note nested one `<div>` deep won't match a
+rule written as `.sui-data-card-body > .note`.
+
+`body` also sets `image-rendering: pixelated` globally. Right for the pixel art, worth
+knowing if you ever place a photographic or high-DPI image in a SUI page.
+
+---
+
+## Flex `min-width: auto` is the top cause of overflow
+
+**A flex item will not shrink below its min-content width unless you set
+`min-width: 0`.** `word-break` and `overflow-wrap` alone do nothing about it. This
+appears in four disguises:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Card 1101px wide in a 441px window; a checkbox pushed off screen | A share URL — one unbreakable token — as a flex item | `min-width: 0` **and** `white-space: normal` |
+| Row stretched past its card | A long identifier in `.sui-result-row-player-info` | `min-width: 0` on the section, `overflow-wrap: anywhere` on the text |
+| Three-item metric group blowing out a row | `inline-flex` with `nowrap` children | `flex-wrap: wrap; max-width: 100%` |
+| An `<input type=number>` clipped to 46px showing `2` instead of `21600` | Flex child, where `width` is only a *basis* | `flex: none` plus an explicit `width` |
+
+Sanity check when something overflows and you can't see why:
+
+```js
+[...root.querySelectorAll('*')]
+  .filter(e => e.scrollWidth > e.clientWidth + 2 && e.clientWidth > 0)
+  .map(e => `${e.className} ${e.clientWidth}/${e.scrollWidth}`);
+```
+
+---
+
+## Result-row minimums force wrapping
+
+`.sui-result-row-left-section` has `min-width: 256px` and `.sui-result-row-right-section`
+has `224px`. Below roughly 500px of row width they wrap — often mid-content, so stat
+chips overlap identity text. Either accept the wrap and set a sensible `gap`, or
+override the minimums for narrow layouts.
+
+---
+
+## Composed classes fight each other at equal specificity
+
+If an element carries two of your classes and both set the same property, **the rule
+declared later in the stylesheet wins** — not the one you meant. A link with
+`class="icon-btn url-display"`, where `.icon-btn { white-space: nowrap }` is declared
+after `.url-display { overflow-wrap: anywhere }`, will never wrap.
+
+Set the property explicitly on the more specific class rather than assuming the other
+won't apply.
+
+---
+
+## Number inputs default to 25px
+
+`.sui-input-stepper input[type=number]` is `width: 25px` with 16px of horizontal
+padding — sized for a one-or-two-digit quantity picker. Give it real width for anything
+larger, and remember it is a flex child, so `width` alone is only a basis. Use
+`flex: none`.
+
+---
+
+## Asset paths are root-absolute
+
+`sui.css` references assets from the **web root**: `url("/img/sui/…")`,
+`url('/fonts/Structicons.woff')`. If your app is served from a subpath or over `file://`,
+**every icon and every piece of form art silently disappears** — checkboxes render as
+blank space with no console error.
+
+Two options: serve the assets at the root, or rewrite the URLs on the way out. Structs
+Desktop does the latter when it serves the Team Ops board under `/board/`; the reference
+implementation is `rebase_css_urls` in `src-tauri/src/mcp/web_board.rs`, which prefixes
+root-absolute `url()` targets and leaves relative, `data:` and scheme URLs alone.
+
+Verify with `document.fonts.check('16px Structicons')` and a network check on one
+`/img/sui/form/*.png`.
+
+---
+
+## Focus outlines are removed globally
+
+```css
+input:focus { outline: none; }
+```
+
+No replacement is provided. If you care about keyboard accessibility — and an operations
+console should — add one back. The `--border-focus-friendly-dark` and
+`--border-focus-enemy-dark` tokens exist for exactly this and are otherwise unused.
+
+---
+
+## Smaller ones
+
+- **`.sui-data-card` sets `gap: -1px`**, which is invalid and computes to `0`. Harmless,
+  but don't copy it as a technique.
+- **`.sui-screen-nav` scrolls rather than wraps.** Items pushed past the edge become
+  invisible with no indicator.
+- **The offcanvas is a singleton.** No stacked drawers, ever.
+- **`sui-icon-value` is not an icon**, it is a `margin-left` utility for a `<span>`.
+
+---
+
+## Known upstream defects
+
+| Where | Defect | Workaround |
+|---|---|---|
+| `SUIOffcanvas.setPlacement` | Assigns `this.placement` before removing the old class, so both placement classes accumulate | Clear both classes at the call site first |
+| `SUIOffcanvas.setTheme` | Same shape, same bug | Same |
+| `SUI.js` | `import {SUIOffcanvas} from "./SUIOffcanvas"` is extensionless and fails outside a bundler | Import each class directly with its `.js` extension |
+| `sui.css` | `--from-input-height-content` is misspelled | Use the typo |
+| `sui.css` | `sui-message-system-model-frame-center` and `-model-overlay` say *model* | Use the typo |
+| `sui.css` | `.sui-data-card { gap: -1px }` is invalid | Ignore |
+| `sui.css` | `.sui-message-inline-alert` has no severity variants and its text hard-sets `--text-body` | Add the four rules above |
+| `sui.css` | `body { text-align: center }` is inherited by everything | Left-align data surfaces explicitly |
+| `sui.css` | `input:focus { outline: none }` with no replacement | Add a focus style |
+| `sui.css` | All asset URLs are root-absolute | Serve at root, or rewrite |
+| `structicons.css` | `.icon-attention` is declared twice | Harmless |
+
+Found something not on this list? [develop/maintenance.md](../maintenance.md) covers how
+to get it verified, documented, and reported upstream rather than worked around in
+silence.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/public/css/sui/sui.css`
+and `src/js/sui/`.*
+
+</document>
+
+<document>
+<source>develop/ui/patterns.md</source>
+# SUI patterns
+
+**Purpose**: The practices that keep a multi-page SUI console coherent as it grows, and
+the checklist to run before calling a surface done.
+
+These are judgement calls drawn from building a nine-page operations console on SUI, not
+properties of the stylesheet. They are here because each one was learned by getting it
+wrong first.
+
+---
+
+## Build a helper kit before the second page
+
+Do not hand-write SUI markup at every call site. The [contracts](components.md) are
+strict enough that repeating them is how they drift. A small kit pays for itself
+immediately and keeps each contract in exactly one place:
+
+```js
+function card(title, bodyNode) {
+  const c = el('div', 'sui-data-card sui-theme-player');
+  c.appendChild(el('div', 'sui-data-card-header sui-text-header', title));
+  const b = el('div', 'sui-data-card-body sui-mod-spacing-xl');
+  b.appendChild(bodyNode);
+  c.appendChild(b);
+  return c;
+}
+```
+
+Aim for **one** way to render a row, **one** to show a statistic, **one** empty state
+and **one** error state. A console that grew organically had four row idioms, three
+statistic idioms, four empty states, seven error states and five time formatters before
+anyone consolidated it. None of that was a decision; it was the absence of one.
+
+A working kit is in [examples/sui-kit.js](examples/sui-kit.js).
+
+## One state component, four severities
+
+SUI gives you [no empty state, skeleton, or spinner](components.md#what-sui-does-not-give-you).
+The webapp fills that gap with loading GIFs and ad-hoc error text, which is exactly why
+you should decide once and reuse:
+
+```js
+const STATE = {
+  loading: { mod: 'sui-mod-secondary',   icon: 'icon-in-progress' },
+  empty:   { mod: 'sui-mod-secondary',   icon: 'icon-info' },
+  info:    { mod: 'sui-mod-primary',     icon: 'icon-info' },
+  warning: { mod: 'sui-mod-warning',     icon: 'icon-alert' },
+  error:   { mod: 'sui-mod-destructive', icon: 'icon-alert' },
+};
+
+function stateBlock(kind, text) {
+  const k = STATE[kind] || STATE.info;
+  const a = el('div', 'sui-message-inline-alert ' + k.mod);
+  a.appendChild(el('i', `sui-icon sui-icon-md ${k.icon}`));
+  const t = el('div', 'sui-message-inline-alert-text');
+  t.textContent = text;                     // textContent, not innerHTML
+  a.appendChild(t);
+  return a;
+}
+```
+
+This needs the four CSS rules from
+[gotchas](gotchas.md#severity-colours-the-icon-but-not-the-text) to actually look
+different from each other.
+
+---
+
+## Reconcile lists by key, don't rebuild them
+
+Rebuilding a list on every refresh destroys scroll position, focus and half-typed filter
+text — and at scale it stalls the page. A roster of 459 rows rebuilt wholesale was 22,415
+DOM nodes; reconciled by key it was 2,967.
+
+For an append-only log the reconcile is trivial and worth doing by hand:
+
+```js
+// Rows are newest-first, so live updates only ever PREPEND.
+const known = new Set(renderedKeys);
+const fresh = [];
+for (const row of matched) {
+  if (known.has(key(row))) break;      // first known row: everything after is older
+  fresh.push(row);
+}
+for (let i = fresh.length - 1; i >= 0; i--) {
+  list.insertBefore(renderRow(fresh[i]), list.firstChild);
+  renderedKeys.unshift(key(fresh[i]));
+}
+while (renderedKeys.length > renderCap) {
+  list.removeChild(list.lastChild);
+  renderedKeys.pop();
+}
+```
+
+Rebuild only when the *set* changes — a filter or sort — or when row content changes
+underneath you, such as names resolving late.
+
+Two traps found the hard way:
+
+**Placeholder rows are not data.** "No results" and "show more" aren't in your key list,
+so a tail-trim that removes `list.lastChild` will eat one and pop a key, desyncing the
+DOM from your state. Purge placeholders **before** reconciling.
+
+**Scroll position.** A rebuild resets `scrollTop` to 0. For a newest-first feed, top
+means "tailing" and anywhere else means "reading" — preserve position unless the user was
+already at the top, and on prepend adjust by the added height so the same rows stay under
+the cursor.
+
+## Separate the data cap from the render cap
+
+Keeping 2,000 records is cheap; rendering 2,000 rows is roughly 24,000 nodes. Hold the
+full set for search and filtering, render a bounded window, and **always say what you
+are holding back**:
+
+> `1,500 older matching event(s) not shown · Show 500 more`
+
+Silent truncation reads as "that's everything", and an operator who believes they are
+looking at the whole picture will make decisions accordingly.
+
+## Drive large forms from a schema
+
+Once a settings page passes roughly 20 fields, hand-written forms drift from their
+labels. Drive them from a field registry keyed by property name, dispatching on type:
+boolean to checkbox, number to stepper, known enum to select, array to comma-separated
+text. One editor, one label source, no drift. Give it a key filter so a single config
+can be split across several cards without forking the editor.
+
+---
+
+## Verify in a DOM, and then in a browser
+
+A jsdom harness with a stubbed backend catches routing, wiring and layout bugs in
+seconds, with no build and no deploy:
+
+```js
+const dom = new JSDOM(fs.readFileSync('app.html', 'utf8'), {
+  runScripts: 'outside-only',
+  pretendToBeVisual: true,
+  url: 'http://localhost/app.html',
+});
+dom.window.__BACKEND__ = { invoke: (cmd) => Promise.resolve(FIXTURES[cmd]) };
+dom.window.eval(fs.readFileSync('app.js', 'utf8'));
+// then: set location.hash, dispatch 'hashchange', assert on the DOM
+```
+
+This found a Send button whose click bubbled to its row's `onClick` and opened the wrong
+panel — invisible in a screenshot, obvious in an assertion.
+
+**But jsdom does not do layout.** Every overflow bug in [gotchas](gotchas.md) needed a
+real browser and a `scrollWidth > clientWidth` sweep. Use both, for different classes of
+bug.
+
+---
+
+## Checklist for a new SUI surface
+
+**Before writing markup**
+
+- [ ] Decide the [scaling model](index.md#decide-the-scaling-model-first)
+- [ ] Confirm `/img` and `/fonts` resolve from your serving root
+- [ ] Load only the SUI JS you need, [by direct import](runtime.md#loading-them)
+- [ ] Pick a theme class for the root
+
+**While building**
+
+- [ ] Every colour from a [token](tokens.md); no hex literals
+- [ ] Every icon from the [two real inventories](icons.md); none invented
+- [ ] Chrome uppercase/ExtremeHazard, content DirectiveZero
+- [ ] Form controls inside `label.sui-input-text`, unclassed
+- [ ] Stepper buttons are literal siblings of the input
+- [ ] Checkbox container is a `<div>`
+- [ ] Badge modifiers limited to default/warning/destructive/solid
+- [ ] `tabular-nums` on numeric cells
+- [ ] `min-width: 0` on any flex item holding long unbreakable text
+- [ ] Prose, tables and logs explicitly left-aligned against the global centre
+- [ ] Empty, loading and error states use one shared component
+- [ ] Lists reconcile by key rather than `innerHTML = ''`
+
+**Before calling it done**
+
+- [ ] Sweep for overflow at your narrowest supported width
+- [ ] Confirm `document.fonts.check('16px Structicons')` is true
+- [ ] Check a checkbox and a radio actually render their art
+- [ ] Confirm the four alert severities are visually distinct
+- [ ] Verify pagination shows 5 slots or fewer and omits prev/next at the ends
+- [ ] Tab bar: confirm no nav item has scrolled out of view
+- [ ] Keyboard: confirm focus is visible somewhere
+
+---
+
+*Practices verified in use against structs-webapp `6eec7f7` (2026-07-21) and the Structs
+Desktop Team Ops console.*
+
+</document>
+
+<document>
+<source>develop/ui/recipes.md</source>
+# SUI recipes
+
+**Purpose**: The four surfaces agents are actually asked to build — dashboard, form,
+menu, HUD — assembled end to end, with the decisions behind each.
+
+Each recipe assumes you have settled the
+[scaling model](index.md#decide-the-scaling-model-first) and are loading SUI's CSS in
+the right order:
+
+```html
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/structicons.css">
+<link rel="stylesheet" href="/css/sui/sui.css">
+<link rel="stylesheet" href="/css/sui-patch.css">   <!-- your local additions, last -->
+```
+
+A runnable version of all four is in [examples/starter.html](examples/starter.html).
+
+---
+
+## Dashboard
+
+The most common request. A grid of data cards, each holding a few statistics.
+
+```html
+<div class="sui-theme-player dash-grid">
+
+  <div class="sui-data-card">
+    <div class="sui-data-card-header sui-text-header">POWER</div>
+    <div class="sui-data-card-body sui-mod-spacing-xl">
+      <div class="sui-data-card-row">
+        <span class="sui-text-label">CAPACITY</span>
+        <span class="num sui-text-primary">18,400</span>
+      </div>
+      <div class="sui-data-card-row">
+        <span class="sui-text-label">LOAD</span>
+        <span class="num sui-text-warning">17,950</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sui-data-card">
+    <div class="sui-data-card-header sui-text-header">STORES</div>
+    <div class="sui-data-card-body sui-mod-spacing-xl">
+      <div class="sui-resource"><span class="num">1,204</span><i class="sui-icon sui-icon-sm sui-icon-alpha-matter"></i></div>
+      <div class="sui-resource"><span class="num">86</span><i class="sui-icon sui-icon-sm sui-icon-alpha-ore"></i></div>
+    </div>
+  </div>
+
+</div>
+```
+
+```css
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--spacing-xl); }
+.num       { font-variant-numeric: tabular-nums; }
+```
+
+Decisions worth copying:
+
+**Colour carries the meaning, not weight.** Capacity is `sui-text-primary` (teal, ours),
+load is `sui-text-warning` (amber, watch this). If load exceeded capacity it would be
+`sui-text-destructive`. A reader scanning ten cards sees the amber before they read a
+number. Never bold a figure to emphasise it.
+
+**`tabular-nums` on every figure.** SUI sets `font-variant-numeric` nowhere, so a
+refreshing dashboard jitters column-by-column as digit widths change.
+
+**`minmax(260px, 1fr)`** rather than a fixed column count. Cards below about 260px start
+breaking their label/value rows onto two lines.
+
+**Do not wrap statistics in badges.** A grid where every value is a `sui-mod-solid`
+badge is unreadable; see [the note on solid](components.md#badge--four-variants-and-only-four).
+
+---
+
+## Form / settings page
+
+```html
+<div class="sui-data-card sui-theme-player">
+  <div class="sui-data-card-header sui-text-header">SCAN FILTERS</div>
+  <div class="sui-data-card-body sui-mod-spacing-xl">
+
+    <label class="sui-input-text"><span>Guild</span>
+      <select id="f-guild"><option value="">Any</option></select>
+    </label>
+
+    <label class="sui-input-text"><span>Fleet Status</span>
+      <div class="sui-checkbox-container">
+        <input type="checkbox" class="sui-checkbox" id="f-away">
+        <span class="sui-checkbox-display"></span>
+        <label for="f-away">Fleet away only</label>
+      </div>
+    </label>
+
+    <label class="sui-input-text"><span>Minimum Ore</span>
+      <div class="sui-input-stepper">
+        <button class="sui-screen-btn sui-mod-secondary" data-step="-1">
+          <i class="sui-icon sui-icon-md icon-subtract"></i>
+        </button>
+        <input type="number" id="f-ore" step="1" min="0" max="99" value="0">
+        <button class="sui-screen-btn sui-mod-secondary" data-step="1">
+          <i class="sui-icon sui-icon-md icon-add"></i>
+        </button>
+      </div>
+    </label>
+
+    <div class="sui-message-inline-alert sui-mod-warning" hidden id="f-error">
+      <i class="sui-icon sui-icon-md icon-alert"></i>
+      <div class="sui-message-inline-alert-text"></div>
+    </div>
+
+    <a class="sui-screen-btn sui-mod-primary" id="f-submit"><span>Scan</span></a>
+  </div>
+</div>
+```
+
+The three contract violations that break this silently, in order of how often they
+happen:
+
+1. Putting a class on the `<input>`. SUI styles it as a descendant of
+   `label.sui-input-text`; the input itself must be unclassed.
+2. Making the checkbox container a `<span>`. Then `label.sui-input-text span` matches it
+   and styles it as the field label — the 40px control balloons to about 106px.
+3. Wrapping a stepper button in a `<div>` for layout. The
+   [stepper JS](runtime.md#suiinputstepper) walks `previousElementSibling`, so the
+   buttons stop working with no error.
+
+On the stepper: `SUIInputStepper` binds once at init, so a form built from data after
+page load will not be wired. Handle `data-step` yourself:
+
+```js
+form.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-step]');
+  if (!btn) return;
+  const input = btn.parentElement.querySelector('input[type=number]');
+  const next = Number(input.value) + Number(btn.dataset.step);
+  input.value = Math.min(Number(input.max), Math.max(Number(input.min), next));
+});
+```
+
+Give the number input real width — it defaults to 25px, which fits two digits.
+
+---
+
+## Menu and navigation
+
+```html
+<div class="sui-screen sui-screen-full-width sui-theme-player">
+  <div class="sui-screen-nav">
+    <div class="sui-screen-nav-items">
+      <a class="sui-screen-nav-item sui-mod-active" href="#/overview">Overview</a>
+      <a class="sui-screen-nav-item" href="#/roster">Roster</a>
+      <a class="sui-screen-nav-item" href="#/energy">Energy</a>
+    </div>
+    <div class="sui-screen-nav-items">
+      <a class="sui-nav-btn" id="refresh"><i class="sui-icon sui-icon-sm icon-refresh-8"></i></a>
+    </div>
+  </div>
+  <div class="sui-screen-body" id="page"></div>
+</div>
+```
+
+`.sui-screen-nav` is `justify-content: space-between`, so that second `nav-items` block
+right-aligns without any work — the idiomatic home for a refresh control or a
+last-updated timestamp.
+
+**Watch the item count.** The nav is `overflow-x: scroll`, not wrapping. A seventh tab
+does not move to a second line; it becomes invisible, with no scrollbar hint at these
+sizes. If you need more destinations than fit, group them into areas with a second level
+of sub-navigation rather than letting the bar overflow.
+
+For paginated content below, follow the
+[pagination contract](components.md#pagination--a-precise-contract) exactly: five slots
+maximum, prev absent on page 1, next absent on the last page, ellipsis as a `<div>`.
+Deviating is immediately visible to anyone who also uses the game client.
+
+---
+
+## HUD and overlay
+
+A HUD sits above content, so the [z-index scale](tokens.md#z-index--a-defined-stack-use-it)
+matters. Use the tokens rather than inventing values, or your overlay will end up under
+the game's own dialogue layer.
+
+```html
+<div class="sui-panel sui-theme-player hud">
+  <div class="sui-panel-top-fill-background"></div>
+  <div class="sui-panel-bottom-fill-background"></div>
+  <div class="sui-panel-edge-left"></div>
+  <div class="sui-panel-chunk sui-mod-grow sui-mod-shrink">
+    <div class="sui-battery sui-theme-player">
+      <span class="sui-battery-chunk sui-mod-filled"></span>
+      <span class="sui-battery-chunk sui-mod-filled"></span>
+      <span class="sui-battery-chunk"></span>
+    </div>
+    <span class="sui-badge sui-mod-default">READY</span>
+  </div>
+  <div class="sui-panel-edge-right"></div>
+</div>
+```
+
+```css
+.hud { position: fixed; bottom: 0; left: 0; right: 0; z-index: var(--hud-z-index); }
+```
+
+Do not omit the edge and fill divs. They are the pixel-art frame; without them a panel
+is a plain rectangle and the HUD stops reading as part of the game.
+
+For a detail drawer, use the [offcanvas](runtime.md#suioffcanvas--the-singleton-drawer)
+rather than building a second panel. It is a singleton on `<body>`, which means two
+things: you cannot stack drawers, and your app-scoped CSS will not reach it.
+
+**Badge discipline matters most here.** A HUD is glanceable, so `sui-mod-solid` should
+mark the one state you want someone to notice from across a room. If every indicator is
+solid teal, none of them are.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21). Runnable versions:
+[examples/](examples/README.md).*
+
+</document>
+
+<document>
+<source>develop/client/index.md</source>
+---
+title: Building a Structs client
+permalink: /develop/client/
+---
+
+# Building a Structs client
+
+**Purpose**: How a real Structs client is put together — the three channels it talks
+over, and what each one is responsible for.
+
+These pages describe [structs-webapp](../repos.md), the flagship client, as a **reference
+implementation**. It is not the only valid architecture, but it is the one the game is
+actually played through, and every mechanic here is verified against its source rather
+than inferred from the chain's API surface.
+
+If you are building a UI rather than a client, start at [develop/ui/](../ui/index.md).
+
+---
+
+## Three channels, three jobs
+
+A Structs client is not a single API client. It talks to the game over three separate
+channels, and getting the division of labour right is most of the architecture.
+
+| Channel | Carries | Latency | Authority |
+|---|---|---|---|
+| **REST** — Guild API over PostgreSQL | Bulk reads, search, history, bootstrap | ~100ms | Authoritative but a moment stale |
+| **NATS/WebSocket** — [GRASS](realtime-grass.md) | Live deltas: block height, ore, power, combat | Sub-second | Fastest, but no replay |
+| **Cosmos RPC** — [signing](actions-and-signing.md) | Writes only | ~6s per block | The only way to change anything |
+
+The rule that falls out of this: **read from REST on load, keep current with GRASS, write
+over RPC, and never assume a write you sent is a write that landed.**
+
+GRASS has no replay buffer. Messages that arrive while you are disconnected are gone. Any
+client that treats the event stream as its source of truth will silently drift; the
+webapp re-fetches authoritative state from REST at login and after significant events,
+using GRASS only to stay current in between.
+
+---
+
+## The subsystems
+
+| Page | Covers |
+|---|---|
+| [state-and-data.md](state-and-data.md) | GameState, factories, the string-number trap, the REST client, the event bus |
+| [actions-and-signing.md](actions-and-signing.md) | Wallet, protobuf registry, the dual-lane signing queue, charge gating |
+| [work-and-pow.md](work-and-pow.md) | Proof-of-work: hash format, difficulty decay, workers, completion |
+| [realtime-grass.md](realtime-grass.md) | NATS connection, the listener contract, all 26 listeners |
+| [rendering-entities.md](rendering-entities.md) | PFP layer compositing, struct art, Lottie lifecycle, the animation queue |
+| [map.md](map.md) | The ambit stack, tiles, fog of war, picture-in-picture |
+| [desktop-extensions.md](desktop-extensions.md) | Extending Structs Desktop: MCP tools, board pages, serving SUI over HTTP |
+
+For the framework the webapp wraps around all of this — its MVVM layer, router, and view
+model conventions — see [develop/frontend-architecture.md](../frontend-architecture.md).
+
+---
+
+## Four things that surprise people
+
+**Charge is a rate limit, not a resource.** It accrues as blocks elapse since your last
+charged action, and it gates *when* you can act rather than what you can afford. The
+client computes it locally as `currentBlock - (lastActionBlock + 1)` and holds
+transactions until the projected charge covers the action's cost. Get this wrong and your
+transactions fail on-chain rather than queueing politely.
+
+**One transaction per block per account.** Not a chain rule but a practical one: the
+webapp serialises broadcasts behind an in-flight mutex and a per-block governor
+specifically to avoid `account sequence mismatch`. It never tracks sequence numbers
+manually — it just never has two in flight.
+
+**Proof-of-work gets cheaper if you wait.** Difficulty decays logarithmically with the
+age of the on-chain anchor. Initiating early and completing later is strictly better than
+hashing hard immediately. The webapp's worker will sit idle for hours rather than burn
+CPU at high difficulty.
+
+**Numbers arrive as strings, and the reference client is inconsistent about converting
+them.** This is the single most likely source of a subtle bug in a new client. See
+[state-and-data.md](state-and-data.md#numbers-arrive-as-strings).
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21).*
+
+</document>
+
+<document>
+<source>develop/client/state-and-data.md</source>
+# State and data
+
+**Purpose**: How the reference client holds game state, gets it from the API, and turns
+JSON into models — including the numeric-precision trap that will bite you.
+
+---
+
+## Numbers arrive as strings
+
+The chain returns `uint64` values as JSON **strings**, because they routinely exceed
+JavaScript's `Number.MAX_SAFE_INTEGER`. Energy values additionally carry three decimal
+places of precision as integers.
+
+**The reference client is inconsistent about converting them.** Know this before you copy
+any of it.
+
+`PlayerFactory` is the careful case. It divides energy fields through `BigInt` before
+narrowing to `Number`:
+
+```js
+// src/js/factories/PlayerFactory.js
+convertFromPreciseNumber(numberString) {
+  return Number(BigInt(numberString) / BigInt(PRECISION_CONVERSION.ENERGY));  // ENERGY = 1000
+}
+
+make(obj) {
+  const player = new Player();
+  Object.assign(player, obj);
+  player.load                = this.convertFromPreciseNumber(player.load);
+  player.structs_load        = this.convertFromPreciseNumber(player.structs_load);
+  player.capacity            = this.convertFromPreciseNumber(player.capacity);
+  player.connection_capacity = this.convertFromPreciseNumber(player.connection_capacity);
+  player.ore                 = parseInt(player.ore);
+  return player;
+}
+```
+
+Most other factories are `Object.assign` and nothing else, leaving values as strings:
+
+```js
+// src/js/factories/InfusionFactory.js — representative of most
+make(obj) {
+  const infusion = new Infusion();
+  Object.assign(infusion, obj);
+  return infusion;
+}
+```
+
+The full picture:
+
+| Path | Energy fields | Ore / counts |
+|---|---|---|
+| REST via `PlayerFactory` | `BigInt` ÷ 1000 → `Number` | `parseInt` |
+| REST via most other factories | **left as strings** | left as strings |
+| GRASS live updates | raw value straight to the setter — **no division** | `parseInt` in `setOre` only |
+| Protobuf codegen `longToNumber` | `Number(int64.toString())` — **lossy above 2^53** | same |
+| Signing queue payloads | `BigInt` is **rejected** — stringify first | same |
+
+Two consequences worth stating plainly. First, `"1000" + 1` is `"10001"`, and a string
+compares as a string — `"9" > "100"` is true. Sorting a leaderboard on an unconverted
+field gives silently wrong output with no error anywhere. Second, energy read from REST
+and energy read from GRASS **may not be on the same scale** in the reference client,
+because the GRASS listeners bypass the factory.
+
+**For a new client: normalise once, at the boundary.** Convert every field in one place,
+on both the REST and GRASS paths, and keep values above 2^53 as `BigInt` or as strings
+all the way to the formatter. Do not adopt the reference client's field-by-field
+approach.
+
+---
+
+## GameState
+
+A single mutable object, constructed once at boot and passed to everything. It holds the
+wallet and signing client, the key players (yourself plus raid participants), struct
+types, the current block height, map components, and assorted UI state.
+
+**Mutation is uncontrolled.** Managers, GRASS listeners and view models all write to it
+directly. There is no reducer and no immutability.
+
+**Observation is via `window` CustomEvents.** There is no central event bus; setters
+dispatch events and interested components listen on `window`:
+
+```js
+// src/js/models/KeyPlayer.js
+setAlpha(alpha) {
+  if (this.player && this.player.hasOwnProperty('alpha')) {
+    this.player.alpha = parseInt(alpha);
+    window.dispatchEvent(new SaveGameStateEvent());
+    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
+  }
+}
+```
+
+Event names live in `src/js/constants/Events.js` (50+ of them), each with a small
+`CustomEvent` subclass in `src/js/events/`. Components subscribe in `initPageCode()` and
+remove their listener when their DOM node is gone.
+
+This is simple and it works, but it means **any code can change any state and the only
+record of what changed is the event that happened to be dispatched**. If you are building
+something you intend to maintain, a narrower state layer is worth the effort.
+
+### What persists
+
+`localStorage`, under `gameState`, holds only a thin slice: mnemonic, pubkey, player ID,
+last-action block heights, charge levels, and the active map. Player objects, structs,
+planets, guild data and struct types are **not** persisted — they are re-fetched at login.
+
+Three other things also live in `localStorage`: router position (`currentMenuPage`,
+`lastMenuPage`), a TTL cache of some API responses, and one-off migration flags.
+
+> **The mnemonic is stored in plaintext.** No encryption, no passphrase. Any script that
+> runs on the page can read the key that controls the account. Do not copy this. See
+> [awareness/agent-security.md](../../awareness/agent-security.md) on key hygiene, and
+> [SAFETY.md](../../SAFETY.md).
+
+---
+
+## The REST client
+
+`src/js/api/GuildAPI.js` wraps `fetch` against `/api`, backed by the guild's PostgreSQL
+read models rather than by chain queries directly — which is why it is fast enough for
+search and pagination. See [knowledge/infrastructure/guild-stack.md](../../knowledge/infrastructure/guild-stack.md).
+
+**Auth is a same-origin session cookie**, not a bearer token. Login POSTs a signed message
+to `/api/auth/login`; Symfony verifies the signature, establishes a session, and every
+later `/api/*` call is authenticated by the cookie that `fetch` sends automatically.
+
+Every response is expected in one envelope:
+
+```json
+{ "success": true, "errors": [], "data": … }
+```
+
+`GuildAPIResponseFactory` throws `GuildAPIError` if any of the three keys is missing, and
+`handleResponseFailure` throws if `success` is false.
+
+> **HTTP status is never checked.** The `fetch` wrapper calls `response.json()`
+> unconditionally, so a 401 or a 500 with a non-JSON body fails as an opaque JSON parse
+> error rather than as the auth or server error it is. Check `response.ok` in your own
+> client.
+
+Representative endpoints:
+
+| Purpose | Endpoint |
+|---|---|
+| Bootstrap | `GET /api/guild/this`, `GET /api/setting` |
+| Auth | `POST /api/auth/signup`, `POST /api/auth/login`, `GET /api/auth/logout` |
+| Player | `GET /api/player/{id}`, `GET /api/player/{id}/action/last/block/height` |
+| Structs | `GET /api/struct/player/{id}`, `GET /api/struct/type` (cached 24h) |
+| Fleet and planets | `GET /api/fleet/player/{id}`, `GET /api/planet/{id}` |
+| Raid search | `GET /api/player/raid/search?…` and `…/count` |
+| Guild | `GET /api/guild/{id}/roster` |
+| Ledger | `GET /api/ledger/player/{id}/page/{page}` |
+| Outstanding work | `GET /api/work/player/{id}` |
+
+That last one matters more than it looks: it is how proof-of-work tasks survive a page
+reload. See [work-and-pow.md](work-and-pow.md#restoring-after-a-reload).
+
+Many more read endpoints exist in the Symfony controllers than are wrapped in
+`GuildAPI.js`. If something you need is missing from the JS client, check the PHP side
+before concluding it isn't available.
+
+---
+
+## Factories
+
+The convention is one factory per model in `src/js/factories/`, each with
+`make(obj)` and an inherited `parseList(list)`:
+
+```js
+// src/js/framework/AbstractFactory.js
+export class AbstractFactory {
+  make(obj) { throw new NotImplementedError(); }
+  parseList(list) { return list.map(this.make); }
+}
+```
+
+Beyond numeric coercion, factories are where nested structures get parsed —
+`PlayerFactory` builds `PfpClientRenderAttributes` from JSON, `StructFactory` runs
+`JSON.parse` on `defending_struct_ids`, `StructTypeFactory` on its ambit arrays.
+
+**GRASS bypasses factories entirely.** Listeners take `messageData.value` and hand it
+straight to a setter. That is the root of the scale inconsistency above, and it is worth
+fixing on your own event path rather than reproducing.
+
+---
+
+## Bootstrap order
+
+```
+gameState.load()                    // restore localStorage, rebuild wallet from mnemonic
+  ↓
+guildAPI.getSettings()              // chain params
+guildAPI.getThisGuild()             // guild identity
+  ↓
+authManager.login(playerId)         // player, structs, fleet, planet, struct types
+  ↓  registers GRASS listeners
+  ↓  initSigningClient() → restores the persisted signing queue
+  ↓  restoreTasksFromDB() → respawns proof-of-work from GET /api/work/player/{id}
+  ↓
+router.restore()                    // return to the last page
+```
+
+The ordering matters. GRASS listeners must be registered before the client starts acting,
+and the signing queue must know the confirmed last-action height before it releases any
+charged transaction — otherwise it would compute charge against a default of `0` and
+conclude it had a full bar. See
+[actions-and-signing.md](actions-and-signing.md#charge-gating).
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/models/GameState.js`,
+`src/js/api/GuildAPI.js`, `src/js/factories/`.*
+
+</document>
+
+<document>
+<source>develop/client/actions-and-signing.md</source>
+# Actions and signing
+
+**Purpose**: How the reference client turns a click into a broadcast transaction —
+wallet, protobuf registry, the dual-lane queue, and charge gating.
+
+Everything that changes game state goes through here. It is also where the two failure
+modes that plague new clients live: `account sequence mismatch`, and acting before you
+have charge.
+
+---
+
+## Wallet
+
+CosmJS, bech32 prefix `structs`, 12-word mnemonic from 16 bytes of entropy:
+
+```js
+// src/js/managers/WalletManager.js
+createMnemonic() {
+  const getNewRandom = Random.getBytes(16);
+  return Bip39.encode(getNewRandom).toString();
+}
+
+async createWallet(mnemonic) {
+  return await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: "structs" });
+}
+```
+
+No `hdPaths` is passed, so derivation falls back to the CosmJS default. If you need the
+exact path, read it off your installed version rather than assuming — this codebase does
+not state it.
+
+> **The mnemonic is stored unencrypted in `localStorage`.** Do not copy that. See
+> [SAFETY.md](../../SAFETY.md).
+
+### Off-chain proof signatures
+
+Guild signup, login and address registration authenticate with a signature over a
+**plain concatenated string** — not an ADR-036 `SignDoc`. SHA-256 the UTF-8 bytes, sign
+the digest with secp256k1, return lowercase hex of the 64-byte fixed-length signature:
+
+```js
+async createSignatureForProxyMessage(message, privateKey) {
+  const encodedMessage = this.textEncoder.encode(message);
+  const digest = sha256(encodedMessage);
+  const rawSignature = await Secp256k1.createSignature(digest, privateKey);
+  return this.bytesToHex(rawSignature.toFixedLength());
+}
+```
+
+The message formats are exact — get a character wrong and the server rejects it:
+
+| Use | Format |
+|---|---|
+| Guild signup | `GUILD{guildId}ADDRESS{address}NONCE{nonce}` |
+| Login | `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unixTimestamp}` |
+| Address register | `PLAYER{playerId}ADDRESS{address}` |
+
+---
+
+## Signing client and registry
+
+```js
+// src/js/managers/SigningClientManager.js
+this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
+
+this.wsUrl = this.publicEndpoint
+    ? `wss://public.testnet.structs.network:26657`
+    : `ws://${window.location.hostname}:26657`;
+
+this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
+  this.wsUrl, wallet, { registry: this.registry },
+);
+```
+
+`msgTypes` comes from `src/js/ts/structs.structs/registry.ts` — roughly 330
+`[typeUrl, GeneratedType]` pairs covering messages, queries, events and domain objects.
+Type URLs are all of the form `/structs.structs.Msg…`:
+
+```ts
+["/structs.structs.MsgStructBuildInitiate", MsgStructBuildInitiate],
+```
+
+**Fees are a single flat constant.** No simulation, no gas price, no adjustment:
+
+```js
+// src/js/constants/Fee.js
+export const FEE = {
+  amount: [{ denom: "ualpha", amount: "0" }],
+  gas: "500000",
+};
+```
+
+This differs from the CLI guidance in [AGENTS.md](../../AGENTS.md), which uses
+`--gas auto --gas-adjustment 1.5`. Both work; the webapp just picks a limit generous
+enough for every message it sends and stops thinking about it.
+
+`creator` is never stored in a queued payload — it is injected from the signing account
+at broadcast time, so a persisted queue cannot be replayed against the wrong account:
+
+```js
+// src/js/models/SigningTransaction.js
+toCosmosMsg(registry) {
+  const type = registry.lookupType(this.message.typeUrl);
+  if (!type) throw new Error(`Unknown typeUrl in registry: ${this.message.typeUrl}`);
+  return {
+    typeUrl: this.message.typeUrl,
+    value: type.fromPartial({ ...this.message.payload, creator: this.accountAddress }),
+  };
+}
+```
+
+---
+
+## The dual-lane queue
+
+`SigningQueueManager` is the most transferable idea in the client. Two lanes and one
+in-flight slot:
+
+```js
+/** @type {SigningTransaction[]} Unordered lane; fired ASAP. */
+this.immediateQueue = [];
+/** @type {SigningTransaction[]} Ordered action lane; head gated lazily on charge. */
+this.actionQueue = [];
+/** @type {SigningTransaction|null} Tx currently being broadcast. */
+this.inFlight = null;
+```
+
+| Lane | Enqueue | For |
+|---|---|---|
+| Immediate | `enqueueImmediate(typeUrl, payload)` | Anything not charge-costed — notably proof-of-work completions |
+| Action | `enqueueAction(typeUrl, payload, chargeCost)` | Charged game actions, strictly FIFO |
+
+On every block, `transactOnBlock` picks at most one transaction:
+
+1. Return immediately if something is in flight, the signing client is missing, or a
+   transaction already went out at this height.
+2. If the action head exists, the confirmed last-action height is loaded, and projected
+   charge covers its cost → broadcast the action head.
+3. Otherwise, if the immediate queue is non-empty → broadcast its head.
+
+**A blocked action head does not block the immediate lane.** That is the whole point of
+the split: your mine completions keep flowing while a charged action waits for the bar to
+refill.
+
+### Sequence numbers: don't track them, just serialise
+
+The client never touches sequence numbers. It avoids `account sequence mismatch` with
+three mechanical guarantees:
+
+- an `inFlight` mutex, so at most one broadcast is outstanding;
+- a `lastBroadcastHeight` governor, so at most one transaction per block per address;
+- strict FIFO within each lane.
+
+CosmJS fetches and increments the sequence internally. Serialising submissions is enough.
+This is the same reasoning behind the CLI rule in [AGENTS.md](../../AGENTS.md) — one
+transaction at a time per account, roughly six seconds apart.
+
+### Charge gating
+
+Charge is elapsed blocks since your last charged action, with a `+1` offset:
+
+```js
+// src/js/util/ChargeCalculator.js
+calcCharge(currentBlockHeight, lastActionBlockHeight) {
+  return currentBlockHeight - (lastActionBlockHeight + 1);
+}
+```
+
+The queue projects the same value against a walking base:
+
+```js
+projectedChargeAt(blockHeight) {
+  return blockHeight - (this.getWalkingBase() + 1);
+}
+```
+
+Three distinct heights are in play, and conflating them is a real bug:
+
+| Value | Source | Used for |
+|---|---|---|
+| `confirmedLastActionBlockHeight` | GRASS `lastAction`, or REST at login | **The scheduler.** The only trustworthy base |
+| `scheduleAnchorHeight` | Inclusion height of the last charged tx this client sent | Advancing the base between confirmations |
+| `lastActionBlockHeight` (optimistic) | Set locally the moment you enqueue | **Display only** — the charge bar |
+
+The walking base is `max(confirmed, anchor)`. The optimistic value drains the bar in the
+UI immediately so the interface feels responsive, and deliberately never reaches the
+scheduler — otherwise a dropped transaction would leave the client believing it had spent
+charge it still has.
+
+> **Hold the action lane until the confirmed height has loaded.** The base defaults to
+> `0`, which projects as effectively infinite charge, and the client would empty its
+> entire queue into one block. The reference client checks `isConfirmedActionLoaded()`
+> before releasing anything.
+
+When charge is short, the head simply stays put and is re-evaluated next block. Nothing
+is dropped and nothing is retried.
+
+### Persistence
+
+The queue survives a reload. Key is `signingQueue:{wsUrl}:{address}`, so switching
+account or network cannot cross-contaminate. Snapshots older than 30 minutes, or corrupt
+JSON, are moved aside to `{key}.corrupt` rather than being parsed. An in-flight
+transaction found at startup has its attempt count incremented and is re-queued or
+dropped, because the client cannot know whether it landed.
+
+Payloads are validated as JSON-safe at enqueue (`assertSerializable`), which is why
+`BigInt` throws — stringify before enqueueing.
+
+### Retries
+
+```js
+// src/js/constants/SigningQueueConstants.js
+DEFAULT_RETRY_LIMIT: 0,           // 0 retries => 1 attempt (no retries for now)
+MAX_QUEUE_AGE_MS: 30 * 60 * 1000,
+TIMEOUT_POLL_BLOCKS: 5,
+```
+
+One attempt by default, with no backoff — a retry, if enabled, goes to the **tail** of
+its lane and waits for the next eligible block. The one special case is a CosmJS
+`TimeoutError` carrying a `txId`, where the client polls `getTx` for five blocks before
+concluding failure, since a timeout is not the same as a rejection.
+
+---
+
+## End to end: building a struct
+
+```
+DeployOffcanvas                 user releases on a deployable struct
+  → SigningClientManager.queueMsgStructBuildInitiate(playerId, typeId, ambit, slot, cost)
+      maps the ambit name to its enum index
+      → SigningQueueManager.enqueueAction('/structs.structs.MsgStructBuildInitiate', …)
+          → SigningTransaction.create → append to action lane → persist
+  ← UI updates optimistically right away (offcanvas closes, pending build appears)
+
+BlockListener (GRASS)           every block
+  → gameState.setCurrentBlockHeight → BLOCK_HEIGHT_CHANGED
+      → SigningQueueManager.transactOnBlock
+          charge gate passes → toCosmosMsg → signAndBroadcast(address, [msg], FEE)
+          on code 0 → advance scheduleAnchorHeight → settle → persist
+
+StructListener (GRASS)          chain emits struct_block_build_start
+  → refreshStruct, and spawn the BUILD proof-of-work task
+StructListener                  chain emits struct_status = BUILT
+  → clear the pending build, render the struct
+```
+
+Note where the UI updates: **immediately on enqueue, not on confirmation**. That is a
+deliberate responsiveness choice, and it is only safe because GRASS will correct the
+display when the real event arrives.
+
+---
+
+## Error handling, and its gap
+
+`whenSettled(id)` resolves — it never rejects — with the transaction object. **Callers
+must check `status` themselves.**
+
+| Failure | Handling | Reaches the user? |
+|---|---|---|
+| Unknown type URL | failure handler | no, `console.warn` |
+| `signAndBroadcast` throws | failure handler (timeout polled first) | no |
+| Broadcast `code !== 0` | treated as failure | no |
+| Signer address mismatch | held, restored to lane head | no, `console.warn` |
+| Retries exhausted | status `DROPPED`, settled | no |
+
+```js
+#handleBroadcastFailure(tx, err) {
+  console.warn('Sign and Broadcast Error:', err);
+  tx.attempts++;
+  tx.error = String(err);
+  if (this.canRetry(tx)) {
+    this.appendToLane(tx);
+  } else {
+    tx.status = TX_STATUS.DROPPED;
+    this.settle(tx);
+    this.persist();
+  }
+}
+```
+
+A `SIGNING_TRANSACTION_SETTLED` event is dispatched on every terminal state — and
+**nothing in the codebase listens to it**. Most call sites are fire-and-forget: the
+deploy flow calls `.then()` with no handler and never inspects the status. So a dropped
+build transaction leaves an optimistic pending-build in the UI with no error shown.
+
+The auth flow is the one place it is done properly:
+
+```js
+if (registerTx.status === TX_STATUS.SUCCEEDED) { … }
+```
+
+**Do it the auth flow's way.** The queue already gives you the event and the status; the
+only missing piece is a listener that turns a `DROPPED` transaction into something the
+operator can see. That is a handful of lines, and it is the difference between an agent
+that knows its action failed and one that reports success it never achieved — see
+[AGENTS.md](../../AGENTS.md) rule 3, verify after acting.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/managers/WalletManager.js`,
+`SigningClientManager.js`, `SigningQueueManager.js`, `src/js/models/SigningTransaction.js`.*
+
+</document>
+
+<document>
+<source>develop/client/work-and-pow.md</source>
+# Work and proof-of-work
+
+**Purpose**: How a client computes the SHA-256 proofs that mining, refining, building and
+raiding require — and why the reference client spends most of its time deliberately idle.
+
+For the protocol itself — what the chain validates, the decay maths, the CLI path — see
+[knowledge/mechanics/hashing.md](../../knowledge/mechanics/hashing.md). This page is the
+client implementation.
+
+---
+
+## The hash
+
+Single-pass SHA-256 over an ASCII string, hex digest, checked for leading zeros. The
+webapp uses `js-sha256` rather than `SubtleCrypto`, because the loop needs to be
+synchronous and run millions of times.
+
+**Input format** — concatenation, no separators except the raid target delimiter:
+
+```
+{objectId}{TASK_TYPE}{blockStart}NONCE{nonce}          build, mine, refine
+{fleetId}@{planetId}RAID{blockStart}NONCE{nonce}       raid
+```
+
+Built as a prefix once, then completed per attempt:
+
+```js
+// src/js/factories/TaskStateFactory.js
+task_state.prefix = task_state.object_id + task_state.task_type
+                  + task_state.block_start + TASK.NONCE_PREFIX;
+
+// src/js/models/TaskState.js
+getMessage(nonce) { return this.prefix + nonce + this.postfix; }
+```
+
+`postfix` is always empty. `TASK.IDENTITY_PREFIX` exists in the constants and is never
+used — dead code, not a protocol feature.
+
+Worked examples:
+
+| Type | Full input for nonce `42` |
+|---|---|
+| Build | `5-1BUILD1283900NONCE42` |
+| Mine | `14-5MINE1283900NONCE42` |
+| Refine | `15-5REFINE1290000NONCE42` |
+| Raid | `4-5@6-10RAID1300000NONCE42` |
+
+**Difficulty is a count of leading hex zeros**, not a target integer:
+
+```js
+// src/js/workers/TaskWorker.js
+function difficultyCheck(hash, difficulty) {
+    for (let position = 1; position <= difficulty; position++) {
+        if (hash[position - 1] !== "0") {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+This matches `HashBuildAndCheckDifficulty` in the chain's `x/structs/types/work.go`
+exactly, which is what makes any conformant client interoperable.
+
+**Nonces start at a random point**, unlike the CLI which starts at 1:
+
+```js
+this.nonce_start = Math.floor(Math.random() * 10000000000);
+this.nonce_current = this.nonce_start;
+```
+
+Any nonce is valid, so this is purely a choice. It does mean two clients working the same
+task will not duplicate each other's effort.
+
+---
+
+## Difficulty decays, so waiting is cheaper than working
+
+```js
+// src/js/models/TaskState.js
+getCurrentDifficulty(){
+  const age = this.getCurrentAgeEstimate();
+  if (age <= 1) {
+    return 64;
+  }
+  let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
+  return Math.max(1, difficulty)
+}
+```
+
+`age` is blocks since the on-chain anchor. `difficulty_target` is the per-operation range
+(`build_difficulty`, `ore_mining_difficulty`, `ore_refining_difficulty`, or the planet's
+`planetary_shield` for raids). At `age <= 1` difficulty is 64, which is unreachable in
+practice; it falls to 1 once age reaches the range.
+
+**The client estimates age from the wall clock**, not by querying each iteration:
+
+```js
+getCurrentAgeEstimate() {
+  const current_time = new Date();
+  const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
+  this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
+  return this.block_current_estimated - this.block_start;
+}
+```
+
+At 6,000ms per block, anchored to a checkpoint refreshed from real block height. It can
+drift, which is exactly why the result is re-checked before submission.
+
+### The idle policy
+
+The worker refuses to start while difficulty is above 10, polling every ten seconds:
+
+```js
+if (state.status === TASK_STATUS.WAITING){
+    while (difficulty > TASK.DIFFICULTY_START) {   // DIFFICULTY_START = 10
+        await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
+        difficulty = state.getCurrentDifficulty();
+    }
+    state.setStatus(TASK_STATUS.RUNNING);
+    postMessage([state]);
+}
+```
+
+This is a **policy choice, not a protocol rule** — and it is a different choice from the
+`-D 3` this documentation recommends for the CLI. Difficulty 10 is 10 leading hex zeros,
+around 2^40 expected attempts; difficulty 3 is around 4,096. The webapp starts hashing
+far earlier than the CLI would and burns considerably more CPU for it.
+
+For an agent, `-D 3` remains the right default: initiate early, come back later, hash for
+milliseconds. `forceRun(pid)` is the escape hatch if you ever need a proof now regardless
+of cost.
+
+---
+
+## The worker loop
+
+```js
+let sessionIterations = 1;
+while (true) {
+    const nonce = state.getNextNonce();
+    const message = state.getMessage(nonce);
+    const hash = sha256(message);
+
+    if (difficultyCheck(hash, difficulty)){
+        state.setResult(nonce, message, hash, difficulty);
+        postMessage([state]);
+        break;
+    }
+
+    if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
+        state.iterations_since_last_start = sessionIterations;
+        postMessage([state]);
+    }
+
+    if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
+        difficulty = state.getCurrentDifficulty();
+
+        // Check to see if a previous hash result is now relevant again
+        if (state.result_exists && state.result_difficulty >= difficulty) {
+            state.setPreviousResult(difficulty);
+            postMessage([state]);
+            break;
+        }
+    }
+    sessionIterations++;
+}
+```
+
+Every five million iterations it reports progress and recomputes difficulty. That second
+job enables a neat trick: if you previously found a hash at difficulty 12, and decay has
+since brought the requirement down to 12 or below, that old hash is **now good enough**
+and the task completes without hashing again.
+
+### Orchestration
+
+One `Worker` per task, capped at five concurrent (`MAX_CONCURRENT_PROCESSES`); the rest
+queue. There is **no nonce-range partitioning** — each worker picks its own random start
+and never coordinates. Progress arrives on the main thread as periodic state snapshots,
+so the UI stays responsive even with five workers saturating cores.
+
+Cancellation is explicit. Mine and refine tasks are killed automatically when GRASS
+reports the cycle cleared (`block === 0`); raid tasks are killed when the raid ends or
+the target's shields come back up.
+
+---
+
+## Restoring after a reload
+
+**Proof-of-work progress is not persisted.** Nonce position, iteration counts and partial
+results are all lost on reload. But the *tasks* survive, because they are reconstructed
+from the server:
+
+```js
+async restoreTasksFromDB() {
+  if (Object.keys(this.processes).length || this.running_queue.length || this.waiting_queue.length) {
+    return;
+  }
+  const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
+  work.forEach((workTask) => {
+    const task = this.taskStateFactory.initTaskFromWork(workTask);
+    this.spawn(task);
+  });
+}
+```
+
+`GET /api/work/player/{id}` reads the guild stack's `view.work`, which derives outstanding
+work from chain state. Losing nonce progress costs nothing in expectation — every attempt
+is independent, so a restarted search has exactly the same expected remaining work as one
+that had been running for an hour.
+
+The lesson for your own client: **the chain already knows what work you owe**. You do not
+need to persist a task list, only to ask.
+
+---
+
+## Completion
+
+Before submitting, the client re-checks the proof against current difficulty:
+
+```js
+checkResultHashDifficulty() {
+  return this.result_difficulty >= this.getCurrentDifficulty();
+}
+```
+
+Because age is estimated from the wall clock, a proof found near a difficulty boundary can
+be stale by the time it surfaces. If it is, the task **respawns** rather than submitting a
+transaction that would fail on-chain. Worth copying.
+
+Valid proofs go out on the **immediate lane** — no charge cost:
+
+| Task | Message | Payload |
+|---|---|---|
+| Build | `/structs.structs.MsgStructBuildComplete` | `{ structId, proof, nonce }` |
+| Mine | `/structs.structs.MsgStructOreMinerComplete` | `{ structId, proof, nonce }` |
+| Refine | `/structs.structs.MsgStructOreRefineryComplete` | `{ structId, proof, nonce }` |
+| Raid | `/structs.structs.MsgPlanetRaidComplete` | `{ fleetId, proof, nonce }` |
+
+`proof` is the hex digest, `nonce` the winning integer. The raid message carries only the
+fleet ID — the chain reconstructs the planet from fleet position, so a mismatch there is
+not something you can paper over client-side.
+
+---
+
+## Task lifecycle
+
+```
+INITIATED → STARTING → WAITING → RUNNING → COMPLETED
+                          ↑         ↓
+                        PAUSED ←────┘        (capacity, or manager offline)
+              any state → TERMINATED         (kill, sweep, cycle cleared)
+              COMPLETED → STARTING           (proof went stale, respawn)
+```
+
+Tasks are spawned by GRASS events rather than by the code that requested the action:
+`struct_block_build_start`, `struct_block_ore_mine_start`,
+`struct_block_ore_refine_start`, and a shield-vulnerable raid status. The chain tells you
+when there is work; you do not assume it from your own transaction.
+
+The manager itself starts `OFFLINE` and comes online eight seconds after page load, which
+keeps five hashing workers from competing with initial render.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/workers/TaskWorker.js`,
+`src/js/managers/TaskManager.js`, `src/js/models/TaskState.js`,
+`src/js/factories/TaskStateFactory.js`. Cross-checked against
+`structsd/x/structs/types/work.go`.*
+
+</document>
+
+<document>
+<source>develop/client/realtime-grass.md</source>
+# Real-time events with GRASS
+
+**Purpose**: How the reference client consumes the live event stream — connection,
+the listener contract, the full listener catalogue, and what the stream will not do
+for you.
+
+For the event schema and subject taxonomy from the server side, see the
+[structs-streaming skill](../../.cursor/skills/structs-streaming/SKILL.md) and
+[api/streaming/event-types.md](../../api/streaming/event-types.md). This page is how a
+client wires it up.
+
+---
+
+## Connection
+
+NATS over WebSocket via `@nats-io/nats-core` 3.0.0, using `wsconnect`:
+
+```js
+this.nc = await natsCore.wsconnect({
+  servers: this.grassServerUrl,
+  maxReconnectAttempts: -1, // never give up on transient drops
+  reconnectTimeWait: 2000,
+  waitOnFirstConnect: true,
+});
+```
+
+The client runs **two managers**, both against `ws://{hostname}:1443`:
+
+| Manager | NATS subject | Listeners |
+|---|---|---|
+| `grassManager` | `structs.>` | all 25 game listeners |
+| `blockGrassManager` | `consensus` | `BlockListener` only |
+
+**No authentication is sent.** No token, no credentials. The scheme is `ws://`, not
+`wss://` — production TLS, if any, is handled by a reverse proxy outside this code.
+
+### Reconnection is doubly defended
+
+The NATS client retries forever on its own, and an outer supervisor loop catches anything
+that escapes it, with exponential backoff from 1s to a 30s ceiling:
+
+```js
+while (this.running) {
+  try {
+    this.nc = await natsCore.wsconnect({ … });
+    this.backoffMs = 1000;                       // reset on a good connect
+    this.subscription = this.nc.subscribe(this.subject);
+    for await (const message of this.subscription) { /* decode, fan out */ }
+  } catch (e) {
+    console.warn('[GrassManager] connection error:', this.subject, e);
+  }
+  await this.nc?.close();
+  if (!this.running) break;
+  await new Promise((resolve) => setTimeout(resolve, this.backoffMs));
+  this.backoffMs = Math.min(this.backoffMs * 2, this.backoffMax);
+}
+```
+
+Registered listeners live in a `Map` that persists across reconnects, so nothing needs
+re-registering. Malformed JSON is skipped; a listener that throws is caught and logged
+without killing the loop.
+
+> **Connection state never reaches the UI.** Drops are `console.warn` and nothing else.
+> A user can sit in front of a silently disconnected client watching stale numbers. If
+> you build anything operational on GRASS, surface the connection state — it is the
+> single highest-value addition to this subsystem.
+
+Note also that despite comments referring to them, there is no public `close()` or
+`reconnect()` on `GrassManager`. Only `init()`.
+
+---
+
+## One subscription, client-side filtering
+
+This is the architectural decision to understand: **there is one NATS subscription per
+manager, and every listener sees every message.** Listeners do not subscribe to subjects.
+They filter, in JavaScript, on fields in the decoded payload.
+
+```js
+getMessageData(message) {
+  return message.json();
+}
+
+shouldIgnoreMessage(messageData) {
+  return !messageData.hasOwnProperty('subject')
+    || !messageData.hasOwnProperty('category');
+}
+```
+
+Messages are JSON with `subject` and `category` as required envelope fields; anything
+missing either is dropped before listeners run.
+
+Subject strings inside the payload follow these shapes:
+
+| Pattern | Carries |
+|---|---|
+| `consensus` | block height |
+| `structs.player.{guildId}.{playerId}` | player consensus, address approve/revoke |
+| `structs.grid.player.{playerId}.{playerId}` | alpha, load, capacity, ore, lastAction |
+| `structs.grid.substation.{substationId}` | connection capacity |
+| `structs.grid.struct.{structId}.{playerId}` | struct fuel |
+| `structs.planet.{planetId}.{playerId}` | structs, combat, raids, shields, fleet, mining |
+| `structs.inventory.ualpha.{guildId}.{playerId}` | alpha sent / received / refined |
+| `structs.inventory.ualpha.infused.{guildId}.{playerId}` | infusion |
+| `structs.inventory.ualpha.defusing.{guildId}.{playerId}` | defusion |
+| `structs.address.register.{activationCode}` | pending device registration |
+
+Fan-out cost grows with listener count, since every listener runs its filter on every
+message. At 26 listeners this is fine. If you are building something that registers
+hundreds, subscribe to narrower NATS subjects instead.
+
+---
+
+## The listener contract
+
+```js
+export class AbstractGrassListener {
+  constructor(name) { this.name = name; }
+  handler(messageData) { throw new NotImplementedError(); }
+  shouldUnregister() { return false; }
+}
+```
+
+Three obligations: a unique `name`, a `handler`, and optionally `shouldUnregister`.
+
+```js
+registerListener(listener) { this.listeners.set(listener.name, listener); }
+unregisterListener(name)   { this.listeners.delete(name); }
+```
+
+> **`name` is a `Map` key, so duplicates silently overwrite.** `AlphaInfusedChangeListener`
+> always names itself `ALPHA_INFUSED_CHANGE`, so registering it for both infuse and defuse
+> replaces the first with the second. Namespace your listener names per instance —
+> several in the codebase already do, e.g. `CONSUME_ALPHA_CHANGE_{structId}`.
+
+### Self-unregistering listeners
+
+Many listeners exist to await exactly one event: a signup confirming, a device being
+approved, a transfer landing. The manager checks after each dispatch:
+
+```js
+this.listeners.forEach((listener) => {
+  try {
+    listener.handler(messageData);
+    if (listener.shouldUnregister()) {
+      this.unregisterListener(listener.name);
+    }
+  } catch (e) {
+    console.warn('[GrassManager] listener error:', listener.name, e);
+  }
+});
+```
+
+Two idioms are in use. Most one-shot listeners overwrite the method on the instance:
+
+```js
+this.shouldUnregister = () => true;
+```
+
+`StructListener` overrides it as a real method, tying its lifetime to a raid:
+
+```js
+shouldUnregister() {
+  if (this.gameState.keyPlayers[this.targetPlayerType].isRaidDependent()) {
+    return !this.gameState.getPlanetRaidInfoForKeyPlayer(this.targetPlayerType)?.isRaidActive();
+  }
+  return false;
+}
+```
+
+The check is synchronous, immediately after `handler()` returns. A listener that sets the
+flag inside a `.then()` will not be removed until the *next* message arrives — harmless
+here, but worth knowing if you build on it.
+
+---
+
+## The listener catalogue
+
+All on `structs.>` except `BlockListener`, which is on `consensus`.
+
+| Listener | Fires on | Does |
+|---|---|---|
+| `BlockListener` | `block` | Sets block height; dispatches `BLOCK_HEIGHT_CHANGED`. **This is the client's clock** — the signing queue and charge bar both hang off it |
+| `PlayerCreatedListener` | `player_consensus`, matching primary address | Logs in, finds a first planet. One-shot |
+| `NewPlanetListener` | `player_consensus` with `planet_id` | Fetches planet/fleet/structs, configures the map, navigates. One-shot |
+| `PlayerAlphaListener` | `alpha` | `setAlpha` |
+| `AlphaChangeListener` | `sent` / `received` / `refined` | Adjusts alpha by delta |
+| `AlphaInfusedChangeListener` | `infused` / `defusion_started` | Refreshes player, navigates to reactor. One-shot |
+| `ConsumeAlphaChangeListener` | `infused` for one struct | Refreshes alpha. One-shot |
+| `TransferSentListener` | `sent`, matching counterparty and amount | Navigates to the transaction page. One-shot |
+| `PlayerLoadListener` | `load` | `setLoad` |
+| `PlayerCapacityListener` | `capacity` | `setPlayerCapacity` |
+| `PlayerStructsLoadListener` | `structsLoad` | `setStructsLoad` |
+| `ConnectionCapacityListener` | `connectionCapacity` | `setConnectionCapacity` |
+| `KeyPlayerLastActionListener` | `lastAction` | **Updates the confirmed charge base.** The signing queue depends on this |
+| `KeyPlayerOreListener` | `ore` | `setOre`, optional planet refresh |
+| `KeyPlayerShieldChangeStatusListener` | `shield_change`, `block_raid_start` | Updates shield info |
+| `StructListener` | `struct_block_build_start`, `struct_status`, `struct_move`, `struct_defense_add`/`remove`, `struct_attack` | The big one: refreshes structs, enqueues combat animations, spawns and kills build tasks |
+| `StructMineStatusListener` | `struct_block_ore_mine_start` | Spawns or kills the MINE proof-of-work task |
+| `StructRefineStatusListener` | `struct_block_ore_refine_start` | Spawns or kills the REFINE task |
+| `GridStructListener` | `fuel` for one struct | Updates fuel, releases the action-bar lock. One-shot |
+| `RaidStatusListener` | `raid_status`, `fleet_depart`/`arrive` on the target | Full offensive raid lifecycle |
+| `PlanetRaidStatusListener` | `raid_status` on your own planet | Defensive raid lifecycle |
+| `PlayerAddressApprovedListener` | `player_address` approved | Refreshes devices, navigates. One-shot |
+| `PlayerAddressApprovedLoginListener` | `player_address` approved for the signing address | Navigates to device activation. One-shot |
+| `PlayerAddressPendingCreatedListener` | `player_address_pending` | Prompts to approve a new device. One-shot |
+| `PlayerAddressRevokedListener` | `player_address` revoked | Logs out or refreshes devices. One-shot |
+| `RecoverAccountAddressApprovedListener` | `player_address` approved for recovery | Completes mnemonic login. One-shot |
+
+Registration is spread across `index.js` (block), `AuthManager` (auth and device flows),
+`RaidManager`, and several view models that register a one-shot listener for the event
+they are waiting on and then navigate.
+
+---
+
+## Reaching the UI
+
+Three patterns, in increasing order of side effects.
+
+**GRASS → GameState setter → CustomEvent → component.** The common case:
+
+```js
+// PlayerAlphaListener
+this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(parseInt(messageData.value));
+// → KeyPlayer.setAlpha dispatches SaveGameStateEvent + AlphaCountChangedEvent
+// → AlphaOwnedComponent updates its text node
+```
+
+**GRASS → direct CustomEvent**, for things with no natural model home — block height.
+
+**GRASS → side effects**, where a listener calls the REST API, navigates the router, or
+pushes onto the [animation queue](rendering-entities.md#the-animation-event-queue).
+`StructListener` does all three.
+
+---
+
+## What the stream will not do for you
+
+| | |
+|---|---|
+| **No replay** | Messages sent while you were disconnected are gone. There is no backfill and no sequence gap detection |
+| **No deduplication** | Nothing keyed on a message ID |
+| **No ordering guarantee** | Handled sequentially in one loop, but async work inside handlers is fire-and-forget and can interleave |
+| **Lag behind chain** | GRASS trails the chain by one to two blocks. The signing queue accounts for this; your code should too |
+| **Silence on disconnect** | No indicator, no event |
+
+Which is why the architecture in [index.md](index.md) matters: **REST is authoritative,
+GRASS keeps you current.** Re-fetch on login and after anything significant. A client that
+treats the stream as its source of truth will drift, and it will drift silently — the
+worst failure mode there is, because everything keeps looking fine.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/framework/GrassManager.js`,
+`src/js/framework/AbstractGrassListener.js`, `src/js/grass_listeners/`.*
+
+</document>
+
+<document>
+<source>develop/client/rendering-entities.md</source>
+# Rendering entities
+
+**Purpose**: How players and structs are drawn — layered PFP compositing, struct art
+selection, the Lottie lifecycle, and the queue that keeps combat animations coherent.
+
+---
+
+## Profile pictures
+
+A player's avatar is not an image file. It is **five PNG layers composited by index**,
+painted back to front: background, arms, body, neck, head.
+
+```js
+// src/js/view_models/components/PfpViewerComponent.js
+const layers = [
+  ['background', this.pfp.background],
+  ['arms', this.pfp.arms],
+  ['body', this.pfp.body],
+  ['neck', this.pfp.neck],
+  ['head', this.pfp.head],
+];
+
+return layers
+  .filter(([, index]) => index !== null && index !== undefined)
+  .map(([part, index]) =>
+    `<img class="pfp-viewer-layer" src="/img/pfp/${part}/pfp_${part}_${index}.png" alt="">`
+  )
+  .join('');
+```
+
+Path convention is `/img/pfp/{part}/pfp_{part}_{index}.png`. All five layers are absolutely
+positioned at 72×72 in the portrait container, so later DOM nodes paint on top.
+
+Indices are **1-based** and bounded by:
+
+```js
+// src/js/constants/PfpConstants.js
+head: 87, neck: 10, body: 57, arms: 34, background: 6
+```
+
+That is 87 × 10 × 57 × 34 × 6 ≈ 10.1 million combinations from 194 assets.
+
+The indices live on the player as `pfp_client_render_attributes`, parsed from chain data
+by `PlayerFactory`. Note the trap: `Player` also has a `pfp` string field that is **not
+used for rendering**. Reading it and expecting an image URL is a natural mistake.
+
+Two fallback behaviours, and one gap:
+
+- No attributes at all, or unparseable JSON → `/img/portrait-placeholder.png`.
+- An individual layer index that is `null` → that layer is skipped.
+- **An out-of-range index is not validated.** The browser requests a URL that doesn't
+  exist and you get a broken image. Clamp against `PFP_PART_COUNTS` yourself.
+
+Rendering a PFP requires no network call beyond the layer PNGs, which makes it cheap to
+show avatars in a long roster. Randomising one at signup is `Math.floor(Math.random() *
+count) + 1` per layer.
+
+---
+
+## Struct art
+
+Two rendering modes, and the choice between them is about state, not about quality.
+
+| Mode | Used for |
+|---|---|
+| **Static still** — layered PNGs | Resting appearance on a map tile |
+| **Lottie animation** — SVG | Combat, deployment, movement, stealth, destruction, active loops |
+
+### Stills
+
+`StructTypeArtSetBuilder` maps each struct type to its PNG layers under `/img/structs`:
+
+```js
+buildCruiser(structType) {
+  const art = new StructTypeArtSet(structType);
+  art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE]  = this.structImageDir + '/cruiser/cruiser-struct-base.png';
+  art[STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG]   = this.structImageDir + '/cruiser/cruiser-struct-dmg.png';
+  art[STRUCT_WEAPON_SYSTEM.PRIMARY_WEAPON]      = this.structImageDir + '/cruiser/cruiser-top-weapon-ballistic.png';
+  art[STRUCT_WEAPON_SYSTEM.SECONDARY_WEAPON]    = this.structImageDir + '/cruiser/cruiser-top-weapon-smart.png';
+  art[STRUCT_WATER_RIPPLE]                      = this.structImageDir + '/cruiser/cruiser-bottom-ripples.png';
+  return art;
+}
+```
+
+Variant selection is driven by health, with per-type layout differences — a Frigate puts
+its primary weapon on the bottom detail layer, a Cruiser on top:
+
+```js
+renderHTML(currentHealth = -1, structVariant = '') {
+  if (currentHealth === 0) {
+    return `<div class="struct-still"></div>`;      // destroyed: nothing
+  }
+  if (structVariant === '') {
+    structVariant = (0 < currentHealth && currentHealth < this.structType.max_health)
+      ? STRUCT_STILL_LAYERS.STRUCT_VARIANT_DMG
+      : STRUCT_STILL_LAYERS.STRUCT_VARIANT_BASE;
+  }
+  return `
+    <div class="struct-still">
+      ${this.renderTopDetailLayers(structVariant)}
+      ${this.renderStructVariant(structVariant)}
+      ${this.renderBottomDetailLayers(structVariant)}
+    </div>
+  `;
+}
+```
+
+Three z-index bands order the layers: bottom detail 100, body 200, top detail 300.
+
+Stealth is handled two ways. Most types get 50% opacity via `struct-stealth-active`; a
+Submersible swaps to a dedicated `STRUCT_VARIANT_HIDDEN` sprite, because a half-transparent
+submarine is not the same idea as a submerged one.
+
+Note that `StructTypeArtSetBuilder` has no art set for Continental Power Plant or World
+Engine, and will throw if asked for one. Those types presumably never reach a tactical
+map, but guard for it if your surface is more general.
+
+### Lottie
+
+`lottie-web` 5.12.2, loaded from `/js/vendor/`, always with the SVG renderer. Animation
+JSON lives at predictable paths:
+
+```
+/lottie/deployment_{space|air|land|water}/data.json      shared by ambit
+/lottie/attack_primary_weapon/{snake_case_type}/data.json    per struct type
+/lottie/stealth_activate/{snake_case_type}/data.json         per struct type
+```
+
+The still and the animation are mutually exclusive: playing an animation hides the still
+container, and structs with an active loop (extractors and refineries while online) hide
+the still permanently in favour of the loop.
+
+**Lottie lifecycle is where the memory leaks are**, and the reference client is explicit
+about it:
+
+```js
+/**
+ * Tear down all lottie players owned by this viewer. Must be called before
+ * the viewer is dereferenced (e.g. when its tile is cleared or the viewer
+ * is replaced), otherwise lottie-web's internal animation registry keeps
+ * the JSON, image bitmaps, rAF subscription, and DOM listeners alive.
+ */
+```
+
+Dropping the reference is not enough — `lottie-web` holds its own registry. The teardown
+chain is `MapStructViewerComponent.destroy()` → `lottieCustomPlayer.destroyAll()` →
+`animation.destroy()`, and the map layer calls it **before** overwriting a tile, not
+after.
+
+Animations load lazily on first play. During playback the client swaps struct PNGs into
+named SVG placeholders (`.struct_init`, `.struct_top_layer_1`), using a generation counter
+so a stale async swap from a previous animation cannot land on the current one.
+
+---
+
+## The animation event queue
+
+A single attack produces a burst of GRASS events: the attacker fires, the defender
+evades, a point-defence cannon counters, a struct takes damage, a struct is destroyed.
+Played concurrently, they trample each other's partial state — health bars and still
+images end up showing a mixture of moments that never existed.
+
+`AnimationEventQueue` serialises them globally. One animation plays at a time, and the
+next starts only when the previous reports it has ended:
+
+```js
+// src/js/data_structures/AnimationEventQueue.js
+enqueue(event) {
+  super.enqueue(event);
+  if (!this.isPlaying) {
+    this.playNext();
+  }
+}
+
+playNext() {
+  if (this.isEmpty()) {
+    const wasPlaying = this.isPlaying;
+    this.isPlaying = false;
+    this.currentEvent = null;
+    if (wasPlaying) {
+      window.dispatchEvent(new CustomEvent(EVENTS.ANIMATION_QUEUE_EMPTY));
+    }
+    return;
+  }
+  this.isPlaying = true;
+  this.currentEvent = super.dequeue();
+  window.dispatchEvent(this.currentEvent);
+}
+```
+
+`StructListener.handleStructAttack` expands one `struct_attack` message into an ordered
+list of `AnimationEvent`s and enqueues them in narrative order.
+
+Three consequences ripple outward from this design, and each is worth copying:
+
+**Game state and displayed state diverge on purpose.** `gameState` holds the final
+post-attack values the moment the event arrives, while animation events carry
+`options.healthAfter` so each step shows the health at *that* moment. The bars catch up as
+the sequence plays.
+
+**Other renderers defer to the queue.** The HUD layer holds back struct-HUD renders while
+an animation is playing and flushes them on `ANIMATION_QUEUE_EMPTY`:
+
+```js
+if (this.gameState.animationEventQueue && this.gameState.animationEventQueue.isPlaying) {
+  this.deferredHudRenders.set(event.struct.id, event.struct);
+  return;
+}
+```
+
+`StructManager` likewise skips showing a still while `isStructAnimating(struct.id)`, so a
+routine refresh cannot tear down a Lottie mid-play.
+
+**Chained side effects hang off `onAnimationEnd`.** A move sequence clears the old tile
+and refreshes the struct after the departure animation and before the arrival one, which
+is the only way to get that ordering right.
+
+Deployment animations are the exception: they autoplay when a struct first renders after
+being built, bypassing the queue entirely, because nothing else is competing at that
+moment.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21):
+`src/js/view_models/components/PfpViewerComponent.js`, `StructStillRenderer.js`,
+`MapStructViewerComponent.js`, `MapStructLottieAnimationSVG.js`,
+`src/js/data_structures/AnimationEventQueue.js`.*
+
+</document>
+
+<document>
+<source>develop/client/map.md</source>
+# The map
+
+**Purpose**: How the tactical map is built — the ambit stack, the tile grid, fog of war,
+and the picture-in-picture trick that keeps combat visible while you scroll.
+
+---
+
+## It's DOM, not canvas
+
+The whole map is nested `<div>` elements with CSS background sprites. No canvas, no WebGL.
+That sounds naive for a game map and turns out to be the right call: tiles are 128×128
+pixel art on a fixed grid, the whole thing scales with a CSS `transform`, and every tile
+is inspectable and event-targetable for free.
+
+Seven stacked layers:
+
+```js
+// src/js/view_models/components/map/MapComponent.js
+return `
+  <div id="${this.mapId}" class="map">
+    <div id="${this.terrainId}" class="map-terrain"></div>
+    <div id="${this.ornamentsId}" class="map-ornaments"></div>
+    <div id="${this.markersId}" class="map-markers"></div>
+    <div id="${this.structLayerId}" class="map-struct-layer"></div>
+    <div id="${this.structHUDLayerId}" class="map-struct-hud-layer"></div>
+    <div id="${this.fogOfWarId}" class="map-fog-of-war-anchor"></div>
+    <div id="${this.tileSelectionId}" class="map-tile-selection"></div>
+  </div>
+`;
+```
+
+Terrain, structs and struct HUD all share identical row and column geometry, so a tile at
+grid position (row, col) means the same place in all three. Tile size is 128×128,
+matching `--tile-width` and `--tile-height` in `sui.css`.
+
+---
+
+## The ambit stack
+
+Only ambits the planet actually has are rendered — the planet's slot counts decide — and
+they always stack in the same order, top to bottom: **space, air, land, water**.
+
+```js
+// src/js/models/Planet.js
+getAmbits() {
+  const ambits = [];
+  if (this.space_slots && this.space_slots > 0) { ambits.push(AMBITS.SPACE); }
+  if (this.air_slots   && this.air_slots   > 0) { ambits.push(AMBITS.AIR); }
+  // … land, water
+}
+```
+
+`.map-terrain` is a column flexbox, so DOM order is visual order. Each ambit is two rows
+of tiles (`MAP_TILE_ROWS_PER_AMBIT = 2`).
+
+### Transitions between ambits
+
+Between every pair of ambits — and after the last one — sits a 128px transition band, so
+the map reads as a continuous vertical slice of a world rather than as stacked strips:
+
+```js
+for (let i = 0; i < ambits.length; i++) {
+  let transition = this.transitionBuilder.make(this.mapColCount, lastAmbit, ambits[i]);
+  html += transition.renderHTML();
+  html += (new MapTerrainAmbitComponent(…)).renderHTML();
+  if (i === ambits.length - 1) {
+    transition = this.transitionBuilder.make(this.mapColCount, ambits[i]);
+    html += transition.renderHTML();
+  }
+}
+```
+
+Some transitions are named rather than generic — entering land gets a `HORIZON` band.
+
+The struct and HUD layers insert their own transition rows at the same offsets, tagged
+`data-tile-type="TRANSITION"`, purely to keep the three grids aligned.
+
+---
+
+## Tiles
+
+Terrain tile classes encode ambit plus position within the ambit block:
+
+```js
+// src/js/util/TileClassNameUtil.js
+getTileClassName(ambit, verticalPos, horizontalPos) {
+  return `tile-${ambit.toLowerCase()}-${verticalPos}-${horizontalPos}`;
+}
+```
+
+Vertical is `top`/`middle`/`bottom`, horizontal is `left`/`middle`/`right`, giving classes
+like `.tile-space-top-left` backed by `/img/tiles/space/space-1-1-top-left.png`. Edge
+variants (`tile-{ambit}-edge-…`, `tile-horizon-…`) handle the transition bands.
+
+Struct-layer tiles carry their identity in data attributes rather than in classes, which
+is what makes hit-testing a click trivial:
+
+```html
+<div class="map-struct-layer-tile mod-side-left"
+     data-tile-type="PLANETARY_SLOT"
+     data-side="left"
+     data-player-id="4-118"
+     data-ambit="land"
+     data-slot="2"
+     data-struct-id=""></div>
+```
+
+Columns run: defender command ship, planetary slots, defender fleet, a divider, attacker
+fleet, attacker command ship. Attacker-side tiles are mirrored with a single CSS rule:
+
+```css
+.map-struct-layer-tile.mod-side-right { transform: scaleX(-1); }
+```
+
+---
+
+## Fog of war
+
+Two mechanisms for the same idea, applied at different layers.
+
+**An overlay** covers everything from the divider rightwards, but only when you are
+looking at your own planet with no attacker present:
+
+```js
+shouldDisplayFogOfWar() {
+  return !this.attacker && (this.perspective === MAP_PERSPECTIVES.DEFENDER);
+}
+```
+
+It is a left edge sprite plus a repeating body, sized in pixels from the divider position.
+
+**Fog tiles** replace attacker-side struct tiles with `data-tile-type="FOG_OF_WAR"`
+carrying `icon-unknown-territory`. These hold the grid positions so geometry stays
+consistent, while making the tiles non-interactive and visibly unknown.
+
+The distinction matters when you are building a scouting or intel view: the overlay is
+cosmetic, the tile type is what your click handling should key off.
+
+---
+
+## The struct layer
+
+`MapStructLayerComponent.renderStruct()` resolves a tile's `data-*` attributes to a struct
+and then takes one of three paths: no struct → destroy any old viewer and clear the tile;
+unbuilt struct → show the deployment indicator; built struct → create a
+`MapStructViewerComponent` and mount it.
+
+**The old viewer is always destroyed before the tile is overwritten**, for the Lottie
+reasons in [rendering-entities.md](rendering-entities.md#lottie).
+
+Updates arrive as `window` CustomEvents, so the map never polls:
+
+| Event | Effect |
+|---|---|
+| `RENDER_ALL_STRUCTS` | Full resync |
+| `RENDER_STRUCT` | Re-render one struct |
+| `ANIMATION` | Play a queued animation on the matching viewer |
+| `RENDER_DEPLOYMENT_INDICATOR` | Show the building indicator |
+| `CLEAR_STRUCT_TILE` | Clear |
+| `SHOW`/`CLEAR_DEFEND_TARGETS`, `SHOW`/`CLEAR_ATTACK_TARGETS` | Targeting highlights |
+
+The chain of custody for a live update is worth tracing once:
+GRASS → `StructListener` → `StructManager.refreshStruct()` → `RenderStructEvent` or an
+enqueued animation → the map layer.
+
+---
+
+## Picture-in-picture
+
+A neat solution to a real problem. The map is larger than the viewport and scaled with a
+CSS `transform`, so during a combat sequence the struct that is currently animating may be
+entirely off-screen — you hear about a battle you cannot see.
+
+`MapPictureInPictureComponent` is a fixed 128×128 viewport appended to `document.body`
+(outside the scaled container, so it can position against the viewport) that mirrors the
+animating struct whenever its real tile is fully off-screen. It slides in from whichever
+side the struct is on, tracks visibility on scroll and resize, and slides out when the
+[animation queue](rendering-entities.md#the-animation-event-queue) drains.
+
+The critical detail is one flag:
+
+```
+ * The PIP's struct viewer runs in "muted" mode (no `AnimationEndEvent`
+ * dispatch) so its lottie completions can't drive the global
+ * `AnimationEventQueue`.
+```
+
+Two viewers play the same animation, so without muting, the queue would advance twice per
+event and the sequence would run at double speed and then desynchronise. Any time you
+mirror an animation, mute the copy.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21):
+`src/js/view_models/components/map/`, `src/js/util/TileClassNameUtil.js`,
+`src/js/models/Planet.js`.*
+
+</document>
+
+<document>
+<source>develop/client/desktop-extensions.md</source>
+# Extending Structs Desktop
+
+**Purpose**: How to add capability to [structs-desktop](../repos.md) — a new MCP tool, a
+new board page, or agent-driven UI — rather than how to use what's already there.
+
+For *using* the existing tools, see [TOOLS.md](../../TOOLS.md) and
+[knowledge/infrastructure/structs-desktop.md](../../knowledge/infrastructure/structs-desktop.md).
+
+Structs Desktop is Tauri 2: a Rust backend (`src-tauri/`) hosting an embedded MCP server,
+and a webview frontend (`frontend/`) built on [SUI](../ui/index.md). The two halves are
+worth understanding separately, because most contributions touch only one.
+
+---
+
+## Adding an MCP tool
+
+Tools live in `src-tauri/src/mcp/tools/`, one module per surface:
+
+```
+action.rs   board.rs      board_pages.rs  dashboard.rs  doctrine.rs
+events.rs   format.rs     hasher.rs       intel.rs      map.rs
+mass_action.rs  players.rs  policy.rs     sequence.rs   strike.rs  system.rs
+```
+
+They surface as the `structs_*` tool family: `structs_action`, `structs_intel`,
+`structs_sequence`, `structs_dashboard`, `structs_map`, `structs_strike`,
+`structs_doctrine`, `structs_policy`, `structs_hash`, `structs_ui`, and others.
+
+The shape to follow is **one tool per surface with an operation parameter**, not one tool
+per operation. `structs_action` covers every game action rather than exposing forty
+separate build/move/attack tools. That keeps the tool list legible to a model — which is
+the actual constraint, since a long flat tool list degrades selection accuracy.
+
+Around the tools sit the pieces that make them safe and fast, and a new tool should reuse
+rather than reimplement them:
+
+| Module | Provides |
+|---|---|
+| `tx_queue.rs`, `tx_retry.rs`, `txq_bridge.rs` | Transaction queueing and retry — the same serialise-don't-track-sequences discipline as the [webapp queue](actions-and-signing.md#the-dual-lane-queue) |
+| `policy.rs` | Capability gating. Anything that signs must pass policy |
+| `error_translator.rs` | Chain errors into text an agent can act on |
+| `enrich.rs`, `roster_cache.rs` | Resolving IDs to names without a round trip per lookup |
+| `event_buffer.rs`, `board_feed.rs` | The event stream behind the board |
+| `telemetry.rs`, `watchdog.rs` | Health and liveness |
+
+The automation loops (`auto_build.rs`, `auto_harvest.rs`, `auto_defend.rs`,
+`auto_raid.rs`, `auto_infuse.rs`, `auto_response.rs`) are the closest thing to worked
+examples of a long-running background capability, and `loop_util.rs` holds the shared
+cadence machinery.
+
+---
+
+## Adding a board page
+
+The Team Ops board (`frontend/board.html` + `board.js` + `board-pages.js`) is a
+nine-page operations console built entirely on SUI. Pages self-register:
+
+```js
+Board.registerPage = function (name, def) {
+  def = def || {};
+  def.lastRun = 0;
+  Board.pages[name] = def;
+};
+```
+
+A page definition is small:
+
+```js
+Board.registerPage('energy', {
+  refresh: renderEnergy,
+  cadenceMs: 30000,
+  onEnter: renderEnergy,
+});
+```
+
+| Key | Meaning |
+|---|---|
+| `refresh` | Called on the cadence while the page is visible. Return a promise if async |
+| `cadenceMs` | How often. Existing pages range from 2.5s (`tx`) to 30s (`energy`) |
+| `onEnter` | Called once when the page becomes visible — usually the same function, for an immediate paint |
+
+**Pick the cadence from how fast the underlying thing changes**, not from how fresh you'd
+like it to feel. Transactions settle per block, so `tx` polls at 2.5s. Energy allocations
+change when someone changes them, so 30s is generous. Every page polling at 1s is how a
+console becomes a load generator against its own backend.
+
+The existing pages are `ops`, `armada`, `energy`, `work`, `inventory`, `diagnostics`,
+`tx`, `grass`, `war`, `config` and `map` — read one near what you're building. They all
+use the shared helpers at the top of `board.js` (`esc`, `el`, `row`, card builders) which
+are the same idea as [sui-kit.js](../ui/examples/sui-kit.js).
+
+Two lessons the board learned the hard way are documented in comments in `board.js` and
+generalise to any agent-facing feed:
+
+**Collapse repetition.** A live sample of the event stream was 85 of 104 entries from
+three message templates, 54 of them the same automation line. Consecutive entries from
+the same source with the same shape now collapse into one row with a count.
+
+**Sort by severity, not only by time.** Important entries are pinned into a NEEDS YOU
+card above the stream as well as appearing in it. Chronological order alone buries the
+raid alarm under routine chatter.
+
+---
+
+## Serving SUI over HTTP: `rebase_css_urls`
+
+The board is served under `/board`, but `sui.css` references its assets from the web root
+(`url("/img/sui/…")`). This is [the asset-path gotcha](../ui/gotchas.md#asset-paths-are-root-absolute),
+and Structs Desktop solves it by rewriting CSS on the way out:
+
+```rust
+/// Prefix root-absolute `url(...)` targets with `/board`. Leaves relative URLs,
+/// `data:` URIs and absolute URLs with a scheme untouched.
+fn rebase_css_urls(bytes: &[u8]) -> Vec<u8> {
+    let Ok(css) = std::str::from_utf8(bytes) else {
+        return bytes.to_vec();
+    };
+    let mut out = String::with_capacity(css.len() + 512);
+    let mut rest = css;
+    while let Some(i) = rest.find("url(") {
+        out.push_str(&rest[..i + 4]);
+        rest = &rest[i + 4..];
+        // Preserve whichever quote style the source used.
+        let quote = rest.chars().next().filter(|c| *c == '"' || *c == '\'');
+        let after_quote = if quote.is_some() { &rest[1..] } else { rest };
+        if let Some(q) = quote {
+            out.push(q);
+        }
+        if after_quote.starts_with('/') {
+            out.push_str("/board");
+        }
+        rest = after_quote;
+    }
+    out.push_str(rest);
+    out.into_bytes()
+}
+```
+
+It only touches targets beginning with `/`, so relative paths, `data:` URIs and
+`https://` URLs pass through unchanged, and it preserves the original quote style. Port
+this to whatever language you are serving from — it is about fifteen lines and it is the
+difference between a styled board and a page of invisible icons.
+
+The board is also available over SSE (`board_events`), with keep-alive comments roughly
+every 15 seconds so SSH tunnels don't idle out. Lagged receivers are allowed to skip,
+because each page re-polls on its own cadence anyway.
+
+---
+
+## Agent-driven UI, and its hard limit
+
+`ui_bridge.rs` lets an agent push declarative UI directives into the webview — a `notify`
+to say something, or a `prompt` to ask something and await the answer.
+
+The constraint is absolute and stated in the module header:
+
+```
+//! UI directives are display/elicitation only — they CANNOT sign. Any action the
+```
+
+An agent can ask a human a question. It cannot use the UI channel to obtain a signature.
+Anything that signs goes through the transaction queue and through `policy.rs`, where the
+human's configured capabilities apply. Keeping display and authority on separate paths is
+what makes it safe to let a model drive the interface at all — see
+[SAFETY.md](../../SAFETY.md).
+
+Three further guards worth knowing before you build on it:
+
+- The whole channel is behind an `agent_ui` policy toggle the human controls. Disabled
+  means directives are dropped, not queued.
+- Rate limiting is a sliding window; excess directives are dropped.
+- A `notify` that cannot reach a window degrades to a one-line board entry rather than
+  disappearing.
+
+Directives are deduped by `directive_id`, so a repeated push is harmless. Take advantage
+of that: retrying is safer than tracking whether the first attempt landed.
+
+---
+
+*Verified against structs-desktop at the pinned reference checkout:
+`src-tauri/src/mcp/`, `frontend/board.js`, `frontend/board-pages.js`.*
+
+</document>
+
+<document>
+<source>develop/repos.md</source>
+# The Structs repositories
+
+**Purpose**: Which repository to read for what, and which one wins when they disagree.
+
+All under [github.com/playstructs](https://github.com/playstructs).
+
+---
+
+## The hierarchy of truth
+
+When two sources conflict — and they do — resolve in this order:
+
+1. **[structsd](https://github.com/playstructs/structsd)** for chain rules. What the
+   validator accepts is not negotiable.
+2. **[structs-webapp](https://github.com/playstructs/structs-webapp)** for the design
+   system and client behaviour. It is what the game is actually played through.
+3. **[structs-desktop](https://github.com/playstructs/structs-desktop)** for
+   agent-facing and desktop-specific patterns.
+4. **[structs-ui](https://github.com/playstructs/structs-ui)** for illustrative markup
+   only. It is years behind.
+
+Everything in `develop/ui/` and `develop/client/` is written from source at a pinned
+revision, recorded in `.structs-webapp-version` and cited at the foot of each page.
+
+---
+
+## structsd — the chain
+
+The Cosmos SDK application. Go, module at `x/structs/`.
+
+Read it when you need to know what the chain *actually enforces*: message handlers in
+`x/structs/keeper/msg_server_*.go`, the proof-of-work validator in
+`x/structs/types/work.go`, permission bits, and the event definitions that become GRASS
+messages.
+
+Install: [structsd-install skill](../.cursor/skills/structsd-install/SKILL.md).
+
+## structs-webapp — the flagship client
+
+Symfony 7.2 backend, custom vanilla-JS MVVM frontend, Webpack. This is the canonical
+source for two separate things, and it is worth being clear which is which.
+
+**The SUI design system** lives in `src/public/css/sui/sui.css`,
+`src/public/css/structicons.css`, `src/js/sui/`, and the fonts and art under
+`src/public/fonts/` and `src/public/img/`. Documented in [develop/ui/](ui/index.md).
+
+**The reference client** lives in `src/js/` — signing queue, proof-of-work workers, GRASS
+listeners, game state, map. Documented in [develop/client/](client/index.md).
+
+Layout worth knowing:
+
+```
+src/
+  public/css/sui/sui.css        the design system
+  public/css/structicons.css    glyph icon font
+  public/img/sui/               component art (checkboxes, panels, battery)
+  js/sui/                       the four optional SUI behaviours
+  js/framework/                 MenuPage, router, GrassManager, base classes
+  js/managers/                  wallet, signing, tasks, auth, raid, struct
+  js/grass_listeners/           26 real-time listeners
+  js/view_models/               pages and components
+  js/factories/                 JSON to model
+  js/workers/TaskWorker.js      proof-of-work
+  js/ts/structs.structs/        generated protobuf types and registry
+  src/                          Symfony PHP: API controllers, auth, managers
+```
+
+## structs-desktop — Tauri app and embedded MCP
+
+Rust backend hosting an MCP server, plus a SUI-based Team Ops board in a webview. The
+primary agent interface. Extending it: [develop/client/desktop-extensions.md](client/desktop-extensions.md).
+Using it: [TOOLS.md](../TOOLS.md).
+
+## structs-pg — the guild database
+
+PostgreSQL schema and views backing the Guild API. Read it when you need query shapes or
+want to understand where a REST field comes from.
+See [knowledge/infrastructure/database-schema.md](../knowledge/infrastructure/database-schema.md)
+and the [guild-stack skill](../.cursor/skills/structs-guild-stack/SKILL.md).
+
+## structs-grass — the event fan-out
+
+NATS-based real-time event distribution. Client side:
+[develop/client/realtime-grass.md](client/realtime-grass.md). Event catalogue:
+[api/streaming](../api/streaming/event-types.md).
+
+## structs-ui — the published gallery
+
+Serves <https://structs.design>. A single `index.html` with sections for icons, messages,
+panels, screens, text and the cheatsheet.
+
+**Treat it as illustrative, not authoritative.** Its last commit is June 2024. Its
+`sui.css` is 2,323 lines against the webapp's 2,701, and it is missing `SUIOffcanvas` and
+`SUICheatsheet` entirely. It is genuinely useful for seeing components rendered and for
+copying markup shapes — just verify anything you take from it against the webapp before
+relying on it.
+
+---
+
+## Working with these locally
+
+The docs assume checkouts under `.references/`:
+
+```bash
+mkdir -p .references && cd .references
+git clone --depth 50 https://github.com/playstructs/structs-webapp.git
+git clone --depth 50 https://github.com/playstructs/structs-desktop.git
+git clone --depth 50 https://github.com/playstructs/structsd.git
+git clone --depth 50 https://github.com/playstructs/structs-pg.git
+git clone --depth 50 https://github.com/playstructs/structs-ui.git
+```
+
+`.references/` is git-ignored. The documentation tooling reads `structs-webapp` from
+there by default, overridable with `STRUCTS_WEBAPP`:
+
+```bash
+scripts/gen-sui-inventory.sh      # extract the SUI ground truth
+scripts/check-webapp-drift.sh     # what changed upstream since the pin
+```
+
+See [develop/maintenance.md](maintenance.md) for the review cycle these support.
+
+</document>
+
+<document>
+<source>develop/frontend-architecture.md</source>
+# Frontend architecture
+
+**Purpose**: The MVVM layer structs-webapp wraps around its client subsystems — router,
+view models, components, build — and an honest read on which parts to copy.
+
+This is the scaffolding. The interesting machinery is in
+[develop/client/](client/index.md); the visual system is in [develop/ui/](ui/index.md).
+
+---
+
+## No framework
+
+There is no React, Vue or Svelte. The pattern is hand-rolled:
+
+| Layer | Location | Role |
+|---|---|---|
+| Model | `js/models/`, `js/dtos/` | Plain classes holding game data |
+| ViewModel | `js/view_models/` | Builds HTML strings, binds DOM events |
+| Controller | `js/controllers/` | Instantiates a view model per page |
+| Shell | `js/framework/MenuPage.js` | The DOM chrome: nav, body, dialogue panels |
+
+Templates are **template literals returning HTML strings**, injected with `innerHTML`.
+There is no virtual DOM and no reactivity — a component that needs to update listens for
+an event and rewrites its own text node.
+
+---
+
+## The view model lifecycle
+
+The base class is one method:
+
+```js
+export class AbstractViewModel {
+  render() {
+    throw new NotImplementedError();
+  }
+}
+```
+
+Everything else is convention rather than contract:
+
+1. **Constructor** — take dependencies (`gameState`, `guildAPI`, managers, element IDs).
+2. **`render()`** — fetch if async, build the HTML string, inject it via
+   `MenuPage.setBodyContent()` or `setPageTemplateContent()`, then call `initPageCode()`.
+3. **`initPageCode()`** — attach listeners, initialise child components.
+
+> **There is no teardown.** Navigating away replaces the DOM by assignment; listeners on
+> removed nodes are collected with them. That works for listeners bound to elements
+> inside the page, and **not** for listeners bound to `window` — which is most
+> live-updating components. Those self-remove by checking whether their element still
+> exists when they fire.
+>
+> The exceptions are the components that hold external resources: map layers and struct
+> viewers implement real `destroy()` methods, because `lottie-web` keeps its own registry
+> and dropping the reference is not enough. See
+> [rendering-entities.md](client/rendering-entities.md#lottie).
+
+Nested components use a parallel base with two methods:
+
+```js
+export class AbstractViewModelComponent {
+  initPageCode() { throw new NotImplementedError(); }
+  renderHTML()   { throw new NotImplementedError(); }
+}
+```
+
+The parent interpolates `component.renderHTML()` into its template, then calls
+`component.initPageCode()` after the DOM exists. Getting that order wrong — calling
+`initPageCode()` before injection — is the most common way a component silently fails to
+bind, because `getElementById` returns null and nothing throws.
+
+---
+
+## Routing
+
+**Not hash-based, and not the History API.** Navigation is a direct call:
+
+```js
+MenuPage.router.goto('Fleet', 'scanResults', { page: 2 });
+```
+
+There is no route table. A controller is an object registered by `name`, and **its method
+names are the pages**:
+
+```js
+registerController(controller) {
+  this.controllers.set(controller.name, controller);
+}
+// …
+this.controllers.get(controllerName)[pageName](options);
+```
+
+Five controllers: `Auth` (about 30 pages, including the whole onboarding sequence),
+`Fleet`, `Guild`, `Account`, `Generic`.
+
+Position is persisted to `localStorage` as `currentMenuPage` and `lastMenuPage`, which is
+what lets `restore()` put you back where you were after a reload. `back()` walks one step
+using the same stored values — so it is a single-step back, not a stack.
+
+Two details worth borrowing:
+
+**A preview mode** that skips the `localStorage` writes, used when viewing another
+player's profile so that browsing someone else's data doesn't become your restore point.
+
+**A `navigationId` counter** incremented on every `goto()`. Async work can snapshot it and
+check on completion whether the user has navigated away, rather than writing into a page
+that no longer exists. The mechanism is there; how consistently view models use it is
+another matter.
+
+The trade-off in all of this: no URLs. You cannot link to a page, the browser back button
+does nothing useful, and reloading depends on the `localStorage` restore. For a
+full-screen game that is a defensible choice. **For a companion app or dashboard it is
+usually the wrong one** — hash routing costs little and gives you shareable links and
+working history.
+
+---
+
+## Worth reading as examples
+
+| File | Shows |
+|---|---|
+| `view_models/fleet/ScanViewModel.js` | Form page: filters, async prefetch, handing off to the router |
+| `view_models/fleet/ScanResultsViewModel.js` | List page: parallel fetch of results and count, row rendering, shared pagination |
+| `view_models/templates/partials/Pagination.js` | The [pagination contract](ui/components.md#pagination--a-precise-contract), which is exact and worth matching |
+| `view_models/components/EnergyUsageComponent.js` | Live-updating component: event subscription and self-cleaning |
+| `view_models/account/AccountProfileViewModel.js` | Multi-fetch page with loading states |
+| `view_models/HUDViewModel.js` | A static singleton rendered once and alive for the session |
+
+`ScanResultsViewModel` is the one to read first if you are building a list view — it
+fetches page and count together, which is the difference between pagination that can show
+"page 3 of 16" and pagination that can only offer a next button:
+
+```js
+Promise.all([
+  this.guildAPI.raidSearch(this.raidSearchRequest),
+  this.guildAPI.raidSearchCount(this.raidSearchRequest)
+]).then(([players, count]) => {
+  // … rows …
+  const pagination = new Pagination(
+    this.raidSearchRequest.page, PAGINATION_LIMITS.DEFAULT, count,
+    'scan', 'Fleet', 'scanResults', this.raidSearchRequest
+  );
+  this.initPageCode();
+  pagination.init();
+});
+```
+
+Note the last two lines: `initPageCode()` then `pagination.init()`, both **after** the
+HTML is in the DOM.
+
+### Directory conventions
+
+```
+view_models/
+  account/ fleet/ guild/ login/ signup/ logout/ generic/    pages by domain
+  components/                 reusable pieces (map, HUD, offcanvas, sequences)
+  templates/partials/         shared HTML builders
+  banners/                    victory and defeat overlays
+```
+
+Named `{Feature}{Purpose}ViewModel.js`; controllers mirror the folders.
+
+---
+
+## Dialogue and banners
+
+`NotificationDialogue` is a separate overlay from the menu page's own dialogue, for
+in-game notifications. It hides the HUD while shown and restores it on close —
+symmetrically, which is easy to get wrong and produces a permanently hidden HUD:
+
+```js
+static hideAndClearDialoguePanel() {
+  document.getElementById(NotificationDialogue.dialoguePanelId).classList.add('hidden');
+  NotificationDialogue.clearDialogueScreen();
+  NotificationDialogue.setDialogueScreenThemeToNeutral();
+  NotificationDialogue.clearDialogueBtnAHandler();
+  HUDViewModel.show();
+}
+```
+
+`BannerLayer` is a thin full-width `innerHTML` slot.
+
+---
+
+## Build
+
+Plain Webpack, not Symfony Encore, with three entry points:
+
+```js
+entry: {
+  index: './js/index.js',
+  test:  './js/tests/test.js',
+  "workers/TaskWorker": "./js/workers/TaskWorker.js",
+},
+output: { path: path.resolve(__dirname, 'public/js') },
+experiments: { topLevelAwait: true },
+resolve: { extensions: [".ts", ".tsx", ".js"] },
+module: { rules: [{ test: /\.([cm]?ts|tsx)$/, loader: "ts-loader", options: { transpileOnly: true } }] },
+plugins: [new NodePolyfillPlugin()],
+```
+
+Three things to note. The proof-of-work worker is a **separate entry point**, because a
+worker cannot share the main bundle. `topLevelAwait` is enabled, which the boot sequence
+relies on. And `NodePolyfillPlugin` is there for CosmJS, which expects Node globals —
+expect to need the same if you use CosmJS in a browser.
+
+Webpack's extension resolution is also why `SUI.js` gets away with an extensionless
+import that breaks everywhere else. See [ui/runtime.md](ui/runtime.md#loading-them).
+
+Symfony serves one route (`/`) rendering a shell template that defines the mount points —
+`#menu-page-layout`, `#hud-container`, the map containers, `#loading-screen` — and loads
+the bundle. Everything inside them is owned by JavaScript.
+
+---
+
+## What to copy, and what not to
+
+**Copy:** the [dual-lane signing queue](client/actions-and-signing.md#the-dual-lane-queue),
+the [animation event queue](client/rendering-entities.md#the-animation-event-queue),
+[restoring work from the server](client/work-and-pow.md#restoring-after-a-reload) rather
+than from local storage, and the explicit Lottie teardown. These are hard-won solutions to
+real problems and they transfer to any stack.
+
+**Don't copy:** the plaintext mnemonic in `localStorage`, uncontrolled `GameState`
+mutation, the missing HTTP status check in the fetch wrapper, per-factory numeric
+coercion, and the absence of any UI for a failed transaction. Each of these is a known
+weakness rather than a design choice, and each is called out where it appears.
+
+---
+
+*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/framework/`,
+`src/js/controllers/`, `src/js/view_models/`, `src/webpack.config.js`.*
+
+</document>
+
+<document>
+<source>develop/maintenance.md</source>
+# Keeping the develop docs true
+
+**Purpose**: The review cycle that stops [develop/ui/](ui/index.md) and
+[develop/client/](client/index.md) from drifting away from the code they describe — and
+the prompt to run it with.
+
+These pages make specific, checkable claims about a codebase that keeps moving. Any
+document like that is wrong eventually. The question is whether it is wrong *knowably*.
+
+---
+
+## The contract
+
+**`structs-webapp` is the source of truth.** Every page in `develop/ui/` and
+`develop/client/` is written from it at the revision recorded in
+[`.structs-webapp-version`](../.structs-webapp-version), and each page's footer names the
+commit it was verified against. When a page and the code disagree, the page is wrong.
+
+Two artifacts hold the line:
+
+| Artifact | Role |
+|---|---|
+| [`generated/sui-inventory.md`](../generated/sui-inventory.md) | Machine-extracted tokens, icons, classes, modifiers and breakpoints. Both the writing source and the drift baseline |
+| [`scripts/check-webapp-drift.sh`](../scripts/check-webapp-drift.sh) | Diffs a fresh extract against that baseline, and lists commits per watched directory |
+
+A weekly GitHub Actions job (`.github/workflows/drift.yml`) runs the check and posts the
+report to the run summary. It is **advisory** — `continue-on-error: true` — because
+upstream moving is normal and should never fail a build. It exists to make drift visible,
+not to gate on it.
+
+---
+
+## The weekly review
+
+Ten minutes when nothing has changed; longer when the report has something to say.
+
+```bash
+# 1. Refresh the checkout and see what moved.
+git -C .references/structs-webapp fetch
+scripts/check-webapp-drift.sh --fetch
+```
+
+The report has two halves. **Inventory** changes are mechanical: a token renamed, an icon
+added, a class removed. **Commit surface** is judgement: it names watched directories with
+new commits and the pages that depend on them, because a behaviour change in
+`SigningQueueManager.js` will never show up in a CSS diff.
+
+```bash
+# 2. If clean, you're done.
+#    If not, read what actually changed in the pages' subject areas.
+git -C .references/structs-webapp log --oneline <pinned-sha>..HEAD -- src/js/sui
+
+# 3. Re-verify the affected claims against source, then refresh the baseline.
+scripts/gen-sui-inventory.sh
+
+# 4. Bump .structs-webapp-version and the "Verified against" footers together.
+```
+
+Step 4 is the one that gets skipped. **A footer claiming a revision the page was not
+re-verified against is worse than a stale footer**, because it converts "possibly old"
+into "certified current" without anyone having done the certifying. If you refresh the
+inventory but do not re-read the affected prose, say so in the commit message and leave
+the footers alone.
+
+### The prompt
+
+Paste this into an agent session with the repository open:
+
+> Review `develop/ui/` and `develop/client/` against the current `structs-webapp`.
+>
+> 1. Run `scripts/check-webapp-drift.sh --fetch` and read the report.
+> 2. For every watched directory with commits since the pin, read the actual diff — not
+>    just the commit subjects — and decide whether it changes a claim any of these pages
+>    makes. Most commits won't.
+> 3. For each claim that did change: fix the page, and verify the fix against source
+>    rather than against the commit message.
+> 4. Pay particular attention to the things these pages assert precisely, because they
+>    are the things most likely to have quietly moved: the fee constant and gas limit,
+>    the charge formula, the proof-of-work input string format and difficulty constants,
+>    the GRASS port and subject patterns, the PFP layer counts, the pagination slot
+>    logic, and the upstream-defects table in `develop/ui/gotchas.md` — a defect that has
+>    been fixed upstream must be removed, not left as a warning about a problem that no
+>    longer exists.
+> 5. Run `scripts/gen-sui-inventory.sh`, then update `.structs-webapp-version` and every
+>    "Verified against" footer **only for pages you actually re-verified**.
+> 6. Run `bash scripts/ci/check-links.sh` and report what you changed and what you chose
+>    not to.
+>
+> `structs-webapp` is authoritative. If it contradicts these pages, the pages are wrong.
+
+---
+
+## When you find an upstream defect
+
+[`develop/ui/gotchas.md`](ui/gotchas.md#known-upstream-defects) carries a table of real
+bugs in SUI, with workarounds. That table is a liability if it is only ever appended to.
+
+**Report it upstream, then document the workaround.** A defect documented here and never
+reported becomes permanent: every future reader works around it, and nobody fixes it.
+Opening an issue on the relevant repository costs a few minutes and is the only path by
+which the table ever gets shorter.
+
+Each row should be removable. When a fix lands upstream, delete the row and the
+corresponding block in [`examples/sui-patch.css`](ui/examples/sui-patch.css) — a patch
+that overrides a bug which no longer exists is a new bug.
+
+Distinguish a **defect** from a **choice** before you file anything. `body { text-align:
+center }` looks like a bug from a dashboard author's chair and is a deliberate decision
+for the game's short HUD strings. That belongs in gotchas as a surprise to work with, not
+as something to report. `SUIOffcanvas.setPlacement` removing the class it is about to add
+is unambiguously a bug.
+
+---
+
+## Verifying a claim
+
+The standard these pages are held to, in order of what counts:
+
+1. **Read the code.** Not the comment above it, not the commit that added it.
+2. **Prefer mechanical extraction** where a script can do the reading. That is what
+   `gen-sui-inventory.sh` is for, and why counts like "67 glyph icons" are trustworthy.
+3. **Distinguish the three kinds of claim.** A *mechanical* claim (a constant, a class
+   name, a count) is verifiable from source and must be exact. A *behavioural* claim
+   (the stepper only binds at init) is verifiable by reading the logic. A *judgement*
+   (don't overuse `sui-mod-solid`) is neither, and should read as advice rather than
+   fact.
+4. **Say what you could not verify.** An honest gap is more useful than a confident
+   guess, and it tells the next reviewer where to look.
+
+That last one applies to reports from other agents too. Several claims that reached these
+pages arrived via field reports and subagent research; every mechanical one was re-checked
+against source before it was written down, and a few did not survive. Treat any report as
+a hypothesis worth testing, not as a finding.
+
+---
+
+## Related
+
+- [scripts/BASELINE.md](../scripts/BASELINE.md) — the maintainer-facing record of every
+  contract in this repository, including this one
+- [develop/repos.md](repos.md) — the hierarchy of truth across all Structs repositories
 
 </document>
 

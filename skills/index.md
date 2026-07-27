@@ -38,6 +38,7 @@ The skills you use every session. Master these first.
 |-------|-------|--------------|
 | [structsd-install](structsd-install/SKILL) | entry | Install/update the `structsd` binary |
 | [structs-streaming](structs-streaming/SKILL) | advanced | Real-time GRASS/NATS events for automation |
+| [structs-ui](structs-ui/SKILL) | advanced | Building interfaces and clients: SUI design system, signing, proof-of-work, GRASS |
 | [structs-guild-stack](structs-guild-stack/SKILL) | advanced | Local node + PostgreSQL for sub-second game-state reads |
 
 ## Tooling

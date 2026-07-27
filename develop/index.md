@@ -5,9 +5,39 @@ permalink: /develop/
 
 # Develop
 
-For building tools, bots, and integrations on top of Structs. Gameplay lives in
-[skills](../.cursor/skills/) and [reference](../reference/index.md); this is the machine
-surface.
+For building tools, bots, integrations, and interfaces on top of Structs. Gameplay lives
+in [skills](../.cursor/skills/) and [reference](../reference/index.md); this is the
+machine surface.
+
+## Build an interface
+
+The Structs UI design system — the one the game itself is built with. Fonts, icons, CSS,
+component contracts, and runnable examples.
+
+- **[Building with SUI](ui/index.md)** — start here for any dashboard, form, menu or HUD
+- [Tokens](ui/tokens.md) · [Icons](ui/icons.md) · [Components](ui/components.md) · [Runtime](ui/runtime.md)
+- [Gotchas](ui/gotchas.md) — the things that cost real debugging time
+- [Patterns](ui/patterns.md) · [Recipes](ui/recipes.md) · [Examples](ui/examples/README.md)
+- Skill: [structs-ui](../.cursor/skills/structs-ui/SKILL.md)
+
+## Build a client
+
+How the flagship client actually works, verified against its source.
+
+- **[Building a Structs client](client/index.md)** — the three-channel architecture
+- [State and data](client/state-and-data.md) — GameState, factories, the string-number trap
+- [Actions and signing](client/actions-and-signing.md) — wallet, dual-lane queue, charge gating
+- [Work and proof-of-work](client/work-and-pow.md) — hashing, difficulty decay, workers
+- [Real-time with GRASS](client/realtime-grass.md) — NATS, the listener contract, all 26 listeners
+- [Rendering entities](client/rendering-entities.md) · [The map](client/map.md)
+- [Extending Structs Desktop](client/desktop-extensions.md) — MCP tools, board pages
+
+## Source and maintenance
+
+- [The repositories](repos.md) — which one to read, and which wins when they disagree
+- [Frontend architecture](frontend-architecture.md) — the webapp's MVVM layer
+- [Maintenance](maintenance.md) — how these pages are kept true as upstream moves
+- [SUI inventory](../generated/sui-inventory.md) — machine-extracted ground truth
 
 ## Connect
 

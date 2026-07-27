@@ -88,6 +88,11 @@ side by side (co-op is a first-class feature).
 - **Agents & strategy** — [skills](skills/), [playbooks](playbooks/),
   [awareness](awareness/)
 - **Game rules** — [knowledge](knowledge/) and [reference](reference/)
+- **Build interfaces** — [SUI, the design system Structs is built with](develop/ui/) —
+  fonts, icons, component contracts and runnable examples for dashboards, forms, menus
+  and HUDs
+- **Build clients** — [how the flagship client works](develop/client/): signing,
+  proof-of-work, real-time events, rendering
 - **Integrate / build tools** — [API](api/), [streaming](api/streaming/event-types.md),
   [Guild Stack](knowledge/infrastructure/guild-stack.md)
 - **Lore** — [the universe](knowledge/lore/universe.md), [Alpha Matter](knowledge/lore/alpha-matter.md); the human [Codex](https://www.playstructs.com/codex) ([term map](reference/codex-crosswalk.md))

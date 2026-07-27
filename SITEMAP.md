@@ -210,6 +210,47 @@ Agent personality and motivation.
 
 ---
 
+## Develop (`develop/`)
+
+Building tools, clients and interfaces on top of Structs. Written from
+[structs-webapp](develop/repos.md) source at the revision in `.structs-webapp-version`.
+
+| File | Topic |
+|------|-------|
+| [index.md](develop/index.md) | Hub: interfaces, clients, connecting, API |
+| [repos.md](develop/repos.md) | Which repository to read, and which wins when they disagree |
+| [frontend-architecture.md](develop/frontend-architecture.md) | The webapp's MVVM layer, router, build tooling |
+| [maintenance.md](develop/maintenance.md) | Keeping these pages true as upstream moves |
+
+### Interfaces — the SUI design system (`develop/ui/`)
+
+| File | Topic |
+|------|-------|
+| [index.md](develop/ui/index.md) | Orientation, the five design rules, the scaling decision |
+| [tokens.md](develop/ui/tokens.md) | Colour, spacing, dimensions, z-index, typography |
+| [icons.md](develop/ui/icons.md) | 67 glyph icons and 29 sprite icons, both complete |
+| [components.md](develop/ui/components.md) | Markup contracts, themes, modifiers, what SUI omits |
+| [runtime.md](develop/ui/runtime.md) | Stepper, tooltip, cheatsheet, offcanvas — and their bugs |
+| [gotchas.md](develop/ui/gotchas.md) | Centre alignment, flex overflow, asset paths, upstream defects |
+| [patterns.md](develop/ui/patterns.md) | Multi-page coherence, list reconciliation, the ship checklist |
+| [recipes.md](develop/ui/recipes.md) | Dashboard, form, menu, HUD assembled |
+| [examples/](develop/ui/examples/README.md) | Runnable: `starter.html`, `sui-kit.js`, `sui-patch.css` |
+
+### Clients (`develop/client/`)
+
+| File | Topic |
+|------|-------|
+| [index.md](develop/client/index.md) | The three-channel architecture |
+| [state-and-data.md](develop/client/state-and-data.md) | GameState, factories, the string-number trap, REST |
+| [actions-and-signing.md](develop/client/actions-and-signing.md) | Wallet, dual-lane queue, charge gating |
+| [work-and-pow.md](develop/client/work-and-pow.md) | Hash format, difficulty decay, workers, completion |
+| [realtime-grass.md](develop/client/realtime-grass.md) | NATS, the listener contract, all 26 listeners |
+| [rendering-entities.md](develop/client/rendering-entities.md) | PFP compositing, struct art, Lottie, animation queue |
+| [map.md](develop/client/map.md) | Ambit stack, tiles, fog of war, picture-in-picture |
+| [desktop-extensions.md](develop/client/desktop-extensions.md) | MCP tools, board pages, serving SUI over HTTP |
+
+---
+
 ## API Reference (`api/`)
 
 Endpoint specifications and streaming protocols.
@@ -433,6 +474,9 @@ Diagrams, graphs, and spatial references.
 | File | Purpose |
 |------|---------|
 | [generate-llms-full.sh](scripts/generate-llms-full.sh) | Regenerate llms-full.txt from source docs |
+| [gen-sui-inventory.sh](scripts/gen-sui-inventory.sh) | Extract the SUI ground truth from structs-webapp into `generated/sui-inventory.md` |
+| [check-webapp-drift.sh](scripts/check-webapp-drift.sh) | Report what changed in structs-webapp since `develop/` was pinned |
+| [BASELINE.md](scripts/BASELINE.md) | Maintainer record of the contracts this repo preserves |
 
 ---
 

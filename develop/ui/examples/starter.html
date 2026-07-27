@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUI starter</title>
+
+<!--
+  Stylesheet order matters: normalize, then the icon font, then SUI, then your
+  own additions last so they win at equal specificity.
+
+  SUI references its assets from the WEB ROOT — url("/img/sui/...") and
+  url('/fonts/Structicons.woff'). Serving this file from a subpath or over
+  file:// makes every icon and every piece of form art silently disappear, with
+  no console error. See examples/README.md.
+-->
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/structicons.css">
+<link rel="stylesheet" href="/css/sui/sui.css">
+<link rel="stylesheet" href="./sui-patch.css">
+
+<style>
+  /* This page runs at 1x. The game renders SUI at scale(2) above 1152px, so a
+     few dimensions need a bump for legibility here. Each override below is a
+     deliberate, documented deviation — see develop/ui/index.md on scaling. */
+  #app            { max-width: 1100px; margin: 0 auto; padding: var(--spacing-xl); }
+  .dash-grid      { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--spacing-xl); }
+  .stack          { display: flex; flex-direction: column; gap: var(--spacing-xl); }
+  .section-title  { margin: var(--spacing-xxl) 0 var(--spacing-md); }
+</style>
+</head>
+<body>
+
+<div id="app" class="sui-theme-player">
+
+  <h1 class="sui-text-display">SUI Starter</h1>
+
+  <!-- Navigation. `.sui-screen-nav` is space-between, so a second nav-items
+       block right-aligns. It is also overflow-x: scroll, NOT wrapping: extra
+       tabs become invisible rather than moving to a second line. -->
+  <div class="sui-screen sui-screen-full-width">
+    <div class="sui-screen-nav">
+      <div class="sui-screen-nav-items">
+        <a class="sui-screen-nav-item sui-mod-active" href="#/overview">Overview</a>
+        <a class="sui-screen-nav-item" href="#/roster">Roster</a>
+        <a class="sui-screen-nav-item" href="#/energy">Energy</a>
+      </div>
+      <div class="sui-screen-nav-items">
+        <a class="sui-nav-btn" id="refresh" data-sui-tooltip="Press and hold">
+          <i class="sui-icon sui-icon-sm icon-refresh-8"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sui-text-header section-title">Dashboard</h2>
+  <div class="dash-grid" id="dash"></div>
+
+  <h2 class="sui-text-header section-title">List</h2>
+  <div id="list"></div>
+
+  <h2 class="sui-text-header section-title">Form</h2>
+  <div id="form"></div>
+
+  <h2 class="sui-text-header section-title">States</h2>
+  <div class="stack" id="states"></div>
+
+  <h2 class="sui-text-header section-title">Pagination</h2>
+  <div id="pager"></div>
+
+</div>
+
+<script type="module">
+  /*
+    Import the SUI behaviours you need DIRECTLY. Do not import SUI.js outside a
+    bundler: it contains an extensionless `import ... from "./SUIOffcanvas"`
+    which 404s in a browser and takes the whole module down with it.
+  */
+  import { SUITooltip }  from '/js/sui/SUITooltip.js';
+  import { SUIOffcanvas } from '/js/sui/SUIOffcanvas.js';
+
+  import {
+    card, row, resource, resultRow, resultRows, field, checkbox,
+    stepper, button, badge, stateBlock, pagination,
+  } from './sui-kit.js';
+
+  const tooltip = new SUITooltip();   tooltip.autoInitAll();
+  const offcanvas = new SUIOffcanvas(); offcanvas.autoInitAll();
+
+  // --- Dashboard ----------------------------------------------------------
+  // Colour carries the meaning. Teal is ours, amber is watch-this, red is bad.
+  // Never bold a figure to emphasise it — weight is 500 everywhere in SUI.
+  document.getElementById('dash').append(
+    card('POWER', [
+      row('CAPACITY', '18,400', 'sui-text-primary'),
+      row('LOAD',     '17,950', 'sui-text-warning'),
+      row('STRUCTS',  '12'),
+    ]),
+    card('STORES', [
+      resource('1,204', 'sui-icon-alpha-matter'),
+      resource('86',    'sui-icon-alpha-ore'),
+    ]),
+    card('STATUS', [
+      row('SHIELDS', 'UP', 'sui-text-primary'),
+      row('FLEET',   'ON STATION'),
+    ]),
+  );
+
+  // --- List ---------------------------------------------------------------
+  // SUI has no table component. This is the list idiom.
+  document.getElementById('list').append(
+    resultRows([
+      resultRow({ iconName: 'icon-planet', title: 'ORACLE-7', subtitle: 'planet 4-118',
+                  resources: [['420', 'sui-icon-alpha-ore']] }),
+      resultRow({ iconName: 'icon-planet', title: 'KESTREL PRIME', subtitle: 'planet 4-233',
+                  resources: [['85', 'sui-icon-alpha-ore']] }),
+    ], { table: true })
+  );
+
+  // --- Form ---------------------------------------------------------------
+  // Every control sits INSIDE label.sui-input-text and carries no class of its
+  // own. The checkbox container is a <div>; a <span> would be styled as the
+  // field label and balloon a 40px control to ~106px.
+  const guildSelect = document.createElement('select');
+  for (const g of ['Any', 'Kingdom', 'Syndicate']) {
+    guildSelect.appendChild(new Option(g, g));
+  }
+
+  document.getElementById('form').append(
+    card('SCAN FILTERS', [
+      field('Guild', guildSelect),
+      field('Fleet Status', checkbox('f-away', 'Fleet away only')),
+      field('Minimum Ore', stepper('f-ore', { min: 0, max: 99, value: 10 })),
+      button('Scan', { mod: 'primary', iconName: 'icon-raid' }),
+    ])
+  );
+
+  // --- States -------------------------------------------------------------
+  // These four must look visibly different. If they don't, sui-patch.css did
+  // not load: sui.css hard-sets the alert text to --text-body regardless of
+  // which sui-mod-* the container carries.
+  document.getElementById('states').append(
+    stateBlock('loading', 'Fetching roster…'),
+    stateBlock('empty',   'No planets match these filters.'),
+    stateBlock('warning', 'Charge is low — 2 of 6.'),
+    stateBlock('error',   'Chain RPC unreachable.'),
+    badge('READY', 'default'),
+  );
+
+  // --- Pagination ---------------------------------------------------------
+  // At most five slots; prev absent on page 1, next absent on the last page.
+  let page = 1;
+  const pager = document.getElementById('pager');
+  const drawPager = () => {
+    pager.replaceChildren(pagination(page, 16, (p) => { page = p; drawPager(); }));
+  };
+  drawPager();
+
+  // --- Drawer -------------------------------------------------------------
+  // setPlacement removes the class it is about to add, so the previous
+  // placement is never dropped. Clear both at the call site.
+  document.getElementById('refresh').addEventListener('click', () => {
+    offcanvas.setHeader('Detail');
+    offcanvas.offcanvasElm.querySelector('.sui-offcanvas-body')
+      .replaceChildren(card('DRAWER', [row('EXAMPLE', 'value')]));
+    offcanvas.offcanvasElm.classList.remove('sui-mod-left', 'sui-mod-right');
+    offcanvas.setPlacement('right');
+    offcanvas.open();
+  });
+
+  // --- Self-check ---------------------------------------------------------
+  // The single most common setup failure is assets not resolving from the web
+  // root, which fails silently. Say so loudly instead.
+  document.fonts.ready.then(() => {
+    if (!document.fonts.check('16px Structicons')) {
+      console.error(
+        'Structicons did not load. SUI asset URLs are root-absolute: serve /css, ' +
+        '/fonts and /img from the web root, or rewrite the url() targets. ' +
+        'See develop/ui/gotchas.md#asset-paths-are-root-absolute'
+      );
+    }
+  });
+</script>
+
+</body>
+</html>

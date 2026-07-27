@@ -97,6 +97,41 @@ Structs Desktop bundles this repo as MCP resources. Investigated
   `scout.sh`, `watch-defense.mjs`) and SAFETY audit paths depend on it. Keep as-is.
 - `.env` / mnemonics — never read, exported, or committed. Preflight only detects presence.
 
+## structs-webapp contract (`develop/ui/`, `develop/client/`)
+
+The builder documentation makes checkable claims about a moving codebase. The contract
+that keeps it honest:
+
+- **Authority**: `structs-webapp` is canonical for the SUI design system and for client
+  behaviour. `structsd` outranks it on chain rules; `structs-ui` (last commit 2024-06)
+  is illustrative only. Full ordering in [`develop/repos.md`](../develop/repos.md).
+- **Pin**: [`.structs-webapp-version`](../.structs-webapp-version) = `6eec7f7` (2026-07-21).
+  Every page in `develop/ui/` and `develop/client/` carries a matching "Verified against"
+  footer.
+- **Baseline**: `generated/sui-inventory.md` is machine-extracted by
+  `scripts/gen-sui-inventory.sh` (72 tokens, 67 glyph icons, 29 sprite icons, 138
+  component classes, 27 modifiers). It is both the writing source and the drift baseline
+  — do not hand-edit it.
+- **Drift gate**: `scripts/check-webapp-drift.sh` diffs a fresh extract against the
+  baseline and lists commits per watched directory, naming the pages each affects. The
+  watched-path table lives in that script and must be updated when a page starts making
+  claims about a new directory.
+- **CI**: the `webapp` job in `.github/workflows/drift.yml` runs it weekly. **Advisory
+  only** (`continue-on-error: true`) — upstream moving is expected and must never fail a
+  build.
+- **Review procedure and the copy-pasteable prompt**:
+  [`develop/maintenance.md`](../develop/maintenance.md).
+
+Two rules that are easy to violate and expensive to detect:
+
+1. **Never bump a "Verified against" footer without re-reading the page.** A footer
+   naming a revision nobody checked converts "possibly stale" into "certified current".
+   Refreshing the inventory alone does not license a footer bump.
+2. **The upstream-defects table in `develop/ui/gotchas.md` must be able to shrink.**
+   Report defects upstream; when a fix lands, delete the row *and* the matching block in
+   `develop/ui/examples/sui-patch.css`. A patch for a bug that no longer exists is a new
+   bug.
+
 ## Known truth issues (Phase 1) — RESOLVED
 
 These were fixed before/during the 2026-07 review loops; kept here so they are not re-opened:

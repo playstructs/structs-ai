@@ -1,0 +1,93 @@
+/* sui-patch.css — sanctioned local additions to SUI.
+ *
+ * Load AFTER sui.css. Everything here fills a documented gap rather than
+ * overriding a deliberate choice; see develop/ui/gotchas.md for why each exists.
+ * Uses only real SUI tokens — no invented colours.
+ */
+
+/* ---- Inline alert severity ------------------------------------------------
+ * `.sui-message-inline-alert` has no severity variants. The global sui-mod-*
+ * utility colours the container (so the icon inherits it) but
+ * `.sui-message-inline-alert-text` hard-sets `color: var(--text-body)`, so the
+ * text never changes. A red icon beside body-coloured text reads as decoration.
+ */
+
+.sui-message-inline-alert.sui-mod-warning .sui-message-inline-alert-text {
+  color: var(--text-warning);
+}
+
+.sui-message-inline-alert.sui-mod-destructive .sui-message-inline-alert-text {
+  color: var(--text-enemy-primary);
+}
+
+.sui-message-inline-alert.sui-mod-primary .sui-message-inline-alert-text {
+  color: var(--text-player-primary);
+}
+
+.sui-message-inline-alert.sui-mod-secondary,
+.sui-message-inline-alert.sui-mod-secondary .sui-message-inline-alert-text {
+  color: var(--text-hint);
+}
+
+/* ---- Focus visibility -----------------------------------------------------
+ * sui.css sets `input:focus { outline: none }` with no replacement, so SUI
+ * actively removes the default focus ring. The two --border-focus-* tokens
+ * exist for this and are otherwise unused in the stylesheet.
+ */
+
+:where(input, select, textarea, button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus-friendly-dark);
+  outline-offset: 1px;
+}
+
+.sui-theme-enemy :where(input, select, textarea, button, a, [tabindex]):focus-visible {
+  outline-color: var(--border-focus-enemy-dark);
+}
+
+/* ---- Numerals -------------------------------------------------------------
+ * SUI defines font-variant-numeric nowhere. Without tabular figures a
+ * refreshing console jitters column-by-column as digit widths change.
+ */
+
+.sui-num,
+.sui-resource span,
+.sui-data-card-row span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Overflow guards ------------------------------------------------------
+ * A flex item will not shrink below its min-content width unless min-width is
+ * 0. word-break and overflow-wrap alone do nothing. These are the two places it
+ * bites most often: long identifiers and URLs inside result rows and cards.
+ */
+
+.sui-result-row-left-section,
+.sui-result-row-right-section,
+.sui-result-row-player-info,
+.sui-data-card-row {
+  min-width: 0;
+}
+
+.sui-break-anywhere {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* Fixed 36px button height plus a wrapping label equals overflow. Let the
+   button grow sideways instead of the label wrapping to three lines. */
+.sui-screen-btn span {
+  white-space: nowrap;
+}
+
+/* ---- Left-aligned data surfaces -------------------------------------------
+ * body { text-align: center } is inherited by everything. Only eleven rules in
+ * sui.css re-assert left. Anything you drop into a card body inherits centre,
+ * which is wrong for prose, tables and logs — and only visible once the text is
+ * long enough to wrap.
+ */
+
+.sui-align-left,
+.sui-data-card-body .sui-align-left {
+  text-align: left;
+}

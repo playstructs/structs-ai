@@ -1,7 +1,9 @@
-name: Live-chain drift (scheduled)
+name: Upstream drift (scheduled)
 
-# Runs the game-constant drift check against a live node. Kept OFF the PR path
-# so ordinary CI never depends on node availability. Scheduled + manual only.
+# Runs the drift checks against upstream sources: game constants against a live
+# node, and structs-webapp against the revision develop/ is written from. Kept
+# OFF the PR path so ordinary CI never depends on network availability.
+# Scheduled + manual only.
 on:
   schedule:
     - cron: "0 12 * * 1" # weekly, Mondays 12:00 UTC
@@ -37,3 +39,37 @@ jobs:
           else
             echo "structsd/python3 unavailable; skipping catalog regeneration."
           fi
+
+  webapp:
+    name: SUI + client docs vs structs-webapp
+    runs-on: ubuntu-latest
+    # Advisory only. Upstream moving is expected; it should never fail a build.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone structs-webapp
+        run: |
+          # Deep enough to contain the pinned revision so the commit-surface
+          # comparison works; check-webapp-drift.sh says so if it isn't.
+          git clone --quiet --depth 200 \
+            https://github.com/playstructs/structs-webapp.git \
+            "$RUNNER_TEMP/structs-webapp"
+
+      - name: Check drift (advisory)
+        env:
+          STRUCTS_WEBAPP: ${{ runner.temp }}/structs-webapp
+        run: |
+          bash scripts/check-webapp-drift.sh | tee "$RUNNER_TEMP/webapp-drift.txt"
+          echo "Exit ${PIPESTATUS[0]} — see develop/maintenance.md for the review procedure."
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo '## structs-webapp drift'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/webapp-drift.txt" 2>/dev/null || echo 'no report produced'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

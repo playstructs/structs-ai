@@ -83,6 +83,7 @@ FULL_FILES=(
   .cursor/skills/structs-intel/SKILL.md
   .cursor/skills/structs-streaming/SKILL.md
   .cursor/skills/structs-guild-stack/SKILL.md
+  .cursor/skills/structs-ui/SKILL.md
 
   # Knowledge - Lore
   knowledge/lore/universe.md
@@ -119,6 +120,31 @@ FULL_FILES=(
   knowledge/infrastructure/guild-stack.md
   knowledge/infrastructure/structs-desktop.md
   knowledge/infrastructure/database-schema.md
+
+  # Develop - Building interfaces (SUI design system)
+  develop/ui/index.md
+  develop/ui/tokens.md
+  develop/ui/icons.md
+  develop/ui/components.md
+  develop/ui/runtime.md
+  develop/ui/gotchas.md
+  develop/ui/patterns.md
+  develop/ui/recipes.md
+
+  # Develop - Building clients
+  develop/client/index.md
+  develop/client/state-and-data.md
+  develop/client/actions-and-signing.md
+  develop/client/work-and-pow.md
+  develop/client/realtime-grass.md
+  develop/client/rendering-entities.md
+  develop/client/map.md
+  develop/client/desktop-extensions.md
+
+  # Develop - Source and maintenance
+  develop/repos.md
+  develop/frontend-architecture.md
+  develop/maintenance.md
 
   # Strategy presets
   strategy/presets/README.md

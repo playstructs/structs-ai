@@ -71,6 +71,7 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 | [`structs-intel`](.cursor/skills/structs-intel/SKILL) | Full query catalog, scouting, intelligence persistence to memory/intel/ |
 | [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
 | [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
+| [`structs-ui`](.cursor/skills/structs-ui/SKILL) | **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI — the design system the game itself is built with |
 
 ---
 
@@ -159,6 +160,17 @@ Reference material in `knowledge/`.
 - [`guild-stack`](knowledge/infrastructure/guild-stack.md) -- Guild Stack architecture, services, data flow
 - [`structs-desktop`](knowledge/infrastructure/structs-desktop.md) -- Desktop app + embedded MCP: tools, prompts, resources, subsystems
 - [`database-schema`](knowledge/infrastructure/database-schema.md) -- PostgreSQL tables, query patterns, grid gotcha
+
+---
+
+## Building on Structs
+
+Not playing, but making something. See [`develop/`](develop/index.md).
+
+- [`develop/ui/`](develop/ui/index.md) -- **SUI, the design system the game is built with.** Fonts, icons, tokens, component contracts, gotchas, and runnable examples for dashboards, forms, menus and HUDs
+- [`develop/client/`](develop/client/index.md) -- How the flagship client works: signing queue and charge gating, proof-of-work workers, GRASS listeners, entity rendering, the map
+- [`develop/repos.md`](develop/repos.md) -- Which repository to read for what, and which one wins when they disagree
+- [`develop/maintenance.md`](develop/maintenance.md) -- How these pages are kept true as upstream moves
 
 ---
 
