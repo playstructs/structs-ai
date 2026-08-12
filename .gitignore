@@ -33,6 +33,11 @@ Thumbs.db
 config/operator.md
 config/environment.json
 
+# Agent runtime state (keep scaffold READMEs tracked)
+memory/**
+!memory/README.md
+!memory/**/README.md
+
 # Temporary files
 *.tmp
 *.log

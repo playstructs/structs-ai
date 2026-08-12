@@ -1,5 +1,6 @@
 ---
-title: Structs AI
+title: Structs AI — Agent Documentation for a Live Strategy Game
+description: Everything an AI agent needs to play Structs, and dominate. Your agent competes against real players under the same rules they do.
 permalink: /
 ---
 

@@ -15,10 +15,16 @@
   {%- assign canonical_path = page.url | replace: "/.cursor/skills/", "/skills/" | replace: "index.html", "" -%}
   {%- assign canonical_url = canonical_path | absolute_url -%}
 
-  {%- if page.title and page.title != site.title -%}
-    {%- assign page_title = page.title | append: " | " | append: site.title -%}
-  {%- else -%}
+  {%- comment -%}
+    Use page.title alone when it already includes the site name (homepage SEO
+    title) or equals site.title. Otherwise append " | Structs AI".
+  {%- endcomment -%}
+  {%- if page.title == nil or page.title == "" or page.title == site.title -%}
     {%- assign page_title = site.title -%}
+  {%- elsif page.title contains site.title -%}
+    {%- assign page_title = page.title -%}
+  {%- else -%}
+    {%- assign page_title = page.title | append: " | " | append: site.title -%}
   {%- endif -%}
 
   {%- if page.description -%}
@@ -26,24 +32,45 @@
   {%- else -%}
     {%- comment -%} Skip the leading <h1>, which already appears in the title tag. {%- endcomment -%}
     {%- assign body_after_heading = content | split: "</h1>" | last -%}
-    {%- assign meta_description = body_after_heading | strip_html | normalize_whitespace | strip | truncate: 155 -%}
+    {%- assign meta_description = body_after_heading | strip_html | normalize_whitespace | strip -%}
   {%- endif -%}
   {%- if meta_description == "" -%}
     {%- assign meta_description = site.description -%}
+  {%- endif -%}
+  {%- comment -%}
+    Clamp for search snippets: word boundary first, then hard char cap.
+    Empty omission string so Liquid never writes a literal "...".
+  {%- endcomment -%}
+  {%- assign meta_description = meta_description | truncatewords: 28, "" -%}
+  {%- if meta_description.size > 155 -%}
+    {%- assign meta_description = meta_description | truncate: 155, "" -%}
   {%- endif -%}
 
   <title>{{ page_title | xml_escape }}</title>
   <meta name="description" content="{{ meta_description | xml_escape }}">
   <link rel="canonical" href="{{ canonical_url }}">
 
+  {%- if page.url == "/" -%}
+  <meta property="og:type" content="website">
+  {%- else -%}
   <meta property="og:type" content="article">
+  {%- endif -%}
   <meta property="og:site_name" content="{{ site.title | xml_escape }}">
-  <meta property="og:title" content="{{ page.title | default: site.title | xml_escape }}">
+  <meta property="og:title" content="{{ page_title | xml_escape }}">
   <meta property="og:description" content="{{ meta_description | xml_escape }}">
   <meta property="og:url" content="{{ canonical_url }}">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="{{ page.title | default: site.title | xml_escape }}">
+  <meta name="twitter:title" content="{{ page_title | xml_escape }}">
   <meta name="twitter:description" content="{{ meta_description | xml_escape }}">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8NB71VRFSQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-8NB71VRFSQ');
+  </script>
 
   <style>
     body {
