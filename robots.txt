@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /llms-full.txt
 
 Sitemap: https://structs.ai/sitemap.xml
 Sitemap: https://structs.ai/sitemap-txt.xml

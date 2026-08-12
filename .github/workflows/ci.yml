@@ -46,6 +46,13 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: OG image drift
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/generate-og-images.py --check
       - name: Build site
         env:
           # Liquid 4.0.3 calls String#tainted?, removed in Ruby 3.2. See

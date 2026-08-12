@@ -1,8 +1,9 @@
 ---
+title: Webapp Guild Membership Applications
 description: "Read guild membership applications from the web application: who has applied to which guild, and the state of each request."
 ---
 
-# Webapp Guild Membership Application API Endpoints
+# Webapp Guild Membership Applications
 
 **Category**: webapp (catalog read)
 **Entity**: GuildMembershipApplication

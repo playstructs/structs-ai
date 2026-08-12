@@ -1,7 +1,8 @@
 {%- comment -%}
   JSON-LD for search engines. Strings go through jsonify so titles with quotes
-  stay valid JSON. dateModified uses last_modified_at / date when present, else
-  site.time — the same fallback jekyll-sitemap uses when those fields are unset.
+  stay valid JSON. dateModified / datePublished use last_modified_at / date when
+  present, else site.time. jekyll-sitemap 1.4.0 does not fall back to site.time
+  for html_pages — lastmod is emitted by the custom sitemap.xml page instead.
   Intermediate breadcrumb items omit `item` when no page exists at that path.
 {%- endcomment -%}
 {%- assign jsonld_space = "x x" | remove: "x" -%}
@@ -17,8 +18,39 @@
 {%- else -%}
   {%- assign jsonld_modified = site.time | date_to_xmlschema -%}
 {%- endif -%}
+{%- if page.date -%}
+  {%- assign jsonld_published = page.date | date_to_xmlschema -%}
+{%- elsif page.last_modified_at -%}
+  {%- assign jsonld_published = page.last_modified_at | date_to_xmlschema -%}
+{%- else -%}
+  {%- assign jsonld_published = site.time | date_to_xmlschema -%}
+{%- endif -%}
 {%- assign jsonld_path = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "/" -%}
 {%- assign jsonld_parts = jsonld_path | split: "/" -%}
+{%- assign jsonld_section = "" -%}
+{%- for part in jsonld_parts -%}
+  {%- if part == "" %}{% continue %}{% endif -%}
+  {%- case part -%}
+    {%- when "api" %}{% assign jsonld_section = "API" -%}
+    {%- when "ui" %}{% assign jsonld_section = "UI" -%}
+    {%- when "sui" %}{% assign jsonld_section = "SUI" -%}
+    {%- else -%}
+      {%- assign jsonld_section = "" -%}
+      {%- assign words = part | replace: "-", jsonld_space | split: jsonld_space -%}
+      {%- for word in words -%}
+        {%- case word -%}
+          {%- when "ui" %}{% assign cap = "UI" -%}
+          {%- when "sui" %}{% assign cap = "SUI" -%}
+          {%- when "api" %}{% assign cap = "API" -%}
+          {%- else %}{% assign cap = word | capitalize -%}
+        {%- endcase -%}
+        {%- if jsonld_section == "" %}{% assign jsonld_section = cap -%}
+        {%- else %}{% assign jsonld_section = jsonld_section | append: jsonld_space | append: cap -%}
+        {%- endif -%}
+      {%- endfor -%}
+  {%- endcase -%}
+  {%- break -%}
+{%- endfor -%}
 {%- if canonical_path contains "/api/" -%}
   {%- assign jsonld_article_type = "APIReference" -%}
 {%- else -%}
@@ -88,13 +120,21 @@
       "description": {{ meta_description | jsonify }},
       "url": {{ canonical_url | jsonify }},
       "image": {{ og_image_url | jsonify }},
+      "datePublished": {{ jsonld_published | jsonify }},
       "dateModified": {{ jsonld_modified | jsonify }},
+      "inLanguage": "en",
       "isPartOf": { "@id": {{ "/#website" | absolute_url | jsonify }} },
+      "author": {
+        "@type": "Organization",
+        "name": {{ site.title | jsonify }},
+        "url": {{ "/" | absolute_url | jsonify }}
+      },
       "publisher": {
         "@type": "Organization",
         "name": {{ site.title | jsonify }},
         "url": {{ "/" | absolute_url | jsonify }}
-      }
+      }{% if jsonld_section != "" %},
+      "articleSection": {{ jsonld_section | jsonify }}{% endif %}
     }{% endif %}
   ]
 }

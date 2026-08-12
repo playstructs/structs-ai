@@ -1,0 +1,4 @@
+Noto Sans Bold
+SIL Open Font License 1.1
+https://github.com/notofonts/notofonts.github.io
+Copyright 2022 The Noto Project Authors.

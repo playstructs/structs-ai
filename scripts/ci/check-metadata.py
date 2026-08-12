@@ -12,8 +12,14 @@ ROOT = Path("_site")
 REPO = Path(".")
 MAX_DESC = 155
 MAX_TITLE = 60
+MIN_TITLE = 30
 SITE_ORIGIN = "https://structs.ai"
-OG_IMAGE_URL = f"{SITE_ORIGIN}/assets/og-image.png"
+OG_FALLBACK = f"{SITE_ORIGIN}/assets/og-image.png"
+OG_PAGE_PREFIX = f"{SITE_ORIGIN}/assets/og/"
+PREV_SITEMAP = REPO / "scripts" / "ci" / "prev-sitemap.txt"
+LASTMOD_VALUE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
+LASTMOD_RE = re.compile(r"<lastmod>([^<]+)</lastmod>")
 
 DIRECTORY_INDEXES = (
     "api",
@@ -97,6 +103,30 @@ def resolve_canonical_target(canon: str) -> Path | None:
     return None
 
 
+def png_dimensions(path: Path) -> tuple[int, int] | None:
+    data = path.read_bytes()[:24]
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    width = int.from_bytes(data[16:20], "big")
+    height = int.from_bytes(data[20:24], "big")
+    return width, height
+
+
+def check_sitemap_file(path: Path, label: str) -> str:
+    if not path.exists():
+        errors.append(f"{label} missing from build")
+        return ""
+    body = path.read_text(encoding="utf-8", errors="replace")
+    locs = LOC_RE.findall(body)
+    lastmods = LASTMOD_RE.findall(body)
+    if len(locs) != len(lastmods):
+        errors.append(f"{label}: {len(locs)} <loc> but {len(lastmods)} <lastmod>")
+    for value in lastmods:
+        if not LASTMOD_VALUE.match(value):
+            errors.append(f"{label}: lastmod not YYYY-MM-DD -> {value!r}")
+    return body
+
+
 def is_redirect_stub(html_text: str) -> bool:
     return "redirect_to" in html_text or 'http-equiv="refresh"' in html_text.lower()
 
@@ -164,10 +194,8 @@ def check_url_gate() -> None:
         errors.append("_site/README.html must not be published")
 
     sitemap = ROOT / "sitemap-txt.xml"
-    if not sitemap.exists():
-        errors.append("_site/sitemap-txt.xml missing")
-    else:
-        body = sitemap.read_text(encoding="utf-8", errors="replace")
+    body = check_sitemap_file(sitemap, "sitemap-txt.xml")
+    if body:
         for loc in TXT_SITEMAP_LOCS:
             if loc not in body:
                 errors.append(f"sitemap-txt.xml missing loc {loc}")
@@ -176,10 +204,27 @@ def check_url_gate() -> None:
                 errors.append(f"sitemap-txt.xml must not list dump {loc}")
 
     sitemap_xml = ROOT / "sitemap.xml"
-    if sitemap_xml.exists():
-        sm = sitemap_xml.read_text(encoding="utf-8", errors="replace")
+    sm = check_sitemap_file(sitemap_xml, "sitemap.xml")
+    if sm:
         if "develop/ui/examples/starter" in sm:
             errors.append("sitemap.xml must not include /develop/ui/examples/starter.html")
+        txt_locs = [u for u in LOC_RE.findall(sm) if u.endswith(".txt")]
+        expected_txt = list(TXT_SITEMAP_LOCS)
+        if sorted(txt_locs) != sorted(expected_txt):
+            errors.append(f"sitemap.xml txt locs {txt_locs!r} != {expected_txt!r}")
+        for loc in TXT_SITEMAP_FORBIDDEN:
+            if loc in sm:
+                errors.append(f"sitemap.xml must not list dump {loc}")
+
+    if PREV_SITEMAP.exists():
+        for raw in PREV_SITEMAP.read_text(encoding="utf-8", errors="replace").splitlines():
+            url = raw.strip()
+            if not url or url.startswith("#"):
+                continue
+            if resolve_canonical_target(url) is None:
+                errors.append(f"prev-sitemap.txt URL missing from _site: {url}")
+    else:
+        errors.append("scripts/ci/prev-sitemap.txt missing")
 
     llms = REPO / "llms.txt"
     if not llms.exists():
@@ -204,6 +249,10 @@ def main() -> int:
         errors.append("favicon.ico missing from _site")
     if not (ROOT / "assets" / "og-image.png").exists():
         errors.append("assets/og-image.png missing from _site")
+    else:
+        dims = png_dimensions(ROOT / "assets" / "og-image.png")
+        if dims != (1200, 630):
+            errors.append(f"assets/og-image.png must be 1200x630, got {dims}")
     if not (ROOT / ".well-known" / "security.txt").exists():
         errors.append(".well-known/security.txt missing from _site")
     if not (ROOT / "schemas" / "responses.html").exists():
@@ -214,6 +263,7 @@ def main() -> int:
     pages = sorted(ROOT.rglob("*.html"))
     # Skip theme/plugin junk if any; redirect stubs are skipped below
     seen_titles: dict[str, list[str]] = {}
+    seen_descs: dict[str, list[str]] = {}
     canonicals: list[tuple[str, str]] = []
 
     for f in pages:
@@ -257,13 +307,16 @@ def main() -> int:
             for bad in BAD_TOKENS:
                 if bad in desc:
                     errors.append(f"{rel}: description contains placeholder/internal value {bad!r}")
+            seen_descs.setdefault(desc, []).append(rel)
 
         # titles
         if not title:
             errors.append(f"{rel}: missing <title>")
         else:
             if len(title) > MAX_TITLE:
-                warnings.append(f"{rel}: title {len(title)} chars (>{MAX_TITLE}, will truncate)")
+                errors.append(f"{rel}: title {len(title)} chars (max {MAX_TITLE})")
+            if len(title) < MIN_TITLE:
+                warnings.append(f"{rel}: title only {len(title)} chars")
             seen_titles.setdefault(title, []).append(rel)
 
         # double-encoding
@@ -291,12 +344,22 @@ def main() -> int:
         if twitter_image is None:
             twitter_image = attr(text, r'<meta\s+[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']twitter:image["\']')
 
-        if og_image != OG_IMAGE_URL:
-            errors.append(f"{rel}: og:image must be {OG_IMAGE_URL}, got {og_image!r}")
+        if not og_image:
+            errors.append(f"{rel}: no og:image")
+        elif og_image != OG_FALLBACK and not og_image.startswith(OG_PAGE_PREFIX):
+            errors.append(f"{rel}: og:image must be fallback or /assets/og/*.png, got {og_image!r}")
+        elif og_image:
+            og_path = resolve_canonical_target(og_image)
+            if og_path is None:
+                errors.append(f"{rel}: og:image 404 {og_image}")
+            else:
+                dims = png_dimensions(og_path)
+                if dims != (1200, 630):
+                    errors.append(f"{rel}: og:image {og_image} must be 1200x630, got {dims}")
         if twitter_card != "summary_large_image":
             errors.append(f"{rel}: twitter:card must be summary_large_image, got {twitter_card!r}")
-        if twitter_image != OG_IMAGE_URL:
-            errors.append(f"{rel}: twitter:image must be {OG_IMAGE_URL}, got {twitter_image!r}")
+        if twitter_image != og_image:
+            errors.append(f"{rel}: twitter:image must match og:image, got {twitter_image!r}")
 
         jsonld = extract_jsonld(text)
         if jsonld is None:
@@ -309,9 +372,13 @@ def main() -> int:
                 for node in graph_nodes(jsonld):
                     if not isinstance(node, dict) or node.get("@type") != "BreadcrumbList":
                         continue
-                    for item in node.get("itemListElement") or []:
+                    for i, item in enumerate(node.get("itemListElement") or [], start=1):
                         if not isinstance(item, dict):
                             continue
+                        if item.get("position") != i:
+                            errors.append(
+                                f"{rel}: breadcrumb position {item.get('position')} != {i}"
+                            )
                         name = item.get("name")
                         url = item.get("item")
                         if not name:
@@ -353,8 +420,15 @@ def main() -> int:
             article = find_typed_node(jsonld, "APIReference") or find_typed_node(
                 jsonld, "TechArticle"
             )
-            if article is not None and not article.get("dateModified"):
-                errors.append(f"{rel}: JSON-LD article missing dateModified")
+            if article is not None:
+                if not article.get("dateModified"):
+                    errors.append(f"{rel}: JSON-LD article missing dateModified")
+                if not article.get("datePublished"):
+                    errors.append(f"{rel}: JSON-LD article missing datePublished")
+                if article.get("inLanguage") != "en":
+                    errors.append(f"{rel}: JSON-LD article inLanguage must be 'en'")
+                if not article.get("author"):
+                    errors.append(f"{rel}: JSON-LD article missing author")
 
         if not canon:
             if "redirect_to" in text or 'http-equiv="refresh"' in text.lower():
@@ -367,6 +441,10 @@ def main() -> int:
     for t, ps in seen_titles.items():
         if len(ps) > 1:
             errors.append(f"duplicate title {t!r} on {len(ps)} pages: {', '.join(ps[:4])}")
+
+    for d, ps in seen_descs.items():
+        if len(ps) > 1:
+            errors.append(f"duplicate description on {len(ps)} pages: {', '.join(ps[:4])}")
 
     for rel, canon in canonicals:
         if resolve_canonical_target(canon) is None:

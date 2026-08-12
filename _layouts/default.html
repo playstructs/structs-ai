@@ -83,12 +83,20 @@
   <meta property="og:title" content="{{ page_title | xml_escape }}">
   <meta property="og:description" content="{{ meta_description | xml_escape }}">
   <meta property="og:url" content="{{ canonical_url }}">
+  {%- assign og_key = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "-" -%}
+  {%- if og_key == "" -%}{%- assign og_key = "index" -%}{%- endif -%}
+  {%- assign og_rel = "/assets/og/" | append: og_key | append: ".png" -%}
   {%- assign og_image_url = "/assets/og-image.png" | absolute_url -%}
+  {%- for f in site.static_files -%}
+    {%- if f.path == og_rel -%}
+      {%- assign og_image_url = og_rel | absolute_url -%}
+    {%- endif -%}
+  {%- endfor -%}
   {%- assign og_image_alt = "Structs — hexagonal S mark over an isometric pixel-art battlefield" -%}
   <meta property="og:image" content="{{ og_image_url }}">
   <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="1500">
-  <meta property="og:image:height" content="500">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="{{ og_image_alt | xml_escape }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ page_title | xml_escape }}">
