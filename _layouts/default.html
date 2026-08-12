@@ -95,6 +95,7 @@
   <meta name="twitter:description" content="{{ meta_description | xml_escape }}">
   <meta name="twitter:image" content="{{ og_image_url }}">
   <meta name="twitter:image:alt" content="{{ og_image_alt | xml_escape }}">
+  {% include json-ld.html %}
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-8NB71VRFSQ"></script>

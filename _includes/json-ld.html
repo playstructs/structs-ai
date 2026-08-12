@@ -1,0 +1,90 @@
+{%- comment -%}
+  JSON-LD for search engines. Strings go through jsonify so titles with quotes
+  stay valid JSON. dateModified is emitted only when Jekyll has the same
+  last_modified_at / date that jekyll-sitemap uses for <lastmod>.
+{%- endcomment -%}
+{%- if page.title and page.title != "" -%}
+  {%- assign jsonld_headline = page.title -%}
+{%- else -%}
+  {%- assign jsonld_headline = site.title -%}
+{%- endif -%}
+{%- assign jsonld_modified = "" -%}
+{%- if page.last_modified_at -%}
+  {%- assign jsonld_modified = page.last_modified_at | date_to_xmlschema -%}
+{%- elsif page.date -%}
+  {%- assign jsonld_modified = page.date | date_to_xmlschema -%}
+{%- endif -%}
+{%- assign jsonld_path = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "/" -%}
+{%- assign jsonld_parts = jsonld_path | split: "/" -%}
+{%- if canonical_path contains "/api/" -%}
+  {%- assign jsonld_article_type = "APIReference" -%}
+{%- else -%}
+  {%- assign jsonld_article_type = "TechArticle" -%}
+{%- endif -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "@id": {{ canonical_url | append: "#breadcrumb" | jsonify }},
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": {{ "/" | absolute_url | jsonify }}
+        }{% assign crumb_accum = "" %}{% for part in jsonld_parts %}{% if part == "" %}{% continue %}{% endif %}{% assign crumb_accum = crumb_accum | append: "/" | append: part %}{% capture crumb_name %}{% case part %}{% when "api" %}API{% when "ui" %}UI{% when "sui" %}SUI{% else %}{% assign words = part | replace: "-", " " | split: " " %}{% for word in words %}{{ word | capitalize }}{% unless forloop.last %} {% endunless %}{% endfor %}{% endcase %}{% endcapture %}
+        ,{
+          "@type": "ListItem",
+          "position": {{ forloop.index | plus: 1 }},
+          "name": {% if forloop.last %}{{ jsonld_headline | jsonify }}{% else %}{{ crumb_name | strip | jsonify }}{% endif %},
+          "item": {% if forloop.last %}{{ canonical_url | jsonify }}{% else %}{{ crumb_accum | append: "/" | absolute_url | jsonify }}{% endif %}
+        }{% endfor %}
+      ]
+    }{% if page.url == "/" %}
+    ,{
+      "@type": "WebSite",
+      "@id": {{ "/#website" | absolute_url | jsonify }},
+      "url": {{ "/" | absolute_url | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "description": {{ meta_description | jsonify }},
+      "publisher": { "@id": {{ "/#organization" | absolute_url | jsonify }} },
+      "about": { "@id": {{ "/#game" | absolute_url | jsonify }} }
+    }
+    ,{
+      "@type": "Organization",
+      "@id": {{ "/#organization" | absolute_url | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "url": {{ "/" | absolute_url | jsonify }}
+    }
+    ,{
+      "@type": ["VideoGame", "SoftwareApplication"],
+      "@id": {{ "/#game" | absolute_url | jsonify }},
+      "name": "Structs",
+      "url": {{ "/" | absolute_url | jsonify }},
+      "description": {{ meta_description | jsonify }},
+      "image": {{ og_image_url | jsonify }},
+      "genre": "Strategy",
+      "applicationCategory": "GameApplication",
+      "playMode": "https://schema.org/MultiPlayer",
+      "publisher": { "@id": {{ "/#organization" | absolute_url | jsonify }} }
+    }{% else %}
+    ,{
+      "@type": {{ jsonld_article_type | jsonify }},
+      "@id": {{ canonical_url | append: "#article" | jsonify }},
+      "headline": {{ jsonld_headline | jsonify }},
+      "description": {{ meta_description | jsonify }},
+      "url": {{ canonical_url | jsonify }},
+      "image": {{ og_image_url | jsonify }},
+      "isPartOf": { "@id": {{ "/#website" | absolute_url | jsonify }} },
+      "publisher": {
+        "@type": "Organization",
+        "name": {{ site.title | jsonify }},
+        "url": {{ "/" | absolute_url | jsonify }}
+      }{% if jsonld_modified != "" %}
+      ,"dateModified": {{ jsonld_modified | jsonify }}{% endif %}
+    }{% endif %}
+  ]
+}
+</script>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 import sys
 from pathlib import Path
@@ -75,6 +76,36 @@ def resolve_canonical_target(canon: str) -> Path | None:
 
 def is_redirect_stub(html_text: str) -> bool:
     return "redirect_to" in html_text or 'http-equiv="refresh"' in html_text.lower()
+
+
+def extract_jsonld(html_text: str) -> dict | None:
+    m = re.search(
+        r'<script\s+type=["\']application/ld\+json["\']\s*>(.*?)</script>',
+        html_text,
+        re.S | re.I,
+    )
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def graph_types(data: dict) -> set[str]:
+    types: set[str] = set()
+    graph = data.get("@graph")
+    nodes = graph if isinstance(graph, list) else [data]
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        raw = node.get("@type")
+        if isinstance(raw, list):
+            types.update(str(t) for t in raw)
+        elif raw:
+            types.add(str(raw))
+    return types
 
 
 def check_url_gate() -> None:
@@ -216,6 +247,39 @@ def main() -> int:
             errors.append(f"{rel}: twitter:card must be summary_large_image, got {twitter_card!r}")
         if twitter_image != OG_IMAGE_URL:
             errors.append(f"{rel}: twitter:image must be {OG_IMAGE_URL}, got {twitter_image!r}")
+
+        jsonld = extract_jsonld(text)
+        if jsonld is None:
+            errors.append(f"{rel}: missing or invalid application/ld+json")
+        else:
+            types = graph_types(jsonld)
+            if "BreadcrumbList" not in types:
+                errors.append(f"{rel}: JSON-LD missing BreadcrumbList")
+            else:
+                for node in jsonld.get("@graph") or []:
+                    if not isinstance(node, dict) or node.get("@type") != "BreadcrumbList":
+                        continue
+                    for item in node.get("itemListElement") or []:
+                        if not isinstance(item, dict):
+                            continue
+                        name = item.get("name")
+                        url = item.get("item")
+                        if not name:
+                            errors.append(f"{rel}: BreadcrumbList item missing name")
+                        if isinstance(url, str) and "://" in url and "///" in url.replace("://", ":"):
+                            errors.append(f"{rel}: BreadcrumbList item has doubled slash {url}")
+            is_home = rel in ("/index.html", "/") or (canon == f"{SITE_ORIGIN}/")
+            is_api = rel.startswith("/api/") or (canon or "").startswith(f"{SITE_ORIGIN}/api/")
+            if is_home:
+                if "WebSite" not in types:
+                    errors.append(f"{rel}: homepage JSON-LD missing WebSite")
+                if "VideoGame" not in types:
+                    errors.append(f"{rel}: homepage JSON-LD missing VideoGame")
+            elif is_api:
+                if "APIReference" not in types:
+                    errors.append(f"{rel}: /api/ JSON-LD missing APIReference")
+            elif "TechArticle" not in types:
+                errors.append(f"{rel}: JSON-LD missing TechArticle")
 
         if not canon:
             if "redirect_to" in text or 'http-equiv="refresh"' in text.lower():
