@@ -1,5 +1,6 @@
 ---
 title: Safety
+description: "The trust and approval contract between an agent and its operator: operation tiers, key hygiene, spend limits, and audit trails."
 permalink: /SAFETY
 ---
 

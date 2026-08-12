@@ -1,3 +1,7 @@
+---
+description: "Read struct defender assignments from the web application: which structs are set to defend which others."
+---
+
 # Webapp Struct Defender API Endpoints
 
 **Category**: webapp (catalog read)

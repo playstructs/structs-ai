@@ -1,3 +1,7 @@
+---
+description: "The permission system: address and object permissions, the flag layout, storage, the check flow, and guild rank permissions."
+---
+
 # Permission System
 
 **Purpose**: AI-readable reference for the Structs permission system. Covers address permissions, object permissions, guild rank permissions, and the message handler permission reference.

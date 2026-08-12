@@ -1,3 +1,7 @@
+---
+description: Fleet status, ID mapping, Command Ship rules, movement, and which operations are available on-station versus away.
+---
+
 # Fleet Mechanics
 
 **Purpose**: AI-readable reference for Structs fleet system. Status, movement, Command Ship rules.

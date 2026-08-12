@@ -1,3 +1,7 @@
+---
+description: "The Fleet entity schema: core data, the structs it carries, status values, and its relationships."
+---
+
 # Fleet Entity Schema
 
 **Version**: 1.0.0
@@ -41,7 +45,7 @@ The `structs` field is an array of struct IDs belonging to this fleet. Each entr
 |----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Code Reference | `x/structs/types/fleet.pb.go`, `x/structs/keeper/fleet_cache.go` |

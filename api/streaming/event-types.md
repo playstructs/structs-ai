@@ -1,3 +1,7 @@
+---
+description: The catalog of GRASS event types and categories, their subject patterns, and notes on which events are still stubbed.
+---
+
 # GRASS Event Types
 
 **Version**: 1.1.0

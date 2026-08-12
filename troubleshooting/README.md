@@ -1,3 +1,7 @@
+---
+description: "Troubleshooting guides drawn from real playtesting failures: build, exploration, transaction, permission, and reactor staking issues."
+---
+
 # Troubleshooting
 
 **Version**: 1.0.0  

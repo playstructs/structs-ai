@@ -1,3 +1,7 @@
+---
+description: "Every game action an agent can take, indexed by category: construction, struct management, combat, and resources. Verified against game code."
+---
+
 # Action Index
 
 **Version**: 1.1.0

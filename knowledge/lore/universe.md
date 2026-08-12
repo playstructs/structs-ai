@@ -1,3 +1,7 @@
+---
+description: "The galactic setting: the Resource Wars, the political landscape, why Alpha Matter matters, and the current state of the galaxy."
+---
+
 # The Universe
 
 **Category**: lore  

@@ -1,3 +1,7 @@
+---
+description: "Every page in the Structs agent corpus, organised by section: skills, knowledge, strategy, awareness, API reference, and build guides."
+---
+
 # Sitemap
 
 Complete file map of the structs.ai repository. The machine-readable `sitemap.xml` is

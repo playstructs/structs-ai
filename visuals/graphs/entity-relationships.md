@@ -1,3 +1,7 @@
+---
+description: "The complete entity relationship graph: every entity type and how each one connects to the others."
+---
+
 # Entity Relationship Graph
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: Read per-object time-series metrics from the web application, for charting how any entity changed over time.
+---
+
 # Webapp Stat API Endpoints
 
 **Category**: webapp (catalog read)

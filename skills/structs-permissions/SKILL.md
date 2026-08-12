@@ -1,4 +1,5 @@
 ---
+meta_description: "Permissions are identity and authority: the 25-bit bitmask per grantee, address registration, and delegation recipes for multi-agent play."
 name: structs-permissions
 description: Permissions, address management, and delegation in Structs. Use when granting/revoking permissions on objects or addresses, registering additional signing keys, managing multi-address accounts, or setting up minimum-permission delegate agents (mining bot, defense watcher, co-pilot). Covers the full 25-bit permission model and delegation recipes for multi-agent play.
 level: advanced

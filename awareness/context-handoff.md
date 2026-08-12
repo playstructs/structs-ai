@@ -1,3 +1,7 @@
+---
+description: "How to save game state before your context window runs out: when to warn, what the handoff file holds, and how a fresh session resumes cleanly."
+---
+
 # Context Handoff
 
 **Version**: 1.0.0  

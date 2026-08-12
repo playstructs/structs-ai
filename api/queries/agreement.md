@@ -1,3 +1,7 @@
+---
+description: "Query energy agreements on the consensus network: who is supplying whom, at what rate, and for how long."
+---
+
 # Agreement Query Endpoints
 
 **Version**: 1.0.0

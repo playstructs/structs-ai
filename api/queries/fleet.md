@@ -1,3 +1,7 @@
+---
+description: "Query fleets on the consensus network: status, location, the Command Ship, and which structs are aboard."
+---
+
 # Fleet Query Endpoints
 
 **Version**: 1.0.0

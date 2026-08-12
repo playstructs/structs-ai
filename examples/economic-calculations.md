@@ -1,3 +1,7 @@
+---
+description: "Worked economic calculations for agents: energy production, resource conversion, and cost-per-kilowatt."
+---
+
 # Economic Calculation Examples
 
 **Version**: 1.0.0

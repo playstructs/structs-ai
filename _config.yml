@@ -27,6 +27,7 @@ include:
   - llms-core.txt
   - llms-full.txt
   - .cursor
+  - .well-known
 
 # Setting `exclude` replaces Jekyll's defaults, so the vendor/cache entries
 # below must be restated or bundled gems get scanned as site content.

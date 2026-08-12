@@ -1,3 +1,7 @@
+---
+description: "Machine-readable visual content for agents: diagrams, relationship graphs, spatial data, and the schemas that describe them."
+---
+
 # Visual Content
 
 **Version**: 1.0.0  

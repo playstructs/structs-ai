@@ -1,3 +1,7 @@
+---
+description: Read fleet records from the web application catalog, including composition and status.
+---
+
 # Webapp Fleet API Endpoints
 
 **Category**: webapp (catalog read)

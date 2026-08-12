@@ -1,3 +1,7 @@
+---
+description: The MVVM layer the webapp wraps around its client subsystems, with an honest read on what to copy and what not to.
+---
+
 # Frontend architecture
 
 **Purpose**: The MVVM layer structs-webapp wraps around its client subsystems — router,

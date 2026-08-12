@@ -1,3 +1,7 @@
+---
+description: "Keeping agent state synchronised with game state: polling-based sync, event-driven sync, and the hybrid approach."
+---
+
 # State Synchronization Patterns
 
 **Version**: 1.0.0  

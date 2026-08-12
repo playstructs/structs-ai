@@ -1,3 +1,7 @@
+---
+description: "The Guild entity schema: core data, members, relationships, and the fields known to be missing."
+---
+
 # Guild Entity Schema
 
 **Version**: 1.0.0
@@ -46,7 +50,7 @@ The following fields exist in the proto definition but are not yet captured in t
 |----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Code Reference | `proto/structs/structs/guild.proto`, `x/structs/keeper/guild_cache.go` |

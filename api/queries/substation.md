@@ -1,3 +1,7 @@
+---
+description: "Query substations on the consensus network: connected capacity, how it is diluted across connections, and who draws from it."
+---
+
 # Substation Query Endpoints
 
 **Version**: 1.0.0

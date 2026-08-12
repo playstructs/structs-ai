@@ -1,3 +1,7 @@
+---
+description: "The gameplay systems an agent operates through: state queries, the 5X framework, and the error cases each one can return."
+---
+
 # Gameplay Protocol
 
 **Version**: 1.1.0  

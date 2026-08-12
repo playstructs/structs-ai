@@ -1,3 +1,7 @@
+---
+description: "The operator profile: the one file a human fills in. Goals, risk tolerance, autonomy level, and connection details for their agent."
+---
+
 # User (OpenClaw compatibility stub)
 
 OpenClaw expects this file. For Structs, the human operator profile lives in

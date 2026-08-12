@@ -1,3 +1,7 @@
+---
+description: Market data structures, operations, and patterns, with verification notes on each.
+---
+
 # Structs Market Data Structures
 
 **Version**: 1.0.0
@@ -219,6 +223,6 @@ Prices are player-driven. Exact formula depends on market implementation.
 
 | Field | Value |
 |-------|-------|
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Source | documentation |
 | Notes | Market data structures based on economic documentation. Some market mechanics may need code verification. |

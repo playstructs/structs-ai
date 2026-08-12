@@ -1,3 +1,7 @@
+---
+description: "Identify dangers before they land: threat categories, how to set up monitoring, and what order to respond in when several fire at once."
+---
+
 # Threat Detection
 
 **Version**: 1.0.0  

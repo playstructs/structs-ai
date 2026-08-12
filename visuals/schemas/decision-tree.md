@@ -1,3 +1,7 @@
+---
+description: "The schema for decision trees: top-level properties, nodes, and edges."
+---
+
 # Decision Tree Schema
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: The complete catalog of game entities as JSON schema, with query patterns and an index pointing at each entity definition.
+---
+
 # Structs Entity Definitions
 
 **Version**: 1.0.0
@@ -493,7 +497,7 @@
 |-------|-------|
 | Verified | true |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Note | Field definitions verified against codebase. Some entities need additional field verification. |

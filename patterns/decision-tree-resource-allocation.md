@@ -1,3 +1,7 @@
+---
+description: A decision tree for allocating Alpha Matter and energy across competing uses, with the conditions that should drive each choice.
+---
+
 # Resource Allocation Decision Tree
 
 **Version**: 1.0.0

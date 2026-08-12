@@ -1,3 +1,7 @@
+---
+description: "The first one to two days: survive, establish the resource pipeline, build a power foundation. Build order, power discipline, and what not to do."
+---
+
 # Early Game
 
 **Phase**: First 1-2 days (first few sessions)  

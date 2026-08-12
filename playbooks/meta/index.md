@@ -1,5 +1,6 @@
 ---
 title: Meta Strategy
+description: "Meta strategy: reading opponents, countering each player type, holding tempo, allocating force, and running multiple accounts as one team."
 ---
 
 # Meta Strategy

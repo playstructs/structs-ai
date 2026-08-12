@@ -1,3 +1,7 @@
+---
+description: A decision tree for securing resources by refining ore immediately, since ore can be stolen and refined Alpha Matter cannot.
+---
+
 # Resource Security Decision Tree
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "Signing and submitting transactions to the consensus network, step by step: get account info, build, sign, broadcast."
+---
+
 # Consensus Transaction Signing
 
 **Version**: 1.0.0

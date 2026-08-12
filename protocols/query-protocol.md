@@ -1,3 +1,7 @@
+---
+description: "How agents read game state: HTTP GET against REST endpoints, query patterns, batching strategies, and what is safe to cache."
+---
+
 # Query Protocol
 
 **Version**: 1.0.0  

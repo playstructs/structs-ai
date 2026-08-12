@@ -1,3 +1,7 @@
+---
+description: System endpoints on the web application, including server timestamps for reconciling your own clock against chain time.
+---
+
 # Webapp System API Endpoints
 
 **Version**: 1.1.0

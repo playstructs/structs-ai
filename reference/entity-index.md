@@ -1,3 +1,7 @@
+---
+description: "Every game entity indexed: core, social, resource, and economic. Verified against game code, with a link to the canonical page for each."
+---
+
 # Entity Index
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "How the tactical map is built: the ambit stack, the tile grid, fog of war, and the picture-in-picture trick that keeps combat visible."
+---
+
 # The map
 
 **Purpose**: How the tactical map is built — the ambit stack, the tile grid, fog of war,

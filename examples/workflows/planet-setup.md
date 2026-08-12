@@ -1,3 +1,7 @@
+---
+description: A worked gameplay workflow for setting up a new planet, with the recommended build order and the principles behind it.
+---
+
 # Planet Setup Workflow
 
 **Version**: 1.0.0

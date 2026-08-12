@@ -1,3 +1,7 @@
+---
+description: How names and profile pictures are moderated by guilds rather than a global authority, the permission check, validation rules, and audit events.
+---
+
 # UGC and Decentralized Moderation
 
 **Purpose**: Explain how user-generated content (names and profile pictures) works in Structs, why it is moderated by guilds rather than by a global authority, and what the chain validates before it accepts anything.

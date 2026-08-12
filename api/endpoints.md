@@ -1,3 +1,7 @@
+---
+description: "The REST API specification: base URLs, consensus network queries, transaction endpoints, and the web application API."
+---
+
 # API Endpoints
 
 **Last Updated**: May 13, 2026

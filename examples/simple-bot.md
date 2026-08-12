@@ -1,3 +1,7 @@
+---
+description: A minimal bot that monitors player state and performs basic actions. Configuration, state handling, and behaviours.
+---
+
 # Simple Bot Example
 
 **Version**: 1.0.0

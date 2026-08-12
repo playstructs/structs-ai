@@ -1,3 +1,7 @@
+---
+description: "A decision tree for running the 5X loop: Explore, Extract, Expand, Exterminate, Exchange, with conditions and phase detail."
+---
+
 # 5X Framework Decision Tree
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "Diagnose permission failures: common causes, the permission bit reference, verification steps, and the error codes each one produces."
+---
+
 # Permission Troubleshooting
 
 **Version**: 2.0.0  

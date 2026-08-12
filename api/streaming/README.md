@@ -1,3 +1,7 @@
+---
+description: "Complete documentation for GRASS real-time streaming over NATS: overview, quick start, and connection details."
+---
+
 # GRASS/NATS Streaming API Documentation
 
 **Purpose**: Complete documentation for GRASS (Game Real-time Application Streaming Service) via NATS messaging

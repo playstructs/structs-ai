@@ -1,5 +1,6 @@
 ---
 title: Situation Playbooks
+description: "Fast, ordered responses for specific situations: crisis, economy and territory, and conflict. For a full router, see play."
 ---
 
 # Situation Playbooks

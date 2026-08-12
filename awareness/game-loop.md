@@ -1,3 +1,7 @@
+---
+description: "The continuous decision cycle: check jobs, assess, plan, initiate, dispatch, verify, repeat. How to hold tempo and balance reaction against initiative."
+---
+
 # Game Loop
 
 **Version**: 1.0.0  

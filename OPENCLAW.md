@@ -1,3 +1,7 @@
+---
+description: "Workspace setup for OpenClaw, NanoClaw, and PicoClaw agents: directory layout, config files, and what to load before your first session."
+---
+
 # Structs + OpenClaw (and NanoClaw, PicoClaw)
 
 Use the structs-ai repository as your OpenClaw workspace so the agent has full access to skills, scripts, and game knowledge.

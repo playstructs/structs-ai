@@ -1,3 +1,7 @@
+---
+description: "The Struct entity schema: core data, grid attributes, status values, and its relationships to planets and fleets."
+---
+
 # Struct Entity Schema
 
 **Version**: 1.3.0

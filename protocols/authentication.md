@@ -1,3 +1,7 @@
+---
+description: "How agents authenticate against Structs APIs: session auth for the web app, key-based signing for the consensus network, and streaming credentials."
+---
+
 # Authentication Protocol
 
 **Version**: 1.0.0  

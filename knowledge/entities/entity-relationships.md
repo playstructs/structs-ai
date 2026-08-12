@@ -1,3 +1,7 @@
+---
+description: "How every entity type relates: the ownership graph, the economic graph, power flow, and the type-index ID format that names them all."
+---
+
 # Entity Relationships
 
 **Purpose**: AI-readable reference for how all Structs entity types relate. Ownership graph, economic graph, and ID format system.

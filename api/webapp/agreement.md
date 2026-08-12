@@ -1,3 +1,7 @@
+---
+description: "Read energy agreement records from the web application catalog: counterparties, rate, and duration."
+---
+
 # Webapp Agreement API Endpoints
 
 **Category**: webapp (catalog read)

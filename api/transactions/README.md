@@ -1,3 +1,7 @@
+---
+description: Transaction endpoints, split out from the full API reference to keep context windows small.
+---
+
 # Transaction Endpoints
 
 **Version**: 1.0.0  

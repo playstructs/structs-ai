@@ -1,3 +1,7 @@
+---
+description: "Query guilds on the consensus network: membership, ranks, the guild's reactor and substation, and its token."
+---
+
 # Guild Query Endpoints
 
 **Version**: 1.0.0

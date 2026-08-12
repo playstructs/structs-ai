@@ -1,5 +1,6 @@
 ---
 title: "Transcript 01 — Zero to Mining"
+description: A full transcript from a fresh workspace to a running mine and refine pipeline, with notes on what made the run good.
 ---
 
 # Transcript 01 — Zero to Mining

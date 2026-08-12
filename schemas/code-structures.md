@@ -1,3 +1,7 @@
+---
+description: "Verified code structures and data types used internally: PlayerCache, StructCache, FleetCache and the patterns around them."
+---
+
 # Structs Code Structures
 
 **Version**: 1.0.0

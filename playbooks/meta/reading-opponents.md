@@ -1,3 +1,7 @@
+---
+description: "Identify an opponent's playstyle from their behaviour. Behavioural signatures for each of the six types, and what each one tells you."
+---
+
 # Reading Opponents
 
 **Topic**: Identifying opponent soul types from behavior  

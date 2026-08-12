@@ -1,3 +1,7 @@
+---
+description: "Every game formula, verified against the codebase: battle damage, economics, and struct building math."
+---
+
 # Structs Formula Definitions
 
 **Version**: 1.0.0

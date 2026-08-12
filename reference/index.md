@@ -1,5 +1,6 @@
 ---
 title: Reference
+description: "Look up a rule, a number, or a name: action and entity indexes, endpoint lookups, formulas, and the glossary. For procedures, use skills instead."
 permalink: /reference/
 ---
 

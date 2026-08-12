@@ -1,5 +1,6 @@
 ---
 title: structs:// MCP resource map
+description: How Structs Desktop derives MCP resource URIs from this corpus, what changed in the documentation redesign, and how to resync.
 permalink: /develop/structs-resources
 ---
 

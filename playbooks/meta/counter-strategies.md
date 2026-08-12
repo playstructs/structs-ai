@@ -1,3 +1,7 @@
+---
+description: How to beat each of the six player types. Know their patterns, exploit them, and deny the strengths their playstyle depends on.
+---
+
 # Counter-Strategies
 
 **Topic**: Beating each of the six player types  

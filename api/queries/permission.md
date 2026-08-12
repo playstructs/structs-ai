@@ -1,3 +1,7 @@
+---
+description: "Query permissions on the consensus network, including the flag layout for the 25-bit bitmask and how to read a grantee's authority."
+---
+
 # Permission Query Endpoints
 
 **Version**: 1.2.0

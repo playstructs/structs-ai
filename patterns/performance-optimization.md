@@ -1,3 +1,7 @@
+---
+description: "Making agents faster: reactor staking query optimisation, permission checking, and database query tuning."
+---
+
 # Performance Optimization
 
 **Version**: 1.0.0  

@@ -1,3 +1,7 @@
+---
+description: "The Substation entity schema: properties, relationships, and verification status."
+---
+
 # Substation Entity Schema
 
 **Version**: 1.0.0
@@ -31,7 +35,7 @@ Substation entity definition -- extracted from game-state.json for context windo
 |-----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 

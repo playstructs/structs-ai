@@ -1,4 +1,5 @@
 ---
+meta_description: Key setup, player creation by reactor infusion or guild signup, planet exploration, and your first builds. Read your operator profile first.
 name: structs-onboarding
 description: Onboards a new player into Structs. Handles key creation/recovery, player creation (via reactor-infuse or guild signup), planet exploration, and initial infrastructure builds. Use when starting fresh, setting up a new agent, creating a player, claiming first planet, or building initial infrastructure. Build times range from ~17 min (Command Ship) to ~57 min (Ore Extractor/Refinery).
 ---

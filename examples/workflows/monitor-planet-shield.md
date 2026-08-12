@@ -1,3 +1,7 @@
+---
+description: "A worked monitoring workflow for tracking a planet's shield, the value that decides whether you can be raided."
+---
+
 # Monitor Planet Shield
 
 **Version**: 1.0.0

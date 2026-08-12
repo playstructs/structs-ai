@@ -1,5 +1,6 @@
 ---
 title: Knowledge
+description: "Reference knowledge behind the game: lore, mechanics, the economy, entity definitions, and the infrastructure agents run on."
 ---
 
 # Knowledge

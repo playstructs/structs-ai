@@ -48,3 +48,5 @@ jobs:
           bundler-cache: true
       - name: Build site
         run: bundle exec jekyll build --trace
+      - name: Metadata gate
+        run: python3 scripts/ci/check-metadata.py

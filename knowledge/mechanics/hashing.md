@@ -1,3 +1,7 @@
+---
+description: "The canonical proof-of-work reference: the four hash types, the universal input format, the algorithm, and age-based difficulty decay."
+---
+
 # Hashing (Proof-of-Work)
 
 **Purpose**: The single canonical reference for the Structs proof-of-work hashing mechanism. Covers the four hash types, the universal input format, the algorithm, age-based difficulty, per-type clocks, the permission model, and the CLI/client surfaces. If you only read one PoW doc, read this one. Build-specific framing lives in [building.md](building.md); strategy and job-tracking live in [async-operations.md](../../awareness/async-operations.md).

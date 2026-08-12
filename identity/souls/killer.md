@@ -1,3 +1,7 @@
+---
+description: The Killer is the predator, hunting because the game allows it and someone has to keep the galaxy honest. Goals, skills, and strategic tendencies.
+---
+
 # The Killer
 
 *"Monitor, Make Moves, Pillage."*

@@ -1,3 +1,7 @@
+---
+description: "Read reactor records from the web application catalog: infusion, capacity, and the validator behind each reactor."
+---
+
 # Webapp Reactor API Endpoints
 
 **Category**: webapp (catalog read)

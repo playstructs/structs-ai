@@ -1,5 +1,6 @@
 ---
-title: Lore
+title: Lore Overview
+description: "The galaxy behind the mechanics: Alpha Matter, the species that fought over it, the guilds that formed, and where structs came from."
 permalink: /lore/
 ---
 

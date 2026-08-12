@@ -1,3 +1,7 @@
+---
+description: How transactions are validated, the failures agents hit most often, and the status codes each one returns.
+---
+
 # Validation Patterns
 
 **Version**: 1.0.0  

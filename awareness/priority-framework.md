@@ -1,3 +1,7 @@
+---
+description: Survival, security, economy, expansion, dominance. The decision hierarchy for when everything demands attention at once, and how to avoid paralysis.
+---
+
 # Priority Framework
 
 **Version**: 1.0.0  

@@ -1,3 +1,7 @@
+---
+description: "Implementing multi-step API workflows: sequential patterns, parallel patterns, and managing state across the steps."
+---
+
 # Workflow Patterns
 
 **Version**: 1.0.0  

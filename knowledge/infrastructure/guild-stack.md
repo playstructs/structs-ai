@@ -1,3 +1,7 @@
+---
+description: "The Guild Stack architecture: a Docker Compose app giving local PostgreSQL access to indexed game state, GRASS events, and a webapp."
+---
+
 # Guild Stack Architecture
 
 **Purpose**: AI-readable reference for the Structs Guild Stack — a Docker Compose application that provides local PostgreSQL access to indexed game state, GRASS real-time events, a webapp, and transaction signing. This is an advanced/optional upgrade for agents who need sub-second query performance.

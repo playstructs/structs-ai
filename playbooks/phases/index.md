@@ -1,5 +1,6 @@
 ---
 title: Phase Playbooks
+description: "What to do in each phase of a Structs game: early-game survival, mid-game expansion, and late-game dominance."
 ---
 
 # Phase Playbooks

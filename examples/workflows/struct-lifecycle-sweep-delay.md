@@ -1,3 +1,7 @@
+---
+description: "A worked workflow covering StructSweepDelay: what happens after a struct is destroyed, and when its slot actually clears."
+---
+
 # Struct Lifecycle - Sweep Delay Workflow
 
 **Version**: 1.0.0

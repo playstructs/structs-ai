@@ -1,3 +1,7 @@
+---
+description: "The schema for describing UI: top-level properties, locations, elements, and annotations."
+---
+
 # UI Schema
 
 **Version**: 1.0.0

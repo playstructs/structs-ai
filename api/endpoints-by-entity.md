@@ -1,7 +1,10 @@
+---
+description: The same endpoints organised by entity instead of by protocol, so you can find everything about a player, planet, guild or struct at once.
+---
+
 # API Endpoints by Entity
 
 **Version**: 1.0.0
-**Last Updated**: 2025-01-XX
 **Description**: API endpoints organized by entity type for easier discovery
 
 ---

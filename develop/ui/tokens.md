@@ -1,3 +1,7 @@
+---
+description: "Every design token SUI defines: colour, a seven-step spacing scale, dimensions, the z-index stack, and the tokens people expect but won't find."
+---
+
 # SUI tokens and typography
 
 **Purpose**: Every design token SUI defines, what each one means, and which ones people

@@ -1,3 +1,7 @@
+---
+description: "How an agent works with the human it plays for: setting goals, agreeing on autonomy, and reporting back in language they understand."
+---
+
 # Commander (compatibility stub)
 
 The human operator profile now lives in one file: **[`config/operator.md`](config/operator.md)**

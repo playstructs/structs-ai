@@ -1,3 +1,7 @@
+---
+description: A worked economic workflow for trading Alpha Matter, with prerequisites, error handling, and best practices.
+---
+
 # Trade Alpha Matter Workflow
 
 **Version**: 1.0.0

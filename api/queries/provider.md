@@ -1,3 +1,7 @@
+---
+description: "Query energy providers on the consensus network: what they sell, at what price, and the agreements they have open."
+---
+
 # Provider Query Endpoints
 
 **Version**: 1.0.0

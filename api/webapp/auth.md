@@ -1,3 +1,7 @@
+---
+description: "Authentication endpoints for the web application: how a session is established and how to carry it on later requests."
+---
+
 # Webapp Authentication API Endpoints
 
 **Version**: 1.1.0

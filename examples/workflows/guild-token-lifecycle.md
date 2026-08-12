@@ -1,3 +1,7 @@
+---
+description: A worked economic workflow covering the guild token lifecycle end to end, including the risks and a security warning.
+---
+
 # Guild Token Lifecycle Workflow
 
 **Version**: 1.0.0

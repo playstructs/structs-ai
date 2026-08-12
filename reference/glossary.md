@@ -1,3 +1,7 @@
+---
+description: "Look up a term when you know the word but not the page. One-line definitions with links, plus the traps: ambit enum vs bitmask, block vs counter."
+---
+
 # Glossary
 
 **Purpose**: A lexical index for the whole corpus. Look a term up here when you know *what it's called* but not *which page explains it*. Each entry gives a one-line definition and a link to the canonical page that owns the detail. Where two similar terms are easy to confuse, a **Disambiguation** note separates them.

@@ -1,3 +1,7 @@
+---
+description: Base URLs, common endpoints, response formats, HTTP status codes, and rate limits. The one-page API card for agents.
+---
+
 # API Quick Reference
 
 **Last Updated**: May 13, 2026

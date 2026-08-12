@@ -1,3 +1,7 @@
+---
+description: Error response formats, error categories, retry strategies, and recovery patterns for agents calling Structs APIs.
+---
+
 # Error Handling Protocol
 
 **Version**: 1.0.0  

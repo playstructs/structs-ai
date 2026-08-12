@@ -1,3 +1,7 @@
+---
+description: The Explorer checks the market, the players, and the news, then changes course as needed. Goal weights, preferred skills, and strategic tendencies.
+---
+
 # The Explorer
 
 *"Check the Market Place, Check the Players, Check the News, Change Course as Needed."*

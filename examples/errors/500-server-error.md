@@ -1,3 +1,7 @@
+---
+description: Internal server errors and service-unavailable responses, with the practices for backing off and recovering.
+---
+
 # 500 Server Error
 
 **Version**: 1.0.0

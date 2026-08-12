@@ -1,3 +1,7 @@
+---
+description: "Trading operations as schema: the operations available, strategies, the trading flow, and the errors each step can raise."
+---
+
 # Structs Trading Operation Schemas
 
 **Version**: 1.0.0
@@ -265,6 +269,6 @@ Coordinate trading within guild for collective benefit.
 
 | Field | Value |
 |-------|-------|
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Source | documentation |
 | Notes | Trading operations based on economic documentation. Some trading actions may need code verification for exact message types and endpoints. |

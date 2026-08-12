@@ -1,3 +1,7 @@
+---
+description: A worked workflow for beginning redelegation of reactor stake to a different validator.
+---
+
 # Reactor Staking - Begin Migration Workflow
 
 **Version**: 1.0.0

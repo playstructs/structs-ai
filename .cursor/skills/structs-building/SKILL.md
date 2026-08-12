@@ -1,4 +1,5 @@
 ---
+meta_description: "Turn power headroom and charge into capability: extractors, refineries, generators, and combat structs. Includes the full struct catalog."
 name: structs-building
 description: Builds and manages structs in Structs — construction, the build-order decision, activation/deactivation, movement, defense assignment, stealth, and generator infusion. Use when building a struct, deciding what to build next, activating/deactivating, moving the Command Ship, setting defenders, enabling stealth, or infusing a generator. Build times range ~17 min (Command Ship) to ~6.4 hr (World Engine) at D=3.
 level: core

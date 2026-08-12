@@ -1,5 +1,6 @@
 ---
 title: Strategy
+description: How to decide, and how to read the board. For doing, see skills; for a crisis router, see play.
 permalink: /strategy/
 ---
 

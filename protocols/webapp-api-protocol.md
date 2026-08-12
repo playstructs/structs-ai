@@ -1,3 +1,7 @@
+---
+description: "The structs-webapp API: response envelope, authentication, catalog conventions, time-series stats, live tunables, and pagination."
+---
+
 # Web Application API Protocol
 
 **Category**: Query

@@ -1,3 +1,7 @@
+---
+description: "Read energy provider records from the web application catalog: pricing, availability, and open agreements."
+---
+
 # Webapp Provider API Endpoints
 
 **Category**: webapp (catalog read)

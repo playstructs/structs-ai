@@ -1,3 +1,7 @@
+---
+description: "The Allocation entity schema: properties, relationships, and verification status."
+---
+
 # Allocation Entity Schema
 
 **Version**: 1.0.0
@@ -47,7 +51,7 @@ Allocations link a source entity to a destination entity. Both source and destin
 |-----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 

@@ -1,4 +1,5 @@
 ---
+meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
 description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
 ---

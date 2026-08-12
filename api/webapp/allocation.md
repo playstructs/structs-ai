@@ -1,3 +1,7 @@
+---
+description: "Read allocation records from the web application catalog: how energy capacity is routed and to whom."
+---
+
 # Webapp Allocation API Endpoints
 
 **Category**: webapp (catalog read)

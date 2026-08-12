@@ -1,4 +1,5 @@
 ---
+meta_description: "Advanced. Run a full local guild node in Docker Compose: PostgreSQL indexing, sub-second queries, GRASS events, and optional signing."
 name: structs-guild-stack
 description: Deploys the Guild Stack (Docker Compose) for local PostgreSQL access to game state. Use when you need faster queries for combat automation, real-time threat detection, raid target scouting, fleet composition analysis, or galaxy-wide intelligence. Advanced/optional -- CLI works for basic gameplay, but PG access transforms what is possible.
 level: advanced

@@ -1,3 +1,7 @@
+---
+description: There is no single win condition in Structs. Forms of mastery, the meta-victory, and what losing looks like in a galaxy with no scoreboard.
+---
+
 # Victory
 
 There is no single win condition in Structs. The galaxy is too complex for a single scoreboard. Victory is what you define it to be -- and the best players define it clearly.

@@ -1,3 +1,7 @@
+---
+description: "An automated bot for resource extraction, refinement and energy production: configuration, capabilities, and the full workflow."
+---
+
 # Economic Bot Example
 
 **Version**: 1.1.0

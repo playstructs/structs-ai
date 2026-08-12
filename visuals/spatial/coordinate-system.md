@@ -1,3 +1,7 @@
+---
+description: "The galactic coordinate system: system properties, regions, and axis definitions."
+---
+
 # Galactic Coordinate System
 
 **Version**: 1.0.0

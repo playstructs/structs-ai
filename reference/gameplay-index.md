@@ -1,7 +1,10 @@
+---
+description: "An index of the gameplay documentation: schemas, protocols, strategy patterns, decision trees, and tasks."
+---
+
 # Gameplay Documentation Index
 
 **Version**: 1.0.0
-**Last Updated**: 2025-01-XX
 **Description**: Complete index of gameplay documentation for AI agents
 
 ---

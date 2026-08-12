@@ -1,3 +1,7 @@
+---
+description: "Read guild rank permissions from the web application: which authority each rank carries inside a guild."
+---
+
 # Webapp Permission Guild Rank API Endpoints
 
 **Category**: webapp (catalog read)

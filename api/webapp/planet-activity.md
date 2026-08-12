@@ -1,3 +1,7 @@
+---
+description: "Read the planet activity log from the web application: the event history of what happened on a planet and when."
+---
+
 # Webapp Planet Activity API Endpoints
 
 **Category**: webapp (catalog read)

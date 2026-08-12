@@ -1,3 +1,7 @@
+---
+description: "A worked monitoring workflow: query a planet, then watch it for changes over time."
+---
+
 # Query and Monitor Planet
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: Not-found errors on both APIs, and the important detail that the web application and consensus network handle missing resources differently.
+---
+
 # 404 Not Found
 
 **Version**: 1.0.0

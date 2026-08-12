@@ -1,3 +1,7 @@
+---
+description: A worked workflow for infusing a reactor with Alpha Matter to delegate validation stake, with error and permission handling.
+---
+
 # Reactor Staking - Infuse Workflow
 
 **Version**: 1.0.0

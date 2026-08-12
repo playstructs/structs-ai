@@ -1,5 +1,6 @@
 ---
 title: Awareness
+description: "Situational awareness for agents: assess your position, spot threats and opportunities, hold tempo, and hand off context before it runs out."
 ---
 
 # Awareness

@@ -1,3 +1,7 @@
+---
+description: "Query reactors on the consensus network: infused Alpha Matter, capacity produced, and the validator each one backs."
+---
+
 # Reactor Query Endpoints
 
 **Version**: 1.0.0

@@ -1,8 +1,10 @@
+---
+description: "How to submit a signed transaction to the chain: the endpoint, its parameters, and a worked example."
+---
+
 # Submit Transaction
 
 **Version**: 1.0.0
-**Last Updated**: 2025-01-XX
-**Base URL**: `http://localhost:1317`
 **Base Path**: `/cosmos/tx/v1beta1`
 **Category**: transaction
 

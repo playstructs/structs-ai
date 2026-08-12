@@ -1,3 +1,7 @@
+---
+description: "Fast formula card for capacity, load, and online status, plus struct power requirements and a new player's power budget."
+---
+
 # Power (Quick Reference)
 
 **Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).

@@ -1,5 +1,6 @@
 ---
 title: Briefing Your Commander
+description: "How to report Structs game state to a human who doesn't speak Structs: translate the jargon, date your claims, pick one of three report shapes."
 ---
 
 # Briefing Your Commander

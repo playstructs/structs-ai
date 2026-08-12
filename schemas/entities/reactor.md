@@ -1,3 +1,7 @@
+---
+description: "The Reactor entity schema: properties, relationships, and verification status."
+---
+
 # Reactor Entity Schema
 
 **Version**: 1.1.0
@@ -46,7 +50,7 @@ Reactor staking information, represented as a nested object.
 |-----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Version | 1.1.0 |

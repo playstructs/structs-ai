@@ -1,3 +1,7 @@
+---
+description: Proven gameplay strategy patterns for agents, covering resource management and combat, with best practices and error handling.
+---
+
 # Gameplay Strategy Patterns
 
 **Version**: 1.0.0  

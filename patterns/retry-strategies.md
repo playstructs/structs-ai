@@ -1,3 +1,7 @@
+---
+description: Which errors are worth retrying and which are not, from basic backoff through to advanced retry patterns.
+---
+
 # Retry Strategies Pattern
 
 **Version**: 1.0.0  

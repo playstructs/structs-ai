@@ -1,3 +1,7 @@
+---
+description: "Practices that keep a multi-page SUI console coherent as it grows: helper kits, list reconciliation, and the pre-ship checklist."
+---
+
 # SUI patterns
 
 **Purpose**: The practices that keep a multi-page SUI console coherent as it grows, and

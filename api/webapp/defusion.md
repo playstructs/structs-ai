@@ -1,3 +1,7 @@
+---
+description: "Read defusion records from the web application: Alpha Matter being withdrawn from a reactor, and the state of each withdrawal."
+---
+
 # Webapp Defusion API Endpoints
 
 **Category**: webapp (catalog read)

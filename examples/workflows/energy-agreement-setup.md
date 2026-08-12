@@ -1,3 +1,7 @@
+---
+description: A worked economic workflow for setting up an energy agreement, including agreement properties and error handling.
+---
+
 # Energy Agreement Setup Workflow
 
 **Version**: 1.0.0

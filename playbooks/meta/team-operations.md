@@ -1,3 +1,7 @@
+---
+description: "Run several accounts as one coordinated force. Most per-player limits are not limits across players: charge, builds, power sharing, focus fire."
+---
+
 # Team Operations
 
 **Topic**: Running multiple players (accounts) as one coordinated force

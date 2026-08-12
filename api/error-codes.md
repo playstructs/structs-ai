@@ -1,7 +1,10 @@
+---
+description: The complete catalog of API error codes for agents, with response examples, categories, and which errors are worth retrying.
+---
+
 # API Error Codes
 
 **Version**: 1.0.0
-**Last Updated**: 2025-01-XX
 **Description**: Complete catalog of API error codes for AI agents
 
 ---

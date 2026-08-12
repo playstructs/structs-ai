@@ -1,3 +1,7 @@
+---
+description: "The history of the galaxy in eras: discovery, the Resource Wars, the emergence of structs, and the formation of the guilds."
+---
+
 # Timeline
 
 **Category**: lore  

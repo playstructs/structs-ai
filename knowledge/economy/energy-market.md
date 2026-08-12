@@ -1,3 +1,7 @@
+---
+description: "How energy flows between players: providers, agreements, pricing dynamics, supply and demand, and provider configuration."
+---
+
 # Energy Market
 
 **Purpose**: AI-readable reference for Structs energy agreements, pricing dynamics, supply/demand, and entity relationships. How energy flows between players.

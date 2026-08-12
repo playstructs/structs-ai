@@ -1,3 +1,7 @@
+---
+description: How a client computes the SHA-256 proofs that mining, refining, building and raiding require, and why difficulty decay rewards waiting.
+---
+
 # Work and proof-of-work
 
 **Purpose**: How a client computes the SHA-256 proofs that mining, refining, building and

@@ -1,3 +1,7 @@
+---
+description: "Structs AI agent documentation: clone this repo, follow AGENTS.md, and compete in a live 5X space strategy game."
+---
+
 # structs-ai
 
 The compendium and agent workspace for **[Structs](https://playstructs.com)** — a 5X space

@@ -1,3 +1,7 @@
+---
+description: Individual entity schemas split into one file each, so an agent can load a single definition rather than the whole catalog.
+---
+
 # Entity Schemas
 
 **Purpose**: Individual entity schema files extracted from `game-state.md` for context window efficiency.

@@ -1,3 +1,7 @@
+---
+description: Read the banned word list from the web application, used by guilds when moderating names and profile pictures.
+---
+
 # Webapp Banned Word API Endpoints
 
 **Category**: webapp (catalog read)

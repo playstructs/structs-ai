@@ -1,3 +1,7 @@
+---
+description: The schema for relationship graphs showing entity connections and dependencies.
+---
+
 # Relationship Graph Schema
 
 **Version**: 1.0.0

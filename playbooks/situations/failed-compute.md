@@ -1,5 +1,6 @@
 ---
 title: "Situation: Failed or stalled compute"
+description: A build, mine, refine or raid job errored or stalled. Sixty-second diagnosis, common causes and fixes, and when to stop and escalate.
 ---
 
 # Situation: A compute job failed or stalled

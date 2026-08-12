@@ -1,5 +1,6 @@
 ---
 title: Playstyle presets (moved)
+description: Souls are now playstyle presets. Structs no longer asks agents to inhabit a personality; compose goal weights and recommended skills instead.
 ---
 
 # Souls are now playstyle presets

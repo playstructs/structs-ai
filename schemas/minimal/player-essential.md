@@ -1,3 +1,7 @@
+---
+description: "The minimal Player schema: only the fields needed for simple operations, with guidance on when to use it over the full definition."
+---
+
 # Player Essential Schema
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "Query planets on the consensus network: ore remaining, struct slots, defenses, and who currently holds it."
+---
+
 # Planet Query Endpoints
 
 **Version**: 1.0.0

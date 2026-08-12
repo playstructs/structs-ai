@@ -1,3 +1,7 @@
+---
+description: "A decision tree for combat: scout, assess, prepare, execute, with separate workflows for attacks and raids."
+---
+
 # Combat Decision Tree
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: The player who sets the pace controls the game. When to speed up, when to slow down, and how parallelism buys initiative.
+---
+
 # Tempo
 
 **Topic**: Initiative, pressure, and timing  

@@ -1,3 +1,7 @@
+---
+description: The complete catalog of game actions an agent can take, with categories, common requirements, and the transaction flow each follows.
+---
+
 # Structs Action Definitions
 
 **Version**: 1.1.0
@@ -1506,7 +1510,7 @@ Use this to reclaim a slot occupied by an unwanted **built** struct. To abort an
 |-------|-------|
 | Verified | true |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Total Actions | 30 |

@@ -1,5 +1,6 @@
 ---
 title: Playstyle presets
+description: "Optional playstyle presets: Industrialist, Raider, Merchant, Explorer, Diplomat, Generalist. Goal weights and recommended skills, not personalities."
 permalink: /strategy/presets/README
 ---
 

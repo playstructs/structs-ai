@@ -1,3 +1,7 @@
+---
+description: The complete catalog of API response formats, from general envelopes through authentication, player and planet responses.
+---
+
 # API Response Schemas
 
 **Version**: 1.0.0

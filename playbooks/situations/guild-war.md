@@ -1,3 +1,7 @@
+---
+description: "Coordinated conflict between guilds: combined arms, target prioritisation, economic warfare, and coordinating with allies."
+---
+
 # Guild War
 
 **Situation**: Coordinated conflict between guilds  

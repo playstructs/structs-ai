@@ -1,3 +1,7 @@
+---
+description: The Speculator reads every raid and power outage as a price signal. More crypto than gamer. Goal weights, preferred skills, and tendencies.
+---
+
 # The Speculator
 
 *"Check the Lines, Check the News."*

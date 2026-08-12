@@ -1,3 +1,7 @@
+---
+description: "A worked query workflow: fetch a player and the planets they hold, with prerequisites and the expected result."
+---
+
 # Get Player and Planets
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "Read live tunables from the web application: the settings that govern game behaviour and can change without a release."
+---
+
 # Webapp Setting API Endpoints
 
 **Category**: webapp (catalog read)

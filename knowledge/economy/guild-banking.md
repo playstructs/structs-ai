@@ -1,3 +1,7 @@
+---
+description: "Central Bank mechanics: token minting, collateral management, the guild token lifecycle, and how guild economics differ from going it alone."
+---
+
 # Guild Banking
 
 **Purpose**: AI-readable reference for Structs Central Bank mechanics, token minting, collateral management, and guild token lifecycle.

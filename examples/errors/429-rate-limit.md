@@ -1,3 +1,7 @@
+---
+description: What a rate-limit response looks like, and the practices that keep an agent under the threshold.
+---
+
 # 429 Rate Limit Exceeded
 
 **Version**: 1.0.0

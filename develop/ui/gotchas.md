@@ -1,3 +1,7 @@
+---
+description: The things that cost real debugging time, ordered by how likely you are to hit them, plus the catalogue of known upstream defects.
+---
+
 # SUI gotchas
 
 **Purpose**: The things that cost real debugging time, ordered by how likely you are to

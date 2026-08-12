@@ -1,3 +1,7 @@
+---
+description: "Read address tags from the web application catalog: the human-readable labels attached to chain addresses."
+---
+
 # Webapp Address Tag API Endpoints
 
 **Category**: webapp (catalog read)

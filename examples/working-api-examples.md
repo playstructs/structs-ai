@@ -1,3 +1,7 @@
+---
+description: API examples verified against the actual repositories and live deployments, covering the consensus network, the web application, and RPC.
+---
+
 # Working API Examples
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: "JSON payload schemas for every GRASS event: the base event shape, individual definitions, and how events are categorised."
+---
+
 # GRASS Event Schemas
 
 **Version**: 1.2.0

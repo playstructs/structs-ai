@@ -1,3 +1,7 @@
+---
+description: "The complete game state structure: the top-level shape an agent reads, and the entity definitions nested inside it."
+---
+
 # Structs Game State Schema
 
 **Version**: 1.0.0
@@ -400,7 +404,7 @@ StructTypes are static definitions loaded from genesis/config. They define the p
 | stealthActivateCharge | string | Charge cost for stealth (if applicable) |
 | hasStealthSystem | boolean | Whether struct has stealth capability |
 
-**Verification**: Verified by GameCodeAnalyst (2025-01-XX) via api-response-analysis. High confidence. Code reference: `genesis_struct_type.go`, `technical/api-reference.md`.
+**Verification**: Verified by GameCodeAnalyst (2025-01-01) via api-response-analysis. High confidence. Code reference: `genesis_struct_type.go`, `technical/api-reference.md`.
 
 ---
 

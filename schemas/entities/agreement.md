@@ -1,3 +1,7 @@
+---
+description: "The Agreement entity schema: the chain shape, the webapp catalog columns, and how the two differ."
+---
+
 # Agreement Entity Schema
 
 **Version**: 1.0.0
@@ -48,7 +52,7 @@ The webapp HTTP API (`TableReadManager`) returns these raw snake_case columns di
 |-----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 

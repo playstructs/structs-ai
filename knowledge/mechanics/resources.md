@@ -1,3 +1,7 @@
+---
+description: "Ore, Alpha Matter, and energy: resource types, how they flow, conversion rates, proof-of-work difficulties, and the security model."
+---
+
 # Resource Mechanics
 
 **Purpose**: AI-readable reference for Structs resources. Types, flows, conversion rates, security model.

@@ -1,3 +1,7 @@
+---
+description: A worked workflow for defusing a reactor to undelegate validation stake, with error and permission handling.
+---
+
 # Reactor Staking - Defuse Workflow
 
 **Version**: 1.0.0

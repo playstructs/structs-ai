@@ -1,3 +1,7 @@
+---
+description: A framework for valuing planets, structs, and whole positions, and using those numbers to make economic decisions.
+---
+
 # Valuation
 
 **Purpose**: AI-readable framework for valuing Structs game assets. Planets, structs, positions. Supports economic decision-making.

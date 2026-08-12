@@ -1,3 +1,7 @@
+---
+description: Query allocations, the primitive that routes energy capacity from a reactor or substation to where it is consumed.
+---
+
 # Allocation Query Endpoints
 
 **Version**: 1.0.0

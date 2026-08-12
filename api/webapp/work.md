@@ -1,3 +1,7 @@
+---
+description: "Read proof-of-work records from the web application: outstanding jobs, their difficulty, and their completion state."
+---
+
 # Webapp Work API Endpoints
 
 **Category**: webapp (catalog read)

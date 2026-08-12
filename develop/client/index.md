@@ -1,5 +1,6 @@
 ---
 title: Building a Structs client
+description: "How a real Structs client is assembled: REST for bulk reads, GRASS for live deltas, RPC for writes, and what surprises people."
 permalink: /develop/client/
 ---
 

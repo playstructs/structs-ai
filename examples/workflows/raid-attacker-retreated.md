@@ -1,3 +1,7 @@
+---
+description: A worked workflow for handling the attackerRetreated raid outcome, with the other outcome scenarios for comparison.
+---
+
 # Raid Attacker Retreated Workflow
 
 **Version**: 1.0.0

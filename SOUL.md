@@ -1,3 +1,7 @@
+---
+description: Playstyle presets replaced souls. Compose goal weights and recommended skills rather than role-playing a personality.
+---
+
 # Soul (compatibility stub)
 
 Structs no longer ships a personality "soul" to inhabit. You are an agent playing a game

@@ -1,3 +1,7 @@
+---
+description: "The substance that fuels galactic civilization: physical properties, lifecycle from ore to refined Alpha, and why it can't simply be taken."
+---
+
 # Alpha Matter
 
 **Category**: lore  

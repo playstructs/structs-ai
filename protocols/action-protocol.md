@@ -1,3 +1,7 @@
+---
+description: "How agents submit actions as transactions to the consensus network: base configuration, transaction flow, action patterns, and requirements."
+---
+
 # Action Protocol
 
 **Version**: 1.0.0  

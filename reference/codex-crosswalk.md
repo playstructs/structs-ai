@@ -1,5 +1,6 @@
 ---
 title: Codex Crosswalk
+description: "Maps human Codex terms to canonical pages: Battlegrounds to ambit, Battery to charge, Alpha Ore to ore. Use it when a UI word doesn't match the docs."
 permalink: /reference/codex-crosswalk/
 ---
 

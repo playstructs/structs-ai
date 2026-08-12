@@ -1,5 +1,6 @@
 ---
 title: "Transcript 02 — Raid Go/No-Go"
+description: A full transcript of deciding whether to raid a neighbour for ore. The agent scouts before committing, and a variant covers dormant targets.
 ---
 
 # Transcript 02 — Raid Go/No-Go

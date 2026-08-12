@@ -1,3 +1,7 @@
+---
+description: "Query examples against the database schema: destroyed structs, cheatsheet details, and permission hashes."
+---
+
 # Database Schema Query Examples
 
 **Version**: 1.0.0

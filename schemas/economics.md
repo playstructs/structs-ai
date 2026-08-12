@@ -1,3 +1,7 @@
+---
+description: "The catalog of economic entities and resources: Alpha Ore, Alpha Matter, energy, and reactors, in schema form."
+---
+
 # Structs Economic Entity Definitions
 
 **Version**: 1.1.0

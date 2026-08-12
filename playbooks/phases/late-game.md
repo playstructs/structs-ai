@@ -1,3 +1,7 @@
+---
+description: "The endgame: Alpha Matter dominance, military supremacy, guild politics, and holding territory once you are the one worth attacking."
+---
+
 # Late Game
 
 **Phase**: Endgame  

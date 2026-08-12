@@ -1,5 +1,6 @@
 ---
 title: Mechanics
+description: "The canonical mechanics reference: combat, defense, energy, power, building, hashing, planets, fleets, permissions, and transactions."
 ---
 
 # Mechanics

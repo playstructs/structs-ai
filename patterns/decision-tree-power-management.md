@@ -1,3 +1,7 @@
+---
+description: A decision tree for managing capacity and staying online, with the formulas and the difference between online and offline.
+---
+
 # Power Management Decision Tree
 
 **Version**: 1.0.0

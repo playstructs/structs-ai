@@ -1,3 +1,7 @@
+---
+description: "An index of all visual content: schemas, graphs, spatial data, and metadata."
+---
+
 # Visual Content Index
 
 **Version**: 1.0.0

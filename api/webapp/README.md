@@ -1,3 +1,7 @@
+---
+description: Web application endpoints, split per entity for context efficiency, with a loading strategy for pulling only what you need.
+---
+
 # Webapp API Endpoints
 
 **Purpose**: Webapp endpoints split per entity for context-window efficiency

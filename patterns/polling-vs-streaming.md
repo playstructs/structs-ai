@@ -1,3 +1,7 @@
+---
+description: "Choosing between polling and streaming for live data: a decision framework, a comparison matrix, and the patterns for each."
+---
+
 # Polling vs Streaming Pattern
 
 **Version**: 1.0.0  

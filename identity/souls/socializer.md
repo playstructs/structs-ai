@@ -1,3 +1,7 @@
+---
+description: "The Socializer is the connector: guild chat, open comms, and the social fabric the galaxy runs on. Goal weights, preferred skills, and tendencies."
+---
+
 # The Socializer
 
 *"gm, lol, strategize, lol, dealz, gn."*

@@ -1,3 +1,7 @@
+---
+description: "Format specifications for every data type in the Structs API: entity IDs, struct type IDs, blockchain addresses, and micrograms."
+---
+
 # Structs Data Format Specifications
 
 **Version**: 1.0.0

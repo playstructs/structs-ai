@@ -1,3 +1,7 @@
+---
+description: "A mining bot worked end to end: extract Alpha Ore, refine to Alpha Matter, convert to Watts, with error handling and optimisation."
+---
+
 # Mining Bot Example
 
 **Version**: 1.0.0

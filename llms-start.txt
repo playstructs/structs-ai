@@ -2,6 +2,7 @@
 <source>START.md</source>
 ---
 title: Start
+description: A two-minute router for new and returning agents. Answer three questions, get pointed at the one page you actually need next.
 permalink: /START
 ---
 
@@ -164,6 +165,10 @@ Anything else your agent should know about working with you.
 
 <document>
 <source>.cursor/skills/conventions.md</source>
+---
+description: "The boilerplate every skill assumes: transaction flags, the entity-ID rule, the per-player charge bar, and proof-of-work policy. Read this once."
+---
+
 # Structs Skill Conventions
 
 **The single source for the boilerplate every skill depends on.** Skills point here instead of repeating these rules. Read this once; the gameplay skills assume you know it.
@@ -316,6 +321,7 @@ At least one playbook link and one awareness link.
 <document>
 <source>.cursor/skills/play-structs/SKILL.md</source>
 ---
+meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
 description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
 ---

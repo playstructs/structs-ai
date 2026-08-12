@@ -1,3 +1,7 @@
+---
+description: Every buildable struct with stats, costs, power requirements, and strategic role, plus ambit bit-flag encoding and build requirements.
+---
+
 # Struct Types
 
 **Purpose**: AI-readable reference for all buildable Structs. Stats, costs, power requirements, strategic role, and when to build. Struct types use **integer IDs** (not `type-index` format); query via `GET /structs/struct_type/{id}`.

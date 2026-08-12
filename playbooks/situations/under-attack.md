@@ -1,3 +1,7 @@
+---
+description: "Hostile action against your territory. Act in priority order: check power, deny the prize, stop the raid. Panic loses more than the attacker takes."
+---
+
 # Under Attack
 
 **Situation**: Hostile action against your territory  

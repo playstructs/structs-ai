@@ -1,3 +1,7 @@
+---
+description: "Find the right endpoint by use case: entity lookups across consensus and webapp, streaming subjects, and authentication."
+---
+
 # API Endpoint Quick Lookup
 
 **Category**: reference

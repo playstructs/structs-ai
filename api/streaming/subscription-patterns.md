@@ -1,3 +1,7 @@
+---
+description: "Subscription patterns for GRASS over NATS: connection types, the patterns worth copying, and practices that keep a listener stable."
+---
+
 # Subscription Patterns
 
 **Version**: 1.1.0

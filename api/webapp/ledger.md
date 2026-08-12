@@ -1,3 +1,7 @@
+---
+description: "Read the ledger from the web application: the record of value moving between players, guilds, and the Central Bank."
+---
+
 # Webapp Ledger API Endpoints
 
 **Category**: webapp

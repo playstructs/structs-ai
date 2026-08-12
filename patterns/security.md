@@ -1,3 +1,7 @@
+---
+description: "Security practices for agents: credential management, session security, and above all private key handling."
+---
+
 # Security Patterns
 
 **Version**: 1.0.0  

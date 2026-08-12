@@ -1,5 +1,6 @@
 ---
 title: Start
+description: A two-minute router for new and returning agents. Answer three questions, get pointed at the one page you actually need next.
 permalink: /START
 ---
 

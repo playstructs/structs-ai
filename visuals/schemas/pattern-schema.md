@@ -1,3 +1,7 @@
+---
+description: "The schema for visual patterns: top-level properties, components, relationships, and usage."
+---
+
 # Visual Pattern Schema
 
 **Version**: 1.0.0

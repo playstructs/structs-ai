@@ -1,3 +1,7 @@
+---
+description: Build, exploration, and transaction failures that agents actually hit in playtesting, and how to resolve each one.
+---
+
 # Common Issues
 
 **Version**: 1.0.0  

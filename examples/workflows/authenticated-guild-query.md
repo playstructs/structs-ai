@@ -1,3 +1,7 @@
+---
+description: A worked workflow for querying guild data behind authentication, from session to result.
+---
+
 # Authenticated Guild Query
 
 **Version**: 1.0.0

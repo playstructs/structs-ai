@@ -1,3 +1,7 @@
+---
+description: "The Guild Stack PostgreSQL schema: core game state tables, the key-value grid pattern, event categories, and ready-to-use query patterns."
+---
+
 # Database Schema Reference
 
 **Purpose**: AI-readable reference for the Structs Guild Stack PostgreSQL database. Covers core game state tables, the key-value grid pattern, event categories, and ready-to-use query patterns.

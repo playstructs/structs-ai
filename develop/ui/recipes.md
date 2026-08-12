@@ -1,3 +1,7 @@
+---
+description: "The four surfaces you'll actually be asked to build, assembled end to end: dashboard, form, menu, and HUD."
+---
+
 # SUI recipes
 
 **Purpose**: The four surfaces agents are actually asked to build — dashboard, form,

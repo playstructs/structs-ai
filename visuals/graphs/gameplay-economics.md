@@ -1,3 +1,7 @@
+---
+description: A relationship graph showing how gameplay mechanics connect to the economic systems underneath them.
+---
+
 # Gameplay / Economics Relationships
 
 **Version**: 1.0.0

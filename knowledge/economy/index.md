@@ -1,5 +1,6 @@
 ---
 title: Economy
+description: "The economy in reference form: the energy market, guild banking and Central Banks, trading and marketplace mechanics, and asset valuation."
 ---
 
 # Economy

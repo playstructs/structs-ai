@@ -1,3 +1,7 @@
+---
+description: "Expansion and scaling: deepen the pipeline, secure the home world, build alliances. When to plan the next planet, and fortify versus scale."
+---
+
 # Mid Game
 
 **Phase**: Expansion and scaling  

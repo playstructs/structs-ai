@@ -1,3 +1,7 @@
+---
+description: The required DOM shape for every SUI component, the traps in each, and an honest list of what the design system does not give you.
+---
+
 # SUI components
 
 **Purpose**: The required DOM shape for every SUI component, the traps in each, and an

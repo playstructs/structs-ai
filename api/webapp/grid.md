@@ -1,3 +1,7 @@
+---
+description: "Read grid attributes from the web application: the key-value store behind most entity state, and the GRASS events that update it."
+---
+
 # Webapp Grid API Endpoints
 
 **Category**: webapp (catalog read)

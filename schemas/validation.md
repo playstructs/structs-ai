@@ -1,3 +1,7 @@
+---
+description: "Validation rules and patterns for agents: input validation, UGC name and profile picture rules, and response validation."
+---
+
 # Validation Rules and Patterns
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: A worked workflow for cancelling an in-progress undelegation and restoring the original delegation.
+---
+
 # Reactor Staking - Cancel Defusion Workflow
 
 **Version**: 1.0.0

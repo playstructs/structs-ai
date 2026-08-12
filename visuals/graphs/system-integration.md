@@ -1,3 +1,7 @@
+---
+description: A system integration graph showing how technical systems, gameplay, economics and operations connect.
+---
+
 # System Integration Graph
 
 **Version**: 1.0.0

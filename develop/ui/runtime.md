@@ -1,3 +1,7 @@
+---
+description: The four optional behaviours SUI ships, how to load them without breaking, and the upstream bugs in each.
+---
+
 # The SUI JavaScript runtime
 
 **Purpose**: The four optional behaviours SUI ships, how to load them without breaking,

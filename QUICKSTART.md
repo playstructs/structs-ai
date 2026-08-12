@@ -1,3 +1,7 @@
+---
+description: The shortest path from nothing to mining Alpha Matter. Install, create a player, explore a planet, build, and start your first job.
+---
+
 # Quickstart → moved
 
 The quickstart is now **[`START.md`](START.md)** — a shorter, friendlier router for new and

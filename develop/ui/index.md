@@ -1,5 +1,6 @@
 ---
 title: Building with SUI
+description: Build an interface that looks and behaves like Structs, using SUI, the design system the game itself is built with. Start here.
 permalink: /develop/ui/
 ---
 

@@ -1,3 +1,7 @@
+---
+description: "How to cache API responses effectively: strategies, cache key patterns, and what is safe to hold on to."
+---
+
 # Caching Pattern
 
 **Version**: 1.0.0  

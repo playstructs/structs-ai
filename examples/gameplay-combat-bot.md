@@ -1,3 +1,7 @@
+---
+description: A combat bot pointed at the real raid and defense procedures, with minimal checklists for attacker and defender.
+---
+
 # Combat Bot Example
 
 **Version**: 2.0.0  

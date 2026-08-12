@@ -1,3 +1,7 @@
+---
+description: "The boilerplate every skill assumes: transaction flags, the entity-ID rule, the per-player charge bar, and proof-of-work policy. Read this once."
+---
+
 # Structs Skill Conventions
 
 **The single source for the boilerplate every skill depends on.** Skills point here instead of repeating these rules. Read this once; the gameplay skills assume you know it.

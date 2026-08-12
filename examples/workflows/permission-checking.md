@@ -1,3 +1,7 @@
+---
+description: A worked workflow for checking permissions in the 25-bit system, including the HasAll semantics that trip people up.
+---
+
 # Permission Checking Workflow
 
 **Version**: 2.0.0

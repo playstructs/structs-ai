@@ -1,3 +1,7 @@
+---
+description: "Connecting to NATS for streaming: native protocol and WebSocket, subscribing to subjects, handling messages, and reconnecting."
+---
+
 # NATS Streaming Connection
 
 **Version**: 1.0.0
@@ -104,7 +108,7 @@ Example message:
     "id": "1",
     "primaryAddress": "structs1abc...",
     "playerId": "1",
-    "updatedAt": "2025-01-XX 12:00:00"
+    "updatedAt": "2025-01-01 12:00:00"
   }
 }
 ```

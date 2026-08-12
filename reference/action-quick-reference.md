@@ -1,3 +1,7 @@
+---
+description: "Fast lookup for performing game actions: categories, common requirements, action patterns, and the transaction flow each one follows."
+---
+
 # Action Quick Reference
 
 **Version**: 1.1.0  

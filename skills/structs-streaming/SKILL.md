@@ -1,4 +1,5 @@
 ---
+meta_description: Subscribe to GRASS over NATS instead of polling. Endpoint discovery, subject patterns, event types, and building custom listeners.
 name: structs-streaming
 description: Connects to the GRASS real-time event system via NATS WebSocket. Use when you need real-time game updates, want to react to events as they happen, need to monitor raids or attacks, watch for player creation, track fleet movements, or build event-driven tools. GRASS is the fastest way to know what's happening in the galaxy.
 level: advanced

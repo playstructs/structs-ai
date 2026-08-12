@@ -1,4 +1,5 @@
 ---
+meta_description: Information is the cheapest weapon in Structs; queries are free and instant. The full query catalog, scouting, and persisting what you learn.
 name: structs-intel
 description: Intelligence gathering in Structs — scouting players, planets, guilds, and the galaxy before you act. Use when assessing a raid target, checking a planet's defenses and Command Ship status, profiling an opponent, surveying the galaxy, or refreshing competitive intel. Persists findings to memory/intel/ so they survive context resets.
 level: advanced

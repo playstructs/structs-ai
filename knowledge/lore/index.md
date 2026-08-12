@@ -1,5 +1,6 @@
 ---
-title: Lore
+title: Knowledge Lore
+description: "The galaxy behind the mechanics. The human-facing Structs Codex is canonical for story; the crosswalk maps its terms to these pages."
 ---
 
 # Lore

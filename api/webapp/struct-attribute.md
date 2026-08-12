@@ -1,3 +1,7 @@
+---
+description: "Read struct attributes from the web application catalog: the per-struct key-value values behind health, status and ambit."
+---
+
 # Webapp Struct Attribute API Endpoints
 
 **Category**: webapp (catalog read)

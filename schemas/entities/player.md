@@ -1,3 +1,7 @@
+---
+description: "The Player entity schema: core data, grid attributes, inventory, and the additional properties the webapp adds."
+---
+
 # Player Entity Schema
 
 **Version**: 1.0.0
@@ -97,7 +101,7 @@ Grid position and resource attributes. All values are string representations of 
 |----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | api-response-verification |
 | Confidence | high |
 | Code Reference | `x/structs/types/player.pb.go` |

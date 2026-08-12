@@ -1,3 +1,7 @@
+---
+description: "How to test API integrations before trusting them in play: endpoint testing patterns, response validation, and deliberate error testing."
+---
+
 # Testing Protocol
 
 **Version**: 1.0.0  

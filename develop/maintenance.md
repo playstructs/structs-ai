@@ -1,3 +1,7 @@
+---
+description: The review cycle that stops the build docs drifting from the code they describe, and the prompt to run it with.
+---
+
 # Keeping the develop docs true
 
 **Purpose**: The review cycle that stops [develop/ui/](ui/index.md) and

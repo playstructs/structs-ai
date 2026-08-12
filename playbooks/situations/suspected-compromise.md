@@ -1,5 +1,6 @@
 ---
 title: "Situation: Suspected compromise"
+description: Actions you did not initiate, unexpected permission grants, or a tool behaving strangely. Diagnose fast, then contain in order.
 ---
 
 # Situation: Suspected compromise

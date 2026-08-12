@@ -1,3 +1,7 @@
+---
+description: "The authoritative structural catalog of the Structs PostgreSQL database: schema overview, roles, and enums."
+---
+
 # Structs Database Schema
 
 **Category**: database

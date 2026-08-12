@@ -1,3 +1,7 @@
+---
+description: "Gameplay mechanics as schema: definitions, constants, resource types, and conversion rates in machine-readable form."
+---
+
 # Structs Gameplay Schema
 
 **Version**: 1.1.0

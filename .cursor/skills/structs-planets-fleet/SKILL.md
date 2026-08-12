@@ -1,4 +1,5 @@
 ---
+meta_description: Your planet is your base and your fleet is your mobile force. Evaluate planets, explore, move the fleet, and evacuate when you have to.
 name: structs-planets-fleet
 description: Manages planets and fleet in Structs — evaluating and exploring planets, claiming/relocating, fleet movement and composition, evacuation, and the onStation-vs-away state. Use when discovering or claiming a planet, your planet is depleting, relocating, moving the fleet, checking fleet status, or deciding fleet composition for offense/defense. Covers the raid-clock implications of fleet position.
 level: core

@@ -1,5 +1,6 @@
 ---
 title: Error index
+description: "Match the error substring you're seeing to its fix. Fuller explanations live in the troubleshooting guides."
 permalink: /play/errors
 ---
 

@@ -1,3 +1,7 @@
+---
+description: Read permission records from the web application catalog, resolved into a form easier to inspect than the raw bitmask.
+---
+
 # Webapp Permission API Endpoints
 
 **Category**: webapp (catalog read)

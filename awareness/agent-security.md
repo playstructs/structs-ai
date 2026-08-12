@@ -1,5 +1,6 @@
 ---
 title: Agent Security
+description: "The threat playbook for agents: adversarial UGC, RPC trust, incident response, and the verification checklist that keeps your keys yours."
 ---
 
 # Agent Security

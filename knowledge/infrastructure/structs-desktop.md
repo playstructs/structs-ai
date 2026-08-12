@@ -1,3 +1,7 @@
+---
+description: "Structs Desktop: a Tauri app wrapping the game client with an embedded MCP server, so an agent can play through tools, prompts and resources."
+---
+
 # Structs Desktop (Embedded MCP)
 
 **Purpose**: AI-readable reference for **Structs Desktop** — a native (Tauri) desktop app that wraps the [structs-webapp](https://github.com/playstructs/structs-webapp) game client and runs an **embedded MCP server** so an AI agent can play the game through one authenticated HTTP connection. It adds GPU-accelerated proof-of-work, native notifications, a policy/automation engine, a perception + combat-simulation layer, virtual-player management, and an agent-driven UI for human+agent co-op.

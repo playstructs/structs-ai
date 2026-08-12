@@ -1,3 +1,7 @@
+---
+description: Read player address records from the web application, including pending addresses, metadata, and activation codes.
+---
+
 # Webapp Player Address API Endpoints
 
 **Category**: webapp

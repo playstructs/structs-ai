@@ -1,3 +1,7 @@
+---
+description: "The Achiever never stops: collect every planet, build every unit, climb the guild ranks. Goal weights, preferred skills, and strategic tendencies."
+---
+
 # The Achiever
 
 *"Check the Job Board, Get Hashin."*

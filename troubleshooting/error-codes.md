@@ -1,3 +1,7 @@
+---
+description: Quick reference for error codes and what they mean, with handling patterns and a lookup table. Full definitions live in the error schema.
+---
+
 # Error Codes
 
 **Version**: 1.0.0  

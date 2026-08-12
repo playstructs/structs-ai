@@ -1,3 +1,7 @@
+---
+description: A worked query workflow for pulling guild statistics, with prerequisites and the expected result.
+---
+
 # Query Guild Stats
 
 **Version**: 1.0.0

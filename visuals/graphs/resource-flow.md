@@ -1,3 +1,7 @@
+---
+description: The complete resource flow from extraction to consumption, showing security levels and conversion methods at each step.
+---
+
 # Resource Conversion Flow
 
 **Version**: 1.0.0

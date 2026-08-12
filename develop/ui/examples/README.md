@@ -1,3 +1,7 @@
+---
+description: Runnable SUI example files. Note that the stylesheet resolves assets from the web root, so serve them over HTTP rather than opening directly.
+---
+
 # SUI examples
 
 Three files you can copy into a project as-is.

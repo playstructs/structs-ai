@@ -1,3 +1,7 @@
+---
+description: Read player records from the web application catalog, with the fuller response schema the webapp adds on top of chain state.
+---
+
 # Webapp Player API Endpoints
 
 **Category**: webapp

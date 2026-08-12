@@ -1,3 +1,7 @@
+---
+description: How to detect rate limits, what the defaults are, and how to stay under them without slowing an agent to a crawl.
+---
+
 # Rate Limiting Pattern
 
 **Version**: 1.0.0  

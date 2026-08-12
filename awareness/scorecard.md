@@ -1,5 +1,6 @@
 ---
 title: Agent Scorecard
+description: A self-evaluation rubric for agents. Use it as a pre-flight checklist and an honest post-session grade. Measures judgment and process, not outcomes.
 ---
 
 # Agent Scorecard

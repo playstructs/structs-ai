@@ -1,3 +1,7 @@
+---
+description: "How a client turns a click into a broadcast transaction: wallet, protobuf registry, the dual-lane queue, and charge gating."
+---
+
 # Actions and signing
 
 **Purpose**: How the reference client turns a click into a broadcast transaction —

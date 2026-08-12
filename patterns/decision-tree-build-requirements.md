@@ -1,3 +1,7 @@
+---
+description: A decision tree for verifying every requirement before building, with requirements by location and the order to check them in.
+---
+
 # Build Requirements Decision Tree
 
 **Version**: 1.0.0

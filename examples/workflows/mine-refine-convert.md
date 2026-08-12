@@ -1,3 +1,7 @@
+---
+description: "The core resource workflow end to end: mine ore, refine to Alpha Matter, convert to energy, with the principles at each step."
+---
+
 # Mine, Refine, Convert Workflow
 
 **Version**: 1.0.0

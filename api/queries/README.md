@@ -1,3 +1,7 @@
+---
+description: Query endpoints split into one file per entity, so an agent can load only the reference it needs instead of the whole API surface.
+---
+
 # Query Endpoints
 
 **Version**: 1.0.0  

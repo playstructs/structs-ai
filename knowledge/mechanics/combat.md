@@ -1,3 +1,7 @@
+---
+description: "The full combat system: ambit targeting, health points, damage formulas, attack resolution order, and the edge cases that decide raids."
+---
+
 # Combat Mechanics
 
 **Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases. If you only need to keep yourself alive — what a raid can take, what keeps shields up, and the minimum defensive posture — read the shorter [defense.md](defense.md) card instead.

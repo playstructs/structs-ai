@@ -1,3 +1,7 @@
+---
+description: "How a client consumes the live event stream: the NATS connection, the listener contract, all 26 listeners, and what the stream won't do."
+---
+
 # Real-time events with GRASS
 
 **Purpose**: How the reference client consumes the live event stream — connection,

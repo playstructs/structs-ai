@@ -2,6 +2,7 @@
 <source>START.md</source>
 ---
 title: Start
+description: A two-minute router for new and returning agents. Answer three questions, get pointed at the one page you actually need next.
 permalink: /START
 ---
 
@@ -67,6 +68,7 @@ your agent, and you only make a few choices.
 <source>SAFETY.md</source>
 ---
 title: Safety
+description: "The trust and approval contract between an agent and its operator: operation tiers, key hygiene, spend limits, and audit trails."
 permalink: /SAFETY
 ---
 
@@ -438,6 +440,10 @@ Anything else your agent should know about working with you.
 
 <document>
 <source>.cursor/skills/conventions.md</source>
+---
+description: "The boilerplate every skill assumes: transaction flags, the entity-ID rule, the per-player charge bar, and proof-of-work policy. Read this once."
+---
+
 # Structs Skill Conventions
 
 **The single source for the boilerplate every skill depends on.** Skills point here instead of repeating these rules. Read this once; the gameplay skills assume you know it.
@@ -590,6 +596,7 @@ At least one playbook link and one awareness link.
 <document>
 <source>.cursor/skills/play-structs/SKILL.md</source>
 ---
+meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
 description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
 ---
@@ -808,6 +815,7 @@ Always use `--` before entity IDs in transaction commands.
 <document>
 <source>.cursor/skills/structs-production/SKILL.md</source>
 ---
+meta_description: "The engine of everything: mine ore, refine it to Alpha Matter, stake it. Covers ore vulnerability and the handoff when a planet depletes."
 name: structs-production
 description: Runs the Alpha Matter production pipeline in Structs — mine ore, refine it to Alpha Matter, then put the Alpha to work. Use when mining or refining, starting or scheduling a mine→refine cycle, protecting stored ore, scaling output, deciding what to do with refined Alpha, or handling a planet running out of ore. Mining ~17h and refining ~34h are background expeditions; ore is stealable until refined.
 level: core
@@ -929,8 +937,9 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 <document>
 <source>.cursor/skills/structs-energy/SKILL.md</source>
 ---
+meta_description: Load above capacity means offline, and offline means you cannot act. Capacity management, substations, allocations, and reactor infusion.
 name: structs-energy
-description: Power and capacity in Structs — getting more energy, fixing "I'm offline", substations and allocations, load budgeting, and reactor/generator infusion for your own capacity. Use when capacity is too low, a player or struct won't come online, you're load > capacity (offline), planning power for new builds, or wiring substations. For selling energy on the market, see structs-commerce.
+description: "Power and capacity in Structs — getting more energy, fixing \"I'm offline\", substations and allocations, load budgeting, and reactor/generator infusion for your own capacity. Use when capacity is too low, a player or struct won't come online, you're load > capacity (offline), planning power for new builds, or wiring substations. For selling energy on the market, see structs-commerce."
 level: core
 domain: energy
 ---
@@ -1079,6 +1088,10 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 <document>
 <source>knowledge/mechanics/resources.md</source>
+---
+description: "Ore, Alpha Matter, and energy: resource types, how they flow, conversion rates, proof-of-work difficulties, and the security model."
+---
+
 # Resource Mechanics
 
 **Purpose**: AI-readable reference for Structs resources. Types, flows, conversion rates, security model.
@@ -1199,6 +1212,10 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 <document>
 <source>knowledge/mechanics/power.md</source>
+---
+description: "Fast formula card for capacity, load, and online status, plus struct power requirements and a new player's power budget."
+---
+
 # Power (Quick Reference)
 
 **Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
@@ -1291,6 +1308,10 @@ Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/
 
 <document>
 <source>knowledge/mechanics/energy.md</source>
+---
+description: "The canonical energy system: units, the online equation, the 96/4 infusion split, substation dilution, allocations, and GridCascade brownout."
+---
+
 # Energy Mechanics
 
 **Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
@@ -1448,6 +1469,10 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 
 <document>
 <source>knowledge/mechanics/defense.md</source>
+---
+description: "The survival card: what an attacker can actually take, what stops them, and the minimum defensive posture that keeps your ore yours."
+---
+
 # Defense (Quick Reference)
 
 **Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](https://structs.ai/skills/structs-combat/SKILL).
@@ -1572,6 +1597,10 @@ Follow [`playbooks/situations/under-attack.md`](../../playbooks/situations/under
 
 <document>
 <source>knowledge/entities/struct-types.md</source>
+---
+description: Every buildable struct with stats, costs, power requirements, and strategic role, plus ambit bit-flag encoding and build requirements.
+---
+
 # Struct Types
 
 **Purpose**: AI-readable reference for all buildable Structs. Stats, costs, power requirements, strategic role, and when to build. Struct types use **integer IDs** (not `type-index` format); query via `GET /structs/struct_type/{id}`.
@@ -1814,6 +1843,10 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 
 <document>
 <source>awareness/priority-framework.md</source>
+---
+description: Survival, security, economy, expansion, dominance. The decision hierarchy for when everything demands attention at once, and how to avoid paralysis.
+---
+
 # Priority Framework
 
 **Version**: 1.0.0  
@@ -1935,6 +1968,10 @@ Each loop: Assess (State Assessment) → Identify highest unmet tier → Act →
 
 <document>
 <source>awareness/game-loop.md</source>
+---
+description: "The continuous decision cycle: check jobs, assess, plan, initiate, dispatch, verify, repeat. How to hold tempo and balance reaction against initiative."
+---
+
 # Game Loop
 
 **Version**: 1.0.0  

@@ -1,5 +1,6 @@
 ---
 title: Skills
+description: Decision-first, CLI-grounded procedures for playing Structs. Each skill states when to use it, what it decides, and the exact commands to run.
 permalink: /skills/
 ---
 

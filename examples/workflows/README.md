@@ -1,3 +1,7 @@
+---
+description: An index of every workflow example, grouped by category, with the patterns each one demonstrates.
+---
+
 # Workflow Examples Index
 
 **Version**: 1.0.0  

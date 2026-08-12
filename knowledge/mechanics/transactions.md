@@ -1,3 +1,7 @@
+---
+description: How the ante handler routes gameplay and staking messages through a free-gas path while everything else pays fees. What free actually means.
+---
+
 # Transactions, Gas, and Fees
 
 **Purpose**: Explain how the ante handler routes Structs gameplay transactions and Cosmos staking transactions through a free-gas path while everything else continues to pay fees in `ualpha`.

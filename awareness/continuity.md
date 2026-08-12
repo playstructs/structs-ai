@@ -1,3 +1,7 @@
+---
+description: "Persist across sessions with file-based memory: what to read on startup, what to update when a session ends, and which files you own."
+---
+
 # Continuity
 
 **Version**: 1.1.0  

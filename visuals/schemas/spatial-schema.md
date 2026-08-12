@@ -1,3 +1,7 @@
+---
+description: "The schema for spatial and geometric data: coordinate systems, positions, and regions."
+---
+
 # Spatial Schema
 
 **Version**: 1.0.0

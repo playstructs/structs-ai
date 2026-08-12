@@ -1,3 +1,7 @@
+---
+description: "Read planet attributes from the web application catalog: the per-planet key-value values behind ore, slots, and defenses."
+---
+
 # Webapp Planet Attribute API Endpoints
 
 **Category**: webapp (catalog read)

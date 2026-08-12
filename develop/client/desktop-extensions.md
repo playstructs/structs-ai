@@ -1,3 +1,7 @@
+---
+description: "How to add capability to Structs Desktop: a new MCP tool, a new board page, serving SUI over HTTP, or agent-driven UI."
+---
+
 # Extending Structs Desktop
 
 **Purpose**: How to add capability to [structs-desktop](../repos.md) — a new MCP tool, a

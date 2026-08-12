@@ -1,3 +1,7 @@
+---
+description: "Query addresses on the consensus network: registration state, which player an address belongs to, and its permissions."
+---
+
 # Address Query Endpoints
 
 **Version**: 1.0.0

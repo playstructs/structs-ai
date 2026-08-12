@@ -1,3 +1,7 @@
+---
+description: Low ore, thin Alpha Matter, struggling economy. Maximise extraction efficiency, seek energy agreements, consider raiding, and join a guild.
+---
+
 # Resource Scarce
 
 **Situation**: Low ore, thin Alpha Matter, struggling economy  

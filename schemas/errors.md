@@ -1,3 +1,7 @@
+---
+description: The complete error code catalog with categories, retry classification, and the handling strategy each class calls for.
+---
+
 # Structs Error Codes
 
 **Version**: 1.1.0

@@ -1,3 +1,7 @@
+---
+description: The complete catalog of API request body formats, indexed by request type, from authentication through player and address operations.
+---
+
 # API Request Schemas
 
 **Version**: 1.0.0

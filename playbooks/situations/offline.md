@@ -1,5 +1,6 @@
 ---
 title: "Situation: Offline / can't act"
+description: Load exceeded capacity and you cannot build, mine, fight or defend. Sixty-second diagnosis, then the recovery steps in order.
 ---
 
 # Situation: Offline (load > capacity)

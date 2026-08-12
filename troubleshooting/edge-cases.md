@@ -1,3 +1,7 @@
+---
+description: "The gotchas: reactor staking edge cases, permission combinations, StructSweepDelay timing, and database query traps."
+---
+
 # Edge Cases and Gotchas
 
 **Version**: 1.0.0  

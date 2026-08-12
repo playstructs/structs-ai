@@ -1,3 +1,7 @@
+---
+description: Which Structs repository to read for what, and which one wins when two of them disagree.
+---
+
 # The Structs repositories
 
 **Purpose**: Which repository to read for what, and which one wins when they disagree.

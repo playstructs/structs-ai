@@ -1,3 +1,7 @@
+---
+description: "Working with the 25-bit permission system: bit values, bit manipulation, checking workflows, and validation."
+---
+
 # Permission Examples
 
 **Version**: 2.0.0

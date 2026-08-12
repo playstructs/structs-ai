@@ -1,3 +1,7 @@
+---
+description: "The economic layer end to end: resource flow, ore security, energy production, and how reactor staking delegates validation."
+---
+
 # Economic Protocol
 
 **Version**: 1.1.0  

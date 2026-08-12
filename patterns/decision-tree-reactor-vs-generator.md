@@ -1,3 +1,7 @@
+---
+description: A decision tree for choosing between a reactor, which is safe, and a generator, which is efficient, with worked comparisons.
+---
+
 # Reactor vs Generator Decision Tree
 
 **Version**: 1.0.0

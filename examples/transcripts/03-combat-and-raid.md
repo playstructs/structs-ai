@@ -1,5 +1,6 @@
 ---
 title: "Transcript 03 — Combat and Raid"
+description: "A full transcript of clearing a vulnerable planet's defenders and completing a raid, applying the levers that actually decide a fight."
 ---
 
 # Transcript 03 — Combat and Raid

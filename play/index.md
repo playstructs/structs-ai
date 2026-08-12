@@ -1,5 +1,6 @@
 ---
 title: Play
+description: "The fastest route from what's happening to the exact skill you need. Crisis router, task router, and every situation card in one place."
 permalink: /play/
 ---
 

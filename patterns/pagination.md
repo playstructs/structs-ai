@@ -1,3 +1,7 @@
+---
+description: How to handle paginated responses. Structs APIs use key-based pagination, with strategies for walking large result sets.
+---
+
 # Pagination Patterns
 
 **Version**: 1.0.0  

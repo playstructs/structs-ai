@@ -1,5 +1,6 @@
 ---
 title: Golden Transcripts
+description: "Worked examples of an agent playing Structs well: the reasoning, the exact commands, the verification step, and what got written to memory."
 ---
 
 # Golden Transcripts

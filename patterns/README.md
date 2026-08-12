@@ -1,3 +1,7 @@
+---
+description: "Common patterns and practices for agents calling Structs APIs: caching, retries, rate limits, pagination, and state sync."
+---
+
 # API Patterns
 
 **Purpose**: Common patterns and best practices for AI agents interacting with Structs APIs

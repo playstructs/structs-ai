@@ -3,16 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
 
   {%- comment -%}
     GitHub Pages serves each page at several live URLs: the real `.html` output, an
     extensionless fallback, both over http and https, and — for the `.cursor/skills`
     mirror — a second path. Every one of those returns 200, so without an explicit
     canonical Google picks its own and reports "Duplicate without user-selected
-    canonical". Collapse them onto one https `.html` URL, preferring the public
-    `/skills/` path over the `.cursor/` mirror.
+    canonical". Collapse them onto one https URL, preferring the public `/skills/`
+    path over the `.cursor/` mirror.
+
+    Strip `index.html` only when it is the entire final path segment — an unanchored
+    replace turns `action-index.html` into the 404 path `action-`.
   {%- endcomment -%}
-  {%- assign canonical_path = page.url | replace: "/.cursor/skills/", "/skills/" | replace: "index.html", "" -%}
+  {%- assign canonical_path = page.url | replace: "/.cursor/skills/", "/skills/" -%}
+  {%- assign _canon_last = canonical_path | split: "/" | last -%}
+  {%- if _canon_last == "index.html" -%}
+    {%- assign canonical_path = canonical_path | replace: "index.html", "" -%}
+  {%- endif -%}
   {%- assign canonical_url = canonical_path | absolute_url -%}
 
   {%- comment -%}
@@ -27,24 +35,40 @@
     {%- assign page_title = page.title | append: " | " | append: site.title -%}
   {%- endif -%}
 
-  {%- if page.description -%}
+  {%- comment -%}
+    Authored descriptions only. Prefer meta_description (skills keep a long Cursor
+    `description:` that must not become the HTML meta). Never scrape the body —
+    that pulled Version:/Category: blocks into search snippets.
+  {%- endcomment -%}
+  {%- if page.meta_description and page.meta_description != "" -%}
+    {%- assign meta_description = page.meta_description -%}
+  {%- elsif page.description and page.description != "" and page.description.size <= 155 -%}
     {%- assign meta_description = page.description -%}
   {%- else -%}
-    {%- comment -%} Skip the leading <h1>, which already appears in the title tag. {%- endcomment -%}
-    {%- assign body_after_heading = content | split: "</h1>" | last -%}
-    {%- assign meta_description = body_after_heading | strip_html | normalize_whitespace | strip -%}
-  {%- endif -%}
-  {%- if meta_description == "" -%}
     {%- assign meta_description = site.description -%}
   {%- endif -%}
-  {%- comment -%}
-    Clamp for search snippets: word boundary first, then hard char cap.
-    Empty omission string so Liquid never writes a literal "...".
-  {%- endcomment -%}
-  {%- assign meta_description = meta_description | truncatewords: 28, "" -%}
-  {%- if meta_description.size > 155 -%}
-    {%- assign meta_description = meta_description | truncate: 155, "" -%}
+  {%- if meta_description == nil or meta_description == "" -%}
+    {%- assign meta_description = site.description -%}
   {%- endif -%}
+
+  {%- comment -%}
+    Decode common entities once before xml_escape so titles with & (or already
+    escaped &amp;) do not become &amp;amp; in the HTML.
+  {%- endcomment -%}
+  {%- assign page_title = page_title
+        | replace: "&amp;", "&"
+        | replace: "&lt;", "<"
+        | replace: "&gt;", ">"
+        | replace: "&quot;", '"'
+        | replace: "&#39;", "'"
+        | replace: "&apos;", "'" -%}
+  {%- assign meta_description = meta_description
+        | replace: "&amp;", "&"
+        | replace: "&lt;", "<"
+        | replace: "&gt;", ">"
+        | replace: "&quot;", '"'
+        | replace: "&#39;", "'"
+        | replace: "&apos;", "'" -%}
 
   <title>{{ page_title | xml_escape }}</title>
   <meta name="description" content="{{ meta_description | xml_escape }}">

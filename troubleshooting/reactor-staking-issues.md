@@ -1,3 +1,7 @@
+---
+description: "Diagnose reactor staking failures: common issues, verification steps, error codes, and the practices that avoid them."
+---
+
 # Reactor Staking Troubleshooting
 
 **Version**: 1.0.0  

@@ -1,3 +1,7 @@
+---
+description: "Query system-level state on the consensus network: chain parameters, timestamps, and other global values."
+---
+
 # System Query Endpoints
 
 **Version**: 1.0.0

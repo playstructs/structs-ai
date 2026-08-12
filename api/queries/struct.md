@@ -1,3 +1,7 @@
+---
+description: "Query structs on the consensus network: type, health, status, ambit, and which planet or fleet it belongs to."
+---
+
 # Struct Query Endpoints
 
 **Version**: 1.0.0

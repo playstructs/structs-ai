@@ -1,3 +1,7 @@
+---
+description: "Read substation records from the web application catalog: connected capacity and how it is shared across connections."
+---
+
 # Webapp Substation API Endpoints
 
 **Category**: webapp (catalog read)

@@ -1,3 +1,7 @@
+---
+description: "The schema for diagram structures such as process flows and relationships: top-level properties, nodes, and edges."
+---
+
 # Diagram Schema
 
 **Version**: 1.0.0

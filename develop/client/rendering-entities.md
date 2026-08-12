@@ -1,3 +1,7 @@
+---
+description: "How players and structs are drawn: layered profile-picture compositing, struct art selection, and the Lottie animation queue."
+---
+
 # Rendering entities
 
 **Purpose**: How players and structs are drawn — layered PFP compositing, struct art

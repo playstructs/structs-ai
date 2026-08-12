@@ -1,3 +1,7 @@
+---
+description: "Query players on the consensus network: inventory, capacity and load, charge, guild membership, and current status."
+---
+
 # Player Query Endpoints
 
 **Version**: 1.0.0

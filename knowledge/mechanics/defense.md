@@ -1,3 +1,7 @@
+---
+description: "The survival card: what an attacker can actually take, what stops them, and the minimum defensive posture that keeps your ore yours."
+---
+
 # Defense (Quick Reference)
 
 **Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](https://structs.ai/skills/structs-combat/SKILL).

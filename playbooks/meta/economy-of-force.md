@@ -1,3 +1,7 @@
+---
+description: "Minimum force necessary for each objective. Don't over-defend, don't over-attack, and how to prioritise when you can't do everything."
+---
+
 # Economy of Force
 
 **Topic**: Allocating limited resources across competing priorities  

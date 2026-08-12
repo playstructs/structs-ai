@@ -1,3 +1,7 @@
+---
+description: "Spot advantages before other players do: what to scan for, which tools surface it, and how to validate an opportunity before committing to it."
+---
+
 # Opportunity Identification
 
 **Version**: 1.0.0  

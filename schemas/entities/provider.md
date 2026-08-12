@@ -1,3 +1,7 @@
+---
+description: "The Provider entity schema: properties, relationships, and verification status."
+---
+
 # Provider Entity Schema
 
 **Version**: 1.3.0
@@ -32,7 +36,7 @@ Provider entity definition -- extracted from game-state.json for context window 
 |-----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 

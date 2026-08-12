@@ -1,3 +1,7 @@
+---
+description: A decision tree for picking the right implementation pattern, with a quick lookup table and the combinations that work well together.
+---
+
 # Patterns Quick Reference
 
 **Version**: 1.0.0  

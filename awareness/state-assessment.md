@@ -1,3 +1,7 @@
+---
+description: "How to evaluate your position in Structs: what to check, in what order, and what the numbers actually mean. Includes a quick assessment script."
+---
+
 # State Assessment
 
 **Version**: 1.0.0  

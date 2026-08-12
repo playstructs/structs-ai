@@ -1,3 +1,7 @@
+---
+description: "Connect to real-time game events through GRASS over NATS: architecture, connection methods, subject patterns, and worked examples."
+---
+
 # Streaming Protocol
 
 **Version**: 1.0.0  
@@ -358,7 +362,7 @@ asyncio.run(connect_to_grass())
     "primaryAddress": "structs1abc...",
     "playerId": "1-11",
     "guildId": "0-1",
-    "updatedAt": "2025-01-XX 12:00:00"
+    "updatedAt": "2025-01-01 12:00:00"
   }
 }
 ```
@@ -377,7 +381,7 @@ asyncio.run(connect_to_grass())
       "guildId": "0-1"
     },
     "event": "update",
-    "timestamp": "2025-01-XX 12:00:00"
+    "timestamp": "2025-01-01 12:00:00"
   }
 }
 ```
@@ -393,7 +397,7 @@ asyncio.run(connect_to_grass())
       "location": "2-1"
     },
     "event": "update",
-    "timestamp": "2025-01-XX 12:00:00"
+    "timestamp": "2025-01-01 12:00:00"
   }
 }
 ```
@@ -404,7 +408,7 @@ asyncio.run(connect_to_grass())
   "subject": "structs.planet.2-1",
   "category": "planet_activity",
   "id": "2-1",
-  "updated_at": "2025-01-XX 12:00:00",
+  "updated_at": "2025-01-01 12:00:00",
   "data": {
     "planetId": "2-1",
     "details": {
@@ -426,7 +430,7 @@ asyncio.run(connect_to_grass())
   "subject": "structs.global",
   "data": {
     "blockHeight": 12345,
-    "timestamp": "2025-01-XX 12:00:00",
+    "timestamp": "2025-01-01 12:00:00",
     "events": [
       {
         "type": "block",

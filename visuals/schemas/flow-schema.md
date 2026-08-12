@@ -1,3 +1,7 @@
+---
+description: "The schema for flows: top-level properties, steps, and transitions."
+---
+
 # Flow Schema
 
 **Version**: 1.0.0

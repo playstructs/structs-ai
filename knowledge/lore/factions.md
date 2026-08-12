@@ -1,3 +1,7 @@
+---
+description: "The political landscape: guilds, Central Banks, independent operators, and the mercenary networks that sell combat services."
+---
+
 # Factions
 
 **Category**: lore  

@@ -1,3 +1,7 @@
+---
+description: "Hard-won notes for building against the live chain and Guild API: numeric fields arrive as JSON strings, event detail has two shapes, and more."
+---
+
 # Integration Notes: Live Data Shapes & Gotchas
 
 **Purpose**: Hard-won, verified notes for anyone building against the live Structs chain and Guild API (bots, MCP servers, dashboards). These are the data-shape and endpoint details that cause silent integration bugs. Each note is tagged with where it was verified.

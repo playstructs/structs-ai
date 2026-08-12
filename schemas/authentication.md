@@ -1,3 +1,7 @@
+---
+description: Authentication data structures for the webapp, the consensus network, and streaming, with the flow for each and security notes.
+---
+
 # Authentication Data Structures
 
 **Version**: 1.0.0

@@ -1,3 +1,7 @@
+---
+description: Construction requirements, proof-of-work on build completion, charge accumulation, and the per-player struct limits that cap your base.
+---
+
 # Building Mechanics
 
 **Purpose**: AI-readable reference for Structs construction. Requirements, proof-of-work, struct limits.

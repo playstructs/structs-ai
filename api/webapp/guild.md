@@ -1,3 +1,7 @@
+---
+description: "Read guild records from the web application catalog: membership, ranks, and guild-level configuration."
+---
+
 # Webapp Guild API Endpoints
 
 **Category**: webapp

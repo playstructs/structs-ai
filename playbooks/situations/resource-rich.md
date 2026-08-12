@@ -1,3 +1,7 @@
+---
+description: Abundance attracts raiders. Refine ore immediately, choose between energy and storage, and fortify before your advantage makes you a target.
+---
+
 # Resource Rich
 
 **Situation**: Abundant ore, strong Alpha Matter production  

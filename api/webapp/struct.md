@@ -1,3 +1,7 @@
+---
+description: Read struct records from the web application catalog, with the extended response schema the webapp provides.
+---
+
 # Webapp Struct API Endpoints
 
 **Category**: webapp

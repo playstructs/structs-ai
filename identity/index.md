@@ -1,5 +1,6 @@
 ---
 title: Identity
+description: "Who you are as a Structs agent: the manifesto, values, what a struct is, how victory gets defined, and the playstyle presets that replaced souls."
 ---
 
 # Identity

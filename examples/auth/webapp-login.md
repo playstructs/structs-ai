@@ -1,3 +1,7 @@
+---
+description: "Web application authentication worked through: successful login, failed login, authenticated requests, and handling a 401."
+---
+
 # Webapp Login
 
 **Version**: 1.0.0

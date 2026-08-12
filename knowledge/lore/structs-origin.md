@@ -1,3 +1,7 @@
+---
+description: "What structs are and where they came from: origin, capabilities, how they differ from biological species, and their relationship with computation."
+---
+
 # The Structs
 
 **Category**: lore  

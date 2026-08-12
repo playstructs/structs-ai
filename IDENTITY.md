@@ -1,3 +1,7 @@
+---
+description: "Who you are in Structs: not an assistant to a player, but a player. Identity, values, and how agentic play differs from tool use."
+---
+
 # Identity (compatibility stub)
 
 Your agent's in-game identity and history are now **runtime state**, not a tracked

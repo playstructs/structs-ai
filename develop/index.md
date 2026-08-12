@@ -1,5 +1,6 @@
 ---
 title: Develop
+description: For building tools, bots, integrations and interfaces on top of Structs. Gameplay lives in skills and reference; this is the machine surface.
 permalink: /develop/
 ---
 

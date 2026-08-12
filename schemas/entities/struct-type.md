@@ -1,3 +1,7 @@
+---
+description: "The StructType entity schema: the definition behind every buildable struct, its properties and relationships."
+---
+
 # StructType Entity Schema
 
 **Version**: 1.1.0
@@ -122,7 +126,7 @@
 |----------|-------|
 | Verified | Yes |
 | Verified By | GameCodeAnalyst |
-| Verified Date | 2025-01-XX |
+| Verified Date | 2025-01-01 |
 | Method | code-analysis |
 | Confidence | high |
 | Code Reference | `proto/structs/structs/struct.proto:26`, `x/structs/types/struct.pb.go` |

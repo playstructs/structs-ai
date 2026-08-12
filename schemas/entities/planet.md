@@ -1,3 +1,7 @@
+---
+description: "The Planet entity schema: core data, the map, starting properties, and the planet view the webapp exposes."
+---
+
 # Planet Entity Schema
 
 **Version**: 1.3.0
