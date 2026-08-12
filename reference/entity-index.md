@@ -1,8 +1,9 @@
 ---
+title: "Entity index: every game object type"
 description: "Every game entity indexed: core, social, resource, and economic. Verified against game code, with a link to the canonical page for each."
 ---
 
-# Entity Index
+# Entity index: every game object type
 
 **Version**: 1.0.0
 **Last Updated**: 2026-01-01

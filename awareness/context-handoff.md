@@ -1,8 +1,9 @@
 ---
+title: Context handoff when memory runs low
 description: "How to save game state before your context window runs out: when to warn, what the handoff file holds, and how a fresh session resumes cleanly."
 ---
 
-# Context Handoff
+# Context handoff when memory runs low
 
 **Version**: 1.0.0  
 **Purpose**: Protocol for managing context window limits during game sessions. When to warn, when to save, how to resume.

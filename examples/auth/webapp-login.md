@@ -1,8 +1,9 @@
 ---
+title: Webapp login authentication example
 description: "Web application authentication worked through: successful login, failed login, authenticated requests, and handling a 401."
 ---
 
-# Webapp Login
+# Webapp login authentication example
 
 **Version**: 1.0.0
 **Category**: Authentication

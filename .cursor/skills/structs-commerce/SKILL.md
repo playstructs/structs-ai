@@ -1,4 +1,5 @@
 ---
+title: "Commerce skill: energy, banks, transfers"
 meta_description: "How Alpha Matter compounds into economic power: providers, energy agreements, reactor staking, the guild Central Bank, and token transfers."
 name: structs-commerce
 description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
@@ -6,7 +7,7 @@ level: advanced
 domain: economy
 ---
 
-# Structs Commerce
+# Commerce skill: energy, banks, transfers
 
 Commerce is how Alpha Matter compounds into economic power. The core loop: refine Alpha → infuse a reactor (capacity) → route it through an **allocation** to a **substation** → sell it through a **provider** → buyers pay in tokens via **agreements** → reinvest. Layered on top are guild Central Bank tokens (mint/redeem) and direct transfers. Where [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL) is "power my own structs", this skill is "make Alpha and energy *earn*."
 

@@ -1,8 +1,9 @@
 ---
+title: 404 not-found error handling
 description: Not-found errors on both APIs, and the important detail that the web application and consensus network handle missing resources differently.
 ---
 
-# 404 Not Found
+# 404 not-found error handling
 
 **Version**: 1.0.0
 **Error Type**: `404-not-found`

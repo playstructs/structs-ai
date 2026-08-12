@@ -1,10 +1,10 @@
 ---
-title: Error index
+title: "Error index: match the string to a fix"
 description: "Match the error substring you're seeing to its fix. Fuller explanations live in the troubleshooting guides."
 permalink: /play/errors
 ---
 
-# Error index
+# Error index: match the string to a fix
 
 Match the substring you see to the fix. Fuller explanations live in
 [`troubleshooting/`](../troubleshooting/common-issues.md).

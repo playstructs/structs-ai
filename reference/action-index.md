@@ -1,8 +1,9 @@
 ---
+title: "Action index: every command an agent can run"
 description: "Every game action an agent can take, indexed by category: construction, struct management, combat, and resources. Verified against game code."
 ---
 
-# Action Index
+# Action index: every command an agent can run
 
 **Version**: 1.1.0
 **Last Updated**: 2026-01-01

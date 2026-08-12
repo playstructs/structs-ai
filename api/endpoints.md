@@ -1,8 +1,9 @@
 ---
+title: REST API endpoints specification
 description: "The REST API specification: base URLs, consensus network queries, transaction endpoints, and the web application API."
 ---
 
-# API Endpoints
+# REST API endpoints specification
 
 **Last Updated**: May 13, 2026
 

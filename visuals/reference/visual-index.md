@@ -1,15 +1,21 @@
 ---
-description: "An index of all visual content: schemas, graphs, spatial data, and metadata."
+title: Visual content catalog for agents
+description: "Catalog of Structs visual content: schemas, graphs, spatial data, and the files that describe them."
+permalink: /visuals/reference/
+redirect_from:
+  - /visuals/reference/visual-index
+  - /visuals/reference/visual-index.html
 ---
 
-# Visual Content Index
+# Visual content catalog for agents
 
-**Version**: 1.0.0
-**Last Updated**: 2025-12-07
-**Category**: visual
-**Description**: Complete index of all visual content for AI agents
+This page is the catalog of machine-readable visual content: which schema files exist, which graphs are populated, and where spatial data lives. It is a table of contents, not a tutorial. The parent [visuals](/visuals/) index explains why the folder exists; this page lists every file.
 
-> Visual content foundation created. Additional graphs, spatial data, metadata, UI elements, and patterns pending.
+Schemas are types. Graphs are instances. Spatial is the coordinate system. Empty sections (metadata, UI, patterns) are placeholders — do not invent content to fill them. If a row has a path, the file is real; if a section says none yet, that is the answer.
+
+## When to open this page
+
+Open this catalog when you need to find a visual file by name. If you already know the folder, skip to [schemas](/visuals/schemas/), [graphs](/visuals/graphs/), or [spatial](/visuals/spatial/). If you are playing, you do not need this page.
 
 ---
 

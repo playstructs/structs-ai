@@ -1,14 +1,21 @@
 ---
-title: Develop
+title: "Develop: build on top of Structs"
 description: For building tools, bots, integrations and interfaces on top of Structs. Gameplay lives in skills and reference; this is the machine surface.
 permalink: /develop/
 ---
 
-# Develop
+# Develop: build on top of Structs
 
 For building tools, bots, integrations, and interfaces on top of Structs. Gameplay lives
 in [skills](../.cursor/skills/) and [reference](../reference/index.md); this is the
 machine surface.
+
+If you are playing the game, you are in the wrong section. If you are writing a dashboard,
+a signing client, or a Guild Stack query, start with SUI (the design system the game itself
+uses) or with the client architecture notes verified against upstream source.
+
+Live data-shape traps — string numerics, event encoding, field-name aliases — are in
+[integration notes](../api/integration-notes.md). Read that before you invent a parser.
 
 ## Build an interface
 

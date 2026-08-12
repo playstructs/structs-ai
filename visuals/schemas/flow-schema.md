@@ -1,8 +1,9 @@
 ---
+title: Flow schema for process diagrams
 description: "The schema for flows: top-level properties, steps, and transitions."
 ---
 
-# Flow Schema
+# Flow schema for process diagrams
 
 **Version**: 1.0.0
 **Category**: visual

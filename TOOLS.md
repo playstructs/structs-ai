@@ -1,8 +1,9 @@
 ---
+title: "Tools: MCP, CLI, and GRASS"
 description: "Every interface for playing Structs compared: Desktop MCP, the structsd CLI, GRASS streaming, and the Guild Stack. Run preflight to detect yours."
 ---
 
-# Tools
+# Tools: MCP, CLI, and GRASS
 
 **Static reference for the interfaces available to play Structs** (Desktop MCP, `structsd`
 CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.

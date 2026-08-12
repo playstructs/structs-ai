@@ -1,8 +1,9 @@
 ---
+title: Client state, data, and precision
 description: How a client holds game state and turns JSON into models, including the numeric-precision trap where numbers arrive as strings.
 ---
 
-# State and data
+# Client state, data, and precision
 
 **Purpose**: How the reference client holds game state, gets it from the API, and turns
 JSON into models — including the numeric-precision trap that will bite you.

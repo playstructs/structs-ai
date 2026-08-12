@@ -1,8 +1,9 @@
 ---
+title: "Alpha Matter: the fuel of the galaxy"
 description: "The substance that fuels galactic civilization: physical properties, lifecycle from ore to refined Alpha, and why it can't simply be taken."
 ---
 
-# Alpha Matter
+# Alpha Matter: the fuel of the galaxy
 
 **Category**: lore  
 **Purpose**: Deep reference on the substance that fuels galactic civilization

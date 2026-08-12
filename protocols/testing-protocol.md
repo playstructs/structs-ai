@@ -1,8 +1,9 @@
 ---
+title: Testing protocol for API integrations
 description: "How to test API integrations before trusting them in play: endpoint testing patterns, response validation, and deliberate error testing."
 ---
 
-# Testing Protocol
+# Testing protocol for API integrations
 
 **Version**: 1.0.0  
 **Category**: Testing  

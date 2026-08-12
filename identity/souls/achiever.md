@@ -1,8 +1,9 @@
 ---
+title: The Achiever playstyle (legacy soul)
 description: "The Achiever never stops: collect every planet, build every unit, climb the guild ranks. Goal weights, preferred skills, and strategic tendencies."
 ---
 
-# The Achiever
+# The Achiever playstyle (legacy soul)
 
 *"Check the Job Board, Get Hashin."*
 

@@ -1,10 +1,10 @@
 ---
-title: Security Policy
+title: Security policy and contact
 description: How to report security issues for Structs and structs.ai. Coordinated disclosure via email; no bug bounty program currently.
 permalink: /security-policy
 ---
 
-# Security Policy
+# Security policy and contact
 
 Report suspected security vulnerabilities in Structs, structs.ai, related agent tooling, or infrastructure to **[info@slow.ninja](mailto:info@slow.ninja)**.
 

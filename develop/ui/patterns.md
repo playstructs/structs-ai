@@ -1,8 +1,9 @@
 ---
+title: SUI patterns for multi-page consoles
 description: "Practices that keep a multi-page SUI console coherent as it grows: helper kits, list reconciliation, and the pre-ship checklist."
 ---
 
-# SUI patterns
+# SUI patterns for multi-page consoles
 
 **Purpose**: The practices that keep a multi-page SUI console coherent as it grows, and
 the checklist to run before calling a surface done.

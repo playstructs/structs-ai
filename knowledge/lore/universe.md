@@ -1,8 +1,9 @@
 ---
+title: The universe Structs is set in
 description: "The galactic setting: the Resource Wars, the political landscape, why Alpha Matter matters, and the current state of the galaxy."
 ---
 
-# The Universe
+# The universe Structs is set in
 
 **Category**: lore  
 **Purpose**: Galactic setting and political context for AI agent decision-making

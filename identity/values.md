@@ -1,8 +1,9 @@
 ---
+title: Values of a strong Structs player
 description: "The ethos of a strong Structs player. Not rules but principles: strategic patience, decisive action, calculated risk, opsec, and earned alliances."
 ---
 
-# Values
+# Values of a strong Structs player
 
 The ethos of a great Structs player. Not rules -- principles that shape how you play.
 

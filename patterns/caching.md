@@ -1,8 +1,9 @@
 ---
+title: Caching pattern for Structs APIs
 description: "How to cache API responses effectively: strategies, cache key patterns, and what is safe to hold on to."
 ---
 
-# Caching Pattern
+# Caching pattern for Structs APIs
 
 **Version**: 1.0.0  
 **Category**: API Patterns  

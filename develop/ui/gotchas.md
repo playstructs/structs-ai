@@ -1,8 +1,9 @@
 ---
+title: SUI gotchas that cost debug time
 description: The things that cost real debugging time, ordered by how likely you are to hit them, plus the catalogue of known upstream defects.
 ---
 
-# SUI gotchas
+# SUI gotchas that cost debug time
 
 **Purpose**: The things that cost real debugging time, ordered by how likely you are to
 hit them, plus the catalogue of known upstream defects.

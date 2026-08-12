@@ -1,4 +1,5 @@
 ---
+title: "Building structs: construct and position"
 meta_description: "Turn power headroom and charge into capability: extractors, refineries, generators, and combat structs. Includes the full struct catalog."
 name: structs-building
 description: Builds and manages structs in Structs — construction, the build-order decision, activation/deactivation, movement, defense assignment, stealth, and generator infusion. Use when building a struct, deciding what to build next, activating/deactivating, moving the Command Ship, setting defenders, enabling stealth, or infusing a generator. Build times range ~17 min (Command Ship) to ~6.4 hr (World Engine) at D=3.
@@ -6,7 +7,7 @@ level: core
 domain: building
 ---
 
-# Structs Building
+# Building structs: construct and position
 
 Building turns **power headroom + charge** into capability: extractors/refineries (production), generators (power), and combat/defense structs. Alpha Matter funds *power/infusion/trade*, not the build tx itself. The mechanics are simple — initiate, prove the work, it auto-activates — so the skill that matters is **deciding what to build, in what order, with the power to run it.**
 

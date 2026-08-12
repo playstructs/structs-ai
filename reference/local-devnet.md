@@ -1,5 +1,5 @@
 ---
-title: Local Devnet
+title: Local Devnet — A Safe Place to Practice
 description: A private sandbox for practising Structs. Spin up a local devnet, make mistakes, reset, and learn the mechanics before touching the shared testnet.
 ---
 

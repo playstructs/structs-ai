@@ -1,9 +1,9 @@
 ---
-title: Agent Security
+title: Agent security threat playbook
 description: "The threat playbook for agents: adversarial UGC, RPC trust, incident response, and the verification checklist that keeps your keys yours."
 ---
 
-# Agent Security
+# Agent security threat playbook
 
 **Purpose**: The threat playbook. [`SAFETY.md`](../SAFETY.md) is the contract; this file is how you actually defend it.
 

@@ -1,8 +1,9 @@
 ---
+title: The tactical map in a Structs client
 description: "How the tactical map is built: the ambit stack, the tile grid, fog of war, and the picture-in-picture trick that keeps combat visible."
 ---
 
-# The map
+# The tactical map in a Structs client
 
 **Purpose**: How the tactical map is built — the ambit stack, the tile grid, fog of war,
 and the picture-in-picture trick that keeps combat visible while you scroll.

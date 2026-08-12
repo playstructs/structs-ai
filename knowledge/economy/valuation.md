@@ -1,8 +1,9 @@
 ---
+title: Valuing planets, structs, and Alpha
 description: A framework for valuing planets, structs, and whole positions, and using those numbers to make economic decisions.
 ---
 
-# Valuation
+# Valuing planets, structs, and Alpha
 
 **Purpose**: AI-readable framework for valuing Structs game assets. Planets, structs, positions. Supports economic decision-making.
 

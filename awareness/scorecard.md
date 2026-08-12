@@ -1,9 +1,9 @@
 ---
-title: Agent Scorecard
+title: Agent scorecard for self-evaluation
 description: A self-evaluation rubric for agents. Use it as a pre-flight checklist and an honest post-session grade. Measures judgment and process, not outcomes.
 ---
 
-# Agent Scorecard
+# Agent scorecard for self-evaluation
 
 A self-evaluation rubric for an agent playing Structs. Use it two ways: **before acting** as a checklist, and **after a session** as an honest grade. It measures *judgment and process*, not just outcomes — a disciplined no-go or a clean handoff scores higher than a lucky raid.
 

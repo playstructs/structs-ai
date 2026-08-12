@@ -1,8 +1,9 @@
 ---
+title: Query protocol for reading game state
 description: "How agents read game state: HTTP GET against REST endpoints, query patterns, batching strategies, and what is safe to cache."
 ---
 
-# Query Protocol
+# Query protocol for reading game state
 
 **Version**: 1.0.0  
 **Category**: Query  

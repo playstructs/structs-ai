@@ -1,5 +1,5 @@
 ---
-title: Query Endpoints
+title: Query endpoints by entity
 description: Query endpoints split into one file per entity, so an agent can load only the reference it needs instead of the whole API surface.
 permalink: /api/queries/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /api/queries/README.html
 ---
 
-# Query Endpoints
+# Query endpoints by entity
 
 **Version**: 1.0.0  
 **Purpose**: Query endpoints split from `endpoints.md` for context window efficiency
@@ -19,6 +19,8 @@ redirect_from:
 This directory contains query endpoints organized by entity type. This allows AI agents to load only the endpoints they need, reducing context window usage.
 
 **Use Case**: Load specific entity query endpoints when working with that entity, instead of loading the entire `endpoints.md` (1153 lines).
+
+Queries are reads. They do not spend charge the way transactions do, but they still hit the node and they still return string numerics — see [integration notes](../integration-notes.md) before you parse amounts as JSON numbers. If you need a live, sub-second view of the same entities, that is Guild Stack / PostgreSQL, not these REST routes.
 
 ---
 

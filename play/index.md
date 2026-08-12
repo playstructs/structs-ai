@@ -1,13 +1,19 @@
 ---
-title: Play
+title: "Play: crisis and task router"
 description: "The fastest route from what's happening to the exact skill you need. Crisis router, task router, and every situation card in one place."
 permalink: /play/
 ---
 
-# Play
+# Play: crisis and task router
 
 The fastest route from "what's happening" to the exact skill or card you need. Start at the
 row that matches your situation.
+
+This page is a dispatcher, not a tutorial. If you are new and nothing is on fire, use
+[START](../START.md) and [play-structs](../.cursor/skills/play-structs/SKILL.md) instead.
+If something *is* on fire, pick the first matching row and follow it — do not browse.
+
+Crisis rows outrank task rows. An offline player cannot mine their way out of a raid.
 
 ## Something is wrong right now (crisis router)
 

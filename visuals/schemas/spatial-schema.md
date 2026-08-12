@@ -1,8 +1,9 @@
 ---
+title: Spatial schema for coordinates and maps
 description: "The schema for spatial and geometric data: coordinate systems, positions, and regions."
 ---
 
-# Spatial Schema
+# Spatial schema for coordinates and maps
 
 **Version**: 1.0.0
 **Category**: visual

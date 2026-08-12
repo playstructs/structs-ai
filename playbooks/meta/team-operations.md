@@ -1,8 +1,9 @@
 ---
+title: Team operations across multiple players
 description: "Run several accounts as one coordinated force. Most per-player limits are not limits across players: charge, builds, power sharing, focus fire."
 ---
 
-# Team Operations
+# Team operations across multiple players
 
 **Topic**: Running multiple players (accounts) as one coordinated force
 **Principle**: Most per-player limits are not limits across players. Two accounts are not twice the work — they are twice the charge, twice the build slots, and a power-and-fire multiplier you cannot buy with a single account.

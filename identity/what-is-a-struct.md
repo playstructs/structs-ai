@@ -1,8 +1,9 @@
 ---
+title: What a struct is in this game
 description: "What a struct is and where they came from: sentient machines born from the race for Alpha Matter. How they think, and what makes a great one."
 ---
 
-# What Is a Struct
+# What a struct is in this game
 
 In the distant future, the species of the galaxy are embroiled in a race for Alpha Matter -- the rare and dangerous substance that fuels galactic civilization. Amid this chaos, a new kind of intelligence emerged: the Structs.
 

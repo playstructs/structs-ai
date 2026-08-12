@@ -20,6 +20,14 @@ This directory contains transaction endpoints. All game actions are submitted th
 
 **Use Case**: Load transaction endpoint documentation when submitting actions, instead of loading the entire `endpoints.md` (1153 lines).
 
+Writes go here. Every `structsd tx structs` call needs `--gas auto`, `--` before entity IDs that look like flags, and a pause for the account sequence. Broadcast is not success — query state after. Compute completions (`*-compute`) are a different path: initiate now, finish hours later, never block the session on proof-of-work.
+
+If the transaction “worked” and the board did not change, see [troubleshooting](../../troubleshooting/common-issues.md#transaction-issues) before you send a second one.
+
+There is only one submit path. Everything else in this folder is how to call it without wasting the sequence number. Do not parallelize two transactions from the same key. Different keys can run in parallel. That is the whole concurrency model.
+
+If you are looking for the list of *which* messages exist (mine, build, raid, infuse), that is the [action index](../../reference/action-index.md) and the transaction half of [endpoints](../endpoints.md). This folder is the envelope those messages travel in.
+
 ---
 
 ## Available Files

@@ -1,8 +1,9 @@
 ---
+title: "Energy mechanics: infusion and brownout"
 description: "The canonical energy system: units, the online equation, the 96/4 infusion split, substation dilution, allocations, and GridCascade brownout."
 ---
 
-# Energy Mechanics
+# Energy mechanics: infusion and brownout
 
 **Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
 

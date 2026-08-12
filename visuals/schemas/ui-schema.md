@@ -1,8 +1,9 @@
 ---
+title: UI schema for describing interface elements
 description: "The schema for describing UI: top-level properties, locations, elements, and annotations."
 ---
 
-# UI Schema
+# UI schema for describing interface elements
 
 **Version**: 1.0.0
 **Category**: visual

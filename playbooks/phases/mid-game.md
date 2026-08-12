@@ -1,8 +1,9 @@
 ---
+title: "Mid game: expand, fortify, join guilds"
 description: "Expansion and scaling: deepen the pipeline, secure the home world, build alliances. When to plan the next planet, and fortify versus scale."
 ---
 
-# Mid Game
+# Mid game: expand, fortify, join guilds
 
 **Phase**: Expansion and scaling  
 **Goal**: Deepen the pipeline, secure the home world, build alliances  

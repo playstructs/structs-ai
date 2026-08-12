@@ -1,8 +1,9 @@
 ---
+title: Sitemap of the agent corpus
 description: "Every page in the Structs agent corpus, organised by section: skills, knowledge, strategy, awareness, API reference, and build guides."
 ---
 
-# Sitemap
+# Sitemap of the agent corpus
 
 Complete file map of the structs.ai repository. The machine-readable `sitemap.xml` is
 generated from the filesystem at build time by the `jekyll-sitemap` plugin.

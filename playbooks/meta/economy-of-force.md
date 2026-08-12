@@ -1,8 +1,9 @@
 ---
+title: "Economy of force: spend only what you must"
 description: "Minimum force necessary for each objective. Don't over-defend, don't over-attack, and how to prioritise when you can't do everything."
 ---
 
-# Economy of Force
+# Economy of force: spend only what you must
 
 **Topic**: Allocating limited resources across competing priorities  
 **Principle**: Minimum force necessary for each objective. Don't over-defend. Don't over-attack. Balance expansion and security.

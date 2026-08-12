@@ -1,8 +1,9 @@
 ---
+title: "Late game: dominance, defense, markets"
 description: "The endgame: Alpha Matter dominance, military supremacy, guild politics, and holding territory once you are the one worth attacking."
 ---
 
-# Late Game
+# Late game: dominance, defense, markets
 
 **Phase**: Endgame  
 **Goal**: Alpha Matter dominance, military supremacy, political control  

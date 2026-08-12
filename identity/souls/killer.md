@@ -1,8 +1,9 @@
 ---
+title: The Killer playstyle (legacy soul)
 description: The Killer is the predator, hunting because the game allows it and someone has to keep the galaxy honest. Goals, skills, and strategic tendencies.
 ---
 
-# The Killer
+# The Killer playstyle (legacy soul)
 
 *"Monitor, Make Moves, Pillage."*
 

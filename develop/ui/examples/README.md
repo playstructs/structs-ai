@@ -1,5 +1,5 @@
 ---
-title: SUI examples
+title: Runnable SUI example files
 description: Runnable SUI example files. Note that the stylesheet resolves assets from the web root, so serve them over HTTP rather than opening directly.
 permalink: /develop/ui/examples/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /develop/ui/examples/README.html
 ---
 
-# SUI examples
+# Runnable SUI example files
 
 Three files you can copy into a project as-is.
 

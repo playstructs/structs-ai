@@ -1,13 +1,19 @@
 ---
-title: Reference
+title: "Reference: rules, numbers, names"
 description: "Look up a rule, a number, or a name: action and entity indexes, endpoint lookups, formulas, and the glossary. For procedures, use skills instead."
 permalink: /reference/
 ---
 
-# Reference
+# Reference: rules, numbers, names
 
 Look up a rule, a number, or a name. For step-by-step procedures use
 [skills](../.cursor/skills/); for strategy use [strategy](../strategy/index.md).
+
+This is the lookup desk. Generated catalogs are stamped from a specific `structsd` version — if your binary is newer, regenerate or distrust the number. The glossary and Codex crosswalk exist because the same idea has three names (UI, Codex, chain) and mixing them causes bad transactions.
+
+Do not read this section top to bottom. Arrive with a word or an error string and leave with a page.
+
+The action and entity indexes are for “what is the name of this thing.” Local devnet is for “I need to fail in private.” If you are about to sign a Tier 1 action you have never rehearsed, that last link is the one.
 
 ## Source-derived catalogs (provenance-stamped)
 
@@ -40,3 +46,7 @@ Look up a rule, a number, or a name. For step-by-step procedures use
 ## Errors
 
 - [Error index](../play/errors.md) · [Troubleshooting](../troubleshooting/common-issues.md)
+
+## When to open this page
+
+Open reference with a search term, an error string, or a struct type ID. It is a desk, not a curriculum. Generated catalogs beat memory. The glossary beats arguing about ambit. Local devnet beats learning a raid on a shared chain.

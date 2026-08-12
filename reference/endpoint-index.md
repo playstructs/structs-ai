@@ -1,8 +1,9 @@
 ---
+title: "Endpoint index: every API route in one list"
 description: Every API endpoint in one index, across the consensus network and the web application, with query patterns and categories.
 ---
 
-# Endpoint Index
+# Endpoint index: every API route in one list
 
 **Last Updated**: May 13, 2026
 **Description**: Complete index of all API endpoints for AI agents

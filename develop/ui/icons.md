@@ -1,8 +1,9 @@
 ---
+title: SUI icon systems and inventories
 description: "The two SUI icon systems: 67 tinting glyph icons and 29 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
 ---
 
-# SUI icons
+# SUI icon systems and inventories
 
 **Purpose**: The two icon systems, the complete inventory of both, and the rule that
 matters most — never invent one.

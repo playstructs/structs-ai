@@ -1,8 +1,9 @@
 ---
+title: Threat detection before you are hit
 description: "Identify dangers before they land: threat categories, how to set up monitoring, and what order to respond in when several fire at once."
 ---
 
-# Threat Detection
+# Threat detection before you are hit
 
 **Version**: 1.0.0  
 **Purpose**: Identifying dangers before they hit. How to set up monitoring and what to watch.

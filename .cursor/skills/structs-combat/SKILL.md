@@ -1,4 +1,5 @@
 ---
+title: "Combat skill: attacks, raids, defense"
 meta_description: Combat exists to move ore. Raids and ore theft, ambit-gated counters, single-target weapons, and the defensive posture that keeps yours.
 name: structs-combat
 description: "Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed."
@@ -6,7 +7,7 @@ level: core
 domain: combat
 ---
 
-# Structs Combat
+# Combat skill: attacks, raids, defense
 
 Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while its shields are vulnerable** — the defender's **fleet is off-station**, or their **Command Ship is offline, destroyed, or non-existent**. Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must **catch them vulnerable — or make them vulnerable** by destroying (or power-starving) their Command Ship. Vulnerability is a state you can force, not just one to wait for. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid exposes your own planet until it returns.)
 

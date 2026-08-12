@@ -1,4 +1,5 @@
 ---
+title: "Guild skill: join, ranks, Central Bank"
 meta_description: A guild gives you a reactor, a substation, a market, a token, and allies. Choosing one, joining, ranks, membership, and UGC moderation.
 name: structs-guild
 description: Guilds in Structs — choosing and joining one, ranks and rank-permissions, membership flows, settings, UGC moderation, and the Central Bank (mint/redeem). Use when picking a guild to join, creating a guild, managing members or ranks, moderating member identity, or running guild token operations.
@@ -6,7 +7,7 @@ level: core
 domain: social
 ---
 
-# Structs Guild
+# Guild skill: join, ranks, Central Bank
 
 A guild is your faction: it gives you a reactor to infuse, a substation to draw power from, a market to sell into, a token to mint, and allies (or moderators). For a new player, **which guild you join is one of your most consequential early choices** — it shapes your power source, your economy, and who has your back. This skill covers choosing/joining, running a guild, ranks/permissions, identity moderation, and the Central Bank.
 

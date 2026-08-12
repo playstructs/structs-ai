@@ -1,5 +1,5 @@
 ---
-title: GRASS Streaming API
+title: GRASS/NATS streaming API
 description: "Complete documentation for GRASS real-time streaming over NATS: overview, quick start, and connection details."
 permalink: /api/streaming/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /api/streaming/README.html
 ---
 
-# GRASS/NATS Streaming API Documentation
+# GRASS/NATS streaming API
 
 **Purpose**: Complete documentation for GRASS (Game Real-time Application Streaming Service) via NATS messaging
 

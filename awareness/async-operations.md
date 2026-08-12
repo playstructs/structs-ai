@@ -1,8 +1,9 @@
 ---
+title: Async operations and background PoW
 description: "Run proof-of-work in the background instead of blocking on it: the pipeline pattern, transaction sequencing, the difficulty cliff, and job tracking."
 ---
 
-# Async Operations
+# Async operations and background PoW
 
 **Purpose**: How to manage proof-of-work as background operations. The pipeline pattern. Job tracking. Multi-player orchestration.
 

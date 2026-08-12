@@ -1,8 +1,9 @@
 ---
+title: Action protocol for submitting transactions
 description: "How agents submit actions as transactions to the consensus network: base configuration, transaction flow, action patterns, and requirements."
 ---
 
-# Action Protocol
+# Action protocol for submitting transactions
 
 **Version**: 1.0.0  
 **Category**: Action  

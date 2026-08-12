@@ -1,5 +1,5 @@
 ---
-title: Minimal Schemas
+title: Minimal schemas for simple operations
 description: "Lightweight schemas carrying only the essential fields, for simple operations that don't need the full entity definition."
 permalink: /schemas/minimal/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /schemas/minimal/README.html
 ---
 
-# Minimal Schemas
+# Minimal schemas for simple operations
 
 **Purpose**: Lightweight schemas containing only essential information for simple operations.
 

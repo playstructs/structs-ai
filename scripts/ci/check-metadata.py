@@ -16,24 +16,47 @@ SITE_ORIGIN = "https://structs.ai"
 OG_IMAGE_URL = f"{SITE_ORIGIN}/assets/og-image.png"
 
 DIRECTORY_INDEXES = (
+    "api",
     "api/queries",
     "api/streaming",
     "api/transactions",
     "api/webapp",
     "develop/ui/examples",
+    "examples",
+    "examples/auth",
+    "examples/database",
+    "examples/errors",
+    "examples/transcripts",
     "examples/workflows",
+    "knowledge/infrastructure",
     "patterns",
+    "protocols",
+    "schemas",
     "schemas/entities",
     "schemas/minimal",
+    "strategy/presets",
     "troubleshooting",
     "visuals",
+    "visuals/graphs",
+    "visuals/reference",
+    "visuals/schemas",
+    "visuals/spatial",
 )
 
 TXT_SITEMAP_LOCS = (
     "https://structs.ai/llms.txt",
     "https://structs.ai/llms-start.txt",
+)
+
+TXT_SITEMAP_FORBIDDEN = (
     "https://structs.ai/llms-core.txt",
     "https://structs.ai/llms-full.txt",
+)
+
+GAME_URL = "https://beta.playstructs.com/"
+GAME_SAME_AS = (
+    "https://www.playstructs.com/",
+    "https://github.com/playstructs",
 )
 
 LLMS_ABS_URL = re.compile(r"https://structs\.ai(/[^\s)\]>\"']*)")
@@ -93,6 +116,24 @@ def extract_jsonld(html_text: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
+def graph_nodes(data: dict) -> list:
+    graph = data.get("@graph")
+    if isinstance(graph, list):
+        return graph
+    return [data]
+
+
+def find_typed_node(data: dict, type_name: str) -> dict | None:
+    for node in graph_nodes(data):
+        if not isinstance(node, dict):
+            continue
+        raw = node.get("@type")
+        types = [str(t) for t in raw] if isinstance(raw, list) else [str(raw)]
+        if type_name in types:
+            return node
+    return None
+
+
 def graph_types(data: dict) -> set[str]:
     types: set[str] = set()
     graph = data.get("@graph")
@@ -130,6 +171,15 @@ def check_url_gate() -> None:
         for loc in TXT_SITEMAP_LOCS:
             if loc not in body:
                 errors.append(f"sitemap-txt.xml missing loc {loc}")
+        for loc in TXT_SITEMAP_FORBIDDEN:
+            if loc in body:
+                errors.append(f"sitemap-txt.xml must not list dump {loc}")
+
+    sitemap_xml = ROOT / "sitemap.xml"
+    if sitemap_xml.exists():
+        sm = sitemap_xml.read_text(encoding="utf-8", errors="replace")
+        if "develop/ui/examples/starter" in sm:
+            errors.append("sitemap.xml must not include /develop/ui/examples/starter.html")
 
     llms = REPO / "llms.txt"
     if not llms.exists():
@@ -256,7 +306,7 @@ def main() -> int:
             if "BreadcrumbList" not in types:
                 errors.append(f"{rel}: JSON-LD missing BreadcrumbList")
             else:
-                for node in jsonld.get("@graph") or []:
+                for node in graph_nodes(jsonld):
                     if not isinstance(node, dict) or node.get("@type") != "BreadcrumbList":
                         continue
                     for item in node.get("itemListElement") or []:
@@ -266,8 +316,15 @@ def main() -> int:
                         url = item.get("item")
                         if not name:
                             errors.append(f"{rel}: BreadcrumbList item missing name")
-                        if isinstance(url, str) and "://" in url and "///" in url.replace("://", ":"):
+                        if url is None:
+                            continue
+                        if not isinstance(url, str):
+                            errors.append(f"{rel}: BreadcrumbList item is not a URL")
+                            continue
+                        if "://" in url and "///" in url.replace("://", ":"):
                             errors.append(f"{rel}: BreadcrumbList item has doubled slash {url}")
+                        if resolve_canonical_target(url) is None:
+                            errors.append(f"{rel}: BreadcrumbList item 404 {url}")
             is_home = rel in ("/index.html", "/") or (canon == f"{SITE_ORIGIN}/")
             is_api = rel.startswith("/api/") or (canon or "").startswith(f"{SITE_ORIGIN}/api/")
             if is_home:
@@ -275,11 +332,29 @@ def main() -> int:
                     errors.append(f"{rel}: homepage JSON-LD missing WebSite")
                 if "VideoGame" not in types:
                     errors.append(f"{rel}: homepage JSON-LD missing VideoGame")
+                game = find_typed_node(jsonld, "VideoGame")
+                if game is not None:
+                    if game.get("url") != GAME_URL:
+                        errors.append(
+                            f"{rel}: VideoGame.url must be {GAME_URL}, got {game.get('url')!r}"
+                        )
+                    same_as = game.get("sameAs")
+                    if not isinstance(same_as, list):
+                        errors.append(f"{rel}: VideoGame.sameAs missing")
+                    else:
+                        for expected in GAME_SAME_AS:
+                            if expected not in same_as:
+                                errors.append(f"{rel}: VideoGame.sameAs missing {expected}")
             elif is_api:
                 if "APIReference" not in types:
                     errors.append(f"{rel}: /api/ JSON-LD missing APIReference")
             elif "TechArticle" not in types:
                 errors.append(f"{rel}: JSON-LD missing TechArticle")
+            article = find_typed_node(jsonld, "APIReference") or find_typed_node(
+                jsonld, "TechArticle"
+            )
+            if article is not None and not article.get("dateModified"):
+                errors.append(f"{rel}: JSON-LD article missing dateModified")
 
         if not canon:
             if "redirect_to" in text or 'http-equiv="refresh"' in text.lower():

@@ -1,8 +1,9 @@
 ---
+title: Trading and marketplace mechanics
 description: "Marketplace mechanics: Alpha Matter exchange, which assets are tradeable, and the on-chain precision rules that govern every trade."
 ---
 
-# Trading
+# Trading and marketplace mechanics
 
 **Purpose**: AI-readable reference for Structs marketplace mechanics, Alpha Matter exchange, tradeable assets, and on-chain precision.
 

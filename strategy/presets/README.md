@@ -1,10 +1,13 @@
 ---
-title: Playstyle presets
+title: Playstyle presets for Structs agents
 description: "Optional playstyle presets: Industrialist, Raider, Merchant, Explorer, Diplomat, Generalist. Goal weights and recommended skills, not personalities."
-permalink: /strategy/presets/README
+permalink: /strategy/presets/
+redirect_from:
+  - /strategy/presets/README
+  - /strategy/presets/README.html
 ---
 
-# Playstyle presets
+# Playstyle presets for Structs agents
 
 A player methodology is **not a personality** — it's a set of goal weights plus a few
 recommended skills and watch-outs. These presets are optional shortcuts for filling in the

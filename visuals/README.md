@@ -1,5 +1,5 @@
 ---
-title: Visual Content
+title: "Visual content: diagrams and spatial data"
 description: "Machine-readable visual content for agents: diagrams, relationship graphs, spatial data, and the schemas that describe them."
 permalink: /visuals/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /visuals/README.html
 ---
 
-# Visual Content
+# Visual content: diagrams and spatial data
 
 **Version**: 1.0.0  
 **Category**: Visual  

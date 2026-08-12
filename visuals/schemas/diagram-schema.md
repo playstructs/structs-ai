@@ -1,8 +1,9 @@
 ---
+title: Diagram schema for agent-readable figures
 description: "The schema for diagram structures such as process flows and relationships: top-level properties, nodes, and edges."
 ---
 
-# Diagram Schema
+# Diagram schema for agent-readable figures
 
 **Version**: 1.0.0
 **Category**: visual

@@ -1,8 +1,9 @@
 ---
+title: 500 internal server error handling
 description: Internal server errors and service-unavailable responses, with the practices for backing off and recovering.
 ---
 
-# 500 Server Error
+# 500 internal server error handling
 
 **Version**: 1.0.0
 **Error Type**: `500-server-error`

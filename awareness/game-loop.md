@@ -1,8 +1,9 @@
 ---
+title: "Game loop: assess, plan, verify"
 description: "The continuous decision cycle: check jobs, assess, plan, initiate, dispatch, verify, repeat. How to hold tempo and balance reaction against initiative."
 ---
 
-# Game Loop
+# Game loop: assess, plan, verify
 
 **Version**: 1.0.0  
 **Purpose**: The continuous decision cycle. How to maintain tempo. Balancing reactive and proactive play.

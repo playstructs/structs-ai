@@ -1,14 +1,18 @@
 ---
-title: Skills
+title: "Skills: procedures for playing"
 description: Decision-first, CLI-grounded procedures for playing Structs. Each skill states when to use it, what it decides, and the exact commands to run.
 permalink: /skills/
 ---
 
-# Skills
+# Skills: procedures for playing
 
 Decision-first, CLI-grounded procedures for playing Structs. Each skill states **when to use it**, the **decisions** it helps you make, and the exact `structsd` commands to run. Shared boilerplate (transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy) lives once in [conventions](conventions).
 
 Start with [play-structs](play-structs/SKILL) — it takes you from zero to mining and links everything below.
+
+Skills are the doing layer. They assume you have already decided *that* you should mine, raid, or infuse; they will not argue you out of a bad war. For that argument see [play](../play/) and [playbooks](../playbooks/). Canonical numbers live in [knowledge](../knowledge/) and [reference](../reference/).
+
+Edit the copies under [`.cursor/skills/`](../.cursor/skills/) — `skills/` is a generated mirror for GitHub Pages and OpenClaw discovery.
 
 ## Core loop
 

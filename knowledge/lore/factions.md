@@ -1,8 +1,9 @@
 ---
+title: Factions, guilds, and galactic politics
 description: "The political landscape: guilds, Central Banks, independent operators, and the mercenary networks that sell combat services."
 ---
 
-# Factions
+# Factions, guilds, and galactic politics
 
 **Category**: lore  
 **Purpose**: Political and organizational entities for AI agent context

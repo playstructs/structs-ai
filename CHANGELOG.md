@@ -1,10 +1,10 @@
 ---
-title: Changelog
+title: Changelog of documentation releases
 description: "Release history for the Structs AI documentation: notable changes, version dates, and what each release added or fixed."
 permalink: /CHANGELOG
 ---
 
-# Changelog
+# Changelog of documentation releases
 
 All notable changes to the Structs Compendium documentation will be documented in this file.
 

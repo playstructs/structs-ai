@@ -1,18 +1,21 @@
 {%- comment -%}
   JSON-LD for search engines. Strings go through jsonify so titles with quotes
-  stay valid JSON. dateModified is emitted only when Jekyll has the same
-  last_modified_at / date that jekyll-sitemap uses for <lastmod>.
+  stay valid JSON. dateModified uses last_modified_at / date when present, else
+  site.time — the same fallback jekyll-sitemap uses when those fields are unset.
+  Intermediate breadcrumb items omit `item` when no page exists at that path.
 {%- endcomment -%}
+{%- assign jsonld_space = "x x" | remove: "x" -%}
 {%- if page.title and page.title != "" -%}
   {%- assign jsonld_headline = page.title -%}
 {%- else -%}
   {%- assign jsonld_headline = site.title -%}
 {%- endif -%}
-{%- assign jsonld_modified = "" -%}
 {%- if page.last_modified_at -%}
   {%- assign jsonld_modified = page.last_modified_at | date_to_xmlschema -%}
 {%- elsif page.date -%}
   {%- assign jsonld_modified = page.date | date_to_xmlschema -%}
+{%- else -%}
+  {%- assign jsonld_modified = site.time | date_to_xmlschema -%}
 {%- endif -%}
 {%- assign jsonld_path = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "/" -%}
 {%- assign jsonld_parts = jsonld_path | split: "/" -%}
@@ -21,6 +24,7 @@
 {%- else -%}
   {%- assign jsonld_article_type = "TechArticle" -%}
 {%- endif -%}
+{%- capture jsonld_known -%}|{% for p in site.pages %}{{ p.url }}|{% endfor %}{%- endcapture -%}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -34,12 +38,13 @@
           "position": 1,
           "name": "Home",
           "item": {{ "/" | absolute_url | jsonify }}
-        }{% assign crumb_accum = "" %}{% for part in jsonld_parts %}{% if part == "" %}{% continue %}{% endif %}{% assign crumb_accum = crumb_accum | append: "/" | append: part %}{% capture crumb_name %}{% case part %}{% when "api" %}API{% when "ui" %}UI{% when "sui" %}SUI{% else %}{% assign words = part | replace: "-", " " | split: " " %}{% for word in words %}{{ word | capitalize }}{% unless forloop.last %} {% endunless %}{% endfor %}{% endcase %}{% endcapture %}
+        }{% assign crumb_accum = "" %}{% for part in jsonld_parts %}{% if part == "" %}{% continue %}{% endif %}{% assign crumb_accum = crumb_accum | append: "/" | append: part %}{% case part %}{% when "api" %}{% assign crumb_name = "API" %}{% when "ui" %}{% assign crumb_name = "UI" %}{% when "sui" %}{% assign crumb_name = "SUI" %}{% else %}{% assign crumb_name = "" %}{% assign words = part | replace: "-", jsonld_space | split: jsonld_space %}{% for word in words %}{% case word %}{% when "ui" %}{% assign cap = "UI" %}{% when "sui" %}{% assign cap = "SUI" %}{% when "api" %}{% assign cap = "API" %}{% else %}{% assign cap = word | capitalize %}{% endcase %}{% if crumb_name == "" %}{% assign crumb_name = cap %}{% else %}{% assign crumb_name = crumb_name | append: jsonld_space | append: cap %}{% endif %}{% endfor %}{% endcase %}{% assign crumb_dir = crumb_accum | append: "/" %}{% assign crumb_has_page = false %}{% assign needle_dir = "|" | append: crumb_dir | append: "|" %}{% assign needle_html = "|" | append: crumb_accum | append: ".html|" %}{% assign needle_index = "|" | append: crumb_accum | append: "/index.html|" %}{% assign needle_bare = "|" | append: crumb_accum | append: "|" %}{% if jsonld_known contains needle_dir or jsonld_known contains needle_html or jsonld_known contains needle_index or jsonld_known contains needle_bare %}{% assign crumb_has_page = true %}{% endif %}
         ,{
           "@type": "ListItem",
           "position": {{ forloop.index | plus: 1 }},
-          "name": {% if forloop.last %}{{ jsonld_headline | jsonify }}{% else %}{{ crumb_name | strip | jsonify }}{% endif %},
-          "item": {% if forloop.last %}{{ canonical_url | jsonify }}{% else %}{{ crumb_accum | append: "/" | absolute_url | jsonify }}{% endif %}
+          "name": {% if forloop.last %}{{ jsonld_headline | jsonify }}{% else %}{{ crumb_name | jsonify }}{% endif %}{% if forloop.last %}
+          ,"item": {{ canonical_url | jsonify }}{% elsif crumb_has_page %}
+          ,"item": {{ crumb_dir | absolute_url | jsonify }}{% endif %}
         }{% endfor %}
       ]
     }{% if page.url == "/" %}
@@ -62,11 +67,17 @@
       "@type": ["VideoGame", "SoftwareApplication"],
       "@id": {{ "/#game" | absolute_url | jsonify }},
       "name": "Structs",
-      "url": {{ "/" | absolute_url | jsonify }},
+      "url": "https://beta.playstructs.com/",
+      "sameAs": [
+        "https://www.playstructs.com/",
+        "https://github.com/playstructs"
+      ],
       "description": {{ meta_description | jsonify }},
       "image": {{ og_image_url | jsonify }},
       "genre": "Strategy",
       "applicationCategory": "GameApplication",
+      "applicationSubCategory": "5X space strategy",
+      "gamePlatform": "Web",
       "playMode": "https://schema.org/MultiPlayer",
       "publisher": { "@id": {{ "/#organization" | absolute_url | jsonify }} }
     }{% else %}
@@ -77,13 +88,13 @@
       "description": {{ meta_description | jsonify }},
       "url": {{ canonical_url | jsonify }},
       "image": {{ og_image_url | jsonify }},
+      "dateModified": {{ jsonld_modified | jsonify }},
       "isPartOf": { "@id": {{ "/#website" | absolute_url | jsonify }} },
       "publisher": {
         "@type": "Organization",
         "name": {{ site.title | jsonify }},
         "url": {{ "/" | absolute_url | jsonify }}
-      }{% if jsonld_modified != "" %}
-      ,"dateModified": {{ jsonld_modified | jsonify }}{% endif %}
+      }
     }{% endif %}
   ]
 }

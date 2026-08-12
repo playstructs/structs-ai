@@ -3,7 +3,7 @@ title: "Situation: Planet running out of ore"
 description: "Your planet's ore is running out and yields are falling. How to diagnose it and how to plan the handoff to your next base."
 ---
 
-# Situation: Planet depletion
+# Situation: Planet running out of ore
 
 **Triggers**: Your planet's remaining ore is low; mining yields are falling; you're planning
 the next base.

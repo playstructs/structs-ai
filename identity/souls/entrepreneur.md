@@ -1,8 +1,9 @@
 ---
+title: The Entrepreneur playstyle (legacy)
 description: "The Entrepreneur treats the galaxy as a portfolio: planets are assets, structs are investments, guilds are enterprises. Goals, skills, tendencies."
 ---
 
-# The Entrepreneur
+# The Entrepreneur playstyle (legacy)
 
 *"Monitor the Builds, Check the Defences, Arrange the Deals."*
 

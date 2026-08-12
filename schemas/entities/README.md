@@ -1,5 +1,5 @@
 ---
-title: Entity Schemas
+title: Entity schemas split one file per type
 description: Individual entity schemas split into one file each, so an agent can load a single definition rather than the whole catalog.
 permalink: /schemas/entities/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /schemas/entities/README.html
 ---
 
-# Entity Schemas
+# Entity schemas split one file per type
 
 **Purpose**: Individual entity schema files extracted from `game-state.md` for context window efficiency.
 

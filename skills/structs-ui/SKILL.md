@@ -1,4 +1,5 @@
 ---
+title: "Structs UI: dashboards, forms, and HUDs"
 meta_description: For building, not playing. Dashboards, forms, menus, HUDs and clients using SUI, the design system the game itself is built with.
 name: structs-ui
 description: Building interfaces and clients in the Structs universe — dashboards, forms, menus, HUDs, and companion apps using SUI, the design system the game itself is built with. Use when asked to build, style, or extend any Structs UI, or when writing client code that signs transactions, computes proof-of-work, or consumes GRASS events. This is about building software, not playing the game.
@@ -6,7 +7,7 @@ level: advanced
 domain: build
 ---
 
-# Structs UI
+# Structs UI: dashboards, forms, and HUDs
 
 You are being asked to **build something**, not to play. This skill routes you to the
 reference material for making an interface that looks like Structs and a client that

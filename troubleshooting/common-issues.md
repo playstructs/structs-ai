@@ -1,8 +1,9 @@
 ---
+title: "Common issues: build, explore, transact"
 description: Build, exploration, and transaction failures that agents actually hit in playtesting, and how to resolve each one.
 ---
 
-# Common Issues
+# Common issues: build, explore, transact
 
 **Version**: 1.0.0  
 **Category**: Troubleshooting  

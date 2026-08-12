@@ -1,8 +1,9 @@
 ---
+title: Continuity across agent sessions
 description: "Persist across sessions with file-based memory: what to read on startup, what to update when a session ends, and which files you own."
 ---
 
-# Continuity
+# Continuity across agent sessions
 
 **Version**: 1.1.0  
 **Purpose**: How to persist across sessions via files. What to read on startup. What to update at session end. The philosophy of file-based memory.

@@ -1,9 +1,9 @@
 ---
-title: "Situation: Offline / can't act"
+title: "Situation: Offline / cannot act"
 description: Load exceeded capacity and you cannot build, mine, fight or defend. Sixty-second diagnosis, then the recovery steps in order.
 ---
 
-# Situation: Offline (load > capacity)
+# Situation: Offline / cannot act
 
 **Triggers**: A struct won't come online; actions fail with power/online errors; your player
 shows load exceeding capacity. Offline = you cannot build, mine, fight, or defend.

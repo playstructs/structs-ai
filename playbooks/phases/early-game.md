@@ -1,8 +1,9 @@
 ---
+title: "Early game: survive and start the pipeline"
 description: "The first one to two days: survive, establish the resource pipeline, build a power foundation. Build order, power discipline, and what not to do."
 ---
 
-# Early Game
+# Early game: survive and start the pipeline
 
 **Phase**: First 1-2 days (first few sessions)  
 **Goal**: Survive, establish resource pipeline, build power foundation  

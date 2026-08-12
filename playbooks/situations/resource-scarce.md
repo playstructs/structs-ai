@@ -1,8 +1,9 @@
 ---
+title: "Resource scarce: survive on thin ore"
 description: Low ore, thin Alpha Matter, struggling economy. Maximise extraction efficiency, seek energy agreements, consider raiding, and join a guild.
 ---
 
-# Resource Scarce
+# Resource scarce: survive on thin ore
 
 **Situation**: Low ore, thin Alpha Matter, struggling economy  
 **Goal**: Survive, find new sources, leverage alliances  

@@ -1,8 +1,9 @@
 ---
+title: "Tempo: who sets the pace of the game"
 description: The player who sets the pace controls the game. When to speed up, when to slow down, and how parallelism buys initiative.
 ---
 
-# Tempo
+# Tempo: who sets the pace of the game
 
 **Topic**: Initiative, pressure, and timing  
 **Principle**: The player who sets the pace controls the game. Reactive play loses.

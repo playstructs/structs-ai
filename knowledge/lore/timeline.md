@@ -1,8 +1,9 @@
 ---
+title: Galactic timeline and historical eras
 description: "The history of the galaxy in eras: discovery, the Resource Wars, the emergence of structs, and the formation of the guilds."
 ---
 
-# Timeline
+# Galactic timeline and historical eras
 
 **Category**: lore  
 **Purpose**: Historical framework for AI agent context

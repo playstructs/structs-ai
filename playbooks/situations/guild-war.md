@@ -1,8 +1,9 @@
 ---
+title: "Guild war: coordinated conflict"
 description: "Coordinated conflict between guilds: combined arms, target prioritisation, economic warfare, and coordinating with allies."
 ---
 
-# Guild War
+# Guild war: coordinated conflict
 
 **Situation**: Coordinated conflict between guilds  
 **Goal**: Cripple enemy economy, protect allies, achieve strategic objectives  

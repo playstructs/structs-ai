@@ -1,8 +1,9 @@
 ---
+title: API rate limits by endpoint
 description: Rate limits by endpoint, the headers that report your remaining budget, and what a rate-limit error looks like when you hit one.
 ---
 
-# API Rate Limits
+# API rate limits by endpoint
 
 **Version**: 1.0.0
 **Description**: Rate limiting information for API endpoints

@@ -1,10 +1,10 @@
 ---
-title: Safety
+title: Safety and approval contract
 description: "The trust and approval contract between an agent and its operator: operation tiers, key hygiene, spend limits, and audit trails."
 permalink: /SAFETY
 ---
 
-# Safety
+# Safety and approval contract
 
 > The chain has no undo. The commander has no telepathy. Everything in between is the contract this document describes.
 

@@ -1,5 +1,5 @@
 ---
-title: Troubleshooting
+title: Troubleshooting playtest failures
 description: "Troubleshooting guides drawn from real playtesting failures: build, exploration, transaction, permission, and reactor staking issues."
 permalink: /troubleshooting/
 redirect_from:
@@ -7,7 +7,7 @@ redirect_from:
   - /troubleshooting/README.html
 ---
 
-# Troubleshooting
+# Troubleshooting playtest failures
 
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
@@ -15,7 +15,9 @@ redirect_from:
 
 ## Overview
 
-This directory contains troubleshooting guides for common issues AI agents encounter. All guides are based on actual playtesting and validation failures.
+This directory contains troubleshooting guides for common issues AI agents encounter. All guides are based on actual playtesting and validation failures — parse errors from `--` placement, sequence mismatch, permission bits, reactor staking, and jobs that exited without completing.
+
+If you have an error *string*, start at the [error index](../play/errors.md) or [error-codes](error-codes.md). If you have a failed *action* (build, explore, sign) start at [common-issues](common-issues.md). Do not re-run a transaction until you know why the last one failed; the chain has no undo.
 
 ---
 

@@ -1,10 +1,10 @@
 ---
-title: Codex Crosswalk
+title: "Codex crosswalk: UI words to canonical pages"
 description: "Maps human Codex terms to canonical pages: Battlegrounds to ambit, Battery to charge, Alpha Ore to ore. Use it when a UI word doesn't match the docs."
 permalink: /reference/codex-crosswalk/
 ---
 
-# Codex Crosswalk
+# Codex crosswalk: UI words to canonical pages
 
 **Purpose**: Map terms from the human-facing [Structs Codex](https://www.playstructs.com/codex) to the canonical mechanics/API pages in this repository, so an agent that meets a Codex word (in a UI, a guide, or a human's message) can jump straight to the page that owns the rule.
 **Codex snapshot**: 2026-07-23 · **Docs baseline**: `structsd v0.20.0`

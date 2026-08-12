@@ -1,8 +1,9 @@
 ---
+title: "Resource rich: abundance draws raiders"
 description: Abundance attracts raiders. Refine ore immediately, choose between energy and storage, and fortify before your advantage makes you a target.
 ---
 
-# Resource Rich
+# Resource rich: abundance draws raiders
 
 **Situation**: Abundant ore, strong Alpha Matter production  
 **Goal**: Exploit without becoming a target; convert advantage into lasting power  

@@ -1,8 +1,9 @@
 ---
+title: "Planet mechanics: explore and deplete"
 description: "The planet lifecycle: exploration, charting, starting properties, and ore depletion, which ends with the planet being destroyed."
 ---
 
-# Planet Mechanics
+# Planet mechanics: explore and deplete
 
 **Purpose**: AI-readable reference for Structs planet system. Lifecycle, ore depletion, exploration, charting.
 

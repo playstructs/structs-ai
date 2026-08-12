@@ -1,4 +1,5 @@
 ---
+title: "Energy skill: capacity, load, infusion"
 meta_description: Load above capacity means offline, and offline means you cannot act. Capacity management, substations, allocations, and reactor infusion.
 name: structs-energy
 description: "Power and capacity in Structs — getting more energy, fixing \"I'm offline\", substations and allocations, load budgeting, and reactor/generator infusion for your own capacity. Use when capacity is too low, a player or struct won't come online, you're load > capacity (offline), planning power for new builds, or wiring substations. For selling energy on the market, see structs-commerce."
@@ -6,7 +7,7 @@ level: core
 domain: energy
 ---
 
-# Structs Energy
+# Energy skill: capacity, load, infusion
 
 Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
 
