@@ -47,6 +47,10 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
       - name: Build site
+        env:
+          # Liquid 4.0.3 calls String#tainted?, removed in Ruby 3.2. See
+          # scripts/ci/ruby-taint-compat.rb.
+          RUBYOPT: "-r${{ github.workspace }}/scripts/ci/ruby-taint-compat"
         run: bundle exec jekyll build --trace
       - name: Metadata gate
         run: python3 scripts/ci/check-metadata.py
