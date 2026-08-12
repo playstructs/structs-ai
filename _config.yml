@@ -56,4 +56,4 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - LICENSE
-  - CHANGELOG.md
+  - README.md

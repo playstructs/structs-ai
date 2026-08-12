@@ -1,5 +1,10 @@
 ---
+title: Entity Schemas
 description: Individual entity schemas split into one file each, so an agent can load a single definition rather than the whole catalog.
+permalink: /schemas/entities/
+redirect_from:
+  - /schemas/entities/README
+  - /schemas/entities/README.html
 ---
 
 # Entity Schemas

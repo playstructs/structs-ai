@@ -1,5 +1,10 @@
 ---
+title: API Patterns
 description: "Common patterns and practices for agents calling Structs APIs: caching, retries, rate limits, pagination, and state sync."
+permalink: /patterns/
+redirect_from:
+  - /patterns/README
+  - /patterns/README.html
 ---
 
 # API Patterns

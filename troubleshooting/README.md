@@ -1,5 +1,10 @@
 ---
+title: Troubleshooting
 description: "Troubleshooting guides drawn from real playtesting failures: build, exploration, transaction, permission, and reactor staking issues."
+permalink: /troubleshooting/
+redirect_from:
+  - /troubleshooting/README
+  - /troubleshooting/README.html
 ---
 
 # Troubleshooting

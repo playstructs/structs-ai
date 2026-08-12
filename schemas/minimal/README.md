@@ -1,5 +1,10 @@
 ---
+title: Minimal Schemas
 description: "Lightweight schemas carrying only the essential fields, for simple operations that don't need the full entity definition."
+permalink: /schemas/minimal/
+redirect_from:
+  - /schemas/minimal/README
+  - /schemas/minimal/README.html
 ---
 
 # Minimal Schemas

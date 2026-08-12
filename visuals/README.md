@@ -1,5 +1,10 @@
 ---
+title: Visual Content
 description: "Machine-readable visual content for agents: diagrams, relationship graphs, spatial data, and the schemas that describe them."
+permalink: /visuals/
+redirect_from:
+  - /visuals/README
+  - /visuals/README.html
 ---
 
 # Visual Content

@@ -1,5 +1,10 @@
 ---
+title: GRASS Streaming API
 description: "Complete documentation for GRASS real-time streaming over NATS: overview, quick start, and connection details."
+permalink: /api/streaming/
+redirect_from:
+  - /api/streaming/README
+  - /api/streaming/README.html
 ---
 
 # GRASS/NATS Streaming API Documentation

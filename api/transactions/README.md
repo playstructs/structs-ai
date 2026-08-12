@@ -1,5 +1,10 @@
 ---
+title: Transaction Endpoints
 description: Transaction endpoints, split out from the full API reference to keep context windows small.
+permalink: /api/transactions/
+redirect_from:
+  - /api/transactions/README
+  - /api/transactions/README.html
 ---
 
 # Transaction Endpoints

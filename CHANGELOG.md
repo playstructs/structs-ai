@@ -1,3 +1,9 @@
+---
+title: Changelog
+description: "Release history for the Structs AI documentation: notable changes, version dates, and what each release added or fixed."
+permalink: /CHANGELOG
+---
+
 # Changelog
 
 All notable changes to the Structs Compendium documentation will be documented in this file.

@@ -8,9 +8,33 @@ import sys
 from pathlib import Path
 
 ROOT = Path("_site")
+REPO = Path(".")
 MAX_DESC = 155
 MAX_TITLE = 60
 SITE_ORIGIN = "https://structs.ai"
+
+DIRECTORY_INDEXES = (
+    "api/queries",
+    "api/streaming",
+    "api/transactions",
+    "api/webapp",
+    "develop/ui/examples",
+    "examples/workflows",
+    "patterns",
+    "schemas/entities",
+    "schemas/minimal",
+    "troubleshooting",
+    "visuals",
+)
+
+TXT_SITEMAP_LOCS = (
+    "https://structs.ai/llms.txt",
+    "https://structs.ai/llms-start.txt",
+    "https://structs.ai/llms-core.txt",
+    "https://structs.ai/llms-full.txt",
+)
+
+LLMS_ABS_URL = re.compile(r"https://structs\.ai(/[^\s)\]>\"']*)")
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -48,6 +72,47 @@ def resolve_canonical_target(canon: str) -> Path | None:
     return None
 
 
+def is_redirect_stub(html_text: str) -> bool:
+    return "redirect_to" in html_text or 'http-equiv="refresh"' in html_text.lower()
+
+
+def check_url_gate() -> None:
+    for rel_dir in DIRECTORY_INDEXES:
+        index = ROOT / rel_dir / "index.html"
+        if not index.exists():
+            errors.append(f"directory index missing: _site/{rel_dir}/index.html")
+
+    changelog_ok = (ROOT / "CHANGELOG.html").exists() or (
+        ROOT / "CHANGELOG" / "index.html"
+    ).exists()
+    if not changelog_ok:
+        errors.append("CHANGELOG missing from _site (expected CHANGELOG.html or CHANGELOG/index.html)")
+    if (ROOT / "README.html").exists():
+        errors.append("_site/README.html must not be published")
+
+    sitemap = ROOT / "sitemap-txt.xml"
+    if not sitemap.exists():
+        errors.append("_site/sitemap-txt.xml missing")
+    else:
+        body = sitemap.read_text(encoding="utf-8", errors="replace")
+        for loc in TXT_SITEMAP_LOCS:
+            if loc not in body:
+                errors.append(f"sitemap-txt.xml missing loc {loc}")
+
+    llms = REPO / "llms.txt"
+    if not llms.exists():
+        errors.append("llms.txt missing from repo root")
+        return
+    cited = []
+    for m in LLMS_ABS_URL.finditer(llms.read_text(encoding="utf-8", errors="replace")):
+        cited.append(SITE_ORIGIN + m.group(1).rstrip(".,;:"))
+    if not cited:
+        errors.append("llms.txt contains no https://structs.ai/... URLs")
+    for url in cited:
+        if resolve_canonical_target(url) is None:
+            errors.append(f"llms.txt cites missing _site target {url}")
+
+
 def main() -> int:
     if not ROOT.is_dir():
         print(f"ERROR: built site not found at {ROOT}/ — run jekyll build first", file=sys.stderr)
@@ -60,8 +125,10 @@ def main() -> int:
     if not (ROOT / "schemas" / "responses.html").exists():
         errors.append("schemas/responses.html missing from _site (sitemap target)")
 
+    check_url_gate()
+
     pages = sorted(ROOT.rglob("*.html"))
-    # Skip theme/plugin junk if any; keep redirect stubs
+    # Skip theme/plugin junk if any; redirect stubs are skipped below
     seen_titles: dict[str, list[str]] = {}
     canonicals: list[tuple[str, str]] = []
 
@@ -76,6 +143,9 @@ def main() -> int:
             continue
 
         text = f.read_text(encoding="utf-8", errors="replace")
+        if is_redirect_stub(text):
+            warnings.append(f"{rel}: redirect stub skipped for meta gate")
+            continue
         # Standalone example assets (not Jekyll layout pages) — detect by missing site chrome
         if rel.startswith("/develop/ui/examples/") and "G-8NB71VRFSQ" not in text:
             warnings.append(f"{rel}: standalone example HTML skipped for meta gate")

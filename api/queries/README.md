@@ -1,5 +1,10 @@
 ---
+title: Query Endpoints
 description: Query endpoints split into one file per entity, so an agent can load only the reference it needs instead of the whole API surface.
+permalink: /api/queries/
+redirect_from:
+  - /api/queries/README
+  - /api/queries/README.html
 ---
 
 # Query Endpoints

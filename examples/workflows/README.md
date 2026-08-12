@@ -1,5 +1,10 @@
 ---
+title: Workflow Examples Index
 description: An index of every workflow example, grouped by category, with the patterns each one demonstrates.
+permalink: /examples/workflows/
+redirect_from:
+  - /examples/workflows/README
+  - /examples/workflows/README.html
 ---
 
 # Workflow Examples Index

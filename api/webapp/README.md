@@ -1,5 +1,10 @@
 ---
+title: Webapp API Endpoints
 description: Web application endpoints, split per entity for context efficiency, with a loading strategy for pulling only what you need.
+permalink: /api/webapp/
+redirect_from:
+  - /api/webapp/README
+  - /api/webapp/README.html
 ---
 
 # Webapp API Endpoints
