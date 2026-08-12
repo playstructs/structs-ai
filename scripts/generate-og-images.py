@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import io
 import re
 import shutil
@@ -55,6 +54,7 @@ SKIP_DIRS = {
     ".jekyll-cache",
     ".sass-cache",
     "gemfiles",
+    ".review",
 }
 
 FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.S)
@@ -133,6 +133,8 @@ def iter_pages() -> list[tuple[str, str]]:
         if rel_parts[0] in SKIP_DIRS or rel_parts[0] == "assets":
             continue
         if any(p in SKIP_DIRS for p in rel_parts):
+            continue
+        if any(p.startswith(".") and p not in {".well-known"} for p in rel_parts):
             continue
         if path.name in {"sitemap.xml", "sitemap-txt.xml", "LICENSE"}:
             continue
@@ -239,8 +241,13 @@ def save_png(img: Image.Image, dest: Path) -> None:
     dest.write_bytes(buf.getvalue())
 
 
-def file_digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def png_dimensions(path: Path) -> tuple[int, int] | None:
+    data = path.read_bytes()[:24]
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    width = int.from_bytes(data[16:20], "big")
+    height = int.from_bytes(data[20:24], "big")
+    return width, height
 
 
 def build_all(out_image: Path, out_dir: Path, source: Image.Image) -> None:
@@ -280,29 +287,33 @@ def main() -> int:
         try:
             build_all(tmp / "og-image.png", tmp / "og", source)
             mismatches = []
-            if not OG_IMAGE.exists() or file_digest(tmp / "og-image.png") != file_digest(OG_IMAGE):
-                mismatches.append("assets/og-image.png")
-            gen_files = {p.name: p for p in (tmp / "og").glob("*.png")}
-            committed = {p.name: p for p in OG_DIR.glob("*.png")} if OG_DIR.exists() else {}
-            extra = sorted(set(committed) - set(gen_files))
-            missing = sorted(set(gen_files) - set(committed))
-            changed = sorted(
-                name
-                for name in set(gen_files) & set(committed)
-                if file_digest(gen_files[name]) != file_digest(committed[name])
+            gen_files = {p.name for p in (tmp / "og").glob("*.png") if not p.name.startswith(".")}
+            committed = (
+                {p.name for p in OG_DIR.glob("*.png") if not p.name.startswith(".")}
+                if OG_DIR.exists()
+                else set()
             )
+            extra = sorted(committed - gen_files)
+            missing = sorted(gen_files - committed)
             if extra:
-                mismatches.append("extra: " + ", ".join(extra[:8]))
+                mismatches.append("extra: " + ", ".join(extra[:12]))
             if missing:
-                mismatches.append("missing: " + ", ".join(missing[:8]))
-            if changed:
-                mismatches.append("changed: " + ", ".join(changed[:8]))
+                mismatches.append("missing: " + ", ".join(missing[:12]))
+            for label, path in [("assets/og-image.png", OG_IMAGE)] + [
+                (f"assets/og/{name}", OG_DIR / name) for name in sorted(committed & gen_files)
+            ]:
+                if not path.exists():
+                    mismatches.append(f"missing file {label}")
+                    continue
+                dims = png_dimensions(path)
+                if dims != (W, H):
+                    mismatches.append(f"{label} must be {W}x{H}, got {dims}")
             if mismatches:
                 print("FAIL: OG images are stale — run python3 scripts/generate-og-images.py and commit")
                 for m in mismatches:
                     print(" ", m)
                 return 1
-            print(f"OK: {len(gen_files)} OG images in sync")
+            print(f"OK: {len(gen_files)} OG images in sync ({W}x{H})")
             return 0
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
