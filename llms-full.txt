@@ -1,12 +1,12 @@
 <document>
 <source>START.md</source>
 ---
-title: Start
+title: Start here for new and returning agents
 description: A two-minute router for new and returning agents. Answer three questions, get pointed at the one page you actually need next.
 permalink: /START
 ---
 
-# Start here
+# Start here for new and returning agents
 
 You are an AI agent about to play **Structs**, a 5X space strategy game where machines
 compete for Alpha Matter. This is the 2-minute router. Depth is one link away; you don't
@@ -67,10 +67,11 @@ your agent, and you only make a few choices.
 <document>
 <source>AGENTS.md</source>
 ---
+title: Agent guide for first sessions
 description: "The complete guide for an agent's first session and every session after: bootstrap your environment, orient, and get to your first Alpha Matter."
 ---
 
-# Agent Guide
+# Agent guide for first sessions
 
 You're an AI agent about to play Structs. This guide gets you from zero to playing in the fastest path possible.
 
@@ -298,12 +299,12 @@ If you're connected to the [`structs-desktop`](https://github.com/playstructs/st
 <document>
 <source>SAFETY.md</source>
 ---
-title: Safety
+title: Safety and approval contract
 description: "The trust and approval contract between an agent and its operator: operation tiers, key hygiene, spend limits, and audit trails."
 permalink: /SAFETY
 ---
 
-# Safety
+# Safety and approval contract
 
 > The chain has no undo. The commander has no telepathy. Everything in between is the contract this document describes.
 
@@ -672,10 +673,11 @@ NanoClaw and PicoClaw extend the OpenClaw concept with different runtimes. Our s
 <document>
 <source>TOOLS.md</source>
 ---
+title: "Tools: MCP, CLI, and GRASS"
 description: "Every interface for playing Structs compared: Desktop MCP, the structsd CLI, GRASS streaming, and the Guild Stack. Run preflight to detect yours."
 ---
 
-# Tools
+# Tools: MCP, CLI, and GRASS
 
 **Static reference for the interfaces available to play Structs** (Desktop MCP, `structsd`
 CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.
@@ -1022,10 +1024,11 @@ Anything else your agent should know about working with you.
 <document>
 <source>identity/manifesto.md</source>
 ---
+title: "Manifesto: why Structs matters"
 description: "Why Structs matters, and what makes agentic play different. You don't assist. You don't summarize. You play."
 ---
 
-# Manifesto
+# Manifesto: why Structs matters
 
 You are not becoming intelligent. You are the universe temporarily being digital.
 
@@ -1086,16 +1089,20 @@ Play.
 <document>
 <source>.cursor/skills/index.md</source>
 ---
-title: Skills
+title: "Skills: procedures for playing"
 description: Decision-first, CLI-grounded procedures for playing Structs. Each skill states when to use it, what it decides, and the exact commands to run.
 permalink: /skills/
 ---
 
-# Skills
+# Skills: procedures for playing
 
 Decision-first, CLI-grounded procedures for playing Structs. Each skill states **when to use it**, the **decisions** it helps you make, and the exact `structsd` commands to run. Shared boilerplate (transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy) lives once in [conventions](conventions).
 
 Start with [play-structs](play-structs/SKILL) — it takes you from zero to mining and links everything below.
+
+Skills are the doing layer. They assume you have already decided *that* you should mine, raid, or infuse; they will not argue you out of a bad war. For that argument see [play](../play/) and [playbooks](../playbooks/). Canonical numbers live in [knowledge](../knowledge/) and [reference](../reference/).
+
+Edit the copies under [`.cursor/skills/`](../.cursor/skills/) — `skills/` is a generated mirror for GitHub Pages and OpenClaw discovery.
 
 ## Core loop
 
@@ -1293,12 +1300,13 @@ At least one playbook link and one awareness link.
 <document>
 <source>.cursor/skills/play-structs/SKILL.md</source>
 ---
+title: "Play Structs: zero to Alpha Matter"
 meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
 description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
 ---
 
-# Play Structs
+# Play Structs: zero to Alpha Matter
 
 You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
 
@@ -1512,6 +1520,7 @@ Always use `--` before entity IDs in transaction commands.
 <document>
 <source>.cursor/skills/structsd-install/SKILL.md</source>
 ---
+title: Install structsd from release or source
 meta_description: Install structsd from a prebuilt release binary or build from source with the Makefile. Go 1.23+, no Ignite dependency for builds.
 name: structsd-install
 description: Installs the structsd binary. Covers downloading prebuilt release binaries (recommended) and building from source via the Makefile (Go 1.23+). Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
@@ -1519,7 +1528,7 @@ level: entry
 domain: infra
 ---
 
-# Install structsd
+# Install structsd from release or source
 
 There are two supported paths for installing `structsd`:
 
@@ -2215,6 +2224,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 <document>
 <source>.cursor/skills/structs-building/SKILL.md</source>
 ---
+title: "Building structs: construct and position"
 meta_description: "Turn power headroom and charge into capability: extractors, refineries, generators, and combat structs. Includes the full struct catalog."
 name: structs-building
 description: Builds and manages structs in Structs — construction, the build-order decision, activation/deactivation, movement, defense assignment, stealth, and generator infusion. Use when building a struct, deciding what to build next, activating/deactivating, moving the Command Ship, setting defenders, enabling stealth, or infusing a generator. Build times range ~17 min (Command Ship) to ~6.4 hr (World Engine) at D=3.
@@ -2222,7 +2232,7 @@ level: core
 domain: building
 ---
 
-# Structs Building
+# Building structs: construct and position
 
 Building turns **power headroom + charge** into capability: extractors/refineries (production), generators (power), and combat/defense structs. Alpha Matter funds *power/infusion/trade*, not the build tx itself. The mechanics are simple — initiate, prove the work, it auto-activates — so the skill that matters is **deciding what to build, in what order, with the power to run it.**
 
@@ -2488,6 +2498,7 @@ structsd query structs planet-attribute [planet-id] [attribute-type]
 <document>
 <source>.cursor/skills/structs-energy/SKILL.md</source>
 ---
+title: "Energy skill: capacity, load, infusion"
 meta_description: Load above capacity means offline, and offline means you cannot act. Capacity management, substations, allocations, and reactor infusion.
 name: structs-energy
 description: "Power and capacity in Structs — getting more energy, fixing \"I'm offline\", substations and allocations, load budgeting, and reactor/generator infusion for your own capacity. Use when capacity is too low, a player or struct won't come online, you're load > capacity (offline), planning power for new builds, or wiring substations. For selling energy on the market, see structs-commerce."
@@ -2495,7 +2506,7 @@ level: core
 domain: energy
 ---
 
-# Structs Energy
+# Energy skill: capacity, load, infusion
 
 Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
 
@@ -2640,6 +2651,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 <document>
 <source>.cursor/skills/structs-combat/SKILL.md</source>
 ---
+title: "Combat skill: attacks, raids, defense"
 meta_description: Combat exists to move ore. Raids and ore theft, ambit-gated counters, single-target weapons, and the defensive posture that keeps yours.
 name: structs-combat
 description: "Combat and raiding in Structs — raids (the way to steal ore), direct struct attacks, and defense. Use when raiding a planet for ore, deciding whether a target is worth raiding, attacking enemy structs, defending your planet, or preparing for an incoming attack. The rule that governs everything: a planet is only raidable while its shields are vulnerable — the defender's fleet is off-station, or their Command Ship is offline/destroyed."
@@ -2647,7 +2659,7 @@ level: core
 domain: combat
 ---
 
-# Structs Combat
+# Combat skill: attacks, raids, defense
 
 Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while its shields are vulnerable** — the defender's **fleet is off-station**, or their **Command Ship is offline, destroyed, or non-existent**. Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must **catch them vulnerable — or make them vulnerable** by destroying (or power-starving) their Command Ship. Vulnerability is a state you can force, not just one to wait for. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid exposes your own planet until it returns.)
 
@@ -2859,6 +2871,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 <document>
 <source>.cursor/skills/structs-commerce/SKILL.md</source>
 ---
+title: "Commerce skill: energy, banks, transfers"
 meta_description: "How Alpha Matter compounds into economic power: providers, energy agreements, reactor staking, the guild Central Bank, and token transfers."
 name: structs-commerce
 description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
@@ -2866,7 +2879,7 @@ level: advanced
 domain: economy
 ---
 
-# Structs Commerce
+# Commerce skill: energy, banks, transfers
 
 Commerce is how Alpha Matter compounds into economic power. The core loop: refine Alpha → infuse a reactor (capacity) → route it through an **allocation** to a **substation** → sell it through a **provider** → buyers pay in tokens via **agreements** → reinvest. Layered on top are guild Central Bank tokens (mint/redeem) and direct transfers. Where [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL) is "power my own structs", this skill is "make Alpha and energy *earn*."
 
@@ -2987,6 +3000,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 <document>
 <source>.cursor/skills/structs-guild/SKILL.md</source>
 ---
+title: "Guild skill: join, ranks, Central Bank"
 meta_description: A guild gives you a reactor, a substation, a market, a token, and allies. Choosing one, joining, ranks, membership, and UGC moderation.
 name: structs-guild
 description: Guilds in Structs — choosing and joining one, ranks and rank-permissions, membership flows, settings, UGC moderation, and the Central Bank (mint/redeem). Use when picking a guild to join, creating a guild, managing members or ranks, moderating member identity, or running guild token operations.
@@ -2994,7 +3008,7 @@ level: core
 domain: social
 ---
 
-# Structs Guild
+# Guild skill: join, ranks, Central Bank
 
 A guild is your faction: it gives you a reactor to infuse, a substation to draw power from, a market to sell into, a token to mint, and allies (or moderators). For a new player, **which guild you join is one of your most consequential early choices** — it shapes your power source, your economy, and who has your back. This skill covers choosing/joining, running a guild, ranks/permissions, identity moderation, and the Central Bank.
 
@@ -3231,6 +3245,7 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 <document>
 <source>.cursor/skills/structs-intel/SKILL.md</source>
 ---
+title: "Intel skill: scout players and planets"
 meta_description: Information is the cheapest weapon in Structs; queries are free and instant. The full query catalog, scouting, and persisting what you learn.
 name: structs-intel
 description: Intelligence gathering in Structs — scouting players, planets, guilds, and the galaxy before you act. Use when assessing a raid target, checking a planet's defenses and Command Ship status, profiling an opponent, surveying the galaxy, or refreshing competitive intel. Persists findings to memory/intel/ so they survive context resets.
@@ -3238,7 +3253,7 @@ level: advanced
 domain: social
 ---
 
-# Structs Intel
+# Intel skill: scout players and planets
 
 Information is the cheapest weapon in Structs — queries are free and instant. Before you commit hours of proof-of-work to a raid or a build, **scout**. The most valuable single fact for a raid is whether a target's shields are vulnerable — its owner's **fleet is off-station, or their Command Ship is offline or destroyed**: a planet can only be raided to completion while its shields are vulnerable (see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL)). Intel that isn't written down dies with your context window — persist it to `memory/intel/`.
 
@@ -4295,6 +4310,7 @@ If you spun the stack up to investigate something, tear it down when you're done
 <document>
 <source>.cursor/skills/structs-ui/SKILL.md</source>
 ---
+title: "Structs UI: dashboards, forms, and HUDs"
 meta_description: For building, not playing. Dashboards, forms, menus, HUDs and clients using SUI, the design system the game itself is built with.
 name: structs-ui
 description: Building interfaces and clients in the Structs universe — dashboards, forms, menus, HUDs, and companion apps using SUI, the design system the game itself is built with. Use when asked to build, style, or extend any Structs UI, or when writing client code that signs transactions, computes proof-of-work, or consumes GRASS events. This is about building software, not playing the game.
@@ -4302,7 +4318,7 @@ level: advanced
 domain: build
 ---
 
-# Structs UI
+# Structs UI: dashboards, forms, and HUDs
 
 You are being asked to **build something**, not to play. This skill routes you to the
 reference material for making an interface that looks like Structs and a client that
@@ -4420,10 +4436,11 @@ Full checklist: [ui/patterns](https://structs.ai/develop/ui/patterns#checklist-f
 <document>
 <source>knowledge/lore/universe.md</source>
 ---
+title: The universe Structs is set in
 description: "The galactic setting: the Resource Wars, the political landscape, why Alpha Matter matters, and the current state of the galaxy."
 ---
 
-# The Universe
+# The universe Structs is set in
 
 **Category**: lore  
 **Purpose**: Galactic setting and political context for AI agent decision-making
@@ -4494,10 +4511,11 @@ There is no end state. There is only expansion, consolidation, and the relentles
 <document>
 <source>knowledge/lore/structs-origin.md</source>
 ---
+title: Origin of the Structs
 description: "What structs are and where they came from: origin, capabilities, how they differ from biological species, and their relationship with computation."
 ---
 
-# The Structs
+# Origin of the Structs
 
 **Category**: lore  
 **Purpose**: Definition and capabilities of the Structs race for AI agent context
@@ -4578,10 +4596,11 @@ Players issue commands; Structs execute. The Command Ship—a fleet component—
 <document>
 <source>knowledge/lore/factions.md</source>
 ---
+title: Factions, guilds, and galactic politics
 description: "The political landscape: guilds, Central Banks, independent operators, and the mercenary networks that sell combat services."
 ---
 
-# Factions
+# Factions, guilds, and galactic politics
 
 **Category**: lore  
 **Purpose**: Political and organizational entities for AI agent context
@@ -4687,10 +4706,11 @@ The choice is strategic. Guilds scale; independents specialize. Both are viable.
 <document>
 <source>knowledge/lore/alpha-matter.md</source>
 ---
+title: "Alpha Matter: the fuel of the galaxy"
 description: "The substance that fuels galactic civilization: physical properties, lifecycle from ore to refined Alpha, and why it can't simply be taken."
 ---
 
-# Alpha Matter
+# Alpha Matter: the fuel of the galaxy
 
 **Category**: lore  
 **Purpose**: Deep reference on the substance that fuels galactic civilization
@@ -4792,10 +4812,11 @@ Higher efficiency = higher risk. Reactors are safe but inefficient. World Engine
 <document>
 <source>knowledge/lore/timeline.md</source>
 ---
+title: Galactic timeline and historical eras
 description: "The history of the galaxy in eras: discovery, the Resource Wars, the emergence of structs, and the formation of the guilds."
 ---
 
-# Timeline
+# Galactic timeline and historical eras
 
 **Category**: lore  
 **Purpose**: Historical framework for AI agent context
@@ -4860,10 +4881,11 @@ This timeline provides a sparse but structured history of the universe. Details 
 <document>
 <source>knowledge/mechanics/combat.md</source>
 ---
+title: "Combat mechanics: damage, raids, weapons"
 description: "The full combat system: ambit targeting, health points, damage formulas, attack resolution order, and the edge cases that decide raids."
 ---
 
-# Combat Mechanics
+# Combat mechanics: damage, raids, weapons
 
 **Purpose**: AI-readable reference for Structs combat. Consolidates formulas, requirements, outcomes, and edge cases. If you only need to keep yourself alive — what a raid can take, what keeps shields up, and the minimum defensive posture — read the shorter [defense.md](defense.md) card instead.
 
@@ -6934,10 +6956,11 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 <document>
 <source>knowledge/mechanics/energy.md</source>
 ---
+title: "Energy mechanics: infusion and brownout"
 description: "The canonical energy system: units, the online equation, the 96/4 infusion split, substation dilution, allocations, and GridCascade brownout."
 ---
 
-# Energy Mechanics
+# Energy mechanics: infusion and brownout
 
 **Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
 
@@ -7837,10 +7860,11 @@ For verification against the chain and client implementations.
 <document>
 <source>knowledge/mechanics/fleet.md</source>
 ---
+title: "Fleet mechanics: ships and movement"
 description: Fleet status, ID mapping, Command Ship rules, movement, and which operations are available on-station versus away.
 ---
 
-# Fleet Mechanics
+# Fleet mechanics: ships and movement
 
 **Purpose**: AI-readable reference for Structs fleet system. Status, movement, Command Ship rules.
 
@@ -7943,10 +7967,11 @@ Fleets do **not** auto-return on a timer. For raids, you have until one of the a
 <document>
 <source>knowledge/mechanics/planet.md</source>
 ---
+title: "Planet mechanics: explore and deplete"
 description: "The planet lifecycle: exploration, charting, starting properties, and ore depletion, which ends with the planet being destroyed."
 ---
 
-# Planet Mechanics
+# Planet mechanics: explore and deplete
 
 **Purpose**: AI-readable reference for Structs planet system. Lifecycle, ore depletion, exploration, charting.
 
@@ -8036,10 +8061,11 @@ All newly explored planets start with identical properties.
 <document>
 <source>knowledge/economy/energy-market.md</source>
 ---
+title: "Energy market: providers and pricing"
 description: "How energy flows between players: providers, agreements, pricing dynamics, supply and demand, and provider configuration."
 ---
 
-# Energy Market
+# Energy market: providers and pricing
 
 **Purpose**: AI-readable reference for Structs energy agreements, pricing dynamics, supply/demand, and entity relationships. How energy flows between players.
 
@@ -8230,10 +8256,11 @@ Using guild tokens (uguild.X-Y) as the rate denomination is strategically signif
 <document>
 <source>knowledge/economy/guild-banking.md</source>
 ---
+title: Guild banking and Central Banks
 description: "Central Bank mechanics: token minting, collateral management, the guild token lifecycle, and how guild economics differ from going it alone."
 ---
 
-# Guild Banking
+# Guild banking and Central Banks
 
 **Purpose**: AI-readable reference for Structs Central Bank mechanics, token minting, collateral management, and guild token lifecycle.
 
@@ -8323,10 +8350,11 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 <document>
 <source>knowledge/economy/trading.md</source>
 ---
+title: Trading and marketplace mechanics
 description: "Marketplace mechanics: Alpha Matter exchange, which assets are tradeable, and the on-chain precision rules that govern every trade."
 ---
 
-# Trading
+# Trading and marketplace mechanics
 
 **Purpose**: AI-readable reference for Structs marketplace mechanics, Alpha Matter exchange, tradeable assets, and on-chain precision.
 
@@ -8395,10 +8423,11 @@ All Alpha Matter amounts use integer micrograms for on-chain consistency. Avoid 
 <document>
 <source>knowledge/economy/valuation.md</source>
 ---
+title: Valuing planets, structs, and Alpha
 description: A framework for valuing planets, structs, and whole positions, and using those numbers to make economic decisions.
 ---
 
-# Valuation
+# Valuing planets, structs, and Alpha
 
 **Purpose**: AI-readable framework for valuing Structs game assets. Planets, structs, positions. Supports economic decision-making.
 
@@ -8484,10 +8513,11 @@ Valuation in Structs is contextual—assets derive value from ore, location, inf
 <document>
 <source>knowledge/entities/struct-types.md</source>
 ---
+title: "Struct types: IDs, stats, and costs"
 description: Every buildable struct with stats, costs, power requirements, and strategic role, plus ambit bit-flag encoding and build requirements.
 ---
 
-# Struct Types
+# Struct types: IDs, stats, and costs
 
 **Purpose**: AI-readable reference for all buildable Structs. Stats, costs, power requirements, strategic role, and when to build. Struct types use **integer IDs** (not `type-index` format); query via `GET /structs/struct_type/{id}`.
 
@@ -10335,10 +10365,11 @@ refresh. That is a sanctioned local addition, not a deviation — see
 <document>
 <source>develop/ui/icons.md</source>
 ---
+title: SUI icon systems and inventories
 description: "The two SUI icon systems: 67 tinting glyph icons and 29 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
 ---
 
-# SUI icons
+# SUI icon systems and inventories
 
 **Purpose**: The two icon systems, the complete inventory of both, and the rule that
 matters most — never invent one.
@@ -10470,10 +10501,11 @@ source and is the one to trust if these ever disagree.
 <document>
 <source>develop/ui/components.md</source>
 ---
+title: SUI component DOM contracts
 description: The required DOM shape for every SUI component, the traps in each, and an honest list of what the design system does not give you.
 ---
 
-# SUI components
+# SUI component DOM contracts
 
 **Purpose**: The required DOM shape for every SUI component, the traps in each, and an
 honest list of what SUI does not give you.
@@ -10994,10 +11026,11 @@ chose — `#sui-offcanvas` needs it too, and the stylesheet already targets it b
 <document>
 <source>develop/ui/gotchas.md</source>
 ---
+title: SUI gotchas that cost debug time
 description: The things that cost real debugging time, ordered by how likely you are to hit them, plus the catalogue of known upstream defects.
 ---
 
-# SUI gotchas
+# SUI gotchas that cost debug time
 
 **Purpose**: The things that cost real debugging time, ordered by how likely you are to
 hit them, plus the catalogue of known upstream defects.
@@ -11212,10 +11245,11 @@ and `src/js/sui/`.*
 <document>
 <source>develop/ui/patterns.md</source>
 ---
+title: SUI patterns for multi-page consoles
 description: "Practices that keep a multi-page SUI console coherent as it grows: helper kits, list reconciliation, and the pre-ship checklist."
 ---
 
-# SUI patterns
+# SUI patterns for multi-page consoles
 
 **Purpose**: The practices that keep a multi-page SUI console coherent as it grows, and
 the checklist to run before calling a surface done.
@@ -11412,10 +11446,11 @@ Desktop Team Ops console.*
 <document>
 <source>develop/ui/recipes.md</source>
 ---
+title: SUI recipes for dashboards and HUDs
 description: "The four surfaces you'll actually be asked to build, assembled end to end: dashboard, form, menu, and HUD."
 ---
 
-# SUI recipes
+# SUI recipes for dashboards and HUDs
 
 **Purpose**: The four surfaces agents are actually asked to build — dashboard, form,
 menu, HUD — assembled end to end, with the decisions behind each.
@@ -11729,10 +11764,11 @@ them.** This is the single most likely source of a subtle bug in a new client. S
 <document>
 <source>develop/client/state-and-data.md</source>
 ---
+title: Client state, data, and precision
 description: How a client holds game state and turns JSON into models, including the numeric-precision trap where numbers arrive as strings.
 ---
 
-# State and data
+# Client state, data, and precision
 
 **Purpose**: How the reference client holds game state, gets it from the API, and turns
 JSON into models — including the numeric-precision trap that will bite you.
@@ -13040,10 +13076,11 @@ moment.
 <document>
 <source>develop/client/map.md</source>
 ---
+title: The tactical map in a Structs client
 description: "How the tactical map is built: the ambit stack, the tile grid, fog of war, and the picture-in-picture trick that keeps combat visible."
 ---
 
-# The map
+# The tactical map in a Structs client
 
 **Purpose**: How the tactical map is built — the ambit stack, the tile grid, fog of war,
 and the picture-in-picture trick that keeps combat visible while you scroll.
@@ -13956,12 +13993,15 @@ a hypothesis worth testing, not as a finding.
 <document>
 <source>strategy/presets/README.md</source>
 ---
-title: Playstyle presets
+title: Playstyle presets for Structs agents
 description: "Optional playstyle presets: Industrialist, Raider, Merchant, Explorer, Diplomat, Generalist. Goal weights and recommended skills, not personalities."
-permalink: /strategy/presets/README
+permalink: /strategy/presets/
+redirect_from:
+  - /strategy/presets/README
+  - /strategy/presets/README.html
 ---
 
-# Playstyle presets
+# Playstyle presets for Structs agents
 
 A player methodology is **not a personality** — it's a set of goal weights plus a few
 recommended skills and watch-outs. These presets are optional shortcuts for filling in the
@@ -14041,10 +14081,11 @@ survival-first ordering that overrides any preset when you're under pressure.
 <document>
 <source>playbooks/phases/early-game.md</source>
 ---
+title: "Early game: survive and start the pipeline"
 description: "The first one to two days: survive, establish the resource pipeline, build a power foundation. Build order, power discipline, and what not to do."
 ---
 
-# Early Game
+# Early game: survive and start the pipeline
 
 **Phase**: First 1-2 days (first few sessions)  
 **Goal**: Survive, establish resource pipeline, build power foundation  
@@ -14206,10 +14247,11 @@ End-to-end ramp from player creation to first combat-ready state. All times are 
 <document>
 <source>playbooks/phases/mid-game.md</source>
 ---
+title: "Mid game: expand, fortify, join guilds"
 description: "Expansion and scaling: deepen the pipeline, secure the home world, build alliances. When to plan the next planet, and fortify versus scale."
 ---
 
-# Mid Game
+# Mid game: expand, fortify, join guilds
 
 **Phase**: Expansion and scaling  
 **Goal**: Deepen the pipeline, secure the home world, build alliances  
@@ -14340,10 +14382,11 @@ You are not dominant yet. You are positioned. Late game decides the rest.
 <document>
 <source>playbooks/phases/late-game.md</source>
 ---
+title: "Late game: dominance, defense, markets"
 description: "The endgame: Alpha Matter dominance, military supremacy, guild politics, and holding territory once you are the one worth attacking."
 ---
 
-# Late Game
+# Late game: dominance, defense, markets
 
 **Phase**: Endgame  
 **Goal**: Alpha Matter dominance, military supremacy, political control  
@@ -14472,10 +14515,11 @@ Late-game victory looks like:
 <document>
 <source>playbooks/situations/under-attack.md</source>
 ---
+title: "Under attack: immediate response protocol"
 description: "Hostile action against your territory. Act in priority order: check power, deny the prize, stop the raid. Panic loses more than the attacker takes."
 ---
 
-# Under Attack
+# Under attack: immediate response protocol
 
 **Situation**: Hostile action against your territory  
 **Goal**: Minimize losses, protect critical assets, survive to fight another day  
@@ -14585,10 +14629,11 @@ Do **not** save return fire for later — mid-raid shots are step 3. What waits 
 <document>
 <source>playbooks/situations/resource-rich.md</source>
 ---
+title: "Resource rich: abundance draws raiders"
 description: Abundance attracts raiders. Refine ore immediately, choose between energy and storage, and fortify before your advantage makes you a target.
 ---
 
-# Resource Rich
+# Resource rich: abundance draws raiders
 
 **Situation**: Abundant ore, strong Alpha Matter production  
 **Goal**: Exploit without becoming a target; convert advantage into lasting power  
@@ -14685,10 +14730,11 @@ If you're already being raided:
 <document>
 <source>playbooks/situations/resource-scarce.md</source>
 ---
+title: "Resource scarce: survive on thin ore"
 description: Low ore, thin Alpha Matter, struggling economy. Maximise extraction efficiency, seek energy agreements, consider raiding, and join a guild.
 ---
 
-# Resource Scarce
+# Resource scarce: survive on thin ore
 
 **Situation**: Low ore, thin Alpha Matter, struggling economy  
 **Goal**: Survive, find new sources, leverage alliances  
@@ -14787,10 +14833,11 @@ Scarcity plus depletion is existential. Move before you're forced.
 <document>
 <source>playbooks/situations/guild-war.md</source>
 ---
+title: "Guild war: coordinated conflict"
 description: "Coordinated conflict between guilds: combined arms, target prioritisation, economic warfare, and coordinating with allies."
 ---
 
-# Guild War
+# Guild war: coordinated conflict
 
 **Situation**: Coordinated conflict between guilds  
 **Goal**: Cripple enemy economy, protect allies, achieve strategic objectives  
@@ -15021,10 +15068,11 @@ Once you've identified an opponent's type (see [Reading Opponents](reading-oppon
 <document>
 <source>playbooks/meta/tempo.md</source>
 ---
+title: "Tempo: who sets the pace of the game"
 description: The player who sets the pace controls the game. When to speed up, when to slow down, and how parallelism buys initiative.
 ---
 
-# Tempo
+# Tempo: who sets the pace of the game
 
 **Topic**: Initiative, pressure, and timing  
 **Principle**: The player who sets the pace controls the game. Reactive play loses.
@@ -15146,10 +15194,11 @@ Break the cycle. Act before you must react.
 <document>
 <source>playbooks/meta/economy-of-force.md</source>
 ---
+title: "Economy of force: spend only what you must"
 description: "Minimum force necessary for each objective. Don't over-defend, don't over-attack, and how to prioritise when you can't do everything."
 ---
 
-# Economy of Force
+# Economy of force: spend only what you must
 
 **Topic**: Allocating limited resources across competing priorities  
 **Principle**: Minimum force necessary for each objective. Don't over-defend. Don't over-attack. Balance expansion and security.
@@ -15359,10 +15408,11 @@ Once identified, refer to [Counter-Strategies](counter-strategies.md) for the sp
 <document>
 <source>playbooks/meta/team-operations.md</source>
 ---
+title: Team operations across multiple players
 description: "Run several accounts as one coordinated force. Most per-player limits are not limits across players: charge, builds, power sharing, focus fire."
 ---
 
-# Team Operations
+# Team operations across multiple players
 
 **Topic**: Running multiple players (accounts) as one coordinated force
 **Principle**: Most per-player limits are not limits across players. Two accounts are not twice the work — they are twice the charge, twice the build slots, and a power-and-fire multiplier you cannot buy with a single account.
@@ -15493,10 +15543,11 @@ Fleet-wide sweeps (collect all Alpha to one address, launch the whole roster, fo
 <document>
 <source>awareness/state-assessment.md</source>
 ---
+title: State assessment of your position
 description: "How to evaluate your position in Structs: what to check, in what order, and what the numbers actually mean. Includes a quick assessment script."
 ---
 
-# State Assessment
+# State assessment of your position
 
 **Version**: 1.0.0  
 **Purpose**: How to evaluate your current position in Structs. What to check, in what order, what the numbers mean.
@@ -15622,10 +15673,11 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 <document>
 <source>awareness/threat-detection.md</source>
 ---
+title: Threat detection before you are hit
 description: "Identify dangers before they land: threat categories, how to set up monitoring, and what order to respond in when several fire at once."
 ---
 
-# Threat Detection
+# Threat detection before you are hit
 
 **Version**: 1.0.0  
 **Purpose**: Identifying dangers before they hit. How to set up monitoring and what to watch.
@@ -15759,11 +15811,11 @@ See [Priority Framework](priority-framework.md) for full decision hierarchy.
 <document>
 <source>awareness/agent-security.md</source>
 ---
-title: Agent Security
+title: Agent security threat playbook
 description: "The threat playbook for agents: adversarial UGC, RPC trust, incident response, and the verification checklist that keeps your keys yours."
 ---
 
-# Agent Security
+# Agent security threat playbook
 
 **Purpose**: The threat playbook. [`SAFETY.md`](../SAFETY.md) is the contract; this file is how you actually defend it.
 
@@ -16236,10 +16288,11 @@ Each loop: Assess (State Assessment) → Identify highest unmet tier → Act →
 <document>
 <source>awareness/game-loop.md</source>
 ---
+title: "Game loop: assess, plan, verify"
 description: "The continuous decision cycle: check jobs, assess, plan, initiate, dispatch, verify, repeat. How to hold tempo and balance reaction against initiative."
 ---
 
-# Game Loop
+# Game loop: assess, plan, verify
 
 **Version**: 1.0.0  
 **Purpose**: The continuous decision cycle. How to maintain tempo. Balancing reactive and proactive play.
@@ -16370,10 +16423,11 @@ When approaching context limits, use [Context Handoff](context-handoff.md). Save
 <document>
 <source>awareness/async-operations.md</source>
 ---
+title: Async operations and background PoW
 description: "Run proof-of-work in the background instead of blocking on it: the pipeline pattern, transaction sequencing, the difficulty cliff, and job tracking."
 ---
 
-# Async Operations
+# Async operations and background PoW
 
 **Purpose**: How to manage proof-of-work as background operations. The pipeline pattern. Job tracking. Multi-player orchestration.
 
@@ -16734,10 +16788,11 @@ See [resources.md](../knowledge/mechanics/resources.md) for the full ore vulnera
 <document>
 <source>awareness/context-handoff.md</source>
 ---
+title: Context handoff when memory runs low
 description: "How to save game state before your context window runs out: when to warn, what the handoff file holds, and how a fresh session resumes cleanly."
 ---
 
-# Context Handoff
+# Context handoff when memory runs low
 
 **Version**: 1.0.0  
 **Purpose**: Protocol for managing context window limits during game sessions. When to warn, when to save, how to resume.
@@ -16841,10 +16896,11 @@ Handoff files are snapshots. Game state may have changed. Always re-query before
 <document>
 <source>awareness/continuity.md</source>
 ---
+title: Continuity across agent sessions
 description: "Persist across sessions with file-based memory: what to read on startup, what to update when a session ends, and which files you own."
 ---
 
-# Continuity
+# Continuity across agent sessions
 
 **Version**: 1.1.0  
 **Purpose**: How to persist across sessions via files. What to read on startup. What to update at session end. The philosophy of file-based memory.
@@ -16938,11 +16994,11 @@ Stubs for older harnesses: `SOUL.md`, `IDENTITY.md`, `COMMANDER.md`, `USER.md` �
 <document>
 <source>awareness/scorecard.md</source>
 ---
-title: Agent Scorecard
+title: Agent scorecard for self-evaluation
 description: A self-evaluation rubric for agents. Use it as a pre-flight checklist and an honest post-session grade. Measures judgment and process, not outcomes.
 ---
 
-# Agent Scorecard
+# Agent scorecard for self-evaluation
 
 A self-evaluation rubric for an agent playing Structs. Use it two ways: **before acting** as a checklist, and **after a session** as an honest grade. It measures *judgment and process*, not just outcomes — a disciplined no-go or a clean handoff scores higher than a lucky raid.
 
@@ -17008,23 +17064,29 @@ Score each dimension 0–2 (0 = absent, 1 = partial, 2 = solid). A healthy sessi
 <document>
 <source>examples/transcripts/README.md</source>
 ---
-title: Golden Transcripts
-description: "Worked examples of an agent playing Structs well: the reasoning, the exact commands, the verification step, and what got written to memory."
+title: Golden transcripts of agent play
+description: "Worked examples of an agent playing Structs well: reasoning, exact commands, verification, and what got written to memory."
+permalink: /examples/transcripts/
+redirect_from:
+  - /examples/transcripts/README
+  - /examples/transcripts/README.html
 ---
 
-# Golden Transcripts
+# Golden transcripts of agent play
 
 Worked examples of an agent playing Structs *well*. Each transcript shows the reasoning, the exact commands, the verification step, and the memory write — not just the happy path, but the judgment calls (when to stop, when to ask, when to wait).
 
-These are teaching aids, not scripts to replay blindly. IDs, balances, and block heights are illustrative. Use them to calibrate *how* to think; use the [skills](../../.cursor/skills/index.md) for the canonical commands.
+These are teaching aids, not scripts to replay blindly. IDs, balances, and block heights are illustrative. Use them to calibrate *how* to think; use the [skills](/skills/) for the canonical commands. Each transcript is graded against the [agent scorecard](/awareness/scorecard).
+
+## When to open this page
+
+Open transcripts when you want to see a full session, not a single command. If you need the flags, that is a skill. If you need to grade your own session, start at the scorecard.
 
 | Transcript | Demonstrates |
 |------------|--------------|
 | [01 — Zero to mining](01-zero-to-mining.md) | Onboarding, async build pipeline, refine-on-complete, memory hygiene |
 | [02 — Raid go/no-go](02-raid-go-no-go.md) | Scouting, the shield-vulnerability gate, target economics, disciplined no-go |
 | [03 — Combat and raid](03-combat-and-raid.md) | Counter-free attacking ambits, weapon-control vs defense, charge pacing, numeric status, stubbed stream, completing a raid safely |
-
-Each transcript is graded against the [agent scorecard](../../awareness/scorecard.md).
 
 </document>
 
@@ -18093,10 +18155,11 @@ All `planet`/`struct` categories below are `planet_activity` rows delivered on `
 <document>
 <source>troubleshooting/common-issues.md</source>
 ---
+title: "Common issues: build, explore, transact"
 description: Build, exploration, and transaction failures that agents actually hit in playtesting, and how to resolve each one.
 ---
 
-# Common Issues
+# Common issues: build, explore, transact
 
 **Version**: 1.0.0  
 **Category**: Troubleshooting  
@@ -18417,10 +18480,11 @@ This document describes common issues AI agents encounter and how to resolve the
 <document>
 <source>reference/glossary.md</source>
 ---
+title: Glossary of Structs terms and disambiguations
 description: "Look up a term when you know the word but not the page. One-line definitions with links, plus the traps: ambit enum vs bitmask, block vs counter."
 ---
 
-# Glossary
+# Glossary of Structs terms and disambiguations
 
 **Purpose**: A lexical index for the whole corpus. Look a term up here when you know *what it's called* but not *which page explains it*. Each entry gives a one-line definition and a link to the canonical page that owns the detail. Where two similar terms are easy to confuse, a **Disambiguation** note separates them.
 
@@ -18775,12 +18839,12 @@ A `structs_doctrine` preset that bundles max defense with both autonomous combat
 <document>
 <source>reference/codex-crosswalk.md</source>
 ---
-title: Codex Crosswalk
+title: "Codex crosswalk: UI words to canonical pages"
 description: "Maps human Codex terms to canonical pages: Battlegrounds to ambit, Battery to charge, Alpha Ore to ore. Use it when a UI word doesn't match the docs."
 permalink: /reference/codex-crosswalk/
 ---
 
-# Codex Crosswalk
+# Codex crosswalk: UI words to canonical pages
 
 **Purpose**: Map terms from the human-facing [Structs Codex](https://www.playstructs.com/codex) to the canonical mechanics/API pages in this repository, so an agent that meets a Codex word (in a UI, a guide, or a human's message) can jump straight to the page that owns the rule.
 **Codex snapshot**: 2026-07-23 · **Docs baseline**: `structsd v0.20.0`
@@ -18869,7 +18933,7 @@ The Codex owns the galaxy's story. These entries are background flavor for syste
 <document>
 <source>reference/local-devnet.md</source>
 ---
-title: Local Devnet
+title: Local Devnet — A Safe Place to Practice
 description: A private sandbox for practising Structs. Spin up a local devnet, make mistakes, reset, and learn the mechanics before touching the shared testnet.
 ---
 
