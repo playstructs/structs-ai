@@ -85,7 +85,7 @@ def first_h1(text: str) -> str:
 
 def og_key(canonical_path: str) -> str:
     p = canonical_path.replace(".html", "").replace("/", " ").strip().replace(" ", "-")
-    return p or "index"
+    return (p or "index").lower()
 
 
 def canonical_from_source(rel: Path, fm: dict[str, str]) -> str | None:
@@ -287,9 +287,13 @@ def main() -> int:
         try:
             build_all(tmp / "og-image.png", tmp / "og", source)
             mismatches = []
-            gen_files = {p.name for p in (tmp / "og").glob("*.png") if not p.name.startswith(".")}
+            gen_files = {
+                p.name.lower()
+                for p in (tmp / "og").glob("*.png")
+                if not p.name.startswith(".")
+            }
             committed = (
-                {p.name for p in OG_DIR.glob("*.png") if not p.name.startswith(".")}
+                {p.name.lower() for p in OG_DIR.glob("*.png") if not p.name.startswith(".")}
                 if OG_DIR.exists()
                 else set()
             )

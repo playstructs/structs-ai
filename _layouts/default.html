@@ -83,7 +83,7 @@
   <meta property="og:title" content="{{ page_title | xml_escape }}">
   <meta property="og:description" content="{{ meta_description | xml_escape }}">
   <meta property="og:url" content="{{ canonical_url }}">
-  {%- assign og_key = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "-" -%}
+  {%- assign og_key = canonical_path | replace: ".html", "" | replace: "/", " " | strip | replace: " ", "-" | downcase -%}
   {%- if og_key == "" -%}{%- assign og_key = "index" -%}{%- endif -%}
   {%- assign og_rel = "/assets/og/" | append: og_key | append: ".png" -%}
   {%- assign og_image_url = "/assets/og-image.png" | absolute_url -%}
