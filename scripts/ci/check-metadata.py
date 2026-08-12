@@ -12,6 +12,7 @@ REPO = Path(".")
 MAX_DESC = 155
 MAX_TITLE = 60
 SITE_ORIGIN = "https://structs.ai"
+OG_IMAGE_URL = f"{SITE_ORIGIN}/assets/og-image.png"
 
 DIRECTORY_INDEXES = (
     "api/queries",
@@ -120,6 +121,8 @@ def main() -> int:
 
     if not (ROOT / "favicon.ico").exists():
         errors.append("favicon.ico missing from _site")
+    if not (ROOT / "assets" / "og-image.png").exists():
+        errors.append("assets/og-image.png missing from _site")
     if not (ROOT / ".well-known" / "security.txt").exists():
         errors.append(".well-known/security.txt missing from _site")
     if not (ROOT / "schemas" / "responses.html").exists():
@@ -196,6 +199,23 @@ def main() -> int:
 
         if not has_favicon_link and "redirect" not in text.lower():
             warnings.append(f"{rel}: no rel=icon link")
+
+        og_image = attr(text, r'<meta\s+[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']*)["\']')
+        if og_image is None:
+            og_image = attr(text, r'<meta\s+[^>]*content=["\']([^"\']*)["\'][^>]*property=["\']og:image["\']')
+        twitter_card = attr(text, r'<meta\s+[^>]*name=["\']twitter:card["\'][^>]*content=["\']([^"\']*)["\']')
+        if twitter_card is None:
+            twitter_card = attr(text, r'<meta\s+[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']twitter:card["\']')
+        twitter_image = attr(text, r'<meta\s+[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']*)["\']')
+        if twitter_image is None:
+            twitter_image = attr(text, r'<meta\s+[^>]*content=["\']([^"\']*)["\'][^>]*name=["\']twitter:image["\']')
+
+        if og_image != OG_IMAGE_URL:
+            errors.append(f"{rel}: og:image must be {OG_IMAGE_URL}, got {og_image!r}")
+        if twitter_card != "summary_large_image":
+            errors.append(f"{rel}: twitter:card must be summary_large_image, got {twitter_card!r}")
+        if twitter_image != OG_IMAGE_URL:
+            errors.append(f"{rel}: twitter:image must be {OG_IMAGE_URL}, got {twitter_image!r}")
 
         if not canon:
             if "redirect_to" in text or 'http-equiv="refresh"' in text.lower():
