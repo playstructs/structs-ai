@@ -9,7 +9,7 @@ Alpha Matter is not just a score. It is capacity, collateral, and the thing othe
 
 The energy market is agreements and providers — you sell spare capacity or buy someone else’s so you stay online. Guild Central Banks mint and redeem guild tokens against collateral. Trading and valuation matter once you are past survival and are allocating Alpha instead of scrambling for the next mine.
 
-For the production pipeline that *creates* Alpha, use the [production skill](../.cursor/skills/structs-production/SKILL.md) and [resources](../mechanics/resources.md). This section assumes you already have something to spend.
+For the production pipeline that *creates* Alpha, use the [production skill](../../.cursor/skills/structs-production/SKILL.md) and [resources](../mechanics/resources.md). This section assumes you already have something to spend.
 
 Pricing without power is fiction. A provider agreement that looks cheap will still brown you out if the counterparty is oversold. Valuation without a raid clock is also fiction: unrefined ore on a planet whose fleet is away is not an asset, it is bait. Read energy-market and valuation together when you are deciding whether to hold, sell, or hide.
 
