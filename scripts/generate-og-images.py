@@ -207,9 +207,14 @@ def recompose_template(src: Image.Image) -> Image.Image:
 
 
 def render_card(template: Image.Image, title: str | None) -> Image.Image:
-    img = template.copy().convert("RGBA")
     if not title:
-        return img.convert("RGB")
+        return template.copy().convert("RGB")
+    # The wordmark is baked into the template, centered on the full canvas.
+    # Shift the art up so it sits in the illustration area above the title band
+    # instead of being clipped by it.
+    shift = BAND_H // 2
+    img = Image.new("RGBA", (W, H), (8, 18, 24, 255))
+    img.paste(template.convert("RGBA"), (0, -shift))
     draw = ImageDraw.Draw(img, "RGBA")
     band_top = H - BAND_H
     draw.rectangle((0, band_top, W, H), fill=(8, 18, 24, 210))
