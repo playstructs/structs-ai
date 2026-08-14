@@ -170,7 +170,7 @@
 - [Database Schema](https://structs.ai/schemas/database-schema): PostgreSQL schema
 - [Error Codes](https://structs.ai/api/error-codes): Error code catalog
 - [Glossary](https://structs.ai/reference/glossary): Lexical index of key terms with definitions and canonical-page links (disambiguates ambit enum vs bitmask, block vs counter, multi-shot vs multi-target, struct_attack stub, etc.)
-- [Codex Crosswalk](https://structs.ai/reference/codex-crosswalk): Maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds→ambit, Battery→charge, Alpha Ore→ore, …) to canonical pages
+- [Codex Crosswalk](https://structs.ai/reference/codex-crosswalk/): Maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds→ambit, Battery→charge, Alpha Ore→ore, …) to canonical pages
 - [Action Reference](https://structs.ai/reference/action-quick-reference): Quick action lookup
 - [Endpoint Index](https://structs.ai/reference/endpoint-index): Full endpoint index
 - [API Quick Reference](https://structs.ai/reference/api-quick-reference): SSL chain endpoints + catalog read shortcuts

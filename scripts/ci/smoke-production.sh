@@ -74,7 +74,8 @@ else
   echo "$LLMS" | grep -oE 'https://structs\.ai/[^)[:space:]]*' | sed 's/[.,;:]$//' | sort -u | while IFS= read -r u; do
     [ -n "$u" ] || continue
     c="$(retry_code "$u")"
-    [ "$c" = "200" ] || fail "BROKEN-CITATION $c $u"
+    # Jekyll directory permalinks 301 when the trailing slash is omitted.
+    case "$c" in 200|301|308) ;; *) fail "BROKEN-CITATION $c $u" ;; esac
   done
 fi
 

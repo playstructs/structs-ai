@@ -238,6 +238,16 @@ def check_url_gate() -> None:
     for url in cited:
         if resolve_canonical_target(url) is None:
             errors.append(f"llms.txt cites missing _site target {url}")
+            continue
+        path = url.replace(SITE_ORIGIN, "").split("#", 1)[0].split("?", 1)[0]
+        rel = path.lstrip("/")
+        if (
+            rel
+            and not path.endswith("/")
+            and (ROOT / rel / "index.html").exists()
+            and not (ROOT / f"{rel}.html").exists()
+        ):
+            errors.append(f"llms.txt must use trailing slash for directory permalink {url}/")
 
 
 def main() -> int:
