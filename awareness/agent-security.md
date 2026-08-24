@@ -147,15 +147,22 @@ structsd query structs address-all-by-player [your-player-id]
 structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [unwanted-address]
 ```
 
-### Step 6: Update primary address to a fresh key
+### Step 6: Replace the primary only from a PermAll key
 
-Create the new key first (`structsd keys add agent-recovery`), get its address, then:
+`player-update-primary-address` requires **`PermAll` on the signing address**. A limited delegate cannot rotate primary or empty the primary purse via that path.
+
+- **Compromised key is a limited delegate:** do **not** sign primary rotation from it. From your still-trusted PermAll key (usually the current primary), register a replacement if needed, revoke the bad address, and leave primary where it is.
+- **Compromised key is the primary (it holds PermAll):** you can register a fresh address and rotate from it, but every remaining tx from that key is a race against the attacker. Prefer a second already-registered PermAll key if you have one.
+
+Create the new key first (`structsd keys add agent-recovery`), get its address, then from a **PermAll** signer:
 
 ```
-structsd tx structs address-register --from [compromised-key] --gas auto -y -- [player-id] [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
-structsd tx structs player-update-primary-address --from [compromised-key] --gas auto -y -- [new-address]
-structsd tx structs address-revoke --from [compromised-key] --gas auto -y -- [old-address]
+structsd tx structs address-register --from [permall-key] --gas auto -y -- [player-id] [new-address] [new-proof-pubkey] [new-proof-signature] 33554431
+structsd tx structs player-update-primary-address --from [permall-key] --gas auto -y -- [new-address]
+structsd tx structs address-revoke --from [new-key] --gas auto -y -- [old-address]
 ```
+
+Revoke leaves Cosmos stake on the old address and drops the game capacity that address was credited. Strict moves refuse while a redelegation is in flight — wait it out rather than forcing the rotation.
 
 Future transactions sign with the new key only.
 

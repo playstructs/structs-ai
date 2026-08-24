@@ -147,7 +147,7 @@ Reference material in `knowledge/`.
 - [`energy`](knowledge/mechanics/energy.md) -- Canonical energy system: units, infusion split, substation dilution, allocations, brownout
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status (quick card)
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
-- [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
+- [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work: four struct-bound types, planet ore clocks, raid pause, guild charter
 - [`fleet`](knowledge/mechanics/fleet.md) -- Ships and movement
 - [`planet`](knowledge/mechanics/planet.md) -- Exploration and depletion
 

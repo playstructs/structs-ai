@@ -18,7 +18,7 @@ The first sentence should answer "what do you need from me, or what changed that
 | Instead of | Write |
 |-----------|-------|
 | "Player 1-42: storedOre 1200, gridAttributes.load 912960000, capacity 912960000, fleet 9-42 onStation false" | "Your fleet is away, which leaves 1,200 unrefined ore exposed to theft. I recommend refining first (ore stays stealable until refine finishes — ~34 h at D=3), then recalling the fleet." |
-| "shieldsVulnerable on 2-117, blockStartRaid 1284551" | "Someone is raiding us and our shields are down. They can take all 1,200 unrefined ore within roughly four minutes unless we restore the Command Ship or destroy theirs. Starting a new refine will not finish in time." |
+| "shieldsVulnerable on 2-117, blockStartRaid 1284551" | "Someone is raiding us and our shields are down. They can take all 1,200 unrefined ore within roughly four minutes unless we restore the Command Ship or destroy theirs. Mining and refining are paused until the raid ends." |
 | "struct 5-310 destroyed, trigger_raid_defeat_by_destruction fired" | "We lost the Planetary Defense Cannon. Nothing else was taken — a raid can only steal unrefined ore — but the planet is now easier to attack." |
 
 Three habits do most of the work: name the stake in the human's terms ("1,200 ore" not "storedOre"), say what you recommend, and say what happens if nothing is done.
@@ -77,7 +77,7 @@ Lead with impact, then cause, then what you have already done, then what you nee
 
 **Active raid** (use this shape first — the clock is short):
 
-> We are being raided; shields are down. They can take all unrefined ore in roughly four minutes. I am restoring the Command Ship / shooting their Command Ship now. Starting a new refine will not finish in time. Want me to arm Desktop `autoresponse` (Tier 2 Standing Automation Grant) so this happens automatically next time?
+> We are being raided; shields are down. They can take all unrefined ore in roughly four minutes. I am restoring the Command Ship / shooting their Command Ship now. Mining and refining are paused until the raid ends. Want me to arm Desktop `autoresponse` (Tier 2 Standing Automation Grant) so this happens automatically next time?
 
 **After the fight** (or non-raid damage):
 

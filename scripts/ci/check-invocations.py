@@ -12,7 +12,7 @@ Three hard gates:
   ORDER     `--` must come after flags, never before them. pflag stops parsing
             flags at `--`, so `... -- 0-1 1 --from key` passes `--from` and
             `key` as *positional args* and the command dies with
-            "accepts N arg(s), received M". Verified empirically on v0.20.0.
+            "accepts N arg(s), received M". Verified empirically on v0.21.0.
   GAS       every `tx` invocation needs `--gas auto` (AGENTS.md rule 6).
 
 Coverage matters as much as the gates. Commands are documented in three shapes —

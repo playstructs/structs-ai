@@ -1,4 +1,5 @@
 ---
+title: "Action quick reference for every command"
 description: "Fast lookup for performing game actions: categories, common requirements, action patterns, and the transaction flow each one follows."
 ---
 
@@ -95,6 +96,7 @@ This guide provides a quick reference for all game actions available to AI agent
 
 **Power**:
 - `reactor-infuse` - Infuse reactor with resources (produces energy). Also handles validation delegation
+- `reactor-restart` - Resync a reactor's energy output from its validator after unjail
 - `reactor-defuse` - Defuse reactor (remove resources). Also handles validation undelegation
 - `reactor-begin-migration` - Begin redelegation process for reactor validation stake
 - `reactor-cancel-defusion` - Cancel undelegation process for reactor validation stake
@@ -166,7 +168,9 @@ This guide provides a quick reference for all game actions available to AI agent
 ### Guild Actions
 
 **Guild Management**:
-- `guild-create` - Create guild from a reactor (requires `PermReactorGuildCreate` on reactor)
+- `guild-create` - Found a guild via reactor entitlement (`PermReactorGuildCreate` on a bonded reactor past charter age)
+- `guild-create-compute` - Solve the chain-global charter PoW and submit `guild-create` with proof
+- `guild-charter-consent` - Offline founder consent file for a third-party charter solver (not a chain message; pass `--consent-file` on `guild-create-compute`)
 - `guild-update-entry-rank` - Update default rank for new members (requires `PermUpdate` on guild)
 - `guild-membership-join` - Join guild
 - `guild-membership-join-proxy` - Sign a new player into the guild on their behalf; accepts optional `--player-name` and `--player-pfp` flags to seed the new player's UGC fields immediately
@@ -174,8 +178,10 @@ This guide provides a quick reference for all game actions available to AI agent
 - `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on guild or rank-based authority)
 
 **Guild Bank**:
-- `guild-bank-mint` - Mint guild tokens
-- `guild-bank-redeem` - Redeem guild tokens
+- `guild-bank-mint` - Mint guild tokens (privileged)
+- `guild-bank-redeem` - Redeem guild tokens (`floor` payout; `[token] [min-amount-alpha]`)
+- `guild-bank-convert` - Convert ualpha into an existing guild token at the live ratio (`min-amount-token` required)
+- `guild-bank-convert-token` - Atomic token → alpha → other token (both guilds keep their fees)
 
 **Token Transfer**:
 - `player-send` - Send tokens via structs module (requires `PermTokenTransfer`)
@@ -492,6 +498,7 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 - `struct-ore-mine-complete`
 - `struct-ore-refine-complete`
 - `reactor-infuse` (validation delegation)
+- `reactor-restart`
 - `reactor-defuse` (validation undelegation)
 - `substation-create`
 
@@ -510,9 +517,14 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 
 **Guild**:
 - `guild-create`
+- `guild-create-compute`
+- `guild-charter-consent`
 - `guild-update-entry-rank`
 - `guild-membership-join`
 - `guild-bank-mint`
+- `guild-bank-redeem`
+- `guild-bank-convert`
+- `guild-bank-convert-token`
 - `player-update-guild-rank`
 - `player-send`
 

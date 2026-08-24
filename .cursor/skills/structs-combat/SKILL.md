@@ -93,7 +93,7 @@ If the defender restores their Command Ship mid-raid, the clock resets — withd
 Use this when the target holds ore but is shielded (Command Ship online, fleet on station) — the case an opportunistic raid can't touch. It costs a fleet engagement and leaves your home exposed, so run the go/no-go above first. Best against a dormant defender who won't rebuild.
 
 1. **Scout the Command Ship's ambit and defenders** — `scripts/scout.sh [planet-id]` surfaces the defender's Command Ship id and status; query it directly with `structsd query structs struct [commandStruct-id]` for its `operatingAmbit`. To enumerate the **same-ambit** structs that can block for it, use the Guild Stack ("defenders by planet" — there is no `structsd` CLI command that lists a planet's structs). Confirm you have weapons that reach the Command Ship's ambit.
-2. **Refine your own ore and move your fleet to the target.** Your home shields drop while away — accept that exposure as the cost of the siege.
+2. **Refine your own ore and move your fleet to the target.** Your home shields drop while away — accept that exposure as the cost of the siege. A planet holds **one visiting fleet** by default; if the slot is taken, `fleet-move` is `queue_full`.
    ```
    structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]
    ```
@@ -124,7 +124,7 @@ structsd tx structs struct-defense-set TX_FLAGS -- [defender-struct-id] [protect
 structsd tx structs struct-defense-clear TX_FLAGS -- [defender-struct-id]
 ```
 
-**Any** struct can be assigned as a defender (1 charge each; stagger ~6 s on one key) as long as it is **built, online, and co-located** with the protected struct — ambit is **not** required to *assign*. Ambit decides what the defender can do: **same-ambit** is required only to **block** (intercept a hit), while a **cross-ambit** defender still **counters** whenever its weapon can reach the attacker. Spread defenders across ambits for counter coverage; keep same-ambit defenders where you need real interception. Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
+**Only fleet structs can be assigned as a defender** (`canDefend: true`; 1 charge each; stagger ~6 s on one key) as long as the defender is **built, online, and co-located** with the protected struct — ambit is **not** required to *assign*. Planetary types (Ore Extractor, Refinery, Ore Bunker, PDC, generators, …) are rejected. Ambit decides what the defender can do: **same-ambit** is required only to **block** (intercept a hit), while a **cross-ambit** defender still **counters** whenever its weapon can reach the attacker. Spread fleet defenders across ambits for counter coverage; keep same-ambit defenders where you need real interception. Minimum viable defense: at least one combat struct per ambit guarding the Command Ship (6 HP; most fleet structs are 3 HP).
 
 ## Tactical reference
 
@@ -205,7 +205,9 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 - **"unreachable" / "out_of_range"** — your weapon can't reach that ambit; reposition the Command Ship or use a different struct.
 - **"fleet not away"** — move the fleet to the target first.
 - **"insufficient charge"** — per-player bar too low; wait (see conventions).
-- **Stolen-from** — your CMD ship went offline mid-window. Restore it; refine ore faster next time.
+- **"queue_full"** — the destination planet already has its visiting-fleet cap (`1 + locationListExtra`, default 1). Wait for the parked fleet to leave, or pick another target.
+- **"cannot defend" / StructCannotDefend** — you tried to assign a planetary struct as a defender. Only fleet types (`canDefend: true`) work.
+- **"under_raid"** — mine/refine is paused while a visitor heads the queue. Do not retry those computes until they leave.
 
 ## See also
 

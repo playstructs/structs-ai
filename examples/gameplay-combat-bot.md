@@ -43,7 +43,7 @@ description: A combat bot pointed at the real raid and defense procedures, with 
 ## Minimal defense checklist
 
 1. Stay online (capacity ≥ load).
-2. If a refine is already completable, finish it; otherwise do **not** start a new 34h refine mid-raid.
+2. Do **not** start or complete a refine mid-raid — the chain rejects mine/refine while `locationListStart` is set (`under_raid`).
 3. Restore Command Ship online + fleet `onStation`, and/or destroy the raider's Command Ship within ~1.8 minutes.
 4. Brief the commander if arming `autoresponse` (Tier 2).
 

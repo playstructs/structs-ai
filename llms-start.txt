@@ -189,7 +189,7 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ### The `-y` rule
 
-`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`): they run for hours and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
+`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`): they run for hours to weeks and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
 
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: "Guild Stack architecture and services"
 description: "The Guild Stack architecture: a Docker Compose app giving local PostgreSQL access to indexed game state, GRASS events, and a webapp."
 ---
 
@@ -22,7 +23,7 @@ Three compose variants exist:
 | Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no sync-state/webapp) |
 | Guild + Discord | `compose-discord.yaml` | Discord-oriented topology: `structsd-indexer-config` + `structs-proxy` + `structs-discord`; **no** `structs-sync-state` / `structs-control` (not “standard + bot”) |
 
-**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (v0.20.0).
+**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (compose default; do not invent a newer tag until `.env.example` ships one).
 
 ---
 

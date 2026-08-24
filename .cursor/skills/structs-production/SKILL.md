@@ -1,4 +1,5 @@
 ---
+title: "Production skill: mine, refine, stake"
 meta_description: "The engine of everything: mine ore, refine it to Alpha Matter, stake it. Covers ore vulnerability and the handoff when a planet depletes."
 name: structs-production
 description: Runs the Alpha Matter production pipeline in Structs — mine ore, refine it to Alpha Matter, then put the Alpha to work. Use when mining or refining, starting or scheduling a mine→refine cycle, protecting stored ore, scaling output, deciding what to do with refined Alpha, or handling a planet running out of ore. Mining ~17h and refining ~34h are background expeditions; ore is stealable until refined.
@@ -28,7 +29,7 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 **Advanced considerations**:
 - **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
-- **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mid-raid: don't start a new refine; see [under-attack](https://structs.ai/playbooks/situations/under-attack).
+- **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mine and refine are **rejected** while a visitor heads the raid queue (`under_raid`); do not retry compute mid-raid. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
 
@@ -43,7 +44,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
 ## Procedure
 
 1. **Check the planet** — `structsd query structs planet [planet-id]`. If `currentOre == 0`, the planet is spent → go to *Depletion* below. Otherwise continue.
-2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge). **Activation *is* the start of the mining cycle** — it stamps `blockStartOreMine`; there is no separate "begin mining" action. (Deactivating clears the clock and cancels the in-progress cycle.)
+2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge). **Activation *is* the start of the mining cycle when you are the first online extractor on the planet** — it stamps the shared `planetBlockStartOreMine`. There is no separate "begin mining" action. Deactivating decrements the planet's active-miner count; the clock stays until quantity returns to zero and a later activate re-anchors.
+3. **Confirm the planet is not under raid** — if `locationListStart` is set, mine/refine compute and complete reject with `under_raid`. Wait for the visitor to leave; the planet clock's pre-raid age is preserved, not decayed through the raid. See [hashing.md — raid pause](https://structs.ai/knowledge/mechanics/hashing#raid-pause-mine-and-refine).
 3. **Compute the mine completion** (background expedition, ~17h to D=3, difficulty 14,000). This hashes against the clock activation already armed and submits the *completion* — it does not "start" anything.
 
    **Approval Block** — confirm before launch: extractor id is correct; planet `currentOre > 0`; `--from` is the owner key; you accept an auto-submitted completion ~17h out even if state shifts.
@@ -53,7 +55,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock lives on the **planet** and resets after each successful mine (any extractor), so every cycle re-enters the full ~17h decay. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
 5. **Refine in parallel — don't wait for the mine.** A refinery can be activated with **0 ore**; ore mined (or received) mid-cycle counts at completion time. Activate and compute the refinery *alongside* the extractor rather than serially, and the pipeline completes faster (~34h to D=3, difficulty 28,000). Refined Alpha is secure; unrefined ore is stealable, so keep the refine cycle always running.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
@@ -103,6 +105,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 
 ## Errors
 
+- **"under_raid"** — a visiting fleet is in the planet's raid queue. Mine/refine compute and complete are rejected until it leaves. Do not retry; the clock's pre-raid age is preserved. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **"struct offline"** — activate the extractor/refinery first.
 - **"insufficient ore"** — planet depleted or nothing in `storedOre`; check `currentOre` / `storedOre`.
 - **"proof invalid"** — re-run compute at the right difficulty; ensure the process wasn't interrupted.

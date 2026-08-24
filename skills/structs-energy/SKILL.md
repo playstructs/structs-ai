@@ -64,7 +64,7 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 ## Procedure — raise your own capacity (reactor infusion)
 
 1. Check capacity: `structsd query structs player [id]`.
-2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID).
+2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). A jailed validator produces **zero** energy from infusions until it is unjailed; `reactor-restart` resyncs after that.
 3. Infuse (CLI prompts — review validator, commission, amount):
    ```
    structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
@@ -112,6 +112,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 | Action | Command |
 |--------|---------|
 | Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor restart | `structsd tx structs reactor-restart TX_FLAGS -- [reactor-address]` |
 | Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
 | Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
 | Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |

@@ -72,7 +72,7 @@ Optional `[name]` sets the planet's display name at creation (validated like `Ms
 
 ### Move the fleet (reposition / recall / stage a raid)
 
-Verify the destination first — moving to unscouted or hostile space can strand you.
+Verify the destination first — moving to unscouted or hostile space can strand you. A foreign planet holds at most **one visiting fleet** by default (`1 + locationListExtra`, extra starts at 0). A move onto a full queue is rejected (`queue_full`). The owner's home fleet does not consume a slot.
 
 ```
 structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]

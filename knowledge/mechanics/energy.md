@@ -66,6 +66,10 @@ So at the default 4% commission, **you keep 96%** of what you infuse (added dire
 
 > **Infusing a reactor does NOT power a substation.** Infusion changes only the **reactor** (commission) and the **infuser** (the 96%). It does **not** raise any substation's capacity, and therefore does **not** raise `connectionCapacity` for other connected players. "Everyone infuse the guild reactor to power the guild" is **false** on its own — someone must also route capacity into the guild substation via an **allocation** (below).
 
+> **Jailed or missing validators produce zero energy.** Infusion **ratio** goes to 0; fuel and stake stay put. Unjail / rebond restores from **live staking**. If hooks cannot restore it, `reactor-restart [reactor address]` resyncs the reactor from the validator. A jailed guild reactor means everyone drawing from it goes dark until the operator unjails.
+
+> **Infusion ownership follows the address.** The infusion record is keyed `(destination, address)`. Its `playerId` is the current owner of that address. Strict address moves (`address-register`, `player-update-primary-address`) refuse while a redelegation is in flight. `address-revoke` leaves the Cosmos stake in place and drops the game capacity credited to that address.
+
 ---
 
 ## Substations: `connectionCapacity` dilutes
@@ -137,7 +141,7 @@ When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it *
 
 | Method | How | Rate | Reversible | Risk |
 |--------|-----|------|------------|------|
-| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low |
+| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low — jailed validator zeros the ratio until unjail / `reactor-restart` |
 | Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
 | Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
 

@@ -1,4 +1,5 @@
 ---
+title: "Permissions: 25-bit flags and grants"
 description: "The permission system: address and object permissions, the flag layout, storage, the check flow, and guild rank permissions."
 ---
 
@@ -438,7 +439,7 @@ Emitted for each guild rank permission bit that changes:
 
 ### Player Creation
 
-When a player is created (via reactor infusion or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record. The primary address can exercise any permission the player holds.
+When a player is created (via reactor infusion or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record. The primary address can exercise any permission the player holds. Rotating primary (`player-update-primary-address`) also requires `PermAll` on the **signing** address — a limited delegate cannot point the purse at a new key.
 
 ### Object Creation
 
@@ -463,6 +464,8 @@ A player can register secondary addresses and restrict each one:
 structsd tx structs permission-set-on-address cosmos1secondary... 15728641 --from primary --gas auto -y
 # 15728641 = PermPlay (1) | PermHashAll (15728640)
 ```
+
+That limited key cannot call `player-update-primary-address`. Infusion `playerId` follows the current owner of the infusion's address. Strict address moves (`address-register`, primary rotation) refuse while a redelegation is in flight. `address-revoke` leaves Cosmos stake in place and drops the game capacity credited to that address.
 
 ### Accumulative Grants vs Absolute Sets
 
@@ -552,7 +555,7 @@ For all permission transactions, the caller must already possess the permission 
 
 | Message | Object Checked | Permission Flag(s) |
 |---------|---------------|-------------------|
-| `PlayerUpdatePrimaryAddress` | Target player | `PermAdmin` (2) |
+| `PlayerUpdatePrimaryAddress` | Target player | `PermAll` (33554431) | `CanUpdatePrimaryAddressBy` — limited delegates cannot rotate primary |
 | `PlayerSend` | Target player | `PermTokenTransfer` (16) |
 | `PlayerUpdateGuildRank` | Guild | `PermAdmin` (2); falls back to rank-based authority |
 | `PlayerUpdateName` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
@@ -593,12 +596,14 @@ For all permission transactions, the caller must already possess the permission 
 | `GuildUpdateEntrySubstationId` | Guild | `PermGuildSubstationUpdate` (65536) | Also checks `PermSubstationConnection` (1024) on target substation |
 | `GuildUpdateEntryRank` | Guild | `PermUpdate` (4) | New entry rank must be >= caller's own rank |
 | `GuildUpdateJoinInfusionMinimum` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | |
-| `GuildUpdateJoinInfusionMinimumBypassByRequest` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | |
-| `GuildUpdateJoinInfusionMinimumBypassByInvite` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | |
+| `GuildUpdateJoinInfusionMinimumBypassByRequest` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | Unknown enum values denied |
+| `GuildUpdateJoinInfusionMinimumBypassByInvite` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | Unknown enum values denied |
 | `GuildUpdateOwnerId` | Guild | `PermAdmin` (2) | |
 | `GuildBankMint` | Guild | `PermGuildTokenMint` (8192) | |
 | `GuildBankConfiscateAndBurn` | Guild | `PermGuildTokenBurn` (4096) | |
 | `GuildBankRedeem` | Calling player | `PermTokenTransfer` (16) | Self-check |
+| `GuildBankConvert` | Calling player | `PermTokenTransfer` (16) | Open-market ualpha → token |
+| `GuildBankConvertToken` | Calling player | `PermTokenTransfer` (16) | Atomic token → token |
 
 ### Guild Membership Transactions
 
@@ -607,11 +612,11 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | Message | Object Checked | Permission Flag(s) | Notes |
 |---------|---------------|-------------------|-------|
 | `GuildMembershipInvite` | Guild | `PermGuildMembership` (512) | Only when bypass level = `permissioned`. When `member`, requires guild membership only. When `closed`, always denied. |
-| `GuildMembershipInviteApprove` | Target player | `PermGuildMembership` (512) | Caller must be the invited player |
+| `GuildMembershipInviteApprove` | Target player | `PermGuildMembership` (512) | Caller must be the invited player; requires a pending application |
 | `GuildMembershipInviteDeny` | Target player | `PermGuildMembership` (512) | Caller must be the invited player |
 | `GuildMembershipInviteRevoke` | Guild | `PermGuildMembership` (512) | Conditional on bypass level |
 | `GuildMembershipRequest` | Target player | `PermGuildMembership` (512) | Guild must allow requests |
-| `GuildMembershipRequestApprove` | Guild | `PermGuildMembership` (512) | Conditional on bypass level |
+| `GuildMembershipRequestApprove` | Guild | `PermGuildMembership` (512) | Conditional on bypass level; requires a pending application |
 | `GuildMembershipRequestDeny` | Guild | `PermGuildMembership` (512) | Same conditions as approve |
 | `GuildMembershipRequestRevoke` | Target player | `PermGuildMembership` (512) | Caller must be the requesting player |
 | `GuildMembershipJoin` | Target player | `PermGuildMembership` (512) | Direct join (pre-approved) |

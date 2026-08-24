@@ -92,7 +92,7 @@ check_glossary_links
 
 preflight
 
-# Expected values for the current documented release (structsd v0.20.0).
+# Expected values for the current documented release (structsd v0.21.0).
 # Format: "<struct-type-id>|<jq-field-alternation>|<expected>|<label>"
 # The jq alternation tolerates snake_case vs camelCase field naming.
 CHECKS=(
@@ -104,6 +104,9 @@ CHECKS=(
   "14|.activateCharge,.activate_charge|2|Ore Extractor activateCharge"
   "18|.buildLimit,.build_limit|0|Ore Bunker build limit (0 = unlimited)"
   "17|.buildLimit,.build_limit|1|Jamming Satellite build limit (1 per player)"
+  "1|.canDefend,.can_defend|true|Command Ship canDefend"
+  "14|.canDefend,.can_defend|false|Ore Extractor canDefend (planetary types cannot defend)"
+  "18|.canDefend,.can_defend|false|Ore Bunker canDefend"
 )
 
 extract() {
@@ -118,7 +121,7 @@ extract() {
 }
 
 pass=0; drift=0; skip=0
-echo "${C_CYN}== Doc drift check (expected = structsd v0.20.0 docs) ==${C_RST}"
+echo "${C_CYN}== Doc drift check (expected = structsd v0.21.0 docs) ==${C_RST}"
 
 declare -A CACHE
 for row in "${CHECKS[@]}"; do

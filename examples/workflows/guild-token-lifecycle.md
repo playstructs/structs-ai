@@ -1,250 +1,89 @@
 ---
-description: A worked economic workflow covering the guild token lifecycle end to end, including the risks and a security warning.
+title: "Guild token lifecycle: mint, convert, redeem"
+description: A worked economic workflow covering mint, convert, redeem, and the uguild send restriction end to end.
 ---
 
 # Guild Token Lifecycle Workflow
 
-**Version**: 1.0.0
 **ID**: guild-token-lifecycle
 **Category**: Economic
-**Estimated Time**: 10-20 minutes
 
 ---
 
 ## Prerequisites
 
-- Player must be online
-- Player must be a guild member
-- Guild permissions required: `mintTokens`, `manageBank`
-- Player must have Alpha Matter
+- Player online, with a signing key that holds `PermTokenTransfer`
+- Mint/confiscate need guild bank privileges (`PermGuildTokenMint` / `PermGuildTokenBurn`)
+- Alpha Matter on the signing address for mint or convert-in
+- Target guild already exists (convert cannot create a denom)
 
 ## Security Warning
 
-Guild tokens are trust-based. Guilds have full control. No technical safeguards.
+Guild tokens are trust-based. Guilds control mint, redeem policy, and confiscate-and-burn. Convert is the open market path; mint/redeem remain guild-privileged.
 
 ## Steps
 
-### 1. Query Guild Central Bank
+### 1. Read collateral and supply
 
-Get current guild central bank status.
+There is no HTTP bank-balance endpoint. Query the Cosmos bank module for `uguild.{guild-id}` supply and the guild bank collateral address:
 
-- **Method**: `GET`
-- **Endpoint**: `/structs/guild/{guildId}/bank`
-- **Response Schema**: `schemas/economics.md#/entities/GuildCentralBank`
-
-**Expected Response**:
-
-```json
-{
-  "guildId": "string",
-  "collateral": "number",
-  "tokensIssued": "number",
-  "tokensInCirculation": "number",
-  "collateralRatio": "number"
-}
+```
+structsd query structs guild-bank-collateral-address [guild-id]
+structsd query bank balances [collateral-address]
+structsd query bank denom-owners uguild.[guild-id]
 ```
 
-### 2. Lock Collateral
+### 2. Mint (guild-privileged)
 
-Lock Alpha Matter as collateral for guild tokens.
-
-- **Method**: `POST`
-- **Endpoint**: `/cosmos/tx/v1beta1/txs`
-- **Message Type**: `/structs.structs.MsgGuildLockCollateral`
-
-**Requirements**: Player must have Alpha Matter in sufficient amount.
-
-**Request Example**:
-
-```json
-{
-  "body": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgGuildLockCollateral",
-          "creator": "structs1...",
-          "guildId": "0-1",
-          "alphaMatterAmount": "100000000"
-        }
-      ]
-    }
-  }
-}
+```
+structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]
 ```
 
-**Expected Result**:
+Ratio is captured at action time. Signer's guild is implicit.
 
-```json
-{
-  "collateralLocked": true,
-  "canMintTokens": true
-}
+### 3. Convert ualpha → token (open path)
+
+Anyone with `PermTokenTransfer` can buy an existing guild token at the live collateral ratio. Convert-in fee stays in that guild's collateral. `min-amount-token` is the required slippage floor:
+
+```
+structsd tx structs guild-bank-convert TX_FLAGS -- [guild-id] [alpha-amount] [min-amount-token]
 ```
 
-### 3. Mint Guild Tokens
+### 4. Convert token → token
 
-Mint new guild tokens backed by collateral.
+Atomic source redeem then target convert. Both guilds keep their fees:
 
-- **Method**: `POST`
-- **Endpoint**: `/cosmos/tx/v1beta1/txs`
-- **Message Type**: `/structs.structs.MsgGuildMintTokens`
-
-**Requirements**: Collateral must be locked and guild permissions must be granted.
-
-**Request Example**:
-
-```json
-{
-  "body": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgGuildMintTokens",
-          "creator": "structs1...",
-          "guildId": "0-1",
-          "tokensToMint": "1000"
-        }
-      ]
-    }
-  }
-}
+```
+structsd tx structs guild-bank-convert-token TX_FLAGS -- [amount]uguild.[source-id] [target-guild-id] [min-amount-token]
 ```
 
-**Expected Result**:
+### 5. Redeem for Alpha
 
-```json
-{
-  "tokensMinted": true,
-  "tokensInCirculation": "updated",
-  "collateralRatio": "calculated"
-}
+Payout is `floor(amount * collateral / supply)` and must clear `min-amount-alpha`:
+
+```
+structsd tx structs guild-bank-redeem TX_FLAGS -- [amount]uguild.[guild-id] [min-amount-alpha]
 ```
 
-### 4. Query Guild Token Market
+### 6. Send restriction
 
-Get current guild token market data.
+`uguild.*` may only go to a registered player, the structs module account, or an indexed provider pool. IBC and unregistered addresses reject with `recipient_not_eligible`. Prefer `player-send` between registered players.
 
-- **Method**: `GET`
-- **Endpoint**: `/structs/market/guild-token/{guildId}`
-- **Response Schema**: `schemas/markets.md#/markets/GuildTokenMarketData`
+### 7. Confiscate and burn (Tier 2)
 
-**Expected Response**:
-
-```json
-{
-  "currentPrice": "number",
-  "marketCap": "number",
-  "tokensInCirculation": "number",
-  "collateral": "number",
-  "collateralRatio": "number",
-  "volume24h": "number",
-  "trustRating": "string"
-}
+```
+structsd tx structs guild-bank-confiscate-and-burn TX_FLAGS -- [amount]uguild.[guild-id] [address]
 ```
 
-### 5. Trade Guild Tokens (Optional)
-
-Trade guild tokens on marketplace.
-
-- **Method**: `POST`
-- **Endpoint**: `/cosmos/tx/v1beta1/txs`
-- **Message Type**: `/structs.structs.MsgTradeGuildToken`
-
-**Request Example**:
-
-```json
-{
-  "body": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgTradeGuildToken",
-          "creator": "structs1...",
-          "guildId": "0-1",
-          "quantity": 100,
-          "price": 0.01,
-          "type": "sell"
-        }
-      ]
-    }
-  }
-}
-```
-
-### 6. Monitor Token Status
-
-Monitor token supply, collateral ratio, and market value.
-
-- **Method**: `GET`
-- **Endpoint**: `/structs/guild/{guildId}/bank`
-- **Response Schema**: `schemas/economics.md#/entities/GuildCentralBank`
-
-**Monitoring Targets**:
-
-| Target | Description |
-|--------|-------------|
-| collateralRatio | Maintain healthy ratio (100%+ recommended) |
-| tokensInCirculation | Track token supply |
-| marketValue | Monitor token price |
-
-### 7. Revoke Tokens (Optional - Economic Warfare)
-
-Revoke and burn tokens (can be used for economic warfare).
-
-- **Method**: `POST`
-- **Endpoint**: `/cosmos/tx/v1beta1/txs`
-- **Message Type**: `/structs.structs.MsgGuildRevokeTokens`
-
-**Warning**: Revocation damages reputation. Use carefully.
-
-**Request Example**:
-
-```json
-{
-  "body": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgGuildRevokeTokens",
-          "creator": "structs1...",
-          "guildId": "0-1",
-          "tokensToRevoke": "100"
-        }
-      ]
-    }
-  }
-}
-```
-
-**Expected Result**:
-
-```json
-{
-  "tokensRevoked": true,
-  "tokensBurned": true
-}
-```
+Audited forever. Damages reputation.
 
 ## Risks
 
-| Risk | Description | Result | Prevention |
-|------|-------------|--------|------------|
-| Over-minting | Minting more tokens than collateral backing | Inflation, reduced token value | Maintain healthy collateral ratio |
-| Poor management | Poor token management damages reputation | Reduced trust, lower token value | Transparent management, maintain collateral |
-| Revocation | Token revocation damages reputation | Reduced trust, potential token devaluation | Use revocation carefully, maintain reputation |
+| Risk | Result | Prevention |
+|------|--------|------------|
+| Over-minting | Thin collateral, convert/redeem slip | Watch collateral vs supply before mint |
+| Slippage miss | Convert rejected | Set `min-amount-token` from the live ratio |
+| Send to IBC / raw address | `recipient_not_eligible` | Send only to registered players or provider pools |
+| Confiscate-and-burn | Holder balance gone, reputation hit | Rank revocation is usually enough |
 
-## Error Handling
-
-| Error | Code | Step | Solution | Retryable |
-|-------|------|------|----------|-----------|
-| Insufficient collateral | `INSUFFICIENT_COLLATERAL` | 2 | Lock more Alpha Matter as collateral | Yes |
-| Over-minting | `OVER_MINTING` | 3 | Add more collateral or reduce token supply | Yes |
-| No permissions | `NO_PERMISSIONS` | 3 | Request permissions from guild leadership | No |
-
-## Best Practices
-
-- **Maintain collateral**: Maintain healthy collateral ratio (100%+ recommended)
-- **Transparent management**: Communicate token management decisions to guild members
-- **Avoid over-minting**: Only mint tokens backed by adequate collateral
-- **Protect reputation**: Use revocation carefully, maintain good reputation
+`TX_FLAGS` per [`conventions.md`](../../.cursor/skills/conventions.md). Canonical economics: [`knowledge/economy/guild-banking.md`](../../knowledge/economy/guild-banking.md).

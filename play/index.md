@@ -21,6 +21,7 @@ Crisis rows outrank task rows. An offline player cannot mine their way out of a 
 |--------|-------|
 | I'm offline / a struct won't come online / load > capacity | [energy skill](../.cursor/skills/structs-energy/SKILL.md) → [offline card](../playbooks/situations/offline.md) |
 | I'm being attacked or raided | [under attack](../playbooks/situations/under-attack.md) · [combat skill](../.cursor/skills/structs-combat/SKILL.md) |
+| Mine/refine compute rejected `under_raid` | [production](../.cursor/skills/structs-production/SKILL.md) · [under attack](../playbooks/situations/under-attack.md) — do not retry compute |
 | I think my keys/agent are compromised | [suspected compromise](../playbooks/situations/suspected-compromise.md) · [agent security](../awareness/agent-security.md) |
 | A build/mine/refine/raid compute failed or stalled | [failed compute](../playbooks/situations/failed-compute.md) · [async ops](../awareness/async-operations.md) |
 | My planet is running out of ore | [planet depletion](../playbooks/situations/planet-depletion.md) · [production skill](../.cursor/skills/structs-production/SKILL.md) |

@@ -2,7 +2,7 @@
 title: "Commerce skill: energy, banks, transfers"
 meta_description: "How Alpha Matter compounds into economic power: providers, energy agreements, reactor staking, the guild Central Bank, and token transfers."
 name: structs-commerce
-description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, guild Central Bank mint/redeem, and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
+description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, the guild Central Bank (mint/redeem/convert), and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem/convert guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
 level: advanced
 domain: economy
 ---
@@ -28,7 +28,7 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time, `ualpha` denom s
 
 **The `rate_denom` trap.** The cost is charged in the **provider's** `rate_denom`, not in alpha. A provider that prices in a guild token (`uguild.0-N`) requires you to hold that token — a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`; read `rawLog` for the exact denom). Check the provider's `rateDenom` and acquire that denom (mint guild tokens / trade) *before* opening.
 
-**Reactor staking economics — you are buying *capacity*, not a yield.** Infusing a reactor stakes your Alpha behind a validator at a locked commission and, in return, credits **energy capacity** to you (`1 − commission` of the infused amount; the commission share becomes the reactor's own capacity). There is **no delegator reward stream, no APR, no passive income** — the payoff is the capacity itself. Income is *indirect*: you turn that capacity into revenue only by selling it as energy through a provider. Lower commission = more capacity to you; staking also strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term. See [energy — reactor infusion](https://structs.ai/knowledge/mechanics/energy) for the 96/4 split.
+**Reactor staking economics — you are buying *capacity*, not a yield.** Infusing a reactor stakes your Alpha behind a validator at a locked commission and, in return, credits **energy capacity** to you (`1 − commission` of the infused amount; the commission share becomes the reactor's own capacity). There is **no delegator reward stream, no APR, no passive income** — the payoff is the capacity itself. Income is *indirect*: you turn that capacity into revenue only by selling it as energy through a provider. Lower commission = more capacity to you; staking also strengthens the guild's reactor. It's reversible only via a defusion cooldown — don't stake Alpha you'll need short-term. A jailed validator zeros the infusion ratio until unjail / `reactor-restart`. See [energy — reactor infusion](https://structs.ai/knowledge/mechanics/energy) for the 96/4 split.
 
 **The energy flywheel (advanced default):** mine → refine → infuse guild reactor → automated allocation grows substation capacity → sell via provider for guild tokens → redeem/reinvest. Each turn compounds. Decisions live in [`knowledge/economy/valuation`](https://structs.ai/knowledge/economy/valuation), [`trading`](https://structs.ai/knowledge/economy/trading), and [`playbooks/phases/late-game`](https://structs.ai/playbooks/phases/late-game).
 
@@ -79,12 +79,12 @@ Only the **controlling** player can delete/transfer an allocation (`--controller
 ```
 structsd tx structs reactor-infuse [your-address] [validator-address] [amount]ualpha TX_FLAGS
 ```
-Validator address is `structsvaloper1...` (from `structsd query structs reactor [id]`, `validator` field) — not the reactor ID. Commission locks at infusion. Unstake: `reactor-defuse [your-address] [validator-address] [amount]ualpha` (cooldown); `reactor-cancel-defusion [your-address] [validator-address] [amount]ualpha [creation-height]` to re-stake during cooldown; `reactor-begin-migration [player-addr] [src-val] [dest-val] [amount]ualpha` to move stake (verify the destination — no undo).
+Validator address is `structsvaloper1...` (from `structsd query structs reactor [id]`, `validator` field) — not the reactor ID. Commission locks at infusion. Unstake: `reactor-defuse [your-address] [validator-address] [amount]ualpha` (cooldown); `reactor-cancel-defusion [your-address] [validator-address] [amount]ualpha [creation-height]` to re-stake during cooldown; `reactor-begin-migration [player-addr] [src-val] [dest-val] [amount]ualpha` to move stake (verify the destination — no undo). After an unjail, `reactor-restart [reactor-address]` resyncs energy output from live staking if hooks did not.
 
 ## Procedure — guild Central Bank & transfers
 
-- **Mint** guild tokens against Alpha collateral / **redeem** tokens back to Alpha — see [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`knowledge/economy/guild-banking`](https://structs.ai/knowledge/economy/guild-banking) for the bank's collateral mechanics and the `guild-bank-*` commands.
-- **Transfer tokens**: `player-send [from-address] [to-address] [amount] TX_FLAGS`. A typo in the destination is permanent — to a brand-new address this is Tier 2.
+- **Mint** (guild-privileged) / **redeem** (`floor` payout plus `min-amount-alpha`) / **convert** ualpha→token or token→token — see [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`knowledge/economy/guild-banking`](https://structs.ai/knowledge/economy/guild-banking). Convert needs `min-amount-token` slippage. `uguild.*` cannot go to IBC.
+- **Transfer tokens**: `player-send [from-address] [to-address] [amount] TX_FLAGS`. A typo in the destination is permanent — to a brand-new address this is Tier 2. Guild denoms additionally require an eligible recipient.
 
 ## Commands reference
 
@@ -94,7 +94,8 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 | Substation create | `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]` |
 | Provider create / delete / withdraw | `structsd tx structs provider-create \| provider-delete \| provider-withdraw-balance TX_FLAGS -- ...` |
 | Agreement open / close / adjust | `structsd tx structs agreement-open \| agreement-close \| agreement-capacity-increase \| ... TX_FLAGS -- ...` |
-| Reactor infuse / defuse / migrate | `structsd tx structs reactor-infuse \| reactor-defuse \| reactor-begin-migration TX_FLAGS -- ...` |
+| Reactor infuse / defuse / migrate / restart | `structsd tx structs reactor-infuse \| reactor-defuse \| reactor-begin-migration \| reactor-restart TX_FLAGS -- ...` |
+| Bank convert / convert-token | `structsd tx structs guild-bank-convert TX_FLAGS -- [guild-id] [alpha-amount] [min-amount-token]` / `guild-bank-convert-token TX_FLAGS -- [amount]uguild.[src] [target-guild-id] [min-amount-token]` |
 | Token transfer | `structsd tx structs player-send [from] [to] [amount] TX_FLAGS` |
 | Query provider / agreement / reactor | `structsd query structs provider \| agreement \| reactor [id]` |
 
@@ -112,6 +113,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 - **Insufficient balance** — refine ore / acquire tokens before infuse/send.
 - **Provider capacity exceeded** — reduce agreement capacity or add provider capacity.
 - **Defusion cooldown** — `reactor-cancel-defusion` to re-stake, or wait it out.
+- **recipient_not_eligible** — `uguild.*` cannot go to IBC escrow or an unregistered address.
 - **Automated allocation limit** — one per source; use dynamic for additional routing.
 - **Generator infuse / staking irreversibility** — staking has a cooldown; generator infusion has none (see [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL)).
 

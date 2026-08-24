@@ -108,6 +108,7 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 | struct-ore-refine-complete | Complete Ore Refining | `/structs.structs.MsgStructOreRefineryComplete` | Yes | Complete ore refining operation (requires proof-of-work) |
 | struct-generator-infuse | Infuse Generator with Alpha Matter | `/structs.structs.MsgStructGeneratorInfuse` | Yes | Infuse a generator struct with Alpha Matter to produce energy |
 | reactor-infuse | Infuse Reactor | `/structs.structs.MsgReactorInfuse` | Yes | Add Alpha Matter to reactor for energy production |
+| reactor-restart | Restart Reactor | `/structs.structs.MsgReactorRestart` | Yes | Resync energy output from the validator after unjail |
 | reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Remove Alpha Matter from reactor |
 | reactor-begin-migration | Begin Reactor Migration | `/structs.structs.MsgReactorBeginMigration` | No | Begin redelegation process for reactor validation stake |
 | reactor-cancel-defusion | Cancel Reactor Defusion | `/structs.structs.MsgReactorCancelDefusion` | No | Cancel undelegation process for reactor validation stake |
@@ -188,19 +189,23 @@ Endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 | ID | Name | Message Type | Verified | Description |
 |----|------|-------------|----------|-------------|
-| guild-create | Create Guild | `/structs.structs.MsgGuildCreate` | Yes | Create a new guild |
+| guild-create | Create Guild | `/structs.structs.MsgGuildCreate` | Yes | Found via charter proof or reactor entitlement |
+| guild-create-compute | Guild Charter Compute | `/structs.structs.MsgGuildCreate` | Yes | Background PoW that submits guild-create with proof |
 | guild-membership-join | Join Guild | `/structs.structs.MsgGuildMembershipJoin` | Yes | Join an existing guild |
 | guild-membership-kick | Kick Guild Member | `/structs.structs.MsgGuildMembershipKick` | Yes | Remove a member from a guild |
-| guild-bank-mint | Mint Guild Tokens | `/structs.structs.MsgGuildBankMint` | Yes | Mint guild tokens |
-| guild-bank-redeem | Redeem Guild Tokens | `/structs.structs.MsgGuildBankRedeem` | Yes | Redeem guild tokens for resources |
+| guild-bank-mint | Mint Guild Tokens | `/structs.structs.MsgGuildBankMint` | Yes | Mint guild tokens (privileged) |
+| guild-bank-redeem | Redeem Guild Tokens | `/structs.structs.MsgGuildBankRedeem` | Yes | Redeem tokens; floor payout must clear minAmountAlpha |
+| guild-bank-convert | Convert Alpha to Token | `/structs.structs.MsgGuildBankConvert` | Yes | Open-market ualpha → uguild at live ratio |
+| guild-bank-convert-token | Convert Token to Token | `/structs.structs.MsgGuildBankConvertToken` | Yes | Atomic token → alpha → other token |
 
 **Details**:
 
-- **guild-create**: Code: `x/structs/keeper/msg_server_guild_create.go` | Proto: `proto/structs/structs/tx.proto:45`
-- **guild-membership-join**: Code: `x/structs/keeper/msg_server_guild_membership_join.go` | Proto: `proto/structs/structs/tx.proto:60`
-- **guild-membership-kick**: Code: `x/structs/keeper/msg_server_guild_membership_kick.go` | Proto: `proto/structs/structs/tx.proto:62`
-- **guild-bank-mint**: Code: `x/structs/keeper/msg_server_guild_bank_mint.go` | Proto: `proto/structs/structs/tx.proto:46`
-- **guild-bank-redeem**: Code: `x/structs/keeper/msg_server_guild_bank_redeem.go` | Proto: `proto/structs/structs/tx.proto:47`
+- **guild-create**: Code: `x/structs/keeper/msg_server_guild_create.go` | Proto: `proto/structs/structs/tx.proto` | Entitlement or charter proof
+- **guild-membership-join**: Code: `x/structs/keeper/msg_server_guild_membership_join.go` | Proto: `proto/structs/structs/tx.proto`
+- **guild-membership-kick**: Code: `x/structs/keeper/msg_server_guild_membership_kick.go` | Proto: `proto/structs/structs/tx.proto`
+- **guild-bank-mint**: Code: `x/structs/keeper/msg_server_guild_bank_mint.go` | Proto: `proto/structs/structs/tx.proto`
+- **guild-bank-redeem**: Code: `x/structs/keeper/msg_server_guild_bank_redeem.go` | Proto: `proto/structs/structs/tx.proto`
+- **guild-bank-convert** / **guild-bank-convert-token**: Code: `x/structs/keeper/` guild bank convert keepers | Proto: `MsgGuildBankConvert`, `MsgGuildBankConvertToken`
 
 All guild actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
@@ -226,4 +231,4 @@ All player identity actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 ## Verification Notes
 
-All actions verified with code references against structsd v0.20.0. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`.
+All actions verified with code references against structsd v0.21.0. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`. Query `guild-charter` for the global charter puzzle; `reactor-restart` resyncs a reactor after unjail.

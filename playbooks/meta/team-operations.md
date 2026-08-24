@@ -75,7 +75,7 @@ The decisive team tactic: **concentrate many accounts' attacks on one target in 
 
 ### Defensive coverage
 
-Spread defenders across accounts and ambits. Any built, online struct can defend a teammate's struct if co-located; cross-ambit defenders still **counter** even when they can't **block**. A team can blanket a key struct (a shared Command Ship, a refinery during its ore window) with counter coverage from every ambit at once. See [combat.md — Assigning Defenders](../../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set).
+Spread defenders across accounts and ambits. A built, online **fleet** struct (`canDefend: true`) can defend a teammate's struct if co-located; planetary types cannot. Cross-ambit defenders still **counter** even when they can't **block**. A team can blanket a key struct (a shared Command Ship, a refinery during its ore window) with counter coverage from every ambit at once. See [combat.md — Assigning Defenders](../../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set).
 
 ### Raids as a team
 

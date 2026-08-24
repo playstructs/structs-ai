@@ -1,4 +1,5 @@
 ---
+title: "Structs Desktop and its embedded MCP"
 description: "Structs Desktop: a Tauri app wrapping the game client with an embedded MCP server, so an agent can play through tools, prompts and resources."
 ---
 
@@ -67,7 +68,7 @@ The bearer token exists because any browser page can reach `localhost` — witho
 |------|-----------|---------|
 | `structs_dashboard` | `player_id` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events. The schema lists `player_id` as required, but omitting it is accepted and falls back to the logged-in player |
 | `structs_hash` | `command`, `task_id`, `task_type`, `block_start`, `difficulty_target`, `target_id`, `enabled`, `engine`, `difficulty_start`, `max_concurrent`, `auto_tune` | Proof-of-work tasks with ETAs: `list` / `start` / `progress` / `stop` / `config`. `task_type` is `MINE`, `REFINE`, `BUILD`, or `RAID` (RAID also needs `target_id`, the planet). Config knobs persist across restarts |
-| `structs_action` | `action`, `args` | One game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Routes through the signing bridge |
+| `structs_action` | `action`, `args` | One game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Routes through the signing bridge. Guild charter, bank convert, and `reactor-restart` are **CLI-only** — they are not in this enum |
 | `structs_intel` | `query`, `args` | Strategic intelligence + perception. Combat/recon: `scout`, `valid_targets`, `simulate`, `strike_options`, `battle_log`, `ruleset`, `is_active`. Identity/planning: `whoami`, `what_can_i_build`, `economy_status`, `plan_timeline`, `slot_map`, `intents`. Economy/trend: `power_forecast`, `planet_history`, `market`, `metric_trend`. Raw: `query` (absorbs the retired `structs_query`) |
 | `structs_policy` | `command`, `policy`, `enabled`, `config` | Standing orders: `list` / `set` / `remove` / `log`. See the policy table below |
 | `structs_events` | `since`, `category`, `mine_only`, `team`, `threats_only`, `limit`, `wait_secs` | Long-poll event feed (raids, attacks, fleet moves, completions, `tx_settled` receipts) so agents react instead of polling |

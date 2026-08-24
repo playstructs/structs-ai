@@ -4,7 +4,7 @@ Maintainer-facing record of the runtime contracts this repo must preserve across
 documentation redesign. Excluded from the Jekyll build (`scripts/` is in `_config.yml`
 `exclude`). Regenerate the inventory bits with `scripts/ci/*.sh`.
 
-Pinned toolchain: see [`.structsd-version`](../.structsd-version) = `v0.20.0` (matches
+Pinned toolchain: see [`.structsd-version`](../.structsd-version) = `v0.21.0` (matches
 `.references/structsd` and the installed binary's `structsd version`). The committed command
 snapshot (`generated/structsd-commands.txt`) and catalogs (`generated/commands.md`,
 `generated/struct-types.md`) are generated against it. Command-name truth is additionally
@@ -13,7 +13,7 @@ enforced by the version-independent deprecated-token blocklist.
 Note: the command lint treats unknown *invocations* as warnings, not hard failures, because
 some reads legitimately have no CLI form. Resolved so far — do not reintroduce these names:
 
-| Phantom name | Reality (verified v0.20.0) |
+| Phantom name | Reality (verified v0.21.0) |
 |--------------|----------------------------|
 | `struct-all-by-planet` | No CLI form. Guild Stack: `select … from struct where location_id=…` |
 | `player-charge` | Not a query at all. Derived: `latest_block_height − player.gridAttributes.lastAction` (`GetCharge()` in `x/structs/keeper/player_cache.go`); `lastAction` is omitted from JSON when `0` |
@@ -32,7 +32,7 @@ three parse-time failures that `lint-commands.sh` cannot see, reading arities fr
 - **ARITY** — positional count must match the Usage line.
 - **ORDER** — `--` must come *after* the flags. pflag stops parsing flags at `--`, so
   `… -- 0-1 1 --from key` hands `--from` and `key` to the command as positional arguments and it
-  dies with `accepts N arg(s), received M`. Verified empirically against v0.20.0.
+  dies with `accepts N arg(s), received M`. Verified empirically against v0.21.0.
 - **GAS** — every `tx` needs `--gas auto` ([`AGENTS.md`](../AGENTS.md) rule 6).
 
 Regenerate the signature snapshot alongside the command snapshot with

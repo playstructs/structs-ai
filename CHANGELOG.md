@@ -11,6 +11,30 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2026-08-24
+
+Umbrix pass. Docs pin **structsd v0.21.0** (`48686a9`). Gameplay pages state current rules only; this changelog is the only place the v0.20.0 → v0.21.0 delta is named.
+
+### Added
+
+- **Guild charter founding** — chain-global PoW (`guild-create-compute`, query `guild-charter`) alongside the one-time reactor entitlement path (`guild-create`). Documented in [hashing.md](knowledge/mechanics/hashing.md) and the [guild skill](.cursor/skills/structs-guild/SKILL.md).
+- **Bank convert** — `guild-bank-convert` and `guild-bank-convert-token`, floor redeem, and the `uguild.*` send restriction (`recipient_not_eligible`, not IBC) in [guild-banking.md](knowledge/economy/guild-banking.md).
+- **`canDefend`** — fleet types only; planetary types including Ore Bunker cannot be assigned as defenders.
+- **Fleet queue capacity** — `1 + locationListExtra` (default one visitor); overflow `queue_full`.
+- **Findability** — `under_raid`, `queue_full`, `StructCannotDefend`, `is_owner`, `recipient_not_eligible`, charter work-failure, and primary-address `PermAll` in [play/errors.md](play/errors.md) and [glossary.md](reference/glossary.md).
+
+### Changed
+
+- **Mine/refine clocks** live on the **planet**. Completing any extractor resets the shared clock. Deactivate decrements quantity; the clock is not cleared. Raid pause **shifts** `blockStart` so pre-raid age is preserved (compute is rejected while a visitor heads the queue).
+- **`player-update-primary-address`** requires `PermAll` on the signing address. [agent-security.md](awareness/agent-security.md) no longer rotates primary from a limited key. Infusion `playerId` follows the current address owner.
+- **Jail** zeros a reactor's infusion ratio; `reactor-restart` resyncs after unjail.
+- **Indexer notes** — `struct_type.can_defend` is chain-owned and persisted; `view.struct` ore clocks still read **struct** attributes (read planet attributes instead); docker-structs-pg ignores `bankConvertInFee` / `bankConvertOutFee` / `charterSolverId`. Compose still defaults `NETWORK_VERSION=116b`.
+- Catalogs regenerated against v0.21.0 (`generated/commands.md`, `generated/struct-types.md` with a CanDefend column, signatures).
+
+### Fixed
+
+- Kill “anyone can create a guild” and “any struct can defend.” Kill “finish a refine mid-raid if completable.”
+
 ## [1.24.0] - 2026-07-24
 
 Runnability pass. Verified the Structs Desktop MCP surface against a **live server's `tools/list`** (authoritative runtime schema) rather than source diffs, and audited every documented `structsd` invocation against the real v0.20.0 binary. Fourteen documented commands could not have run as written.

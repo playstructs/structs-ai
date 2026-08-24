@@ -1,4 +1,5 @@
 ---
+title: "Action catalog: messages an agent can send"
 description: The complete catalog of game actions an agent can take, with categories, common requirements, and the transaction flow each follows.
 ---
 
@@ -16,11 +17,11 @@ description: The complete catalog of game actions an agent can take, with catego
 |----------|---------|
 | construction | MsgStructBuild, MsgStructBuildInitiate, MsgStructBuildComplete |
 | combat | MsgStructAttack, MsgPlanetRaidComplete |
-| resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgAllocationCreate, MsgAllocationUpdate, MsgAllocationDelete, MsgAllocationTransfer, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
+| resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgReactorRestart, MsgAllocationCreate, MsgAllocationUpdate, MsgAllocationDelete, MsgAllocationTransfer, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
 | economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse |
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
-| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem |
+| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem, MsgGuildBankConvert, MsgGuildBankConvertToken |
 | ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgPlayerUpdatePfpClientRenderAttributes, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
 | struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructDeactivateBatch, MsgStructTrash, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
@@ -495,10 +496,11 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 | playerOnline | true |
 | structOnline | true |
 | planetHasOre | true |
+| planetNotUnderRaid | `locationListStart` must be empty — otherwise `under_raid` |
 | sufficientCharge | Charge >= structType.OreMiningCharge |
-| proofOfWork | HashBuildAndCheckDifficulty with OreMiningDifficulty (14000) |
+| proofOfWork | HashBuildAndCheckDifficulty with OreMiningDifficulty (14000); `{blockStart}` is the **planet** mine clock |
 
-**Effects**: `StoredOreIncrement(1)` -- fixed 1 ore per operation. Also resets `blockStartOreMine` to the current block — the cycle **auto-restarts** and the next mine begins immediately with no further action (re-entering the full difficulty decay).
+**Effects**: `StoredOreIncrement(1)` -- fixed 1 ore per operation. Also resets the **planet** `planetBlockStartOreMine` to the current block — every extractor on the planet re-enters the full difficulty decay.
 
 ```json
 {
@@ -534,13 +536,14 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 | playerOnline | true |
 | structOnline | true |
 | hasStoredOre | true |
+| planetNotUnderRaid | `locationListStart` must be empty — otherwise `under_raid` |
 | sufficientCharge | Charge >= structType.OreRefiningCharge |
-| proofOfWork | HashBuildAndCheckDifficulty with OreRefiningDifficulty (28000) |
+| proofOfWork | HashBuildAndCheckDifficulty with OreRefiningDifficulty (28000); `{blockStart}` is the **planet** refine clock |
 
 **Effects**:
 - Alpha Matter created: `DepositRefinedAlpha()` -- mints 1,000,000 ualpha (1 gram)
 - Ore consumed: `StoredOreDecrement(1)`
-- Resets `blockStartOreRefine` to the current block — the cycle **auto-restarts**; the next refine begins immediately. Note `hasStoredOre` is only checked here at completion, so a refinery can be activated with 0 ore and complete once ore arrives mid-cycle.
+- Resets the **planet** `planetBlockStartOreRefine` to the current block — every refinery on the planet re-enters the full decay. `hasStoredOre` is only checked here at completion, so a refinery can be activated with 0 ore and complete once ore arrives mid-cycle.
 
 ```json
 {
@@ -744,6 +747,7 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 | playerOnline | true |
 | commandShipOnline | Command Ship must be online in fleet |
 | validDestination | Destination must exist and be accessible |
+| queueCapacity | Foreign destinations only: `locationListCount < 1 + locationListExtra` or the move is `queue_full` |
 
 **Fleet Status**:
 
@@ -778,15 +782,18 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 - **Name**: Create Guild
 - **Message Type**: `/structs.structs.MsgGuildCreate`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Create a new guild from a reactor
+- **Description**: Found a guild by spending a reactor's one-time entitlement, or by submitting a solved charter proof (`guild-create-compute` fills proof/nonce). The signer is the solver; `founderPlayerId` names the owner when they differ.
 
 **Required Fields**: `creator`, `reactorId`, `endpoint`, `entrySubstationId`
+
+**Optional Fields**: `proof`, `nonce` (charter path), `founderPlayerId`, `address`, `proofPubKey`, `proofSignature` (third-party founder consent)
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| permReactorGuildCreate | Requires `PermReactorGuildCreate` (524288) on the reactor |
-| permSubstationConnection | Also requires `PermSubstationConnection` (1024) on the entry substation |
+| entitlement or proof | Entitlement path: bonded reactor past `GuildCharterReactorAge`, `PermReactorGuildCreate` (524288) on the reactor. Proof path: valid charter nonce against the current global anchor |
+| permSubstationConnection | `PermSubstationConnection` (1024) on the entry substation |
+| not owner | Founder who already owns a guild must transfer it first (`is_owner`) |
 
 ```json
 {
@@ -794,7 +801,10 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
     "messages": [
       {
         "@type": "/structs.structs.MsgGuildCreate",
-        "creator": "structs1..."
+        "creator": "structs1...",
+        "reactorId": "3-1",
+        "endpoint": "https://guild.example",
+        "entrySubstationId": "4-1"
       }
     ]
   }
@@ -939,15 +949,15 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 - **Name**: Redeem Guild Tokens
 - **Message Type**: `/structs.structs.MsgGuildBankRedeem`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Redeem guild tokens for resources
+- **Description**: Redeem guild tokens for Alpha. Payout is `floor(amount * collateral / supply)` and must be ≥ `minAmountAlpha`.
 
-**Required Fields**: `creator`, `guildId`, `amount`
+**Required Fields**: `creator`, `amountToken`, `minAmountAlpha`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| inGuild | Player must be in the guild |
-| sufficientTokens | Player must have sufficient guild tokens |
+| permTokenTransfer | `PermTokenTransfer` (16) on the signer |
+| slippage | Alpha out must be ≥ `minAmountAlpha` |
 
 ```json
 {
@@ -956,8 +966,66 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
       {
         "@type": "/structs.structs.MsgGuildBankRedeem",
         "creator": "structs1...",
+        "amountToken": { "denom": "uguild.0-1", "amount": "1000000" },
+        "minAmountAlpha": "1"
+      }
+    ]
+  }
+}
+```
+
+### MsgGuildBankConvert
+
+- **ID**: `guild-bank-convert`
+- **Name**: Convert Alpha into Guild Tokens
+- **Message Type**: `/structs.structs.MsgGuildBankConvert`
+- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+- **Description**: Convert `ualpha` into an existing guild token at the live collateral ratio. Convert-in fee stays in collateral. `minAmountToken` is required and nonzero.
+
+**Required Fields**: `creator`, `guildId`, `amountAlpha`, `minAmountToken`
+
+| Requirement | Details |
+|-------------|---------|
+| playerOnline | true |
+| permTokenTransfer | `PermTokenTransfer` (16) on the signer |
+| slippage | Output tokens must be ≥ `minAmountToken` |
+
+```json
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgGuildBankConvert",
+        "creator": "structs1...",
         "guildId": "0-1",
-        "amount": "1000000"
+        "amountAlpha": "1000000",
+        "minAmountToken": "1"
+      }
+    ]
+  }
+}
+```
+
+### MsgGuildBankConvertToken
+
+- **ID**: `guild-bank-convert-token`
+- **Name**: Convert Guild Token into another
+- **Message Type**: `/structs.structs.MsgGuildBankConvertToken`
+- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+- **Description**: Atomic source-token → ualpha (source convert-out fee) → target token (target convert-in fee). `amountToken` denom identifies the source guild; `guildId` is the target.
+
+**Required Fields**: `creator`, `amountToken`, `guildId`, `minAmountToken`
+
+```json
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/structs.structs.MsgGuildBankConvertToken",
+        "creator": "structs1...",
+        "amountToken": { "denom": "uguild.0-1", "amount": "1000" },
+        "guildId": "0-2",
+        "minAmountToken": "1"
       }
     ]
   }
@@ -1190,8 +1258,8 @@ User-generated content (name and pfp) updates. All seven messages are part of th
 
 **Effects**:
 - Increments StructsLoad by PassiveDraw
-- Resets mining timer (`blockStartOreMine` = current block) — activation *starts* the mining cycle; there is no separate "begin mining" message
-- Resets refining timer (`blockStartOreRefine` = current block) — starts the refining cycle
+- If this is a miner, increments planet `oreMiningActiveQuantity`; re-anchors `planetBlockStartOreMine` only on 0→1
+- If this is a refinery, increments planet `oreRefiningActiveQuantity`; re-anchors `planetBlockStartOreRefine` only on 0→1
 - Increments planetary defenses if on planet
 - Sets struct status to online
 
@@ -1417,7 +1485,9 @@ Use this to reclaim a slot occupied by an unwanted **built** struct. To abort an
 | playerOnline | true |
 | defenderExists | true |
 | protectedExists | true |
-| sameAmbit | Defender and protected must be in same ambit for full blocking |
+| canDefend | Defender's `StructType.canDefend` is true (fleet types only) |
+| coLocated | Defender and protected share a planet or fleet |
+| builtAndOnline | Defender is built and online |
 
 ```json
 {

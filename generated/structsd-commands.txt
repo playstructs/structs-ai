@@ -1,5 +1,5 @@
 # structsd command snapshot
-# source: structsd 0.20.0 --help
+# source: structsd 0.21.0 --help
 # regenerate: scripts/ci/snapshot-commands.sh
 ## tx structs
 address-register
@@ -15,9 +15,13 @@ allocation-transfer
 allocation-update
 fleet-move
 guild-bank-confiscate-and-burn
+guild-bank-convert
+guild-bank-convert-token
 guild-bank-mint
 guild-bank-redeem
+guild-charter-consent
 guild-create
+guild-create-compute
 guild-membership-invite
 guild-membership-invite-approve
 guild-membership-invite-deny
@@ -29,6 +33,8 @@ guild-membership-request
 guild-membership-request-approve
 guild-membership-request-deny
 guild-membership-request-revoke
+guild-update-bank-convert-in-fee
+guild-update-bank-convert-out-fee
 guild-update-endpoint
 guild-update-entry-rank
 guild-update-entry-substation-id
@@ -69,6 +75,7 @@ reactor-begin-migration
 reactor-cancel-defusion
 reactor-defuse
 reactor-infuse
+reactor-restart
 struct-activate
 struct-attack
 struct-build-cancel
@@ -118,6 +125,7 @@ guild
 guild-all
 guild-bank-collateral-address
 guild-bank-collateral-address-all
+guild-charter
 guild-membership-application
 guild-membership-application-all
 guild-rank-permission-by-object

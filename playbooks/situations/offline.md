@@ -16,7 +16,8 @@ structsd query structs player [player-id]      # compare load vs capacity, onlin
 
 - **load > capacity** → you're in brownout; the grid shed you. Reduce load or add capacity.
 - **capacity dropped** → a reactor/generator/agreement went offline (maybe a raid, a defused
-  reactor, or an expired agreement).
+  reactor, an expired agreement, or a **jailed validator** — infusion ratio goes to 0 until
+  unjail / `reactor-restart`).
 - **a single struct won't start** → its activation would push load over capacity.
 
 ## Do this, in order

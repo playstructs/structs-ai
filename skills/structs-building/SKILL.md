@@ -67,7 +67,7 @@ Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entit
 | Other fleet combat (IDs 2-13) | 3 | unlimited | ambit-locked; Battleship primary is armour-piercing |
 | Ore Extractor / Refinery | 6 | 1 each | the production pipeline |
 | Orbital Shield Generator | 6 | **unlimited** | shield-only → stack it |
-| Ore Bunker | 6 | **unlimited** | raises planetary shield (raid PoW); does **not** vault ore |
+| Ore Bunker | 6 | **unlimited** | raises planetary shield (raid PoW); does **not** vault ore; `canDefend: false` |
 | Jamming Satellite / PDC | 6 | 1 each | shield + active defense |
 | Field Generator | 8 | 1 | `armour` (DR 1); 2 kW/g |
 | Continental Power Plant | 10 | 1 | `armour` (DR 1); 5 kW/g |
@@ -91,7 +91,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 ## Manage existing structs
 
 - **Move (Command Ship only — it's the one movable struct):** `struct-move TX_FLAGS -- [cmd-ship-id] [new-ambit] [new-slot] [new-location]`. The chain rejects `struct-move` on any other struct.
-- **Defense assignment:** `struct-defense-set TX_FLAGS -- [defender-id] [protected-id]` / `struct-defense-clear TX_FLAGS -- [defender-id]` (1 charge).
+- **Defense assignment:** `struct-defense-set TX_FLAGS -- [defender-id] [protected-id]` / `struct-defense-clear TX_FLAGS -- [defender-id]` (1 charge). Only fleet types (`canDefend: true`) can be assigned.
 - **Stealth (Stealth Bomber, Submersible):** `struct-stealth-activate` / `struct-stealth-deactivate` (2 charge to activate).
 - **Deactivate / re-activate:** `struct-deactivate` frees its power (free, and works even while you're offline — a recovery lever); `struct-activate` brings it back (2 charge, requires you online). Deactivate many at once with `struct-deactivate-batch -- [id1,id2,...]` (up to 65). Taking an Extractor/Refinery offline halts your pipeline (Tier 1).
 - **Trash (Tier 2, IRREVERSIBLE):** `struct-trash TX_FLAGS -- [struct-id]` permanently destroys a **built** struct you own to free its slot (costs 8 charge, same as building it). There is no undo and nothing is refunded. To abort an **unfinished** build instead, use `struct-build-cancel`.

@@ -74,6 +74,9 @@ A fleet state: the fleet (and its Command Ship) has left its home planet. While 
 ### Ballistic weapon
 *(Codex term)* The human Codex's weapon class for mass-accelerator/kinetic munitions — our **unguided** weapons. Evaded by Defensive Maneuver. → [Guided / Unguided](#guided--unguided)
 
+### Bank convert
+Open-market `guild-bank-convert` (ualpha → existing `uguild.{id}` at the live collateral ratio, convert-in fee stays in collateral) and `guild-bank-convert-token` (atomic token → alpha → other token). Distinct from privileged mint/redeem. `minAmountToken` is the slippage floor. → [guild-banking.md](../knowledge/economy/guild-banking.md)
+
 ### Battery
 *(Codex/UI term)* The human Codex's name for what powers player actions — our **[Charge](#charge)** (a per-player, per-block threshold that resets to 0 on use). **Caveat:** the on-screen "Battery Level" *bars* are a UI display scale, **not** the raw charge value — do not equate a bar number with a charge cost. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation), [codex-crosswalk.md](codex-crosswalk.md)
 
@@ -87,7 +90,7 @@ A defender soaking a hit meant for the struct it protects. Requires the defender
 A GRASS category fired when a planet's raid vulnerability clock (`blockStartRaid`) is armed. → [api/streaming/event-types.md](../api/streaming/event-types.md#planet-events)
 
 ### blockStartBuild / blockStartOreMine / blockStartOreRefine / blockStartRaid
-The per-operation clocks that drive proof-of-work difficulty. Build's clock is one-shot per struct; mine/refine clocks are set on activation, cleared on deactivate, **never expire**, and reset (auto-restart) after each completion; raid's clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md — Cycle lifecycle](../knowledge/mechanics/hashing.md#minerefine-cycle-lifecycle)
+The clocks that drive proof-of-work difficulty. Build's clock is per-struct (`blockStartBuild`). Mine and refine clocks live on the **planet** (`planetBlockStartOreMine` / `planetBlockStartOreRefine`); completing any extractor/refinery resets the shared planet clock. Deactivate decrements quantity; the clock stays until quantity returns to 0. Raid pause **shifts** planet clocks so pre-raid age is preserved (`under_raid` while a visitor heads the queue). Raid's own clock arms when the defender becomes vulnerable (`0` = not raidable). → [hashing.md](../knowledge/mechanics/hashing.md)
 
 ### Breach
 *(Codex term)* The human Codex's name for a raid's completion phase — the countdown that runs once a defender's planet is vulnerable (no on-station Command Ship), ending in ore seizure. Our raid PoW while [shieldsVulnerable](#shieldsvulnerable). → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
@@ -105,6 +108,9 @@ A struct's power draw while building (`BuildDraw`) vs while online (`PassiveDraw
 The per-player cap on how many of a struct type you can own. Most planet structs and the Command Ship are 1; Orbital Shield Generator, Ore Bunker, and fleet combat structs are unlimited. Exceeding it raises [capacity_exceeded](#capacity_exceeded). → [building.md — Struct Limits](../knowledge/mechanics/building.md#struct-limits-per-player)
 
 ## C
+
+### canDefend
+Struct-type flag. Fleet types (Command Ship through type 13) are `true` and may be assigned with `struct-defense-set`. Planetary types (Ore Extractor onward, including Ore Bunker) are `false` and raise `StructCannotDefend`. → [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set), [struct-types.md](../knowledge/entities/struct-types.md)
 
 ### capacity / capacitySecondary
 Your power capacity: `capacity` is your own generation (the only part you can allocate out); `capacitySecondary` is what a connected substation supplies (its `connectionCapacity`, not re-allocatable). Available power = `(capacity + capacitySecondary) − (load + structsLoad)`. → [energy.md — The online equation](../knowledge/mechanics/energy.md#the-online-equation)
@@ -136,7 +142,7 @@ Return damage from a defender or the target, fired at most once per `struct-atta
 The difficulty target on `*-compute` commands: the CLI waits until difficulty decays to `D` before hashing. `-D 3` is the default — instant hash, zero CPU wasted. → [building.md — The -D Flag](../knowledge/mechanics/building.md#the--d-flag)
 
 ### Defender
-A struct assigned via `struct-defense-set` to protect another. Any co-located, built, online struct can be assigned regardless of ambit; ambit only governs whether it blocks (same ambit) or merely counters (cross ambit). → [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set)
+A struct assigned via `struct-defense-set` to protect another. The defender's type must have `canDefend: true` (fleet types; planetary types cannot defend). Assignment also requires co-located, built, and online. Ambit only governs whether it blocks (same ambit) or merely counters (cross ambit). → [combat.md — Assigning Defenders](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set)
 
 ### Defensive Maneuver
 A unit defense (High Altitude Interceptor) that evades **unguided** weapons 66% of the time. Beaten by guided weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
@@ -165,6 +171,9 @@ A category present in the enum but **not emitted** by the current indexer; fleet
 ### Generators (Field / Continental Power Plant / World Engine)
 Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage reduction 1). They raise capacity, not neighbours' HP. → [struct-types.md](../knowledge/entities/struct-types.md)
 
+### Guild charter
+Chain-global proof-of-work that founds a guild (`guild-create-compute`). Preimage `CHAIN{chainId}|{solver}@{founder}GUILDCHARTER{anchor}NONCE{nonce}`. Not a `PermHash*` bit. Query `guild-charter` for the live anchor; solving moves it and kills other in-flight nonces. The other founding path is a one-time reactor entitlement (`guild-create`). → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [structs-guild](../.cursor/skills/structs-guild/SKILL.md)
+
 ### GRASS
 Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
 
@@ -183,7 +192,7 @@ A weapon's control type. Guided weapons are evaded by Signal Jamming (66%); ungu
 ## H
 
 ### Hash types
-The four proof-of-work operations: build, mine, refine, raid. Each shares one algorithm but keys off a different clock and difficulty range. → [hashing.md — The Four Hash Types](../knowledge/mechanics/hashing.md#the-four-hash-types)
+Four struct-bound proof-of-work operations (build, mine, refine, raid) plus the chain-global guild charter puzzle. Charter is not a `PermHash*` bit. → [hashing.md](../knowledge/mechanics/hashing.md)
 
 ### HP (Health)
 A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struct_attribute`, not the base struct row. → [combat.md — Health Points](../knowledge/mechanics/combat.md#health-points), [integration-notes.md](../api/integration-notes.md#where-struct-hp-and-status-live)
@@ -205,6 +214,9 @@ Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram 
 Planet struct (type 17, 1 per player, `noUnitDefenses`, built in the space ambit) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network), which evades incoming **guided** ordnance aimed at planetary structs on their own planet (ambit-irrelevant; unguided passes through). → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
 
 ## L
+
+### locationListExtra
+Planet parameter that adds visiting-fleet slots beyond the base of one. Capacity is `1 + locationListExtra` (default extra `0` → **one** visitor). The home fleet does not consume a slot. Overflow rejects with `queue_full`. → [fleet.md](../knowledge/mechanics/fleet.md)
 
 ### Load
 Power you've allocated **out** to others (distinct from `structsLoad`, the draw of your own structs). Online requires `load + structsLoad ≤ capacity + capacitySecondary`. → [energy.md — The online equation](../knowledge/mechanics/energy.md#the-online-equation)
@@ -332,6 +344,9 @@ Infrastructure that pools power capacity and shares it evenly across connected p
 A Command Ship property: when a Command Ship is destroyed **while away from home**, its fleet is defeated (`attackerDefeated`) and sent home. It defeats the **attacking** fleet — not the defender. → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
 
 ## U
+
+### under_raid
+Mine/refine compute and complete reject while a visitor heads the planet's fleet queue (`locationListStart != ""`). Hashing does not keep decaying; when the queue empties, `PauseOreClocksForRaid` shifts planet clocks so pre-raid age is preserved. Do not retry compute. → [hashing.md](../knowledge/mechanics/hashing.md), [under-attack.md](../playbooks/situations/under-attack.md)
 
 ### Unguided
 See [Guided / Unguided](#guided--unguided).

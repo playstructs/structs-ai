@@ -92,7 +92,7 @@ The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills an
 
 - **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
 - **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
-- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to ~34 hours and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, and `guild-create-compute` run for minutes to weeks and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
 
 Two named variants of `TX_FLAGS` make this explicit:
 
@@ -115,7 +115,7 @@ No escalation. Ever.
 
 - All `structsd query ...` reads
 - `planet-explore` for a brand-new player (no current planet)
-- `struct-ore-refine-compute` for ore you mined (not mid-raid — follow [under-attack](playbooks/situations/under-attack.md))
+- `struct-ore-refine-compute` for ore you mined (not while the planet is under raid — follow [under-attack](playbooks/situations/under-attack.md))
 - Building structs below your standing-order build-cost cap
 - Verifying after-action state
 - Reading personal files
@@ -464,7 +464,7 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ### The `-y` rule
 
-`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`): they run for hours and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
+`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`): they run for hours to weeks and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
 
 ---
 
@@ -816,6 +816,7 @@ Always use `--` before entity IDs in transaction commands.
 <document>
 <source>.cursor/skills/structs-production/SKILL.md</source>
 ---
+title: "Production skill: mine, refine, stake"
 meta_description: "The engine of everything: mine ore, refine it to Alpha Matter, stake it. Covers ore vulnerability and the handoff when a planet depletes."
 name: structs-production
 description: Runs the Alpha Matter production pipeline in Structs — mine ore, refine it to Alpha Matter, then put the Alpha to work. Use when mining or refining, starting or scheduling a mine→refine cycle, protecting stored ore, scaling output, deciding what to do with refined Alpha, or handling a planet running out of ore. Mining ~17h and refining ~34h are background expeditions; ore is stealable until refined.
@@ -845,7 +846,7 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 **Advanced considerations**:
 - **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
-- **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mid-raid: don't start a new refine; see [under-attack](https://structs.ai/playbooks/situations/under-attack).
+- **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mine and refine are **rejected** while a visitor heads the raid queue (`under_raid`); do not retry compute mid-raid. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
 
@@ -860,7 +861,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
 ## Procedure
 
 1. **Check the planet** — `structsd query structs planet [planet-id]`. If `currentOre == 0`, the planet is spent → go to *Depletion* below. Otherwise continue.
-2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge). **Activation *is* the start of the mining cycle** — it stamps `blockStartOreMine`; there is no separate "begin mining" action. (Deactivating clears the clock and cancels the in-progress cycle.)
+2. **Confirm the extractor is online** — `structsd query structs struct [extractor-id]` (status Online). Activate if needed (`struct-activate`, 2 charge). **Activation *is* the start of the mining cycle when you are the first online extractor on the planet** — it stamps the shared `planetBlockStartOreMine`. There is no separate "begin mining" action. Deactivating decrements the planet's active-miner count; the clock stays until quantity returns to zero and a later activate re-anchors.
+3. **Confirm the planet is not under raid** — if `locationListStart` is set, mine/refine compute and complete reject with `under_raid`. Wait for the visitor to leave; the planet clock's pre-raid age is preserved, not decayed through the raid. See [hashing.md — raid pause](https://structs.ai/knowledge/mechanics/hashing#raid-pause-mine-and-refine).
 3. **Compute the mine completion** (background expedition, ~17h to D=3, difficulty 14,000). This hashes against the clock activation already armed and submits the *completion* — it does not "start" anything.
 
    **Approval Block** — confirm before launch: extractor id is correct; planet `currentOre > 0`; `--from` is the owner key; you accept an auto-submitted completion ~17h out even if state shifts.
@@ -870,7 +872,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/mine-[extractor-id].log 2>&1 & echo $! > memory/jobs/mine-[extractor-id].pid
    ```
 
-4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock (`blockStartOreMine`) resets after each successful mine, so every cycle re-enters the full ~17h decay — repeat-mining is naturally paced, not free. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
+4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock lives on the **planet** and resets after each successful mine (any extractor), so every cycle re-enters the full ~17h decay. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
 5. **Refine in parallel — don't wait for the mine.** A refinery can be activated with **0 ore**; ore mined (or received) mid-cycle counts at completion time. Activate and compute the refinery *alongside* the extractor rather than serially, and the pipeline completes faster (~34h to D=3, difficulty 28,000). Refined Alpha is secure; unrefined ore is stealable, so keep the refine cycle always running.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
@@ -920,6 +922,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 
 ## Errors
 
+- **"under_raid"** — a visiting fleet is in the planet's raid queue. Mine/refine compute and complete are rejected until it leaves. Do not retry; the clock's pre-raid age is preserved. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **"struct offline"** — activate the extractor/refinery first.
 - **"insufficient ore"** — planet depleted or nothing in `storedOre`; check `currentOre` / `storedOre`.
 - **"proof invalid"** — re-run compute at the right difficulty; ensure the process wasn't interrupted.
@@ -1003,7 +1006,7 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 ## Procedure — raise your own capacity (reactor infusion)
 
 1. Check capacity: `structsd query structs player [id]`.
-2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID).
+2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). A jailed validator produces **zero** energy from infusions until it is unjailed; `reactor-restart` resyncs after that.
 3. Infuse (CLI prompts — review validator, commission, amount):
    ```
    structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
@@ -1051,6 +1054,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 | Action | Command |
 |--------|---------|
 | Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor restart | `structsd tx structs reactor-restart TX_FLAGS -- [reactor-address]` |
 | Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
 | Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
 | Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |
@@ -1215,6 +1219,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 <document>
 <source>knowledge/mechanics/power.md</source>
 ---
+title: "Power: capacity, load, and online status"
 description: "Fast formula card for capacity, load, and online status, plus struct power requirements and a new player's power budget."
 ---
 
@@ -1245,7 +1250,7 @@ allocatable    = capacity - load
 | `load` | Power you've allocated out. |
 | `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
 
-If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings.
+If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings. A jailed or missing validator zeros that reactor's infusion ratio (fuel stays); `reactor-restart` resyncs after unjail.
 
 ---
 
@@ -1378,6 +1383,10 @@ So at the default 4% commission, **you keep 96%** of what you infuse (added dire
 
 > **Infusing a reactor does NOT power a substation.** Infusion changes only the **reactor** (commission) and the **infuser** (the 96%). It does **not** raise any substation's capacity, and therefore does **not** raise `connectionCapacity` for other connected players. "Everyone infuse the guild reactor to power the guild" is **false** on its own — someone must also route capacity into the guild substation via an **allocation** (below).
 
+> **Jailed or missing validators produce zero energy.** Infusion **ratio** goes to 0; fuel and stake stay put. Unjail / rebond restores from **live staking**. If hooks cannot restore it, `reactor-restart [reactor address]` resyncs the reactor from the validator. A jailed guild reactor means everyone drawing from it goes dark until the operator unjails.
+
+> **Infusion ownership follows the address.** The infusion record is keyed `(destination, address)`. Its `playerId` is the current owner of that address. Strict address moves (`address-register`, `player-update-primary-address`) refuse while a redelegation is in flight. `address-revoke` leaves the Cosmos stake in place and drops the game capacity credited to that address.
+
 ---
 
 ## Substations: `connectionCapacity` dilutes
@@ -1449,7 +1458,7 @@ When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it *
 
 | Method | How | Rate | Reversible | Risk |
 |--------|-----|------|------------|------|
-| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low |
+| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low — jailed validator zeros the ratio until unjail / `reactor-restart` |
 | Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
 | Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
 
@@ -1473,6 +1482,7 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 <document>
 <source>knowledge/mechanics/defense.md</source>
 ---
+title: "Defense card: ore, shields, posture"
 description: "The survival card: what an attacker can actually take, what stops them, and the minimum defensive posture that keeps your ore yours."
 ---
 
@@ -1519,7 +1529,7 @@ In priority order. The first two are worth more than everything below them combi
 
 ## Defenders: block vs. counter
 
-Assigning a defender (`struct-defense-set`) requires only that it is **co-located** with the protected struct and **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, and that it is **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
 
 | | Block | Counter-attack |
 |---|---|---|
@@ -1549,7 +1559,7 @@ Guided fire at a planetary target faces two independent layers: the target's own
 
 | Status | What it means for you |
 |--------|----------------------|
-| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire); finish a refine only if it is already completable. |
+| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire). Mine and refine are rejected (`under_raid`) until the visitor leaves. |
 | `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
 | `ongoing` | You restored shields mid-raid. Completion is blocked. |
 | `raidSuccessful` | You lost **all** stored ore. Nothing else. |
@@ -1576,7 +1586,7 @@ So at a typical unbunkered base your response budget is **roughly four minutes**
 
 **Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
 
-**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3); a new refine cannot finish inside four minutes, and partial progress does not shrink loot. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Mid-raid, finish a refine only if it is already completable; otherwise spend the budget on shields and the raider's Command Ship.
+**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3). Mine and refine complete are **rejected** while a visitor heads the queue (`under_raid`); the planet clocks do not keep decaying, and they shift forward when the raid ends so pre-raid age is preserved. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Spend the four-minute budget on shields and the raider's Command Ship.
 
 One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
 
@@ -1611,7 +1621,7 @@ description: Every buildable struct with stats, costs, power requirements, and s
 
 > **Source-of-truth for the numbers:** the raw stat table is generated from the pinned chain
 > source into [`generated/struct-types.md`](../../generated/struct-types.md) (provenance:
-> `structsd v0.20.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
+> `structsd v0.21.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
 > strategic context; if the two ever disagree, the generated catalog wins. CLI command names
 > are catalogued separately in [`generated/commands.md`](../../generated/commands.md) (these
 > are CLI names, distinct from proto message names).
@@ -1662,7 +1672,7 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 
 > The `generating_rate` values above (2/5/10) are the raw chain rate. In the Guild Stack DB this raw value is stored as `generating_rate_p`, and a `generating_rate` column is exposed as `generating_rate_p * 1000` — read `generating_rate_p` when you want the per-gram rate quoted here. See [integration-notes.md](../../api/integration-notes.md#struct_type-db-field-shapes).
 
-Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP.
+Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP. **`canDefend` is true for every fleet type (IDs 1–13) and false for every planetary type (IDs 14–22).** Planetary structs cannot be assigned via `struct-defense-set`.
 
 ### Planetary Shield Contributions
 

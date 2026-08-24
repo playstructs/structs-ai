@@ -1,4 +1,5 @@
 ---
+title: "Permissions skill: bits, keys, delegates"
 meta_description: "Permissions are identity and authority: the 25-bit bitmask per grantee, address registration, and delegation recipes for multi-agent play."
 name: structs-permissions
 description: Permissions, address management, and delegation in Structs. Use when granting/revoking permissions on objects or addresses, registering additional signing keys, managing multi-address accounts, or setting up minimum-permission delegate agents (mining bot, defense watcher, co-pilot). Covers the full 25-bit permission model and delegation recipes for multi-agent play.
@@ -74,7 +75,7 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 2. **Grant / revoke / set on object** — `permission-grant-on-object -- [object-id] [player-id] [bits]` (additive); `permission-revoke-on-object -- ...`; `permission-set-on-object -- ...` (replaces the set — confirm you aren't dropping a bit you need).
 3. **Address-level** — `permission-grant-on-address|revoke-on-address|set-on-address -- [address] [bits]`.
 4. **Guild rank** — `permission-guild-rank-set -- [object-id] [guild-id] [permission] [rank]` / `permission-guild-rank-revoke -- [object-id] [guild-id] [permission]`.
-5. **Address management** — register a key: `address-register -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]` (Tier 2, verify proof); revoke: `address-revoke -- [address]` (don't orphan your own `--from`); change primary: `player-update-primary-address -- [new-address]`. **Distinguish two patterns:** `address-register` (or a webapp activation code) adds another signing key to **one existing player** (shared identity, planet, inventory); deriving fresh addresses from one mnemonic at `m/44'/118'/0'/0/N` and running a separate guild signup for each creates **fully independent players** (separate identities) recoverable from a single seed — see [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations).
+5. **Address management** — register a key: `address-register -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]` (Tier 2, verify proof); revoke: `address-revoke -- [address]` (don't orphan your own `--from`; revoke leaves Cosmos stake and drops game capacity on that address); change primary: `player-update-primary-address -- [new-address]` (**requires `PermAll` on the signing address** — a limited delegate cannot rotate primary). Strict address moves refuse while a redelegation is in flight. **Distinguish two patterns:** `address-register` (or a webapp activation code) adds another signing key to **one existing player** (shared identity, planet, inventory); deriving fresh addresses from one mnemonic at `m/44'/118'/0'/0/N` and running a separate guild signup for each creates **fully independent players** (separate identities) recoverable from a single seed — see [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations).
 
 ## Commands reference
 
@@ -84,7 +85,7 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 | Grant / revoke / set on address | `structsd tx structs permission-grant-on-address \| ...-revoke-on-address \| ...-set-on-address TX_FLAGS -- [address] [bits]` |
 | Guild rank set / revoke | `structsd tx structs permission-guild-rank-set \| permission-guild-rank-revoke TX_FLAGS -- [object-id] [guild-id] [permission] [rank]` |
 | Address register / revoke | `structsd tx structs address-register \| address-revoke TX_FLAGS -- ...` |
-| Update primary address | `structsd tx structs player-update-primary-address TX_FLAGS -- [new-address]` |
+| Update primary address | `structsd tx structs player-update-primary-address TX_FLAGS -- [new-address]` (signer must hold `PermAll`) |
 | Query permission / address | `structsd query structs permission-by-object \| permission-by-player \| address \| address-all-by-player [id]` |
 
 `TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions). **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
@@ -97,8 +98,9 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 
 ## Errors
 
-- **Permission denied** — signer lacks the needed bit on the object; check `permission-by-object`.
+- **Permission denied** — signer lacks the needed bit on the object; check `permission-by-object`. Primary rotation specifically needs `PermAll`, not merely `PermAdmin`.
 - **Address already registered** — revoke first or link to a different player.
+- **Redelegation in flight** — strict address moves (`address-register`, primary rotation) refuse until the redelegation completes.
 - **Invalid proof** — registration needs a valid proof pubkey/signature; see [`protocols/authentication`](https://structs.ai/protocols/authentication).
 - **Locked yourself out** — revoking the address your `--from` resolves to breaks your next command; verify before revoking.
 

@@ -178,7 +178,9 @@ If `health == 0` and `postDestructionDamage > 0`, damage applies to surrounding 
 
 ### Assigning Defenders (`struct-defense-set`)
 
-**Any** struct can be assigned to defend another, regardless of ambit. Assignment checks only that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
+**Only structs whose type has `canDefend: true` can be assigned.** That is every **fleet** type (Command Ship through Submersible, IDs 1–13). Every **planetary** type (Ore Extractor through World Engine, IDs 14–22) has `canDefend: false` and is rejected (`StructCannotDefend`) — an Ore Bunker cannot be used as a block.
+
+Assignment then checks that the defender is **co-located** with the protected struct (same planet or fleet) and is **built and online** — an offline or still-building struct is rejected. Ambit does not gate *assignment*; it gates what the defender can *do* once an attack lands:
 
 - A **same-ambit** defender can **block** (soak a hit meant for the protected struct) and can counter.
 - A **cross-ambit** defender cannot block, but still **counters** whenever its weapon reach includes the attacker's ambit.
@@ -207,7 +209,7 @@ Each struct can counter-attack **at most once per `struct-attack` invocation**. 
 
 Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct. **Defenders do not take counter-attack damage** — only the original attacker and target can be damaged by counters.
 
-**Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only on-station fleet structs and planet-based structs can defend their home planet.
+**Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only **on-station fleet structs** (`canDefend: true`) can defend their home planet. Planetary structs cannot be assigned as defenders.
 
 | Scenario | Damage |
 |----------|--------|
@@ -317,6 +319,12 @@ In the live `struct_attack` event `detail`, the attacker context is **flat** at 
 
 An attack action depends only on the attacking struct (and its owner) being online — the attacker's Command Ship does not need to be online, and the same holds for defensive changes (`struct-defense-set`) and stealth changes. The target must be a built struct; `struct-attack` against a struct that is still building is rejected (`unbuilt`), and a destroyed struct is rejected (`destroyed`). The target's online status is irrelevant.
 
+### Visiting-fleet queue
+
+A planet holds at most **`1 + locationListExtra` visiting fleets**. `locationListExtra` defaults to **0**, so capacity is **one** raider. The owner's home fleet does not consume a slot. A `fleet-move` onto a foreign planet that is already at capacity is rejected (`queue_full`). The owner's mine and refine proofs are rejected (`under_raid`) for as long as `locationListStart` is set.
+
+Query `locationListStart`, `locationListLast`, `locationListCount`, and `locationListExtra` on the planet. First-in-queue (`LocationListForward == ""` on the raiding fleet) is still required to complete a raid — with default extra=0, the only visitor *is* first.
+
 Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
 
 ---
@@ -407,7 +415,7 @@ Destroying the defender's Command Ship (or catching their fleet off-station) mak
 
 This is the **siege** path — how to force the window open when the defender is shielded. It is executable at the source level: an away raiding fleet that is **first in the target's raid queue** can attack any struct on that planet, including the on-station defender's Command Ship (`isReachable`, verified in `keeper/struct_cache.go`), subject to ambit reach and same-ambit blockers.
 
-1. **Move your fleet to the target** (raid `initiated`). While the defender is still shielded, `blockStartRaid` stays 0 and `planet-raid-compute` is rejected — this is expected; do not grind yet.
+1. **Move your fleet to the target** (raid `initiated`). A foreign planet holds **one visiting fleet** by default — if someone is already parked, `fleet-move` is `queue_full`. While the defender is still shielded, `blockStartRaid` stays 0 and `planet-raid-compute` is rejected — this is expected; do not grind yet.
 2. Strip **same-ambit blockers** so your attacks reach the Command Ship (cross-ambit defenders counter but cannot block — see [Blocking](#blocking)).
 3. Destroy the defender's **Command Ship** to open the `shieldsVulnerable` window. The destruction path fires `CommandStructRaidStatusHook()` → `RefreshRaidVulnerability()`, which starts the clock and emits `shieldsVulnerable` because your raider is already present.
 4. Run **`planet-raid-compute`** now that the clock is running, and complete while it is down to seize all stored ore.
@@ -443,7 +451,7 @@ Everything above is derivable from the source. It is also confirmed by outcomes:
 - **Target validation**: Target struct existence is validated before attack proceeds
 - **Defense vs ore**: Defensive posture protects structs from being destroyed during raids, but does NOT prevent ore seizure. Defense saves your structures; only refining saves your ore.
 - **PDC stacking**: Multiple players' Planetary Defense Cannons on the same planet stack correctly.
-- **No defender cap**: there is no per-ambit limit on how many structs can defend another — `defense-set` only checks co-location, and attack resolution iterates every registered defender. The planet's **slot** structure provides 4 slots per ambit, which caps how many structs can exist per ambit, not how many can defend.
+- **No defender cap**: there is no per-ambit limit on how many **fleet** structs can defend another — `defense-set` checks `canDefend`, co-location, built, and online, and attack resolution iterates every registered defender. Planetary types cannot be assigned. The planet's **slot** structure provides 4 slots per ambit, which caps how many structs can exist per ambit, not how many can defend.
 - **No charge banking before an attack**: Charge cannot be stockpiled for an alpha-strike. Any charge-consuming action resets the player's shared bar to 0 and it only refills linearly (~1/block); you cannot "burst" multiple expensive attacks back-to-back. See [building.md — Charge Accumulation](building.md#charge-accumulation).
 
 ---

@@ -1,4 +1,5 @@
 ---
+title: "Guild Stack PostgreSQL schema reference"
 description: "The Guild Stack PostgreSQL schema: core game state tables, the key-value grid pattern, event categories, and ready-to-use query patterns."
 ---
 
@@ -113,7 +114,7 @@ The authoritative reference for all game balance data (~60 columns). Key columns
 - `ore_mining_difficulty`, `ore_refining_difficulty` -- PoW difficulty
 - `build_difficulty` -- PoW difficulty for construction
 - Charge costs: `activate_charge`, `build_charge`, `defend_change_charge`, `move_charge`, `stealth_activate_charge`
-- Display: `class`, `class_abbreviation`, `unit_description`
+- `can_defend` -- chain-owned; fleet types `true`, planetary types `false` (including Ore Bunker). Persisted by sync-state from the struct-type event (the structs-pg SQL comment that called it indexer-owned is stale)
 
 > **`_p` precision columns are the base; their bare companions are GENERATED.** Three pairs on this table are split: `generating_rate_p` / `generating_rate` (= `generating_rate_p * 1000`), `build_draw_p` / `build_draw`, and `passive_draw_p` / `passive_draw` (both formatted via `unit_legacy_format(…, 'milliwatt')`). The bare names are still readable — a `SELECT generating_rate` keeps working — but only the `_p` column is writable, so it is the one sync-state upserts and the one to use in a `WHERE` on an exact integer. The same pattern applies to `structs.ledger.amount_p`, `structs.infusion.fuel_p`/`power_p`/`ratio_p`/`defusing_p`, and `structs.guild.join_infusion_minimum_p`. The `*_array` bitmask-derivative columns (`primary_weapon_ambits_array`, `possible_ambit_array`, …) are likewise GENERATED.
 
@@ -180,6 +181,10 @@ There is **no `seized_ore` column on `structs.planet`.** Seized ore is tracked p
 | attribute_type | Meaning |
 |----------------|---------|
 | `planetaryShield` | Current planetary shield value |
+| `blockStartRaid` | Raid PoW clock |
+| `blockRaiderArrived` | Set while a visitor heads the fleet queue (raid pause) |
+| `planetBlockStartOreMine` / `planetBlockStartOreRefine` | Shared planet mine/refine PoW clocks (`id` prefix `12-` / `13-`) |
+| `oreMiningActiveQuantity` / `oreRefiningActiveQuantity` | How many extractors/refineries currently hold the planet clock (`14-` / `15-`) |
 | `defensiveCannonQuantity` | Defensive Cannons installed on the planet |
 | `lowOrbitBallisticsInterceptorNetworkQuantity` | LOBIN installations |
 | `lowOrbitBallisticsInterceptorNetworkSuccessRateNumerator` / `...Denominator` | LOBIN interception rate |
@@ -357,7 +362,7 @@ The `detail` column for `struct_attack` carries the attacker at the top level (`
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
 | `reactor` | `id`, `guild_id`, `validator`, `owner` | Links validator address to guild; `owner` is PlayerId |
-| `infusion` | `destination_id`, `address`, `destination_type`, `player_id`, `fuel_p`, `power_p`, `ratio_p`, `defusing_p`, `commission` | Composite PK: `(destination_id, address)`. `destination_type` is `reactor` or `struct`. The bare `fuel`/`power`/`ratio`/`defusing` columns are GENERATED from the `_p` values. |
+| `infusion` | `destination_id`, `address`, `destination_type`, `player_id`, `fuel_p`, `power_p`, `ratio_p`, `defusing_p`, `commission` | Composite PK: `(destination_id, address)`. `destination_type` is `reactor` or `struct`. `player_id` is the **current owner of `address`** and is re-homed on register/revoke. The bare `fuel`/`power`/`ratio`/`defusing` columns are GENERATED from the `_p` values. |
 | `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing; `controller` is PlayerId (not address) |
 | `substation` | `id`, `owner` | Power distribution nodes |
 | `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
@@ -504,6 +509,10 @@ The `view` schema holds 21 views. The ones worth reaching for:
 | `view.work` | Outstanding proof-of-work windows |
 
 Use views, not raw tables, when building leaderboard, inventory, or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
+
+> **Mine/refine clocks: read planet attributes, not `view.struct`.** `view.struct.block_start_ore_mine` / `block_start_ore_refine` still join **struct** attributes (`id` prefix `3-` / `4-`). The live clocks live on the **planet** (`planet_attribute` `planetBlockStartOreMine` / `planetBlockStartOreRefine`, prefixes `12-` / `13-`). Completing any extractor resets the shared planet clock. `view.planet` currently exposes `block_start_raid` but not the ore clocks — query `structs.planet_attribute` (or the planet grid) directly.
+
+> **Guild event fields not persisted.** Chain guild events also emit `bankConvertInFee`, `bankConvertOutFee`, and `charterSolverId`. docker-structs-pg's payload decoder ignores those JSON keys; they are not columns. Read convert fees and the current charter solver from chain queries (`guild`, `guild-charter`), not from PG.
 
 ---
 

@@ -33,11 +33,11 @@ A dead base cannot defend or respond. Power first.
 
 ---
 
-## 2. Deny the Prize — Only If You Can Finish It Now
+## 2. Deny the Prize — You Cannot Finish a Refine Mid-Raid
 
 A successful raid seizes **all** of your `storedOre`. Starting a new refine does **not** help: ore stays stealable for the whole refine PoW (~34 h at D=3), and partial progress does not shrink the loot.
 
-Mid-raid, deny the prize only if a refine is **already completable** (PoW finished or about to be — submit `struct-ore-refine-complete` / let Desktop finish). Otherwise skip to step 3; pre-raid discipline ("refine as soon as ore lands") is what zeroes the prize, not a four-minute scramble.
+While a visitor heads the raid queue, **mine and refine compute and complete are rejected** (`under_raid`). There is no "finish it if already completable" path — the chain pauses those proofs until the raid ends, then shifts the planet clocks so pre-raid age is preserved. Skip to step 3. Pre-raid discipline ("refine as soon as ore lands") is what zeroes the prize.
 
 ---
 

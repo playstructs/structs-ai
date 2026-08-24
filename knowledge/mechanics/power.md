@@ -1,4 +1,5 @@
 ---
+title: "Power: capacity, load, and online status"
 description: "Fast formula card for capacity, load, and online status, plus struct power requirements and a new player's power budget."
 ---
 
@@ -29,7 +30,7 @@ allocatable    = capacity - load
 | `load` | Power you've allocated out. |
 | `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
 
-If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings.
+If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings. A jailed or missing validator zeros that reactor's infusion ratio (fuel stays); `reactor-restart` resyncs after unjail.
 
 ---
 

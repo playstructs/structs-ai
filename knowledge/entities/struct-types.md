@@ -9,7 +9,7 @@ description: Every buildable struct with stats, costs, power requirements, and s
 
 > **Source-of-truth for the numbers:** the raw stat table is generated from the pinned chain
 > source into [`generated/struct-types.md`](../../generated/struct-types.md) (provenance:
-> `structsd v0.20.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
+> `structsd v0.21.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
 > strategic context; if the two ever disagree, the generated catalog wins. CLI command names
 > are catalogued separately in [`generated/commands.md`](../../generated/commands.md) (these
 > are CLI names, distinct from proto message names).
@@ -60,7 +60,7 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 
 > The `generating_rate` values above (2/5/10) are the raw chain rate. In the Guild Stack DB this raw value is stored as `generating_rate_p`, and a `generating_rate` column is exposed as `generating_rate_p * 1000` — read `generating_rate_p` when you want the per-gram rate quoted here. See [integration-notes.md](../../api/integration-notes.md#struct_type-db-field-shapes).
 
-Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP.
+Planet struct health: baseline planetary structs (Ore Extractor, Ore Refinery, Orbital Shield Generator, Jamming Satellite, Ore Bunker, Planetary Defense Cannon) have 6 HP; power generators are hardened higher (Field Generator 8, Continental Power Plant 10, World Engine 10) and carry `armour` (damage reduction 1), so disrupting a planet's power is a deliberate, costly raid objective. Armour-piercing weapons bypass that reduction (see Battleship). Fleet structs are unchanged: Command Ship 6 HP, all other fleet structs 3 HP. **`canDefend` is true for every fleet type (IDs 1–13) and false for every planetary type (IDs 14–22).** Planetary structs cannot be assigned via `struct-defense-set`.
 
 ### Planetary Shield Contributions
 

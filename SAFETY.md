@@ -24,7 +24,7 @@ The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills an
 
 - **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
 - **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
-- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to ~34 hours and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, and `guild-create-compute` run for minutes to weeks and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
 
 Two named variants of `TX_FLAGS` make this explicit:
 
@@ -47,7 +47,7 @@ No escalation. Ever.
 
 - All `structsd query ...` reads
 - `planet-explore` for a brand-new player (no current planet)
-- `struct-ore-refine-compute` for ore you mined (not mid-raid — follow [under-attack](playbooks/situations/under-attack.md))
+- `struct-ore-refine-compute` for ore you mined (not while the planet is under raid — follow [under-attack](playbooks/situations/under-attack.md))
 - Building structs below your standing-order build-cost cap
 - Verifying after-action state
 - Reading personal files

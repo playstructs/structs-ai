@@ -70,7 +70,7 @@ For an existing planet owner, `planet-explore` requires the fleet to be `onStati
 - One planet ownership at a time
 - **Planet completion**: When a planet's ore depletes, all fleets are automatically sent away (peace deal)
 - Fleet movement validation does not block moves based on fleet-away state
-- Fleets can move to already-populated planets
+- Visiting a foreign planet consumes a **raid-queue slot**. Capacity is `1 + locationListExtra` (default extra **0** → one visitor). The owner's home fleet does not count. A move onto a full foreign planet is rejected (`queue_full`).
 
 ### Fleet Return Conditions
 
@@ -78,6 +78,7 @@ Fleets stay "away" until one of these triggers:
 1. **Explicit move** — The player issues `fleet-move` to return home
 2. **Command Ship destroyed** — If the fleet's Command Ship is destroyed, the fleet auto-returns
 3. **Planet completed** — If the defending planet's owner depletes all ore and explores a new planet, visiting fleets are sent away
+4. **Queue overflow** — Fleets beyond `1 + locationListExtra` are sent home (the upgrade path that seeded the limit did this; live moves simply reject `queue_full`)
 
 Fleets do **not** auto-return on a timer. For raids, you have until one of the above triggers to complete the raid PoW and submit `planet-raid-complete`.
 

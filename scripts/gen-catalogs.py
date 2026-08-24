@@ -68,7 +68,7 @@ def gen_commands():
 
 
 STRUCT_FIELDS = [
-    "Id", "Type", "Class", "Category", "BuildLimit", "BuildDifficulty",
+    "Id", "Type", "Class", "Category", "CanDefend", "BuildLimit", "BuildDifficulty",
     "BuildDraw", "PassiveDraw", "MaxHealth", "PossibleAmbit", "Movable",
     "PrimaryWeaponDamage", "PrimaryWeaponCharge", "PrimaryWeaponTargets",
     "PrimaryWeaponAmbits", "SecondaryWeaponDamage",
@@ -104,17 +104,17 @@ def gen_struct_types():
         f.write("# Struct type catalog\n\n")
         f.write(f"> Generated from the pinned chain source (`{ver}`). Draw values are energy "
                 "units; ambit is a bitmask. Do not hand-edit — run `scripts/gen-catalogs.py`.\n\n")
-        f.write("| ID | Type | Category | Build limit | Build diff | Build draw | "
-                "Passive draw | Max HP | Movable | Primary dmg (charge) |\n")
-        f.write("|---|---|---|---|---|---|---|---|---|---|\n")
+        f.write("| ID | Type | Category | Can defend | Build limit | Build diff | "
+                "Build draw | Passive draw | Max HP | Movable | Primary dmg (charge) |\n")
+        f.write("|---|---|---|---|---|---|---|---|---|---|---|\n")
         for e in entries:
-            f.write("| {Id} | {Type} | {Category} | {BuildLimit} | {BuildDifficulty} | "
+            f.write("| {Id} | {Type} | {Category} | {CanDefend} | {BuildLimit} | {BuildDifficulty} | "
                     "{BuildDraw} | {PassiveDraw} | {MaxHealth} | {Movable} | "
                     "{pdmg} ({pchg}) |\n".format(
                         pdmg=e.get("PrimaryWeaponDamage", "-"),
                         pchg=e.get("PrimaryWeaponCharge", "-"),
                         **{k: e.get(k, "-") for k in
-                           ["Id", "Type", "Category", "BuildLimit", "BuildDifficulty",
+                           ["Id", "Type", "Category", "CanDefend", "BuildLimit", "BuildDifficulty",
                             "BuildDraw", "PassiveDraw", "MaxHealth", "Movable"]}))
     print(f"wrote generated/struct-types.md ({len(entries)} struct types)")
 

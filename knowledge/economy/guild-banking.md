@@ -1,6 +1,6 @@
 ---
 title: Guild banking and Central Banks
-description: "Central Bank mechanics: token minting, collateral management, the guild token lifecycle, and how guild economics differ from going it alone."
+description: "Central Bank mint, redeem, and convert: collateral ratios, uguild send limits, and how guild tokens differ from going it alone."
 ---
 
 # Guild banking and Central Banks
@@ -19,10 +19,13 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 | Concept | Description |
 |---------|-------------|
-| **Collateral** | Alpha Matter held in reserve; backs token value |
-| **Collateral ratio** | Tokens in circulation / Alpha Matter in reserve |
-| **Token credibility** | Insufficient collateral undermines token value |
-| **Minting** | Guild creates tokens against deposited Alpha Matter |
+| **Collateral** | Alpha Matter held in the guild bank module account; backs token value |
+| **Collateral ratio** | Live `collateral / supply`. Convert and redeem both read this ratio at action time |
+| **Minting** | Guild-privileged: deposits Alpha and issues tokens at a chosen amount (`guild-bank-mint`) |
+| **Convert** | Open path: anyone with `PermTokenTransfer` can turn `ualpha` into an existing `uguild.{id}` at the live ratio (`guild-bank-convert`). Convert-in fee stays in that guild's collateral. `minAmountToken` is the required slippage floor |
+| **Convert-token** | Atomic token→alpha→other token (`guild-bank-convert-token`). Source guild keeps convert-out fee; target guild keeps convert-in fee |
+| **Redemption** | Payout is `floor(amount * collateral / supply)` (`guild-bank-redeem`); CLI requires `min-amount-alpha` |
+| **Send restriction** | `uguild.*` may only go to a registered player, the structs module account, or an indexed provider pool — **not IBC**, not an unregistered address (`recipient_not_eligible`) |
 
 ---
 
@@ -30,9 +33,11 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 | Phase | Action | Notes |
 |-------|--------|-------|
-| **Minting** | Guild deposits Alpha Matter; mints tokens | Collateral must cover circulation |
-| **Circulation** | Tokens used for payments, mercenaries, internal trade | Trust in guild determines acceptance |
-| **Redemption** | Token holders redeem for Alpha Matter | Requires guild to hold sufficient reserve |
+| **Minting** | Guild deposits Alpha; mints tokens | Privileged; ratio captured at action time |
+| **Convert in** | Holder spends `ualpha` for tokens at the live ratio | Open market path; fee stays in collateral |
+| **Circulation** | Tokens used for payments, agreements, internal trade | Trust in guild still determines acceptance |
+| **Convert across** | `guild-bank-convert-token` redeems source then mints target | Both guilds keep their fees |
+| **Redemption** | Token holders redeem for Alpha | `floor` against current collateral and supply; CLI requires `min-amount-alpha` slippage |
 
 ---
 
@@ -75,7 +80,9 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 **Security warning**: Guild tokens are trust-based. Guilds have full control over their Central Bank. There are no technical safeguards preventing a guild from revoking tokens or mismanaging collateral. Token revocation can be used as economic warfare -- but damages reputation.
 
-> **No HTTP bank-balance read.** `MsgGuildBankMint` / `MsgGuildBankRedeem` are chain transactions, and there is **no** webapp endpoint (e.g. `GET /api/guild/{id}/bank`) to read a guild's bank/token balance. Read balances via chain queries (the Cosmos `bank` module, e.g. balances of the `uguild.{guild_id}` denom) or by reconstructing from the ledger — not from the webapp.
+> **No HTTP bank-balance read.** Mint, redeem, and convert are chain transactions, and there is **no** webapp endpoint (e.g. `GET /api/guild/{id}/bank`) to read a guild's bank/token balance. Read balances via chain queries (the Cosmos `bank` module, e.g. balances of the `uguild.{guild_id}` denom) or by reconstructing from the ledger — not from the webapp.
+
+Commands: [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
 
 ---
 

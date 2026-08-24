@@ -57,7 +57,7 @@ flowchart TD
 The core security principle is simple: **never leave player `storedOre` / `gridAttributes.ore` unrefined**. Ore can be stolen during raids, but Alpha Matter cannot. Ore Bunkers raise planetary shield; they do **not** hold ore.
 
 1. **Check for stored ore** -- Query the **player** (`gridAttributes.ore`). The planet's own `gridAttributes.ore` is unmined and not raidable.
-2. **Refine immediately** -- Launch `struct-ore-refine-compute` as soon as ore lands (not mid-raid unless already completable).
+2. **Refine immediately** -- Launch `struct-ore-refine-compute` as soon as ore lands. Mine and refine are rejected while a visitor heads the raid queue (`under_raid`); do not retry those computes during a raid.
 3. **Verify refinement** -- Confirm Alpha Matter increased / ore went to zero after completion.
 4. **Evaluate Watts needs** -- Once Alpha Matter is secured, decide whether to infuse reactors/generators. Always maintain a reserve.
 5. **Mining cycle** -- When no ore is stored, mine from the planet and refine the result. When the planet is empty, follow planet-depletion (one-planet explore).

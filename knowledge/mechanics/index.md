@@ -22,6 +22,6 @@ Hashing is why mining takes ~17 hours and refining ~34 at typical difficulty: yo
 - [Power](power) -- Capacity, load, online status formulas (quick card)
 - [Energy](energy) -- Full energy system: units, infusion, substations, allocations, brownout
 - [Building](building) -- Construction, proof-of-work, struct states
-- [Hashing](hashing) -- Proof-of-work mechanism: the four hash types, universal input format, algorithm, difficulty decay, hash permissions
+- [Hashing](hashing) -- Proof-of-work: four struct-bound types, planet ore clocks, raid pause, guild charter
 - [Fleet](fleet) -- Ships, movement, on-station vs away
 - [Planet](planet) -- Exploration, depletion, ore mechanics

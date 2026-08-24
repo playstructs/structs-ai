@@ -7,7 +7,7 @@ permalink: /reference/codex-crosswalk/
 # Codex crosswalk: UI words to canonical pages
 
 **Purpose**: Map terms from the human-facing [Structs Codex](https://www.playstructs.com/codex) to the canonical mechanics/API pages in this repository, so an agent that meets a Codex word (in a UI, a guide, or a human's message) can jump straight to the page that owns the rule.
-**Codex snapshot**: 2026-07-23 · **Docs baseline**: `structsd v0.20.0`
+**Codex snapshot**: 2026-07-23 · **Docs baseline**: `structsd v0.21.0`
 
 ---
 

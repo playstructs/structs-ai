@@ -1,4 +1,5 @@
 ---
+title: "Defense card: ore, shields, posture"
 description: "The survival card: what an attacker can actually take, what stops them, and the minimum defensive posture that keeps your ore yours."
 ---
 
@@ -45,7 +46,7 @@ In priority order. The first two are worth more than everything below them combi
 
 ## Defenders: block vs. counter
 
-Assigning a defender (`struct-defense-set`) requires only that it is **co-located** with the protected struct and **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, and that it is **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
 
 | | Block | Counter-attack |
 |---|---|---|
@@ -75,7 +76,7 @@ Guided fire at a planetary target faces two independent layers: the target's own
 
 | Status | What it means for you |
 |--------|----------------------|
-| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire); finish a refine only if it is already completable. |
+| `initiated` | A raider's fleet has arrived. Shields still up. Act now (restore shields / return fire). Mine and refine are rejected (`under_raid`) until the visitor leaves. |
 | `shieldsVulnerable` | Your shields are down and the clock is running. Restore the Command Ship online with the fleet on station to reset it. |
 | `ongoing` | You restored shields mid-raid. Completion is blocked. |
 | `raidSuccessful` | You lost **all** stored ore. Nothing else. |
@@ -102,7 +103,7 @@ So at a typical unbunkered base your response budget is **roughly four minutes**
 
 **Shoot the raider's Command Ship.** Destroying it ends the raid outright: 16 of 16 `attackerDefeated` episodes did it, and 0 of the other 279 outcomes did. It is the one deterministic lever available to a defender, and it is reachable precisely because the raiding Command Ship is parked at *your* planet for the duration.
 
-**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3); a new refine cannot finish inside four minutes, and partial progress does not shrink loot. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Mid-raid, finish a refine only if it is already completable; otherwise spend the budget on shields and the raider's Command Ship.
+**Pre-raid refining still wins.** Ore stays stealable for the whole refine PoW (~34 h at D=3). Mine and refine complete are **rejected** while a visitor heads the queue (`under_raid`); the planet clocks do not keep decaying, and they shift forward when the raid ends so pre-raid age is preserved. The prize is denied by refining *as ore lands*, not by starting PoW mid-raid. Spend the four-minute budget on shields and the raider's Command Ship.
 
 One constraint shapes who can shoot: **combat is co-located**. Only your on-station fleet and anything else already parked at that planet can respond. Structs elsewhere cannot help no matter how much charge they have, which is an argument for keeping a defender at home rather than concentrating everything in one roaming fleet.
 

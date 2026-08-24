@@ -1,4 +1,5 @@
 ---
+title: "Transactions: free gameplay vs paid fees"
 description: How the ante handler routes gameplay and staking messages through a free-gas path while everything else pays fees. What free actually means.
 ---
 
@@ -102,6 +103,7 @@ The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission m
 
 - Treat `--gas auto --gas-adjustment 1.5` as mandatory on every `structsd tx structs` command. The free meter is tight enough that hand-tuning a low gas value is a footgun.
 - Do not mix module operations in one tx if you want the free path. For example, `MsgPlayerSend` (Structs) and `cosmos.bank.v1beta1.MsgSend` (bank) in the same tx will pay fees. If you need to do both, send two transactions.
+- `uguild.*` cannot travel over IBC or to an unregistered address. Eligible destinations are a registered player, the structs module account, or an indexed provider pool. Anything else rejects with `recipient_not_eligible`. Use `player-send` (or convert) rather than a Cosmos bank send onto IBC.
 - Free does not relax sequence numbers. The chain still tracks `account_sequence`. One in-flight tx per address at a time still applies. Wait for the previous block (~6 s) before broadcasting the next.
 - Submitting the same staking message twice in one block from one address will fail at `StakingThrottleDecorator`. Wait a block.
 - The free-gas budgets (20 M / 40 M) are governance parameters in the chain (`FreeGasCap`, `FreeStakingGasCap` on `HandlerOptions`). Treat them as soft-coded numbers; check `structsd query params` if you suspect they've moved.

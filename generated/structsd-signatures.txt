@@ -1,5 +1,5 @@
 # structsd positional-argument signatures
-# source: structsd 0.20.0 '<cmd> --help' Usage lines
+# source: structsd 0.21.0 '<cmd> --help' Usage lines
 # regenerate: scripts/ci/snapshot-commands.sh
 # format: <tx|query><TAB><command><TAB><bracketed positional args, [flags] removed>
 tx	address-register	[player id] [address] [proof pubkey] [proof signature] [permissions]
@@ -15,9 +15,13 @@ tx	allocation-transfer	[allocation id] [new controller playerId]
 tx	allocation-update	[allocation id] [power]
 tx	fleet-move	[fleet id] [destination location id]
 tx	guild-bank-confiscate-and-burn	[token amount] [address]
+tx	guild-bank-convert	[guild id] [alpha amount] [min-amount-token]
+tx	guild-bank-convert-token	[source token] [target guild id] [min-amount-token]
 tx	guild-bank-mint	[alpha amount] [token amount]
-tx	guild-bank-redeem	[token]
+tx	guild-bank-redeem	[token] [min-amount-alpha]
+tx	guild-charter-consent	[reactor ID]
 tx	guild-create	[reactor id] [endpoint] [substation id]
+tx	guild-create-compute	[reactor ID]
 tx	guild-membership-invite	[player id]
 tx	guild-membership-invite-approve	[guild id]
 tx	guild-membership-invite-deny	[guild id]
@@ -29,6 +33,8 @@ tx	guild-membership-request	[guild id]
 tx	guild-membership-request-approve	[player id]
 tx	guild-membership-request-deny	[player id]
 tx	guild-membership-request-revoke	[guild id] [player id]
+tx	guild-update-bank-convert-in-fee	[guild id] [fee]
+tx	guild-update-bank-convert-out-fee	[guild id] [fee]
 tx	guild-update-endpoint	[guild id] [endpoint]
 tx	guild-update-entry-rank	[new entry rank]
 tx	guild-update-entry-substation-id	[guild id] [entry substation id]
@@ -69,6 +75,7 @@ tx	reactor-begin-migration	[player address] [source reactor address] [destinatio
 tx	reactor-cancel-defusion	[player address] [reactor address] [amount] [creation height]
 tx	reactor-defuse	[player address] [reactor address] [amount]
 tx	reactor-infuse	[player address] [reactor address] [amount]
+tx	reactor-restart	[reactor address]
 tx	struct-activate	[struct id]
 tx	struct-attack	[operating struct id] [target struct id,target struct id2,...] [weapon system]
 tx	struct-build-cancel	[struct id]
@@ -117,6 +124,7 @@ query	guild	[guild id]
 query	guild-all	
 query	guild-bank-collateral-address	[guild id]
 query	guild-bank-collateral-address-all	
+query	guild-charter	
 query	guild-membership-application	[guild id] [player id]
 query	guild-membership-application-all	
 query	guild-rank-permission-by-object	[object id]

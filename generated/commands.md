@@ -1,8 +1,8 @@
 ---
 kind: mechanics
 authority: source
-verified_against: structsd 0.20.0
-verified_at: 2026-07-17
+verified_against: structsd 0.21.0
+verified_at: 2026-08-24
 volatility: medium
 generated_by: scripts/gen-catalogs.py
 ---
@@ -27,10 +27,14 @@ generated_by: scripts/gen-catalogs.py
 | `allocation-transfer` | Transfer an Allocation to a different account |
 | `allocation-update` | Update a dynamic Allocation |
 | `fleet-move` | Move a fleet from one planet to another |
-| `guild-bank-confiscate-and-burn` | Confiscate a Guild Token from an address and burn it |
-| `guild-bank-mint` | Mint new Alpha-backed token for a guild |
-| `guild-bank-redeem` | Redeem a Guild Token for the underlying Alpha asset |
-| `guild-create` | Create a guild from an account with an associated Reactor |
+| `guild-bank-confiscate-and-burn` | Confiscate a Guild Token from an address and burn it (--guild-id to name a guild you own but are not in) |
+| `guild-bank-convert` | Convert Alpha into a Guild Token at the current collateral ratio (required slippage guard) |
+| `guild-bank-convert-token` | Convert one Guild Token into another via Alpha in a single transaction (required slippage guard) |
+| `guild-bank-mint` | Mint new Alpha-backed token for a guild (--guild-id to name a guild you own but are not in) |
+| `guild-bank-redeem` | Redeem a Guild Token for the underlying Alpha asset (required slippage guard) |
+| `guild-charter-consent` | Sign consent for another player to found your guild |
+| `guild-create` | Found a guild on a reactor's charter entitlement |
+| `guild-create-compute` | Do the work to found a Guild |
 | `guild-membership-invite` | Invite a player to a guild |
 | `guild-membership-invite-approve` | Accept an invitation to a guild |
 | `guild-membership-invite-deny` | Deny an invitation to a guild |
@@ -42,8 +46,10 @@ generated_by: scripts/gen-catalogs.py
 | `guild-membership-request-approve` | Accept a request from a player to join the guild |
 | `guild-membership-request-deny` | Deny a request to join a guild |
 | `guild-membership-request-revoke` | Destroy an application to join a guild |
+| `guild-update-bank-convert-in-fee` | Update the guild bank convert-in fee (0.0 inclusive, 1.0 exclusive) |
+| `guild-update-bank-convert-out-fee` | Update the guild bank convert-out fee (0.0 inclusive, 1.0 exclusive) |
 | `guild-update-endpoint` | Update the endpoint Guild setting |
-| `guild-update-entry-rank` | Update the entry rank for your guild |
+| `guild-update-entry-rank` | Update the entry rank for your guild (--guild-id to name a guild you own but are not in) |
 | `guild-update-entry-substation-id` | Update the entry substation Guild setting |
 | `guild-update-join-infusion-minimum` | Update the infusion minimum Guild setting |
 | `guild-update-join-infusion-minimum-by-invite` | Update the minimum bypass level for invites Guild setting |
@@ -64,7 +70,7 @@ generated_by: scripts/gen-catalogs.py
 | `planet-raid-compute` | Do the work to raid a planet |
 | `planet-update-name` | Update the cosmetic name of a planet |
 | `player-send` | Send tokens from any player-owned address |
-| `player-update-guild-rank` | Update the guild rank of a player in your guild |
+| `player-update-guild-rank` | Update the guild rank of a player in your guild (--guild-id to name a guild you own but are not in) |
 | `player-update-name` | Update the cosmetic name of a player |
 | `player-update-pfp` | Update the profile picture of a player |
 | `player-update-pfp-cr-attributes` | Update the client render attributes for a player's local profile picture |
@@ -81,6 +87,7 @@ generated_by: scripts/gen-catalogs.py
 | `reactor-cancel-defusion` | Place cooling Alpha back into the Reactor to resume generating energy |
 | `reactor-defuse` | Defuse Alpha from a Reactor, returning it to the player after a cooldown |
 | `reactor-infuse` | Infuse Alpha from a player address into a reactor |
+| `reactor-restart` | Resync a Reactor's energy output with its validator, restoring it after an unjail |
 | `struct-activate` | Bring a Struct online |
 | `struct-attack` | Attack a Struct with a Struct |
 | `struct-build-cancel` | Cancel an unfinished Struct |
@@ -134,6 +141,7 @@ generated_by: scripts/gen-catalogs.py
 | `guild-all` | Returns all Guilds |
 | `guild-bank-collateral-address` | Lookup a Guild Bank Collateral Address |
 | `guild-bank-collateral-address-all` | Show all Guild Bank Collateral Addresses |
+| `guild-charter` | Get the anchor and current difficulty of the global guild charter puzzle |
 | `guild-membership-application` | Show the details of a specific Membership Application |
 | `guild-membership-application-all` | Returns all Guild Membership Applications |
 | `guild-rank-permission-by-object` | List guild rank permissions for an object |

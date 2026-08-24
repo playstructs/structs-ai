@@ -1,4 +1,5 @@
 ---
+title: "UGC names, pfps, and guild moderation"
 description: How names and profile pictures are moderated by guilds rather than a global authority, the permission check, validation rules, and audit events.
 ---
 
@@ -29,7 +30,7 @@ These are the only mutable identity fields under the chain's control. Everything
 
 ## Why moderation is decentralized
 
-Structs is permissionless. Anyone can create a player, anyone can create a guild, and anyone can name themselves whatever passes the chain's structural validators (see below). The chain deliberately does **not** maintain a global blacklist of "bad" names, a global allowlist of approved pfps, or a moderator role with cross-guild authority. There is no Structs admin who can rename your player.
+Structs is permissionless at the player layer. Anyone can create a player, and anyone can name themselves whatever passes the chain's structural validators (see below). Founding a **guild** is not free-form: it is either a chain-global charter proof-of-work or a one-time reactor entitlement (see [hashing.md — Guild Charter](hashing.md#guild-charter) and the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL)). The chain deliberately does **not** maintain a global blacklist of "bad" names, a global allowlist of approved pfps, or a moderator role with cross-guild authority. There is no Structs admin who can rename your player.
 
 Instead, the chain ships:
 
