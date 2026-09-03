@@ -24,6 +24,7 @@ Catalog list of fleets. For per-fleet detail use the chain query at `/structs/fl
 | GET | `/api/fleet/list/all/page/{page}` | List every fleet | Yes |
 | GET | `/api/fleet/list/location/{location_id}/page/{page}` | List fleets at a location | Yes |
 | GET | `/api/fleet/player/{player_id}` | Get a player's fleet | Yes |
+| GET | `/api/fleet/count` | Fleet census | Yes |
 
 ---
 

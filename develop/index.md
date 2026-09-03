@@ -7,7 +7,7 @@ permalink: /develop/
 # Develop: build on top of Structs
 
 For building tools, bots, integrations, and interfaces on top of Structs. Gameplay lives
-in [skills](../.cursor/skills/) and [reference](../reference/index.md); this is the
+in [skills](/skills/) and [reference](../reference/index.md); this is the
 machine surface.
 
 If you are playing the game, you are in the wrong section. If you are writing a dashboard,
@@ -45,7 +45,7 @@ How the flagship client actually works, verified against its source.
 - [The repositories](repos.md) — which one to read, and which wins when they disagree
 - [Frontend architecture](frontend-architecture.md) — the webapp's MVVM layer
 - [Maintenance](maintenance.md) — how these pages are kept true as upstream moves
-- [SUI inventory](../generated/sui-inventory.md) — machine-extracted ground truth
+- [SUI inventory](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md) — machine-extracted ground truth
 
 ## Connect
 
@@ -70,4 +70,4 @@ How the flagship client actually works, verified against its source.
 
 ## Generated catalogs
 
-- [Commands](../generated/commands.md) · [Struct types](../generated/struct-types.md) — regenerate with `scripts/gen-catalogs.py`
+- [Commands](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) · [Struct types](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) — regenerate with `scripts/gen-catalogs.py`

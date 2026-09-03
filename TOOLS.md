@@ -9,8 +9,8 @@ description: "Every interface for playing Structs compared: Desktop MCP, the str
 CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.
 
 > Your connection details (RPC, chain ID, key name, MCP URL) and preferences now live in
-> **[`config/operator.md`](config/operator.md)** (copy from
-> [`config/operator.example.md`](config/operator.example.md)). To detect what's actually
+> **`config/operator.md`** (copy from
+> [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). To detect what's actually
 > available in your environment, run **`scripts/preflight.sh`** — it writes a capability
 > profile to `config/environment.json`. This page is the catalog; that profile is the truth
 > for your machine.

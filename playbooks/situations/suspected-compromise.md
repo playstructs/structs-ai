@@ -32,7 +32,7 @@ structsd query structs address-all-by-player [player-id]  # unknown registered a
 ## Stop / escalate
 
 - Any key rotation, `address-register/revoke`, or `player-update-primary-address` is Tier 2 —
-  escalate per [`config/operator.md`](../../config/operator.md) and [`SAFETY.md`](../../SAFETY.md).
+  escalate per `config/operator.md` and [`SAFETY.md`](../../SAFETY.md).
 
 ## See also
 

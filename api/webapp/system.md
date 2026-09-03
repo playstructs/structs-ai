@@ -17,8 +17,9 @@ description: System endpoints on the web application, including server timestamp
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
 | GET | `/api/timestamp` | Get current Unix timestamp | No (public) |
+| GET | `/api/block` | Indexer `current_block`: height, tip_height, lag_blocks, status, updated_at | Yes |
 
-`/api/timestamp` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); it needs no session cookie. Use it to obtain server time for the login `unix_timestamp` (must be within 600s of server time).
+`/api/timestamp` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); it needs no session cookie. Use it to obtain server time for the login `unix_timestamp` (must be within 600s of server time). `/api/block` requires a session; many charting responses also stamp `meta.height` — see [`analytics.md`](analytics.md).
 
 ---
 

@@ -5,7 +5,7 @@ description: "The operator profile: the one file a human fills in. Goals, risk, 
 
 # Operator profile the agent reads
 
-OpenClaw and older prompts look for `USER.md`. For Structs, the human-edited file is **[`config/operator.md`](config/operator.md)** — copy it from [`config/operator.example.md`](config/operator.example.md) and fill it in. This page stays so those links still resolve.
+OpenClaw and older prompts look for `USER.md`. For Structs, the human-edited file is **`config/operator.md`** — copy it from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) and fill it in. This page stays so those links still resolve.
 
 `config/operator.md` is gitignored. It survives `git pull`. Do not commit it. Do not put mnemonics or private keys in it. The key material stays in the `structsd` keyring or Desktop; this file only names which key to use.
 

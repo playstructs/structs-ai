@@ -5,7 +5,7 @@ description: "How an agent works with the human it plays for: goals, autonomy, a
 
 # Commander contract with your agent
 
-Older prompts look for `COMMANDER.md`. The live contract is two files: **[`config/operator.md`](config/operator.md)** (the instance — copy from [`config/operator.example.md`](config/operator.example.md)) and **[`SAFETY.md`](SAFETY.md)** (the framework). This page stays so those prompts still resolve.
+Older prompts look for `COMMANDER.md`. The live contract is two files: **`config/operator.md`** (the instance — copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)) and **[`SAFETY.md`](SAFETY.md)** (the framework). This page stays so those prompts still resolve.
 
 You are the commander. The agent is the player. The chain has no undo and you have no telepathy. Everything in between is the contract.
 

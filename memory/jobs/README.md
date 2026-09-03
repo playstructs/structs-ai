@@ -4,7 +4,7 @@ One set of files per long-running proof-of-work compute (mine ~17h, refine ~34h,
 
 Each job leaves three files:
 
-- `<job>.json` — structured record (schema in [`../README.md`](../README.md#jobs--background-proof-of-work-jobs))
+- `<job>.json` — structured record (schema in [`../README.md`](/awareness/continuity.html#jobs--background-proof-of-work-jobs))
 - `<job>.log` — captured stdout/stderr
 - `<job>.pid` — process ID
 

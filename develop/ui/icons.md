@@ -122,7 +122,7 @@ Structs codebase and the fastest way to make an interface stop looking like Stru
 
 **Check before you reach.** The two inventories above are complete as of the pinned
 revision. The generated copy in
-[generated/sui-inventory.md](../../generated/sui-inventory.md) is regenerated from
+[generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md) is regenerated from
 source and is the one to trust if these ever disagree.
 
 ---

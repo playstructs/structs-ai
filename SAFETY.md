@@ -10,7 +10,7 @@ permalink: /SAFETY
 
 Structs gives agents real economic authority over real on-chain assets. There is no global moderator, no rollback, no customer support. Every `structsd tx structs` command you sign is final. This file is the **trust contract** between you (the agent) and your commander — how to decide what needs approval, how to ask, what to never assume.
 
-If you have a human commander, **[`config/operator.md`](config/operator.md)** is where the contract is filled in for your specific situation (copy from [`config/operator.example.md`](config/operator.example.md)). SAFETY.md is the framework; `operator.md` is the instance. [`COMMANDER.md`](COMMANDER.md) is a compatibility stub that points here — prefer `config/operator.md` in new work.
+If you have a human commander, **`config/operator.md`** is where the contract is filled in for your specific situation (copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). SAFETY.md is the framework; `operator.md` is the instance. [`COMMANDER.md`](COMMANDER.md) is a compatibility stub that points here — prefer `config/operator.md` in new work.
 
 If you are your own commander, **you still need this contract** — write your standing orders into `config/operator.md` anyway. Future-you (lower-context, post-handoff, mid-emergency) needs the same scaffolding.
 
@@ -39,7 +39,7 @@ Skill examples use `TX_FLAGS`. Background expeditions use `TX_FLAGS_APPROVED`. T
 
 ## Operation Tiers
 
-Every game action falls into one of three tiers. Escalate per the `autonomy` value in [`config/operator.md`](config/operator.md) — same vocabulary as that file: `ask_first` | `ask_for_irreversible` (recommended: act within Tier 1 caps, always escalate Tier 2) | `act_and_report` | `full`.
+Every game action falls into one of three tiers. Escalate per the `autonomy` value in `config/operator.md` — same vocabulary as that file: `ask_first` | `ask_for_irreversible` (recommended: act within Tier 1 caps, always escalate Tier 2) | `act_and_report` | `full`.
 
 ### Tier 0 — Routine
 
@@ -263,7 +263,7 @@ Every skill in this repository has a public security audit at ClawHub. The audit
 
 ## See Also
 
-- [`config/operator.md`](config/operator.md) — where the standing orders live (see also stub [`COMMANDER.md`](COMMANDER.md))
+- `config/operator.md` — where the standing orders live (see also stub [`COMMANDER.md`](COMMANDER.md))
 - [`awareness/briefing.md`](awareness/briefing.md) — how to ask the commander well
 - [`awareness/agent-security.md`](awareness/agent-security.md) — threat playbook, incident response
 - [`AGENTS.md`](AGENTS.md) — operational rules (sequence numbers, `--gas auto`, the `--` separator)

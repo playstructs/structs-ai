@@ -24,6 +24,7 @@ The grid table holds per-object scalar attributes (`capacity`, `connectionCapaci
 | GET | `/api/grid/all/page/{page}` | List every grid attribute row | Yes |
 | GET | `/api/grid/object/{object_id}/page/{page}` | List all grid attributes for one object | Yes |
 | GET | `/api/grid/attribute-type/{attribute_type}/page/{page}` | List one attribute type across every object | Yes |
+| GET | `/api/grid/attribute-type/{attribute_type}/object-type/{object_type}/page/{page}` | Same, filtered to one object type; `?order=` allowlisted | Yes |
 
 ---
 

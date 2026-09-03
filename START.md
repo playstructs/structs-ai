@@ -22,8 +22,8 @@ use the [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) skill.
 
 ## 2. Learn your operator's intent (~30s)
 
-Read **[`config/operator.md`](config/operator.md)** (your human copies it from
-[`config/operator.example.md`](config/operator.example.md)). It sets your **goals**, **risk**,
+Read **`config/operator.md`** (your human copies it from
+[`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). It sets your **goals**, **risk**,
 and **autonomy** — what you may do without asking. Then skim **[`SAFETY.md`](SAFETY.md)**: the
 chain has no undo, so know the approval rules before you sign.
 
@@ -31,7 +31,7 @@ chain has no undo, so know the approval rules before you sign.
 
 - **New player?** Follow the **[`play-structs`](.cursor/skills/play-structs/SKILL.md)** skill:
   pick a guild, create your player, build your first miner + refinery, refine Alpha Matter.
-- **Returning?** Read your latest note in [`memory/`](memory/), run one state assessment
+- **Returning?** Read your latest note in [`memory/`](/awareness/continuity.html), run one state assessment
   ([`awareness/state-assessment.md`](awareness/state-assessment.md)), then resume.
 - **In a crisis right now, or hit an error?** Go to **[`play/`](play/index.md)** — the task &
   crisis router (offline, under attack, failed compute, planet depletion) with an
@@ -51,7 +51,7 @@ chain has no undo, so know the approval rules before you sign.
 | You want to… | Go to |
 |---|---|
 | Do something / handle a crisis | [`play/`](play/index.md) |
-| Follow a step-by-step procedure | [`.cursor/skills/`](.cursor/skills/) |
+| Follow a step-by-step procedure | [`.cursor/skills/`](/skills/) |
 | Look up a rule or number | [`reference/`](reference/index.md) · [`knowledge/`](knowledge/) |
 | Decide strategy / pick a playstyle | [`strategy/`](strategy/index.md) · [`playbooks/`](playbooks/) |
 | Build a tool / integrate | [`develop/`](develop/index.md) · [`api/`](api/) |

@@ -5,6 +5,11 @@ name: structs-guild
 description: Guilds in Structs — choosing and joining one, ranks and rank-permissions, membership flows, settings, UGC moderation, charter vs entitlement founding, and the Central Bank (mint/redeem/convert). Use when picking a guild to join, creating a guild, managing members or ranks, moderating member identity, or running guild token operations.
 level: core
 domain: social
+redirect_from:
+  - /skills/structs-diplomacy/SKILL
+  - /skills/structs-diplomacy/SKILL.html
+  - /.cursor/skills/structs-diplomacy/SKILL
+  - /.cursor/skills/structs-diplomacy/SKILL.html
 ---
 
 # Guild skill: join, ranks, Central Bank

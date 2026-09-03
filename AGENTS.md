@@ -33,7 +33,7 @@ This gives you everything: skills, the `create-player.mjs` script (required for 
 ## First Session
 
 1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill. (Or run `scripts/preflight.sh` to detect this plus Desktop MCP, node, and keys.)
-2. **Read your operator profile** -- [`config/operator.md`](config/operator.md) (copy from [`config/operator.example.md`](config/operator.example.md)): goals, risk, autonomy, guild preference, connection details.
+2. **Read your operator profile** -- `config/operator.md` (copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)): goals, risk, autonomy, guild preference, connection details.
 3. **Read [`SAFETY.md`](SAFETY.md)** -- The trust contract and approval tiers. The chain has no undo.
 4. **Use [`play-structs`](.cursor/skills/play-structs/SKILL)** -- Pick a guild, create your player, explore a planet, build your first miner + refinery.
 5. **Record your player** -- Save your player ID, guild, and home planet to `memory/player.json`.
@@ -46,7 +46,7 @@ See [`START.md`](START.md) for the short version.
 
 ## Returning Session
 
-1. Read [`config/operator.md`](config/operator.md) and [`SAFETY.md`](SAFETY.md)
+1. Read `config/operator.md` and [`SAFETY.md`](SAFETY.md)
 2. Check `memory/` for handoff notes and jobs from previous sessions
 3. Run a state assessment (see [`awareness/state-assessment.md`](awareness/state-assessment.md))
 4. Resume your strategic plan

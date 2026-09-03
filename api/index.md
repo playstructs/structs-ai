@@ -10,7 +10,7 @@ This is the machine surface of Structs: REST queries against the chain, the tran
 
 Start at [integration notes](integration-notes) before you parse a response. Amounts are strings. Event details are encoded twice. Field names do not always match the CLI. If you skip that page you will invent a client that works on fixtures and fails on the network.
 
-Queries are reads. Transactions are writes and they spend sequence numbers — one at a time per key, `--gas auto`, `--` before entity IDs. The webapp API is the paginated catalog (lists, stats, settings) hosted by a guild, not by the chain binary. GRASS is the live stream; it will not give you history.
+Queries are reads. Transactions are writes and they spend sequence numbers — one at a time per key, `--gas auto`, `--` before entity IDs. The webapp API is the paginated catalog (lists, stats, settings) hosted by a guild, not by the chain binary, plus a [charting surface](webapp/analytics) (leaderboards, banks, aggregates). GRASS is the live stream; it will not give you history.
 
 ## When to open this page
 

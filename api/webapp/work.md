@@ -24,6 +24,7 @@ Lists outstanding proof-of-work jobs (mining, refining, building, and other PoW-
 | GET | `/api/work/all/page/{page}` | List every work item, paginated | Yes |
 | GET | `/api/work/guild/{guild_id}/page/{page}` | List work items for a guild, paginated | Yes |
 | GET | `/api/work/player/{player_id}` | List a player's work items | Yes |
+| GET | `/api/work/count` | Outstanding `view.work` row count | Yes |
 
 ---
 

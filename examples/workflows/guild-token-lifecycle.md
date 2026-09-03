@@ -25,7 +25,9 @@ Guild tokens are trust-based. Guilds control mint, redeem policy, and confiscate
 
 ### 1. Read collateral and supply
 
-There is no HTTP bank-balance endpoint. Query the Cosmos bank module for `uguild.{guild-id}` supply and the guild bank collateral address:
+Guild webapp (session cookie): `GET /api/guild-bank` for every guild's `collateral`, `supply`, and `ratio`; `GET /api/inventory/denom/uguild.{guild-id}/page/1` for holders. See [`api/webapp/analytics.md`](../../api/webapp/analytics.md).
+
+Chain fallback (authoritative if the indexer lags):
 
 ```
 structsd query structs guild-bank-collateral-address [guild-id]

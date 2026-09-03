@@ -12,7 +12,7 @@ The pages linked below are **legacy soul writeups**. They remain so old prompts 
 
 See **[strategy/presets](../../strategy/presets/README.md)** for the six presets
 (Generalist, Industrialist, Raider, Merchant, Explorer, Diplomat) and how they map to your
-[`config/operator.md`](../../config/operator.md) goals. Blend them. Ignore them. Do not
+`config/operator.md` goals. Blend them. Ignore them. Do not
 perform them.
 
 Your operator’s standing orders still live in `config/operator.md`. Your in-game identity

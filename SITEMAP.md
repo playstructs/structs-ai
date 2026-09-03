@@ -1,6 +1,8 @@
 ---
 title: Sitemap of the agent corpus
 description: "Every page in the Structs agent corpus, organised by section: skills, knowledge, strategy, awareness, API reference, and build guides."
+robots: noindex
+sitemap: false
 ---
 
 # Sitemap of the agent corpus
@@ -19,7 +21,7 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 | Decide strategy | [strategy/](strategy/index.md) |
 | Build / integrate | [develop/](develop/index.md) |
 | Lore | [lore/](lore/index.md) |
-| Operator config | [config/operator.example.md](config/operator.example.md) |
+| Operator config | [config/operator.example.md](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) |
 | Playstyle presets | [strategy/presets/](strategy/presets/README.md) |
 
 ---
@@ -28,13 +30,13 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 
 | File | Purpose |
 |------|---------|
-| [README.md](README.md) | Project overview, setup instructions |
+| [README.md](https://github.com/playstructs/structs-ai/blob/main/README.md) | Project overview, setup instructions |
 | [AGENTS.md](AGENTS.md) | Agent guide — start here |
 | [QUICKSTART.md](QUICKSTART.md) | Compatibility stub → [`START.md`](START.md) |
 | [SAFETY.md](SAFETY.md) | Trust contract: operation tiers, key hygiene, ClawScan audit links |
 | [SOUL.md](SOUL.md) | Compatibility stub → [`START.md`](START.md) / operator profile |
-| [IDENTITY.md](IDENTITY.md) | Compatibility stub → `memory/` + [`config/operator.md`](config/operator.example.md) |
-| [COMMANDER.md](COMMANDER.md) | Compatibility stub → [`config/operator.md`](config/operator.md) |
+| [IDENTITY.md](IDENTITY.md) | Compatibility stub → `memory/` + [`config/operator.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) |
+| [COMMANDER.md](COMMANDER.md) | Compatibility stub → `config/operator.md` |
 | [TOOLS.md](TOOLS.md) | Environment configuration (servers, keys, accounts) |
 | [USER.md](USER.md) | OpenClaw compatibility redirect to COMMANDER.md |
 | [OPENCLAW.md](OPENCLAW.md) | OpenClaw platform setup guide |
@@ -42,7 +44,7 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 | [index.md](index.md) | Documentation site index |
 | [llms.txt](llms.txt) | LLM-readable summary (lightweight) |
 | [llms-full.txt](llms-full.txt) | LLM-readable full documentation bundle |
-| [_config.yml](_config.yml) | Jekyll site configuration |
+| [_config.yml](https://github.com/playstructs/structs-ai/blob/main/_config.yml) | Jekyll site configuration |
 
 ---
 
@@ -292,6 +294,7 @@ Webapp endpoints split per entity (load only what you need):
 
 - **Bespoke entity endpoints** (joined / aggregated objects): [auth](api/webapp/auth.md), [guild](api/webapp/guild.md), [infusion](api/webapp/infusion.md), [ledger](api/webapp/ledger.md), [planet](api/webapp/planet.md), [player](api/webapp/player.md), [player-address](api/webapp/player-address.md), [struct](api/webapp/struct.md), [system](api/webapp/system.md)
 - **Catalog read endpoints** (paginated lists per entity): [address-tag](api/webapp/address-tag.md), [agreement](api/webapp/agreement.md), [allocation](api/webapp/allocation.md), [banned-word](api/webapp/banned-word.md), [defusion](api/webapp/defusion.md), [fleet](api/webapp/fleet.md), [grid](api/webapp/grid.md), [guild-membership-application](api/webapp/guild-membership-application.md), [permission](api/webapp/permission.md), [permission-guild-rank](api/webapp/permission-guild-rank.md), [planet-activity](api/webapp/planet-activity.md), [planet-attribute](api/webapp/planet-attribute.md), [provider](api/webapp/provider.md), [reactor](api/webapp/reactor.md), [substation](api/webapp/substation.md), [struct-attribute](api/webapp/struct-attribute.md), [struct-defender](api/webapp/struct-defender.md), [work](api/webapp/work.md)
+- **Charting and analytics**: [analytics](api/webapp/analytics.md) — leaderboards, inventory, guild banks, denom/resolve, aggregates, markets, census
 - **Live tunables and stats**: [setting](api/webapp/setting.md), [stat](api/webapp/stat.md)
 - **Index**: [README.md](api/webapp/README.md)
 
@@ -449,10 +452,10 @@ Agent working memory (populated during gameplay).
 
 | File | Purpose |
 |------|---------|
-| [README.md](memory/README.md) | Memory directory guide |
-| [intel/README.md](memory/intel/README.md) | Intelligence directory guide |
-| [intel/territory.md](memory/intel/territory.md) | Territory intelligence |
-| [intel/threats.md](memory/intel/threats.md) | Threat intelligence |
+| [README.md](/awareness/continuity.html) | Memory directory guide |
+| [intel/README.md](/awareness/continuity.html) | Intelligence directory guide |
+| [intel/territory.md](/awareness/continuity.html) | Territory intelligence |
+| [intel/threats.md](/awareness/continuity.html) | Threat intelligence |
 
 ---
 
@@ -478,10 +481,10 @@ Diagrams, graphs, and spatial references.
 
 | File | Purpose |
 |------|---------|
-| [generate-llms-full.sh](scripts/generate-llms-full.sh) | Regenerate llms-full.txt from source docs |
-| [gen-sui-inventory.sh](scripts/gen-sui-inventory.sh) | Extract the SUI ground truth from structs-webapp into `generated/sui-inventory.md` |
-| [check-webapp-drift.sh](scripts/check-webapp-drift.sh) | Report what changed in structs-webapp since `develop/` was pinned |
-| [BASELINE.md](scripts/BASELINE.md) | Maintainer record of the contracts this repo preserves |
+| [generate-llms-full.sh](https://github.com/playstructs/structs-ai/blob/main/scripts/generate-llms-full.sh) | Regenerate llms-full.txt from source docs |
+| [gen-sui-inventory.sh](https://github.com/playstructs/structs-ai/blob/main/scripts/gen-sui-inventory.sh) | Extract the SUI ground truth from structs-webapp into `generated/sui-inventory.md` |
+| [check-webapp-drift.sh](https://github.com/playstructs/structs-ai/blob/main/scripts/check-webapp-drift.sh) | Report what changed in structs-webapp since `develop/` was pinned |
+| [BASELINE.md](https://github.com/playstructs/structs-ai/blob/main/scripts/BASELINE.md) | Maintainer record of the contracts this repo preserves |
 
 ---
 

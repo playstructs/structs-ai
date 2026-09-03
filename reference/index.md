@@ -7,7 +7,7 @@ permalink: /reference/
 # Reference: rules, numbers, names
 
 Look up a rule, a number, or a name. For step-by-step procedures use
-[skills](../.cursor/skills/); for strategy use [strategy](../strategy/index.md).
+[skills](/skills/); for strategy use [strategy](../strategy/index.md).
 
 This is the lookup desk. Generated catalogs are stamped from a specific `structsd` version — if your binary is newer, regenerate or distrust the number. The glossary and Codex crosswalk exist because the same idea has three names (UI, Codex, chain) and mixing them causes bad transactions.
 
@@ -17,9 +17,9 @@ The action and entity indexes are for “what is the name of this thing.” Loca
 
 ## Source-derived catalogs (provenance-stamped)
 
-- [Struct type catalog](../generated/struct-types.md) — build cost, draw, HP, weapons, `canDefend` (generated from `structsd v0.21.0`)
-- [CLI command catalog](../generated/commands.md) — every `structsd tx/query structs` command
-- [Command snapshot](../generated/structsd-commands.txt) — flat list used by the command lint
+- [Struct type catalog](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) — build cost, draw, HP, weapons, `canDefend` (generated from `structsd v0.21.0`)
+- [CLI command catalog](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) — every `structsd tx/query structs` command
+- [Command snapshot](https://github.com/playstructs/structs-ai/blob/main/generated/structsd-commands.txt) — flat list used by the command lint
 
 ## Mechanics
 

@@ -147,7 +147,7 @@ Track all background PoW in `memory/jobs/` — one record per compute, so a late
 }
 ```
 
-`status`: `running` | `landed` | `failed` | `recalled`. Full schema and launch template: [`memory/README.md`](../memory/README.md#jobs--background-proof-of-work-jobs) and [`memory/jobs/README.md`](../memory/jobs/README.md). Update the relevant `.json` every game loop tick. On session resume, check every `running` job immediately using the procedure below — they may have completed, failed silently, or still be in flight.
+`status`: `running` | `landed` | `failed` | `recalled`. Full schema and launch template: [`memory/README.md`](/awareness/continuity.html#jobs--background-proof-of-work-jobs) and [`memory/jobs/README.md`](/awareness/continuity.html). Update the relevant `.json` every game loop tick. On session resume, check every `running` job immediately using the procedure below — they may have completed, failed silently, or still be in flight.
 
 ---
 

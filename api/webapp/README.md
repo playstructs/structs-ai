@@ -10,7 +10,7 @@ redirect_from:
 # Webapp API Endpoints
 
 **Purpose**: Webapp endpoints split per entity for context-window efficiency
-**Last Updated**: May 13, 2026
+**Last Updated**: September 2, 2026
 
 ---
 
@@ -22,7 +22,9 @@ This directory contains the structs-webapp HTTP API split per entity. Agents sho
 
 **Authentication required by default.** Per `config/packages/security.yaml`, the only public routes are `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, and `/api/setting`. **Every other `/api/` route — including all catalog read endpoints below — requires an authenticated `PHPSESSID` session** and returns `401` without one. Browser clients must send `credentials: include` so the cookie rides along.
 
-**Response envelope (all endpoints)**: every webapp response — bespoke or catalog, success or failure — is `{ "success": bool, "errors": {}, "data": ... }`. **Always check `success`, then unwrap `data`.** `errors` is a keyed object (e.g. `{"signature_validation_failed": "..."}`), never a string array. Bespoke endpoints return SQL column names (snake_case) inside `data` unless otherwise noted; catalog reads return a flat array of rows in `data`. See `../../protocols/webapp-api-protocol.md`.
+**Response envelope (all endpoints)**: every webapp response — bespoke or catalog, success or failure — is `{ "success": bool, "errors": {}, "data": ... }` with optional `meta.height` (indexer or `current_block`) and `total`. **Always check `success`, then unwrap `data`.** `errors` is a keyed object (e.g. `{"signature_validation_failed": "..."}`), never a string array. Bespoke endpoints return SQL column names (snake_case) inside `data` unless otherwise noted; catalog reads return a flat array of rows in `data`. See `../../protocols/webapp-api-protocol.md`.
+
+**Charting and analytics.** Leaderboards, inventory, guild-bank history, time-series aggregates, market snapshots, and census counts are documented together in [`analytics.md`](analytics.md) — that is the page to load when you are drawing a dashboard rather than fetching one entity.
 
 **Base URLs**:
 
@@ -46,7 +48,8 @@ These existed before the catalog read layer was added. They tend to return enric
 - [`ledger.md`](ledger.md) — `/api/ledger/{tx_id}` and `/api/ledger/player/*` plus `/api/ledger/list/*`
 - [`infusion.md`](infusion.md) — `/api/infusion/player/*` plus `/api/infusion/list/*`
 - [`work.md`](work.md) — `/api/work/*` (outstanding proof-of-work jobs)
-- [`system.md`](system.md) — `/api/timestamp` and other system endpoints
+- [`system.md`](system.md) — `/api/timestamp` and `/api/block`
+- [`analytics.md`](analytics.md) — **charting hub**: leaderboards, inventory, guild banks, denom/resolve, aggregates, markets, census
 
 ### Catalog read endpoints (one entity per file)
 
@@ -73,7 +76,7 @@ Uniform paginated reads under `/api/{entity}[/{filter}]/page/{page}`. See `proto
 ### Other
 
 - [`setting.md`](setting.md) — `/api/setting` (one-shot snapshot of live tunables)
-- [`stat.md`](stat.md) — `/api/stat/{metric}/object/{object_key}/range/page/{page}` with `?start_time=&end_time=`
+- [`stat.md`](stat.md) — per-object range plus `?bucket=` / `?limit=`; galaxy-wide aggregate is on [`analytics.md`](analytics.md)
 
 ---
 

@@ -407,6 +407,11 @@ def main() -> int:
             if is_home:
                 if "WebSite" not in types:
                     errors.append(f"{rel}: homepage JSON-LD missing WebSite")
+                website = find_typed_node(jsonld, "WebSite")
+                if website is not None:
+                    alt = website.get("alternateName")
+                    if not isinstance(alt, list) or "Structs AI" not in alt or "structs.ai" not in alt:
+                        errors.append(f"{rel}: WebSite.alternateName must include Structs AI and structs.ai")
                 if "VideoGame" not in types:
                     errors.append(f"{rel}: homepage JSON-LD missing VideoGame")
                 game = find_typed_node(jsonld, "VideoGame")

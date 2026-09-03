@@ -5,6 +5,11 @@ name: structs-commerce
 description: Earning and trading in Structs — selling energy via providers, buying capacity via agreements, allocations, reactor staking economics, the guild Central Bank (mint/redeem/convert), and token transfers. Use when you want to monetize surplus energy, shop for an energy agreement, set provider pricing, stake Alpha into a reactor for capacity, mint/redeem/convert guild tokens, or send tokens. For just keeping your own structs powered, see structs-energy.
 level: advanced
 domain: economy
+redirect_from:
+  - /skills/structs-economy/SKILL
+  - /skills/structs-economy/SKILL.html
+  - /.cursor/skills/structs-economy/SKILL
+  - /.cursor/skills/structs-economy/SKILL.html
 ---
 
 # Commerce skill: energy, banks, transfers
@@ -121,6 +126,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 
 - [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) — provider/agreement flow, pricing
 - [knowledge/economy/guild-banking](https://structs.ai/knowledge/economy/guild-banking) — Central Bank tokens, collateral
+- [api/webapp/analytics](https://structs.ai/api/webapp/analytics) — live `GET /api/guild-bank`, inventory, leaderboards
 - [knowledge/economy/valuation](https://structs.ai/knowledge/economy/valuation) / [trading](https://structs.ai/knowledge/economy/trading) — what things are worth
 - [playbooks/phases/late-game](https://structs.ai/playbooks/phases/late-game) — market control
 - [structs-energy](https://structs.ai/skills/structs-energy/SKILL) — capacity for your own use; [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) — provider access grants

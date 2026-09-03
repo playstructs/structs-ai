@@ -35,7 +35,7 @@ structsd query structs player [player-id]      # compare load vs capacity, onlin
 - If capacity loss came from a **raid or reactor defuse**, treat it as a security event →
   [under attack](under-attack.md).
 - If infusion would exceed your operator's Tier-1 caps → escalate per
-  [`config/operator.md`](../../config/operator.md).
+  `config/operator.md`.
 
 ## See also
 

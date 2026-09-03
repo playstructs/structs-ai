@@ -92,6 +92,32 @@ for p in /robots.txt /sitemap.xml /favicon.ico /.well-known/security.txt /llms.t
   [ "$c" = "200" ] || fail "MISSING $c $p"
 done
 
+# 7. Every internal anchor on every sitemap HTML page resolves (200/301/308)
+if [ -n "$SITEMAP" ]; then
+  python3 - <<'PY' > /tmp/structs-anchors.txt
+import re, urllib.request, urllib.parse
+sm = urllib.request.urlopen("https://structs.ai/sitemap.xml", timeout=30).read().decode()
+seen = set()
+for p in re.findall(r"<loc>([^<]+)</loc>", sm):
+    if p.endswith(".txt"):
+        continue
+    try:
+        h = urllib.request.urlopen(p, timeout=30).read().decode("utf-8", "replace")
+    except Exception:
+        continue
+    for a in re.findall(r'href="([^"#]+)"', h):
+        u = urllib.parse.urljoin(p, a.split("?")[0])
+        if u.startswith("https://structs.ai/") and u not in seen:
+            seen.add(u)
+            print(u)
+PY
+  while IFS= read -r u; do
+    [ -n "$u" ] || continue
+    c="$(retry_code "$u")"
+    case "$c" in 200|301|308) ;; *) fail "BROKEN-ANCHOR $c $u" ;; esac
+  done < /tmp/structs-anchors.txt
+fi
+
 if [ -s "$FAIL" ]; then
   echo "smoke-production FAILED" >&2
   exit 1

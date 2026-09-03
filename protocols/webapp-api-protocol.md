@@ -34,6 +34,8 @@ Every webapp response — both layers, success and failure — uses one envelope
 - `success` (boolean): `true` on HTTP 200, `false` on `400/401/403/404/409`.
 - `errors` (object): a **keyed map** of `error_key` → message (e.g. `{"signature_validation_failed":"Invalid signature"}`). Empty `{}` on success. It is never a string array, and there is no top-level `error`/`code`/`details`.
 - `data` (object | array | null): the payload. Single-row reads → object; catalog list reads → **flat array** (see Pattern 7); `null` on error or an empty single lookup.
+- `total` (optional): present when the handler sets it.
+- `meta.height` (optional): indexer height. `ResponseMetaUtil::stampHeight` uses `structs.api_refresh_state.source_height` for a named model (leaderboards, inventory, guild bank) or `current_block.height`. Compare to `GET /api/block` (`height` vs `tip_height`, `lag_blocks`) when a chart must not outrun the chain.
 
 Parsing rule for all clients/agents: check `success`, then read `errors` or unwrap `data`. Browser clients must send `credentials: include` so the `PHPSESSID` cookie rides along.
 
@@ -341,9 +343,8 @@ The page endpoint returns a **flat array** of ledger rows in `data` (page size 1
 Conventions:
 
 - `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
-- Page size is **fixed at 100** (`PaginationLimits::DEFAULT`); it is not client-configurable and there are no `offset`/`limit` query params.
+- Catalog page size defaults to **100** (`PaginationLimits::DEFAULT`) and is **not** sent as `offset`. Newer charting list reads accept optional `?limit=` clamped to **1–1000** (`PaginationLimits::clamp`). Leaderboards default to **50**. Full-page test: `data.length ===` the limit you used (100 if omitted).
 - Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
-- To detect more pages: if `data.length === 100`, fetch `page + 1`; if `< 100` (or empty), you have reached the end.
 - Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all`, `/api/permission-guild-rank/object/{object_id}/page/1`).
 - For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
 
@@ -374,6 +375,10 @@ Conventions:
 
 **Format**: `GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix_seconds}&end_time={unix_seconds}`
 
+Optional `bucket=1h|1d` averages into `date_trunc` buckets and raises the max window from **7 days** to **30 days**. Optional `limit` (default 100, max 1000).
+
+Galaxy-wide LOCF aggregate (not a page of one object): `GET /api/stat/{metric}/aggregate/range?object_type=&start_time=&end_time=` with optional `bucket`. See [`api/webapp/analytics.md`](../api/webapp/analytics.md).
+
 **Example**:
 
 ```json
@@ -401,7 +406,7 @@ Conventions:
 **Constraints** (all `400` with keyed `errors`):
 - `start_time_end_time_required` — `start_time`/`end_time` query params missing.
 - `time_range_invalid` — `end_time` must be greater than `start_time`.
-- `time_range_too_large` — max window is **604800s (7 days)**.
+- `time_range_too_large` — max window is **604800s (7 days)** without `bucket`, **2592000s (30 days)** with `bucket=1h|1d` or on the aggregate endpoint.
 - `object_key_invalid` — malformed key, or wrong entity type for a **family-two** metric (`structs_load`→player, `connection_count`/`connection_capacity`→substation, `struct_health`/`struct_status`→struct). Family-one metrics (`ore`, `fuel`, `capacity`, `load`, `power`) accept any object type.
 
 ### Pattern 9: Live Tunables
@@ -486,7 +491,8 @@ HTTP status conveys the category: `400` (validation), `401` (unauthenticated / s
 - Search functionality (raids, transfers)
 - Authentication and user management
 - **Catalog reads** (paginated lists per entity, joined with metadata) when you would otherwise reach into the chain's `pagination.key` API
-- **Time-series stats** for one object across a time window
+- **Time-series stats** for one object across a time window, or galaxy-wide aggregates
+- **Charting / admin reads** — leaderboards, inventory, guild banks, denom registry, market snapshots, census counts. Map: [`api/webapp/analytics.md`](../api/webapp/analytics.md)
 - **Live tunables** (`/api/setting`) — chain constants without parameter queries
 - **Banned word list** to preflight UGC name validation client-side
 

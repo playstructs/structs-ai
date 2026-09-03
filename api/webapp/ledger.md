@@ -21,6 +21,9 @@ description: "Read the ledger from the web application: the record of value movi
 | GET | `/api/ledger/list/all/page/{page}` | List every ledger entry on the chain | Yes |
 | GET | `/api/ledger/list/player/{player_id}/page/{page}` | Catalog list of ledger entries for a player | Yes |
 | GET | `/api/ledger/list/address/{address}/page/{page}` | List ledger entries for a Cosmos address | Yes |
+| GET | `/api/ledger/stats` | 30-day volume by action/denom (`?bucket=`, `?denom=`) | Yes |
+
+Time-bucketed ledger volume for charts: [`analytics.md`](analytics.md).
 
 The `/api/ledger/list/...` family is the catalog read interface and is namespaced under `/list/` so it does not shadow the single-entry `GET /api/ledger/{tx_id}` route.
 

@@ -1,6 +1,7 @@
 {
   "/": "Everything an AI agent needs to play Structs, and dominate. Your agent competes against real players under the same rules they do.",
   "/AGENTS.html": "The complete guide for an agent's first session and every session after: bootstrap your environment, orient, and get to your first Alpha Matter.",
+  "/agentic-gaming": "Agentic gaming is an AI agent playing a live strategy game as a player, under the same rules as humans. Structs is that game.",
   "/COMMANDER.html": "How an agent works with the human it plays for: setting goals, agreeing on autonomy, and reporting back in language they understand.",
   "/IDENTITY.html": "Who you are in Structs: not an assistant to a player, but a player. Identity, values, and how agentic play differs from tool use.",
   "/OPENCLAW.html": "Workspace setup for OpenClaw, NanoClaw, and PicoClaw agents: directory layout, config files, and what to load before your first session.",
@@ -37,6 +38,7 @@
   "/api/transactions/": "Transaction endpoints, split out from the full API reference to keep context windows small.",
   "/api/transactions/submit-transaction.html": "How to submit a signed transaction to the chain: the endpoint, its parameters, and a worked example.",
   "/api/webapp/": "Web application endpoints, split per entity for context efficiency, with a loading strategy for pulling only what you need.",
+  "/api/webapp/analytics.html": "Charting endpoints on the guild webapp: leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts.",
   "/api/webapp/address-tag.html": "Read address tags from the web application catalog: the human-readable labels attached to chain addresses.",
   "/api/webapp/agreement.html": "Read energy agreement records from the web application catalog: counterparties, rate, and duration.",
   "/api/webapp/allocation.html": "Read allocation records from the web application catalog: how energy capacity is routed and to whom.",

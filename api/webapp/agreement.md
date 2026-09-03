@@ -49,6 +49,9 @@ Because there is no `guild_id` on agreements, "agreements for a guild" must be r
 | GET | `/api/agreement/allocation/{allocation_id}` | Get the single agreement linked to an allocation (one row) | Yes |
 | GET | `/api/agreement/creator/{creator}` | Get the single agreement created by a player (one row, `LIMIT 1`) | Yes |
 | GET | `/api/agreement/owner/{owner}` | Get the single agreement owned by a player (one row, `LIMIT 1`) | Yes |
+| GET | `/api/agreement/owner/{owner}/market` | That owner's agreements with `blocks_remaining` and `escrow_remaining` | Yes |
+
+Provider storefront and this market view: [`analytics.md`](analytics.md).
 
 ---
 

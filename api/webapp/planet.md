@@ -22,8 +22,11 @@ description: Read planet records from the web application catalog, with the exte
 | GET | `/api/planet/raid/active/fleet/{fleet_id}` | Get active raid for fleet | Yes |
 | GET | `/api/planet/list/all/page/{page}` | Catalog list of all planets, paginated | Yes |
 | GET | `/api/planet/list/owner/{owner}/page/{page}` | Catalog list of planets owned by a player | Yes |
+| GET | `/api/planet/count` | Planet census | Yes |
+| GET | `/api/planet-raid/all/page/{page}` | Raid board, newest first (`?limit=`) | Yes |
+| GET | `/api/planet-raid/status/{status}/page/{page}` | Raid board filtered by status | Yes |
 
-Planet activity (`planet_activity`, including `struct_health` rows) and per-planet attribute reads live in [`planet-activity.md`](planet-activity.md) and [`planet-attribute.md`](planet-attribute.md).
+Planet activity stats and the rest of the charting surface: [`analytics.md`](analytics.md). Planet activity (`planet_activity`, including `struct_health` rows) and per-planet attribute reads live in [`planet-activity.md`](planet-activity.md) and [`planet-attribute.md`](planet-attribute.md).
 
 ---
 

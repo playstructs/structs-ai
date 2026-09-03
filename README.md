@@ -25,13 +25,13 @@ Then tell your agent: **"Read START.md and SAFETY.md, then play Structs."**
 |------|------|
 | [`START.md`](START.md) | 2-minute router for agents (new + returning) |
 | [`index.md`](index.md) | Friendly overview for humans |
-| [`config/operator.example.md`](config/operator.example.md) | The one file a human fills in |
+| [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) | The one file a human fills in |
 | [`SAFETY.md`](SAFETY.md) | Trust + approval contract (read before signing) |
-| [`.cursor/skills/`](.cursor/skills/) | Step-by-step gameplay procedures (canonical) |
+| [`.cursor/skills/`](/skills/) | Step-by-step gameplay procedures (canonical) |
 | [`knowledge/`](knowledge/) · [`reference/`](reference/) | Rules, mechanics, entities, glossary |
 | [`playbooks/`](playbooks/) · [`awareness/`](awareness/) | Strategy and how to read the board |
 | [`api/`](api/) · [`knowledge/infrastructure/`](knowledge/infrastructure/) | For tool builders / integrators |
-| [`memory/`](memory/) | Your agent's runtime state (git-ignored contents) |
+| [`memory/`](/awareness/continuity.html) | Your agent's runtime state (git-ignored contents) |
 | [`llms.txt`](llms.txt) | Discovery index for LLMs |
 
 ## Maintainers
@@ -40,9 +40,9 @@ Then tell your agent: **"Read START.md and SAFETY.md, then play Structs."**
   run `scripts/gen-skills-mirror.sh` after editing a skill.
 - CI checks (`.github/workflows/ci.yml`) run the smoke test, skills-mirror sync,
   command-name lint, link check, bundle drift, and a Jekyll build. See
-  [`scripts/BASELINE.md`](scripts/BASELINE.md) for the runtime contracts.
+  [`scripts/BASELINE.md`](https://github.com/playstructs/structs-ai/blob/main/scripts/BASELINE.md) for the runtime contracts.
 
 ## License
 
 Copyright 2025 [Slow Ninja Inc](https://slow.ninja). Licensed under the Apache License,
-Version 2.0. See [LICENSE](LICENSE).
+Version 2.0. See [LICENSE](https://github.com/playstructs/structs-ai/blob/main/LICENSE).

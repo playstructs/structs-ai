@@ -402,7 +402,7 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 1. Subscribe to your planet(s): `structs.planet.{id}.*` — raid alerts, fleet arrivals (trailing `*` matches any owner `player_id`)
 2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
 3. Subscribe to global: `structs.global` — block tick for game loop timing
-4. Log events to [memory/](https://structs.ai/memory) for cross-session awareness
+4. Log events to [continuity memory](https://structs.ai/awareness/continuity) for cross-session awareness
 
 ---
 

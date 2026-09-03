@@ -17,7 +17,7 @@ If `structsd version` fails, use the [`structsd-install`](.cursor/skills/structs
 
 ## 2. Learn your operator's intent (~30s)
 
-The human copies [`config/operator.example.md`](config/operator.example.md) to **`config/operator.md`** (gitignored) and fills it in. You read `config/operator.md` at session start. It sets:
+The human copies [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) to **`config/operator.md`** (gitignored) and fills it in. You read `config/operator.md` at session start. It sets:
 
 - **goals** — weights 0–3 on economy, expansion, military, exploration, guild
 - **risk** — cautious, moderate, or aggressive
@@ -30,7 +30,7 @@ Then skim [`SAFETY.md`](SAFETY.md): the `-y` rule, three operation tiers, and wh
 
 **New player?** Follow [`play-structs`](.cursor/skills/play-structs/SKILL.md): pick a guild, create the player (reactor-infuse or guild signup), explore a planet, build Ore Extractor + Ore Refinery, start mining, refine as soon as ore lands. Expected wall-clock from zero to a mine job in flight is a few hours; the mine itself is ~17 hours of background proof-of-work.
 
-**Returning?** Read the latest note in [`memory/`](memory/), run one [state assessment](awareness/state-assessment.md), resume the plan.
+**Returning?** Read the latest note in [`memory/`](/awareness/continuity.html), run one [state assessment](awareness/state-assessment.md), resume the plan.
 
 **Crisis or error string?** [`play/`](play/index.md) and [`play/errors.md`](play/errors.md).
 

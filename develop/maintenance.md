@@ -24,8 +24,8 @@ Two artifacts hold the line:
 
 | Artifact | Role |
 |---|---|
-| [`generated/sui-inventory.md`](../generated/sui-inventory.md) | Machine-extracted tokens, icons, classes, modifiers and breakpoints. Both the writing source and the drift baseline |
-| [`scripts/check-webapp-drift.sh`](../scripts/check-webapp-drift.sh) | Diffs a fresh extract against that baseline, and lists commits per watched directory |
+| [`generated/sui-inventory.md`](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md) | Machine-extracted tokens, icons, classes, modifiers and breakpoints. Both the writing source and the drift baseline |
+| [`scripts/check-webapp-drift.sh`](https://github.com/playstructs/structs-ai/blob/main/scripts/check-webapp-drift.sh) | Diffs a fresh extract against that baseline, and lists commits per watched directory |
 
 A weekly GitHub Actions job (`.github/workflows/drift.yml`) runs the check and posts the
 report to the run summary. It is **advisory** — `continue-on-error: true` — because
@@ -140,6 +140,6 @@ a hypothesis worth testing, not as a finding.
 
 ## Related
 
-- [scripts/BASELINE.md](../scripts/BASELINE.md) — the maintainer-facing record of every
+- [scripts/BASELINE.md](https://github.com/playstructs/structs-ai/blob/main/scripts/BASELINE.md) — the maintainer-facing record of every
   contract in this repository, including this one
 - [develop/repos.md](repos.md) — the hierarchy of truth across all Structs repositories

@@ -80,7 +80,7 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 **Security warning**: Guild tokens are trust-based. Guilds have full control over their Central Bank. There are no technical safeguards preventing a guild from revoking tokens or mismanaging collateral. Token revocation can be used as economic warfare -- but damages reputation.
 
-> **No HTTP bank-balance read.** Mint, redeem, and convert are chain transactions, and there is **no** webapp endpoint (e.g. `GET /api/guild/{id}/bank`) to read a guild's bank/token balance. Read balances via chain queries (the Cosmos `bank` module, e.g. balances of the `uguild.{guild_id}` denom) or by reconstructing from the ledger — not from the webapp.
+> **HTTP bank read.** Mint, redeem, and convert are still chain transactions. Live collateral, supply, and ratio are on the guild webapp: `GET /api/guild-bank` (every guild) and `GET /api/guild-bank/{guild_id}/history?bucket=` (30-day mint/burn/infuse volume). Holder balances: `GET /api/inventory/denom/{denom}/page/{n}` or `GET /api/inventory/owner/{owner_type}/{owner_id}`. Format amounts from `GET /api/denom`. Charting map: [`api/webapp/analytics.md`](../../api/webapp/analytics.md). Chain `bank` queries remain authoritative if the indexer lags (`meta.height` vs `/api/block`).
 
 Commands: [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
 

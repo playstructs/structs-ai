@@ -183,6 +183,7 @@ FULL_FILES=(
 
   # API
   api/integration-notes.md
+  api/webapp/analytics.md
   api/streaming/event-types.md
   api/streaming/event-schemas.md
 

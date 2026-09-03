@@ -73,6 +73,9 @@
   <title>{{ page_title | xml_escape }}</title>
   <meta name="description" content="{{ meta_description | xml_escape }}">
   <link rel="canonical" href="{{ canonical_url }}">
+  {%- if page.robots and page.robots != "" -%}
+  <meta name="robots" content="{{ page.robots | xml_escape }}">
+  {%- endif -%}
 
   {%- if page.url == "/" -%}
   <meta property="og:type" content="website">
@@ -168,14 +171,32 @@
 <body>
   <nav>
     <a href="/">structs.ai</a>
+    <a href="/agentic-gaming">agentic gaming</a>
     <a href="/llms.txt">llms.txt</a>
     <a href="/llms-full.txt">llms-full.txt</a>
     <a href="/AGENTS">guide</a>
   </nav>
   {{ content }}
+  {%- if page.url == "/" %}
+  <footer>
+    <p>Sections:
+      <a href="/identity/">identity</a> ·
+      <a href="/protocols/">protocols</a> ·
+      <a href="/troubleshooting/">troubleshooting</a> ·
+      <a href="/examples/">examples</a> ·
+      <a href="/security-policy">security policy</a> ·
+      <a href="/llms-start.txt">llms-start.txt</a>
+    </p>
+  </footer>
+  {%- endif %}
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'strict',
+      themeVariables: { edgeLabelBackground: '#1c2128' }
+    });
     document.querySelectorAll('pre > code.language-mermaid').forEach((code) => {
       const div = document.createElement('div');
       div.className = 'mermaid';

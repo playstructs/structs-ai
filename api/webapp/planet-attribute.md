@@ -13,7 +13,9 @@ description: "Read planet attributes from the web application catalog: the per-p
 
 ## Overview
 
-Per-planet typed attributes (shield health, ore reserves, slot counts, defensive metadata, etc.). Cache rows are deleted when the chain attribute reaches zero — missing rows mean "no value", not "value of zero".
+Per-planet typed attributes (shield health, ore reserves, slot counts, defensive metadata, **mine/refine clocks**). Cache rows are deleted when the chain attribute reaches zero — missing rows mean "no value", not "value of zero".
+
+Mine and refine `blockStart` live on the **planet** (`planetBlockStartOreMine` / `planetBlockStartOreRefine`, attribute prefixes `12-` / `13-`). Do not read them from struct attributes. See [hashing.md](../../knowledge/mechanics/hashing.md).
 
 ---
 

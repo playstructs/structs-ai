@@ -25,6 +25,12 @@ description: Read player records from the web application catalog, with the full
 | GET | `/api/player/list/all/page/{page}` | Catalog list of all players, paginated | Yes |
 | GET | `/api/player/list/guild/{guild_id}/page/{page}` | Catalog list of players in a guild | Yes |
 | GET | `/api/player/list/substation/{substation_id}/page/{page}` | Catalog list of players connected to a substation | Yes |
+| GET | `/api/player/count` | Player census | Yes |
+| GET | `/api/player/active/count` | Players with `lastAction` inside `?window_blocks=` (default 16363) | Yes |
+| GET | `/api/player/{player_id}/power` | Capacity, load, margin from `view.player` | Yes |
+| GET | `/api/player/power/at-risk` | Lowest power-margin players (`?limit=`, default 25) | Yes |
+
+Census, power-margin, and leaderboards for dashboards: [`analytics.md`](analytics.md).
 
 ---
 

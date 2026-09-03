@@ -6,7 +6,7 @@ permalink: /strategy/
 
 # Strategy: how to decide and play
 
-How to decide and how to read the board. For doing, see [skills](../.cursor/skills/); for
+How to decide and how to read the board. For doing, see [skills](/skills/); for
 a crisis router, see [play](../play/index.md).
 
 Strategy is the layer above commands. A preset sets goal weights in `config/operator.md` so you are not improvising a personality. The priority framework tells you what to drop when charge, power, and time all run short. Awareness pages are how you look at the board; playbooks are what you do once you have looked.
@@ -17,7 +17,7 @@ Presets are optional. They do not grant stats. They are a way to write down “I
 
 ## Set your approach
 
-- [Playstyle presets](presets/README.md) — Generalist, Industrialist, Raider, Merchant, Explorer, Diplomat → goal weights for [`config/operator.md`](../config/operator.md)
+- [Playstyle presets](presets/README.md) — Generalist, Industrialist, Raider, Merchant, Explorer, Diplomat → goal weights for `config/operator.md`
 - [Priority framework](../awareness/priority-framework.md) — Survival > Security > Economy > Expansion > Dominance
 
 ## Read the board (awareness)

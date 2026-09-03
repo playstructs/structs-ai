@@ -84,7 +84,7 @@ Write structured findings to `memory/intel/` so the next session inherits them. 
   "notes": "CS offline 3+ checks; raid window open"
 }
 ```
-Keep a `memory/intel/galaxy.json` for guild/market snapshots and `memory/intel/targets/` per-target files. Record the block height with every reading so staleness is obvious. Memory schema conventions: [`memory/README`](https://structs.ai/memory/README).
+Keep a `memory/intel/galaxy.json` for guild/market snapshots and `memory/intel/targets/` per-target files. Record the block height with every reading so staleness is obvious. Memory schema conventions: [`awareness/continuity`](https://structs.ai/awareness/continuity).
 
 ## Advanced: Guild Stack (PostgreSQL)
 

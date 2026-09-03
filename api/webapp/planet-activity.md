@@ -24,6 +24,9 @@ Per-planet activity log — raids, attacks, builds, defender changes, struct hea
 | GET | `/api/planet-activity/all/page/{page}` | List every planet activity row | Yes |
 | GET | `/api/planet-activity/planet/{planet_id}/page/{page}` | List activity for a planet | Yes |
 | GET | `/api/planet-activity/category/{category}/page/{page}` | List activity by category | Yes |
+| GET | `/api/planet-activity/stats` | 30-day counts by category (`?category=`, `?bucket=1h\|day`) | Yes |
+
+Bucketed stats for charts: [`analytics.md`](analytics.md).
 
 ---
 

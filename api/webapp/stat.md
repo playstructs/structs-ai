@@ -33,8 +33,10 @@ Range query against per-object time-series stat tables. Pick a metric name and a
 
 - `start_time_end_time_required` — `start_time`/`end_time` query params missing.
 - `time_range_invalid` — `end_time` must be greater than `start_time`.
-- `time_range_too_large` — window may not exceed **604800 seconds (7 days)**.
+- `time_range_too_large` — without `bucket`, window may not exceed **604800 seconds (7 days)**; with `bucket=1h` or `1d`, **2592000 seconds (30 days)**.
 - `object_key_invalid` — `object_key` not `{type}-{index}`, or wrong type for a family-two metric.
+
+Galaxy-wide aggregates, optional `?bucket=` / `?limit=` on this range, and the rest of the charting surface: [`analytics.md`](analytics.md).
 
 ---
 
@@ -43,6 +45,8 @@ Range query against per-object time-series stat tables. Pick a metric name and a
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
 | GET | `/api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix}&end_time={unix}` | Range stats for one object | Yes |
+
+Optional query: `bucket=1h|1d` (avg per bucket; 30-day max window), `limit` (default 100, max 1000). Galaxy-wide LOCF aggregate: `GET /api/stat/{metric}/aggregate/range` on [`analytics.md`](analytics.md).
 
 ---
 
@@ -92,7 +96,7 @@ GET http://localhost:8080/api/stat/power/object/1-11/range/page/1?start_time=171
 }
 ```
 
-Page size is fixed at 100 — if `data.length === 100`, request the next page (still within the same 7-day window).
+Page size is 100 by default — if `data.length === 100` and you omitted `limit`, request the next page (still within the same window). With `?limit=` the full-page test is that limit.
 
 **Validation failure example** (window too large):
 

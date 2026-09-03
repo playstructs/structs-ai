@@ -217,7 +217,7 @@ Skills can opt-in by appending after each tx. Commanders read this to verify wha
 ## See Also
 
 - [`SAFETY.md`](../SAFETY.md) — the trust contract; Tier definitions
-- [`config/operator.md`](../config/operator.example.md) — where your standing orders live ([`COMMANDER.md`](../COMMANDER.md) is a stub)
+- [`config/operator.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) — where your standing orders live ([`COMMANDER.md`](../COMMANDER.md) is a stub)
 - [`threat-detection.md`](threat-detection.md) — in-game threats (raids, depletion, power)
 - [`async-operations.md`](async-operations.md) — background-job hygiene
 - [`knowledge/mechanics/permissions.md`](../knowledge/mechanics/permissions.md) — the 25-bit permission system

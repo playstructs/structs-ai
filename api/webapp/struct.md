@@ -21,6 +21,8 @@ description: Read struct records from the web application catalog, with the exte
 | GET | `/api/struct/list/all/page/{page}` | Catalog list of every struct | Yes |
 | GET | `/api/struct/list/owner/{owner}/page/{page}` | Catalog list of structs owned by a player | Yes |
 | GET | `/api/struct/list/location/{location_id}/page/{page}` | Catalog list of structs at a location | Yes |
+| GET | `/api/struct/status/counts` | Counts from `view.struct_status` (materialized, built, online, …) | Yes |
+| GET | `/api/struct/count` | Struct census; optional `?is_destroyed=0\|1` | Yes |
 
 Per-struct attributes and defender relationships live in [`struct-attribute.md`](struct-attribute.md) and [`struct-defender.md`](struct-defender.md).
 

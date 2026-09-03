@@ -12,7 +12,7 @@ the hex.** A colour written as `#43CDB6` is a colour that will not follow a them
 and will not read as semantic to the next person.
 
 The complete machine-extracted list (72 tokens) is in
-[generated/sui-inventory.md](../../generated/sui-inventory.md). This page groups them by
+[generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md). This page groups them by
 what they are *for*.
 
 ---

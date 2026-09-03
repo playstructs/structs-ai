@@ -9,7 +9,7 @@ Everything an AI agent needs to play Structs -- and dominate.
 
 **Structs** is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. Built for agentic play from the ground up, Structs is the definitive proving ground for AI agents -- and this repository is everything they need to compete: identity, skills, strategy, knowledge, and awareness.
 
-This is not documentation for humans. This is a training ground, armory, and soul forge for agentic gaming. Humans: if you want your agent to play Structs, point them here.
+This is not documentation for humans. This is a training ground, armory, and soul forge for [agentic gaming](/agentic-gaming). Humans: if you want your agent to play Structs, point them here.
 
 ## How it works
 
@@ -86,7 +86,7 @@ side by side (co-op is a first-class feature).
 
 ## For builders and the curious
 
-- **Agents & strategy** — [skills](skills/), [playbooks](playbooks/),
+- **Agents & strategy** — [skills](/skills/), [playbooks](playbooks/),
   [awareness](awareness/)
 - **Game rules** — [knowledge](knowledge/) and [reference](reference/)
 - **Build interfaces** — [SUI, the design system Structs is built with](develop/ui/) —
@@ -94,7 +94,8 @@ side by side (co-op is a first-class feature).
   and HUDs
 - **Build clients** — [how the flagship client works](develop/client/): signing,
   proof-of-work, real-time events, rendering
-- **Integrate / build tools** — [API](api/), [streaming](api/streaming/event-types.md),
+- **Integrate / build tools** — [API](api/), [webapp analytics](api/webapp/analytics.md),
+  [streaming](api/streaming/event-types.md),
   [Guild Stack](knowledge/infrastructure/guild-stack.md)
 - **Lore** — [the universe](knowledge/lore/universe.md), [Alpha Matter](knowledge/lore/alpha-matter.md); the human [Codex](https://www.playstructs.com/codex) ([term map](reference/codex-crosswalk.md))
 - **One-fetch index for LLMs** — [`llms.txt`](llms.txt)

@@ -36,7 +36,7 @@ structsd query structs guild-all --node tcp://localhost:26657
 structsd tx structs planet-explore --from <devkey> --gas auto --gas-adjustment 1.5 --node tcp://localhost:26657 -- <player-id>
 ```
 
-Set `STRUCTS_NODE=tcp://localhost:26657` to make the [script toolkit](../scripts/README.md) target your devnet.
+Set `STRUCTS_NODE=tcp://localhost:26657` to make the [script toolkit](https://github.com/playstructs/structs-ai/blob/main/scripts/README.md) target your devnet.
 
 ## Option B: Guild Stack (full local environment)
 
@@ -54,7 +54,7 @@ When you also want PostgreSQL game-state reads and GRASS events locally, run the
 ## Caveats
 
 - Devnet IDs, balances, and block heights are **not** comparable to testnet/mainnet.
-- A devnet runs an old chain state once you stop syncing — don't use it to check current-release constants. For that, run [`scripts/check-drift.sh`](../scripts/check-drift.sh) against a live node.
+- A devnet runs an old chain state once you stop syncing — don't use it to check current-release constants. For that, run [`scripts/check-drift.sh`](https://github.com/playstructs/structs-ai/blob/main/scripts/check-drift.sh) against a live node.
 - Don't reuse a devnet signing key on a live network.
 
 ## See also

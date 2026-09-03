@@ -11,7 +11,7 @@ redirect_from:
 
 A player methodology is **not a personality** — it's a set of goal weights plus a few
 recommended skills and watch-outs. These presets are optional shortcuts for filling in the
-`goals` block of [`config/operator.md`](../../config/operator.md). Pick one, blend two, or
+`goals` block of `config/operator.md`. Pick one, blend two, or
 ignore them and set weights directly.
 
 Weights are 0–3 (0 = ignore, 3 = primary focus), matching the operator profile:

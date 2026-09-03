@@ -2,6 +2,9 @@
 title: "Skills: procedures for playing"
 description: Decision-first, CLI-grounded procedures for playing Structs. Each skill states when to use it, what it decides, and the exact commands to run.
 permalink: /skills/
+redirect_from:
+  - /.cursor/skills
+  - /.cursor/skills/
 ---
 
 # Skills: procedures for playing
@@ -12,7 +15,7 @@ Start with [play-structs](play-structs/SKILL) — it takes you from zero to mini
 
 Skills are the doing layer. They assume you have already decided *that* you should mine, raid, or infuse; they will not argue you out of a bad war. For that argument see [play](../play/) and [playbooks](../playbooks/). Canonical numbers live in [knowledge](../knowledge/) and [reference](../reference/).
 
-Edit the copies under [`.cursor/skills/`](../.cursor/skills/) — `skills/` is a generated mirror for GitHub Pages and OpenClaw discovery.
+Edit the copies under `.cursor/skills/` — [`skills/`](/skills/) is a generated mirror for GitHub Pages and OpenClaw discovery.
 
 ## Core loop
 

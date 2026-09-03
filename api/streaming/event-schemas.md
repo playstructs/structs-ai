@@ -234,5 +234,5 @@ All `planet`/`struct` categories below are `planet_activity` rows delivered on `
 
 ## Related Documentation
 
-- [Event Types](event-types.yaml)
+- [Event Types](event-types.md)
 - [Streaming Protocol](../../protocols/streaming.md)

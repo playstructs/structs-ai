@@ -35,7 +35,7 @@ real-time events — see [develop/client/](../client/index.md).
 
 Paths are relative to a [structs-webapp](../repos.md) checkout, the canonical source.
 The extracted inventory of every token, icon, class and modifier lives in
-[generated/sui-inventory.md](../../generated/sui-inventory.md).
+[generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md).
 
 ---
 
@@ -116,4 +116,4 @@ webapp considerably.
 ---
 
 *Verified against structs-webapp `6eec7f7` (2026-07-21). Inventory:
-[generated/sui-inventory.md](../../generated/sui-inventory.md).*
+[generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md).*

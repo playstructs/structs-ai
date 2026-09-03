@@ -25,6 +25,9 @@ Energy providers — the supply side of the agreement market. Each provider has 
 | GET | `/api/provider/owner/{owner}/page/{page}` | List providers owned by a player | Yes |
 | GET | `/api/provider/denom/{denom}/page/{page}` | List providers selling for a denom | Yes |
 | GET | `/api/provider/substation/{substation_id}/page/{page}` | List providers backed by a substation | Yes |
+| GET | `/api/provider/market` | Storefront snapshot: alpha-equivalent rate, committed capacity, guild | Yes |
+
+Charting this market: [`analytics.md`](analytics.md).
 
 ---
 

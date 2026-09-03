@@ -26,7 +26,7 @@ Read in this order:
 
 | File | Purpose |
 |------|---------|
-| [`config/operator.md`](../config/operator.md) | Goals, risk, autonomy, guild preference, standing orders (copy from [`config/operator.example.md`](../config/operator.example.md) if missing) |
+| `config/operator.md` | Goals, risk, autonomy, guild preference, standing orders (copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md) if missing) |
 | [`SAFETY.md`](../SAFETY.md) | Trust contract and approval tiers |
 | [`TOOLS.md`](../TOOLS.md) | Environment: servers, MCP, accounts |
 
@@ -57,7 +57,7 @@ Before ending a session:
 
 **Path**: `memory/`
 
-**Contents** (full shapes in [`memory/README.md`](../memory/README.md)):
+**Contents** (full shapes in [`memory/README.md`](/awareness/continuity.html)):
 
 - `jobs/` — Active/completed PoW background jobs as `<job>.json` + `.log` + `.pid` (check **first** on resume)
 - `player.json` — Player id, last-action / charge plan (next action + cost + ready block)

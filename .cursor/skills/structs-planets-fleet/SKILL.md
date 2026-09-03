@@ -4,6 +4,11 @@ name: structs-planets-fleet
 description: Manages planets and fleet in Structs — evaluating and exploring planets, claiming/relocating, fleet movement and composition, evacuation, and the onStation-vs-away state. Use when discovering or claiming a planet, your planet is depleting, relocating, moving the fleet, checking fleet status, or deciding fleet composition for offense/defense. Covers the raid-clock implications of fleet position.
 level: core
 domain: territory
+redirect_from:
+  - /skills/structs-exploration/SKILL
+  - /skills/structs-exploration/SKILL.html
+  - /.cursor/skills/structs-exploration/SKILL
+  - /.cursor/skills/structs-exploration/SKILL.html
 ---
 
 # Structs Planets & Fleet
