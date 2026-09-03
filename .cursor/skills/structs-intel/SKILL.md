@@ -45,7 +45,7 @@ structsd query structs struct [commandStruct-id]          # Command Ship status/
 # (they route through the Guild Stack / webapp query API — see scripts/BASELINE.md):
 #   Guild Stack: select id,type,operating_ambit from struct where location_id='[planet-id]';
 ```
-Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`](https://structs.ai/scripts/scout.sh) for a one-shot bundle when available.
+Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`](https://github.com/playstructs/structs-ai/blob/main/scripts/scout.sh) for a one-shot bundle when available.
 
 ### 2. Profile a guild
 

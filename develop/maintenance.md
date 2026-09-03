@@ -17,7 +17,7 @@ document like that is wrong eventually. The question is whether it is wrong *kno
 
 **`structs-webapp` is the source of truth.** Every page in `develop/ui/` and
 `develop/client/` is written from it at the revision recorded in
-[`.structs-webapp-version`](../.structs-webapp-version), and each page's footer names the
+[`.structs-webapp-version`](https://github.com/playstructs/structs-ai/blob/main/.structs-webapp-version), and each page's footer names the
 commit it was verified against. When a page and the code disagree, the page is wrong.
 
 Two artifacts hold the line:

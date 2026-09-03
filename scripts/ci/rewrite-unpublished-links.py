@@ -37,6 +37,8 @@ def repo_rel(from_file: Path, href: str) -> str | None:
     path = href.split("#", 1)[0].split("?", 1)[0]
     if not path or path.startswith(("#", "mailto:", "structs://")):
         return None
+    if path.startswith("https://structs.ai/") or path.startswith("http://structs.ai/"):
+        return path.split("structs.ai/", 1)[1]
     if path.startswith(("http://", "https://")):
         return None
     if path.startswith("/"):
