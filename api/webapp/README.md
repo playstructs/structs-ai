@@ -10,7 +10,7 @@ redirect_from:
 # Webapp API Endpoints
 
 **Purpose**: Webapp endpoints split per entity for context-window efficiency
-**Last Updated**: September 2, 2026
+**Last Updated**: September 4, 2026
 
 ---
 
@@ -25,6 +25,8 @@ This directory contains the structs-webapp HTTP API split per entity. Agents sho
 **Response envelope (all endpoints)**: every webapp response — bespoke or catalog, success or failure — is `{ "success": bool, "errors": {}, "data": ... }` with optional `meta.height` (indexer or `current_block`) and `total`. **Always check `success`, then unwrap `data`.** `errors` is a keyed object (e.g. `{"signature_validation_failed": "..."}`), never a string array. Bespoke endpoints return SQL column names (snake_case) inside `data` unless otherwise noted; catalog reads return a flat array of rows in `data`. See `../../protocols/webapp-api-protocol.md`.
 
 **Charting and analytics.** Leaderboards, inventory, guild-bank history, time-series aggregates, market snapshots, and census counts are documented together in [`analytics.md`](analytics.md) — that is the page to load when you are drawing a dashboard rather than fetching one entity.
+
+**Pagination and batch caps.** Catalog page size defaults to 100. Optional `?limit=` is clamped to **1–10000**. `/api/objects?ids=` and `/api/resolve` name search cap at **200** ids.
 
 **Base URLs**:
 

@@ -6,7 +6,7 @@ description: "The structs-webapp API: response envelope, authentication, catalog
 
 **Category**: Query
 **Status**: Stable
-**Last Updated**: May 13, 2026
+**Last Updated**: September 4, 2026
 
 ## Overview
 
@@ -343,7 +343,8 @@ The page endpoint returns a **flat array** of ledger rows in `data` (page size 1
 Conventions:
 
 - `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
-- Catalog page size defaults to **100** (`PaginationLimits::DEFAULT`) and is **not** sent as `offset`. Newer charting list reads accept optional `?limit=` clamped to **1–1000** (`PaginationLimits::clamp`). Leaderboards default to **50**. Full-page test: `data.length ===` the limit you used (100 if omitted).
+- Catalog page size defaults to **100** (`PaginationLimits::DEFAULT`) and is **not** sent as `offset`. List reads accept optional `?limit=` clamped to **1–10000** (`PaginationLimits::MAX`). Leaderboards default to **50**. Full-page test: `data.length ===` the limit you used (100 if omitted).
+- Batch id lists are a separate cap: `/api/objects?ids=` is regex-limited to **200** comma-separated object keys (`PaginationLimits::BATCH_IDS_MAX` / `RegexPattern::IDS`). More than 200 ids is `400`. `/api/resolve` name search uses the same 200 as its SQL `LIMIT`.
 - Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
 - Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all`, `/api/permission-guild-rank/object/{object_id}/page/1`).
 - For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
@@ -375,7 +376,7 @@ Conventions:
 
 **Format**: `GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix_seconds}&end_time={unix_seconds}`
 
-Optional `bucket=1h|1d` averages into `date_trunc` buckets and raises the max window from **7 days** to **30 days**. Optional `limit` (default 100, max 1000).
+Optional `bucket=1h|1d` averages into `date_trunc` buckets and raises the max window from **7 days** to **30 days**. Optional `limit` (default 100, max **10000**).
 
 Galaxy-wide LOCF aggregate (not a page of one object): `GET /api/stat/{metric}/aggregate/range?object_type=&start_time=&end_time=` with optional `bucket`. See [`api/webapp/analytics.md`](../api/webapp/analytics.md).
 

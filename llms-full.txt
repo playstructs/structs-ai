@@ -17961,7 +17961,7 @@ description: "Charting endpoints on the guild webapp: leaderboards, inventory, b
 # Webapp analytics and charting API
 
 **Category**: webapp
-**Verified against**: structs-webapp `fdf120d8` (PR #121, 2026-09-02)
+**Verified against**: structs-webapp `0597b514` (2026-09-04)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
 
 These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, optional `meta.height` for the indexer tip, and (where noted) `?bucket=1h|1d` windows over the last 30 days.
@@ -17969,6 +17969,15 @@ These routes exist to **draw the board**, not to look up one entity. Leaderboard
 They still sit behind a session cookie. Public prefixes remain `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`. `/api/block` needs auth.
 
 Envelope: `{ "success", "errors", "data" }` plus optional `meta.height` and `total`. Unwrap `data` after `success`. Protocol: [webapp-api-protocol](../../protocols/webapp-api-protocol.md). Per-entity lookup routes stay on their entity pages; this file is the charting map.
+
+**Limits** (`PaginationLimits` in structs-webapp):
+
+| Constant | Value | Applies to |
+|---------|-------|------------|
+| `DEFAULT` | 100 | Catalog / range page size when `?limit=` is omitted |
+| `MAX` | **10000** | `?limit=` clamp on lists, leaderboards, stats, inventory, planet-raid |
+| `LEADERBOARD_DEFAULT` | 50 | Leaderboards when `?limit=` is omitted |
+| `BATCH_IDS_MAX` | **200** | `/api/objects?ids=` (regex cap) and `/api/resolve` name-search `LIMIT` |
 
 ## What to call for a dashboard
 
@@ -18006,13 +18015,13 @@ Unit registry: `ualpha` and `ore`, plus every `uguild.{guild_id}` (optional `gui
 
 - **ID**: `webapp-resolve`
 
-Required `q`. Object key (`N-M`) returns one typed row. Bech32 ≥32 chars looks up `player_address`. Anything else is ILIKE on player username, guild name/tag, substation name. Cap `PaginationLimits::BATCH_IDS_MAX` (25). `address` (`8-N`) and `infusion` (`7-N`) are not addressable by object key — `object` is `null`.
+Required `q`. Object key (`N-M`) returns one typed row. Bech32 ≥32 chars looks up `player_address`. Anything else is ILIKE on player username, guild name/tag, substation name. Cap `PaginationLimits::BATCH_IDS_MAX` (**200**). `address` (`8-N`) and `infusion` (`7-N`) are not addressable by object key — `object` is `null`.
 
 ### GET `/api/objects?ids=`
 
 - **ID**: `webapp-objects`
 
-Comma-separated ids, same typed fetch as resolve. Projections are explicit column lists, not `SELECT *`.
+Comma-separated object keys, same typed fetch as resolve. Cap **200** ids (`RegexPattern::IDS`); more than that is `400`. Projections are explicit column lists, not `SELECT *`.
 
 Resolvable types: guild, player, planet, reactor, substation, struct, allocation, fleet, provider, agreement.
 
@@ -18022,7 +18031,7 @@ Resolvable types: guild, player, planet, reactor, substation, struct, allocation
 
 - **ID**: `webapp-leaderboard`
 
-`kind` ∈ `player|guild|reactor|substation|provider`. Query: `order` (allowlisted per kind or `400 order_invalid`), `limit` (default 50, clamp 1–1000).
+`kind` ∈ `player|guild|reactor|substation|provider`. Query: `order` (allowlisted per kind or `400 order_invalid`), `limit` (default 50, clamp 1–10000).
 
 | kind | Default order | Amount columns (strings, `_p`) |
 |------|---------------|--------------------------------|
@@ -18081,7 +18090,7 @@ That owner's agreements plus `blocks_remaining` and `escrow_remaining` (capacity
 Raw per-object range still lives on [stat.md](stat.md). Charting additions:
 
 - Optional `?bucket=1h|1d` on the per-object range: `date_trunc` + `AVG(value)`. With a bucket the max window is **30 days** (`2592000` s); without it the max stays **7 days**.
-- Optional `?limit=` on that range (default 100, max 1000).
+- Optional `?limit=` on that range (default 100, max 10000).
 
 ### GET `/api/stat/{metric}/aggregate/range`
 

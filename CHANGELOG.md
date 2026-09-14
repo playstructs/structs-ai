@@ -11,6 +11,15 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.1] - 2026-09-04
+
+Webapp pagination and batch-id caps (structs-webapp `0597b514`).
+
+### Changed
+
+- **`?limit=` max is 10000** (`PaginationLimits::MAX`). Catalog lists, leaderboards, stats, inventory, and planet-raid accept 1–10000; default page size is still 100, leaderboards still default to 50.
+- **`/api/objects?ids=` and `/api/resolve` name search cap at 200** (`PaginationLimits::BATCH_IDS_MAX`). More than 200 ids is `400`.
+
 ## [1.26.0] - 2026-09-02
 
 Webapp analytics API (structs-webapp `fdf120d8`, PR #121) plus the September search-audit P0–P3: unpublished repo links no longer 404 on the site, dead skill URLs redirect, and `/agentic-gaming` owns the query the homepage already defined.
