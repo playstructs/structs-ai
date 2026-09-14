@@ -6,7 +6,7 @@ description: "Charting endpoints on the guild webapp: leaderboards, inventory, b
 # Webapp analytics and charting API
 
 **Category**: webapp
-**Verified against**: structs-webapp `0597b514` (2026-09-04)
+**Verified against**: structs-webapp `9ac438f3` (2026-09-14)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
 
 These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, optional `meta.height` for the indexer tip, and (where noted) `?bucket=1h|1d` windows over the last 30 days.
@@ -40,6 +40,8 @@ Envelope: `{ "success", "errors", "data" }` plus optional `meta.height` and `tot
 | One object's metric over time | `GET /api/stat/{metric}/object/{key}/range/page/{n}` |
 | Galaxy-wide metric (LOCF average/sum) | `GET /api/stat/{metric}/aggregate/range` |
 | Activity volume by category | `GET /api/planet-activity/stats` |
+| One player's combat / activity feed | `GET /api/planet-activity/player/{id}/page/{n}` |
+| One player's activity counts | `GET /api/planet-activity/player/{id}/stats` |
 | Ledger volume by action/denom | `GET /api/ledger/stats` |
 | Power-margin census | `GET /api/player/power/at-risk`, `GET /api/player/{id}/power` |
 | Raid board | `GET /api/planet-raid/all/page/{n}` or `.../status/{status}/page/{n}` |
@@ -143,7 +145,7 @@ Raw per-object range still lives on [stat.md](stat.md). Charting additions:
 
 Required query: `object_type`, `start_time`, `end_time` (unix seconds). Optional `bucket` (`1h` default, or `1d`). Max window 30 days. `400 object_type_start_time_end_time_required` if any of the three is missing.
 
-Samples are change-triggered. A naïve `AVG` per bucket would describe only objects that moved. This endpoint **last-observation-carries-forward** every object's last-known value to each bucket close, then returns `bucket`, `sum`, `avg`, `population`, `samples`. Objects with no sample yet contribute nothing (not zero).
+Reads **precomputed** LOCF hourly snapshots from `structs.stat_rollup` (`sum`, `population`, `samples`; `avg` is `sum / population` when population > 0). Empty buckets are **absent**. The unfinished current hour is not present until the `:02` cron writes it. `?bucket=1d` takes the last hourly row of each day and sums that day's `samples`.
 
 Family-two metrics still require their entity `object_type` (`structs_load` → player, `connection_*` → substation, `struct_health`/`struct_status` → struct).
 
@@ -151,7 +153,15 @@ Family-two metrics still require their entity `object_type` (`structs_load` → 
 
 - **ID**: `webapp-planet-activity-stats`
 
-Optional `category`, `bucket` (`1h` or day). Last 30 days. Rows: `bucket`, `category`, `count`.
+Optional `category`, `bucket` (`1h` or `1d`; omit = daily). Last 30 days from `planet_activity_hourly` / `planet_activity_daily`. Rows: `bucket`, `category`, `count`.
+
+### GET `/api/planet-activity/player/{player_id}/stats`
+
+- **ID**: `webapp-planet-activity-player-stats`
+
+Daily only (`400 bucket_invalid` on `1h`). Optional `category`, `role` (`attacker|target|owner|planet_owner|defender|protected|fleet_owner`). Last 30 days from `planet_activity_player_daily`. Rows: `bucket`, `category`, `role`, `count`.
+
+The matching event feed is `GET /api/planet-activity/player/{player_id}/page/{page}` (`?category=`, `?role=`, `?since_height=`, `?order=asc|desc`). See [planet-activity.md](planet-activity.md).
 
 ### GET `/api/ledger/stats`
 

@@ -22,7 +22,7 @@ Player entity endpoints.
 | webapp-player-ore-stats | GET | `/api/player/{player_id}/ore/stats` | Webapp | Get player ore statistics |
 | webapp-player-action-last-block | GET | `/api/player/{player_id}/action/last/block/height` | Webapp | Get player's last action block height |
 | webapp-player-completed-planets | GET | `/api/player/{player_id}/planet/completed` | Webapp | Get player's completed planets |
-| webapp-player-launched-raids | GET | `/api/player/{player_id}/raid/launched` | Webapp | Get player's launched raids |
+| webapp-player-launched-raids | GET | `/api/player/{player_id}/raid/launched` | Webapp | Count of raids this player initiated |
 
 ### Actions
 
@@ -58,6 +58,8 @@ Planet entity endpoints.
 | webapp-planet-shield-health | GET | `/api/planet/{planet_id}/shield/health` | Webapp | Get planetary shield health |
 | webapp-planet-shield | GET | `/api/planet/{planet_id}/shield` | Webapp | Get planetary shield information |
 | webapp-planet-raid-active | GET | `/api/planet/{planet_id}/raid/active` | Webapp | Get active raid for planet |
+| webapp-planet-activity-by-player | GET | `/api/planet-activity/player/{player_id}/page/{page}` | Webapp | Per-player activity feed |
+| webapp-planet-activity-player-stats | GET | `/api/planet-activity/player/{player_id}/stats` | Webapp | Per-player daily activity counts |
 
 ### Dependencies
 

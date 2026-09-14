@@ -355,6 +355,12 @@ The `detail` column for `struct_attack` carries the attacker at the top level (`
 
 **GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](../../.cursor/skills/structs-streaming/SKILL.md).
 
+### `planet_activity_player` (per-player attribution)
+
+Side table written at insert time. Ownership is as-of-event. Columns include `player_id`, `role` (`attacker`, `target`, `owner`, `planet_owner`, `defender`, `protected`, `fleet_owner`), plus the parent key (`time`, `planet_id`, `seq`, `block_height`, `category`). The Guild API player feed joins this back to `planet_activity` and uses `block_height` (`?since_height=`) as the cross-planet cursor — `seq` is still per-planet.
+
+Continuous aggregates backing the stats endpoints: `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily`. Galaxy-wide metric charts read `structs.stat_rollup` (hourly LOCF snapshots).
+
 ---
 
 ## Energy Commerce Tables

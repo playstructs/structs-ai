@@ -7,7 +7,7 @@ description: Read struct records from the web application catalog, with the exte
 **Category**: webapp
 **Entity**: Struct
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: May 13, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -26,7 +26,7 @@ description: Read struct records from the web application catalog, with the exte
 
 Per-struct attributes and defender relationships live in [`struct-attribute.md`](struct-attribute.md) and [`struct-defender.md`](struct-defender.md).
 
-> **`health` and numeric `status` are only on the bespoke endpoints.** The catalog `list/*` endpoints return **base struct columns only** (no `health`, no `status`) — they read `structs.struct` with no joins. The bespoke endpoints (`/api/struct/player/{id}`, `/api/struct/{id}`) `LEFT JOIN struct_attribute` to add `health` and the numeric `status` bitmask. If you need HP, built-state, or status from a list, either call a bespoke endpoint per struct or read the chain entity (`GET /structs/struct/{id}` → `structAttributes.health`, `.isBuilt`, `.blockStartBuild`, `.status`). See [api/integration-notes.md — Where struct HP and status live](../integration-notes.md#where-struct-hp-and-status-live).
+> **`health` and numeric `status` are only on the bespoke endpoints.** The catalog `list/*` endpoints return **base struct columns only** (no `health`, no `status`) — they read `structs.struct` with no joins. The bespoke endpoints (`/api/struct/player/{id}`, `/api/struct/{id}`) `LEFT JOIN struct_attribute` to add `health` and the numeric `status` bitmask. If the status attribute row is missing, `status` is **32** when `is_destroyed` is true, otherwise **0**. If you need HP, built-state, or status from a list, either call a bespoke endpoint per struct or read the chain entity (`GET /structs/struct/{id}` → `structAttributes.health`, `.isBuilt`, `.blockStartBuild`, `.status`). See [api/integration-notes.md — Where struct HP and status live](../integration-notes.md#where-struct-hp-and-status-live).
 
 ---
 
@@ -229,7 +229,7 @@ Catalog list of structs sitting on a given location object (planet, fleet, or ot
 
 ### Struct Response
 
-Destroyed structs are filtered out of responses. The `is_destroyed` field is used in queries (`WHERE s.is_destroyed = false`) but destroyed structs are not returned to clients. The bespoke struct managers select `struct s.*` (snake_case DB columns) plus joined `health`, `status`, and `defending_struct_ids`, wrapped in the standard envelope:
+Destroyed structs stay on the bespoke reads until `destroyed_block + STRUCT_SWEEP_DELAY` is behind the current height; after that they disappear. When a remaining destroyed struct has no `status` attribute row, `status` is **32** (Destroyed bit) rather than `0`. The bespoke struct managers select `struct s.*` (snake_case DB columns) plus joined `health`, `status`, and `defending_struct_ids`, wrapped in the standard envelope:
 
 ```json
 {

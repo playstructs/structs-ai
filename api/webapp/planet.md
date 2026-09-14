@@ -7,7 +7,7 @@ description: Read planet records from the web application catalog, with the exte
 **Category**: webapp
 **Entity**: Planet
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: May 13, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -26,7 +26,7 @@ description: Read planet records from the web application catalog, with the exte
 | GET | `/api/planet-raid/all/page/{page}` | Raid board, newest first (`?limit=`) | Yes |
 | GET | `/api/planet-raid/status/{status}/page/{page}` | Raid board filtered by status | Yes |
 
-Planet activity stats and the rest of the charting surface: [`analytics.md`](analytics.md). Planet activity (`planet_activity`, including `struct_health` rows) and per-planet attribute reads live in [`planet-activity.md`](planet-activity.md) and [`planet-attribute.md`](planet-attribute.md).
+Planet activity (including the per-player feed and stats) and per-planet attribute reads live in [`planet-activity.md`](planet-activity.md) and [`planet-attribute.md`](planet-attribute.md). Charting surface: [`analytics.md`](analytics.md).
 
 ---
 

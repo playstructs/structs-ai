@@ -7,7 +7,7 @@ description: Read player records from the web application catalog, with the full
 **Category**: webapp
 **Entity**: Player
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: May 29, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -21,7 +21,7 @@ description: Read player records from the web application catalog, with the full
 | GET | `/api/player/transfer/search` | Search player transfers | Yes |
 | GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | Yes |
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | Yes |
-| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | Yes |
+| GET | `/api/player/{player_id}/raid/launched` | Count of raids this player initiated | Yes |
 | GET | `/api/player/list/all/page/{page}` | Catalog list of all players, paginated | Yes |
 | GET | `/api/player/list/guild/{guild_id}/page/{page}` | Catalog list of players in a guild | Yes |
 | GET | `/api/player/list/substation/{substation_id}/page/{page}` | Catalog list of players connected to a substation | Yes |
@@ -30,7 +30,7 @@ description: Read player records from the web application catalog, with the full
 | GET | `/api/player/{player_id}/power` | Capacity, load, margin from `view.player` | Yes |
 | GET | `/api/player/power/at-risk` | Lowest power-margin players (`?limit=`, default 25) | Yes |
 
-Census, power-margin, and leaderboards for dashboards: [`analytics.md`](analytics.md).
+Census, power-margin, and leaderboards for dashboards: [`analytics.md`](analytics.md). Per-player combat feed: [`planet-activity.md`](planet-activity.md).
 
 ---
 
@@ -193,7 +193,7 @@ Get completed planets for player.
 
 ### GET `/api/player/{player_id}/raid/launched`
 
-Get launched raids for player.
+Count of raids this player **initiated**: `planet_activity` rows with `category = 'raid_status'` and `detail.status = 'initiated'`, joined to `fleet` on `detail.fleet_id` where `fleet.owner` is the player. Returns `{ "count": N }`. This is not a list, and it is not "fleets that left planets this player currently owns".
 
 - **ID**: `webapp-player-raid-launched`
 

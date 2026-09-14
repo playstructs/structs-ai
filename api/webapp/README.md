@@ -10,7 +10,7 @@ redirect_from:
 # Webapp API Endpoints
 
 **Purpose**: Webapp endpoints split per entity for context-window efficiency
-**Last Updated**: September 4, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -26,7 +26,7 @@ This directory contains the structs-webapp HTTP API split per entity. Agents sho
 
 **Charting and analytics.** Leaderboards, inventory, guild-bank history, time-series aggregates, market snapshots, and census counts are documented together in [`analytics.md`](analytics.md) — that is the page to load when you are drawing a dashboard rather than fetching one entity.
 
-**Pagination and batch caps.** Catalog page size defaults to 100. Optional `?limit=` is clamped to **1–10000**. `/api/objects?ids=` and `/api/resolve` name search cap at **200** ids.
+**Pagination and batch caps.** Catalog page size defaults to 100. Optional `?limit=` is clamped to **1–10000**. `/api/objects?ids=` and `/api/resolve` name search cap at **200** ids. Per-player planet-activity uses `?since_height=` (not `since_seq`).
 
 **Base URLs**:
 
@@ -67,7 +67,7 @@ Uniform paginated reads under `/api/{entity}[/{filter}]/page/{page}`. See `proto
 - [`guild-membership-application.md`](guild-membership-application.md) — `/api/guild-membership-application/*`
 - [`permission.md`](permission.md) — `/api/permission/*`
 - [`permission-guild-rank.md`](permission-guild-rank.md) — `/api/permission-guild-rank/*`
-- [`planet-activity.md`](planet-activity.md) — `/api/planet-activity/*`
+- [`planet-activity.md`](planet-activity.md) — `/api/planet-activity/*` including per-player feed and stats
 - [`planet-attribute.md`](planet-attribute.md) — `/api/planet-attribute/*`
 - [`provider.md`](provider.md) — `/api/provider/*`
 - [`reactor.md`](reactor.md) — `/api/reactor/*`

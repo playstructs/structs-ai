@@ -7,7 +7,7 @@ description: Read per-object time-series metrics from the web application, for c
 **Category**: webapp (catalog read)
 **Entity**: Stat (per-object time-series metrics)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: September 4, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -46,7 +46,7 @@ Galaxy-wide aggregates, optional `?bucket=` / `?limit=` on this range, and the r
 |--------|------|-------------|---------------|
 | GET | `/api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix}&end_time={unix}` | Range stats for one object | Yes |
 
-Optional query: `bucket=1h|1d` (avg per bucket; 30-day max window), `limit` (default 100, max 10000). Galaxy-wide LOCF aggregate: `GET /api/stat/{metric}/aggregate/range` on [`analytics.md`](analytics.md).
+Optional query: `bucket=1h|1d` (avg per bucket; 30-day max window), `limit` (default 100, max 10000). Galaxy-wide LOCF aggregate (`structs.stat_rollup`): `GET /api/stat/{metric}/aggregate/range` on [`analytics.md`](analytics.md).
 
 ---
 

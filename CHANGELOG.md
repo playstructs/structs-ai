@@ -11,6 +11,22 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.0] - 2026-09-14
+
+Webapp API against structs-webapp `9ac438f3`: per-player planet-activity, precomputed stat rollups, raid-launch count, destroyed-struct status.
+
+### Added
+
+- **Per-player planet activity** — `GET /api/planet-activity/player/{player_id}/page/{page}` (`?category=`, `?role=`, `?since_height=`, `?order=asc|desc`) and `GET /api/planet-activity/player/{player_id}/stats` (daily). [`planet-activity.md`](api/webapp/planet-activity.md).
+
+### Changed
+
+- **Stat aggregate** reads `structs.stat_rollup` (precomputed hourly LOCF). Empty buckets are absent; the current hour is missing until the `:02` cron. [`analytics.md`](api/webapp/analytics.md).
+- **Planet-activity stats** read `planet_activity_hourly` / `planet_activity_daily` (`?bucket=1h|1d`).
+- **`GET /api/player/{id}/raid/launched`** counts `raid_status` rows with `detail.status = initiated` whose fleet owner is the player.
+- **Bespoke struct `status`** is `32` when a destroyed struct has no status attribute row. Recently destroyed structs remain until `STRUCT_SWEEP_DELAY`.
+- **Ledger lists** order `time DESC, id DESC`.
+
 ## [1.26.1] - 2026-09-04
 
 Webapp pagination and batch-id caps (structs-webapp `0597b514`).

@@ -9900,6 +9900,12 @@ The `detail` column for `struct_attack` carries the attacker at the top level (`
 
 **GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](../../.cursor/skills/structs-streaming/SKILL.md).
 
+### `planet_activity_player` (per-player attribution)
+
+Side table written at insert time. Ownership is as-of-event. Columns include `player_id`, `role` (`attacker`, `target`, `owner`, `planet_owner`, `defender`, `protected`, `fleet_owner`), plus the parent key (`time`, `planet_id`, `seq`, `block_height`, `category`). The Guild API player feed joins this back to `planet_activity` and uses `block_height` (`?since_height=`) as the cross-planet cursor — `seq` is still per-planet.
+
+Continuous aggregates backing the stats endpoints: `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily`. Galaxy-wide metric charts read `structs.stat_rollup` (hourly LOCF snapshots).
+
 ---
 
 ## Energy Commerce Tables
@@ -17721,7 +17727,8 @@ The same activity event reaches you in two different encodings depending on the 
 
 | Source | `detail` encoding | How to read |
 |--------|-------------------|-------------|
-| Guild API `planet-activity` feed (REST) | **JSON-encoded string** | `JSON.parse(row.detail)` before use |
+| Guild API `planet-activity` catalog (`/all`, `/planet/`, `/category/`) | **JSON-encoded string** | `JSON.parse(row.detail)` before use |
+| Guild API `GET /api/planet-activity/player/{id}/page/{n}` | string **and** object | `row.detail` is still the string; `row.detail_json` is the parsed object (or `null`) |
 | NATS / GRASS realtime stream | **already-parsed object** | use `message.detail.*` directly |
 
 Verified: GRASS frames are parsed once via `message.json()` in webapp `src/js/framework/GrassManager.js`, and listeners access `messageData.detail.*` as an object. The REST `planet-activity` rows come straight from a PostgreSQL `detail` column and arrive as a JSON string. An integrator consuming **both** must branch on the source.
@@ -17784,12 +17791,12 @@ Struct **health** and the numeric **status bitmask** are NOT on the base struct 
 | Source | Returns `health`? | Returns numeric `status`? |
 |--------|-------------------|---------------------------|
 | Guild API catalog `GET /api/struct/list/{all\|owner\|location}/...` | No | No |
-| Guild API bespoke `GET /api/struct/player/{id}`, `GET /api/struct/{id}` | **Yes** (joined, default 0) | **Yes** (joined, default 0) |
+| Guild API bespoke `GET /api/struct/player/{id}`, `GET /api/struct/{id}` | **Yes** (joined, default 0) | **Yes** (joined; missing attribute is **32** if `is_destroyed`, else 0) |
 | Chain LCD struct entity (`GET /structs/struct/{id}`) | Yes (`structAttributes.health`) | Yes (`status`) |
 
 The catalog list endpoints return only base columns: `id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at` (verified in webapp `TableReadManager::structListAll/ByOwner/ByLocation`). To get HP, built-state, or the build clock you must use a bespoke endpoint or the chain entity, where `structAttributes` exposes `health`, `isBuilt`, `blockStartBuild`, and `status`.
 
-The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row.
+The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row. Bespoke reads keep recently destroyed structs until `STRUCT_SWEEP_DELAY` elapses.
 
 See [api/webapp/struct.md](webapp/struct.md) for full response shapes.
 
@@ -17961,7 +17968,7 @@ description: "Charting endpoints on the guild webapp: leaderboards, inventory, b
 # Webapp analytics and charting API
 
 **Category**: webapp
-**Verified against**: structs-webapp `0597b514` (2026-09-04)
+**Verified against**: structs-webapp `9ac438f3` (2026-09-14)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
 
 These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, optional `meta.height` for the indexer tip, and (where noted) `?bucket=1h|1d` windows over the last 30 days.
@@ -17995,6 +18002,8 @@ Envelope: `{ "success", "errors", "data" }` plus optional `meta.height` and `tot
 | One object's metric over time | `GET /api/stat/{metric}/object/{key}/range/page/{n}` |
 | Galaxy-wide metric (LOCF average/sum) | `GET /api/stat/{metric}/aggregate/range` |
 | Activity volume by category | `GET /api/planet-activity/stats` |
+| One player's combat / activity feed | `GET /api/planet-activity/player/{id}/page/{n}` |
+| One player's activity counts | `GET /api/planet-activity/player/{id}/stats` |
 | Ledger volume by action/denom | `GET /api/ledger/stats` |
 | Power-margin census | `GET /api/player/power/at-risk`, `GET /api/player/{id}/power` |
 | Raid board | `GET /api/planet-raid/all/page/{n}` or `.../status/{status}/page/{n}` |
@@ -18098,7 +18107,7 @@ Raw per-object range still lives on [stat.md](stat.md). Charting additions:
 
 Required query: `object_type`, `start_time`, `end_time` (unix seconds). Optional `bucket` (`1h` default, or `1d`). Max window 30 days. `400 object_type_start_time_end_time_required` if any of the three is missing.
 
-Samples are change-triggered. A naïve `AVG` per bucket would describe only objects that moved. This endpoint **last-observation-carries-forward** every object's last-known value to each bucket close, then returns `bucket`, `sum`, `avg`, `population`, `samples`. Objects with no sample yet contribute nothing (not zero).
+Reads **precomputed** LOCF hourly snapshots from `structs.stat_rollup` (`sum`, `population`, `samples`; `avg` is `sum / population` when population > 0). Empty buckets are **absent**. The unfinished current hour is not present until the `:02` cron writes it. `?bucket=1d` takes the last hourly row of each day and sums that day's `samples`.
 
 Family-two metrics still require their entity `object_type` (`structs_load` → player, `connection_*` → substation, `struct_health`/`struct_status` → struct).
 
@@ -18106,7 +18115,15 @@ Family-two metrics still require their entity `object_type` (`structs_load` → 
 
 - **ID**: `webapp-planet-activity-stats`
 
-Optional `category`, `bucket` (`1h` or day). Last 30 days. Rows: `bucket`, `category`, `count`.
+Optional `category`, `bucket` (`1h` or `1d`; omit = daily). Last 30 days from `planet_activity_hourly` / `planet_activity_daily`. Rows: `bucket`, `category`, `count`.
+
+### GET `/api/planet-activity/player/{player_id}/stats`
+
+- **ID**: `webapp-planet-activity-player-stats`
+
+Daily only (`400 bucket_invalid` on `1h`). Optional `category`, `role` (`attacker|target|owner|planet_owner|defender|protected|fleet_owner`). Last 30 days from `planet_activity_player_daily`. Rows: `bucket`, `category`, `role`, `count`.
+
+The matching event feed is `GET /api/planet-activity/player/{player_id}/page/{page}` (`?category=`, `?role=`, `?since_height=`, `?order=asc|desc`). See [planet-activity.md](planet-activity.md).
 
 ### GET `/api/ledger/stats`
 

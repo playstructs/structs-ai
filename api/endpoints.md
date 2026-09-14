@@ -421,7 +421,7 @@ In addition to the bespoke endpoints below, the webapp exposes a uniform catalog
 | GET | `/api/player/transfer/search` | Search player transfers | Yes |
 | GET | `/api/player/{player_id}/ore/stats` | Get player ore statistics | Yes |
 | GET | `/api/player/{player_id}/planet/completed` | Get completed planets for player | Yes |
-| GET | `/api/player/{player_id}/raid/launched` | Get launched raids for player | Yes |
+| GET | `/api/player/{player_id}/raid/launched` | Count of raids this player initiated | Yes |
 
 > Username and PFP updates use on-chain `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`; the webapp queues them through the signing client manager. See `knowledge/mechanics/ugc-moderation.md`.
 

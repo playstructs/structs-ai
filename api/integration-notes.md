@@ -60,7 +60,8 @@ The same activity event reaches you in two different encodings depending on the 
 
 | Source | `detail` encoding | How to read |
 |--------|-------------------|-------------|
-| Guild API `planet-activity` feed (REST) | **JSON-encoded string** | `JSON.parse(row.detail)` before use |
+| Guild API `planet-activity` catalog (`/all`, `/planet/`, `/category/`) | **JSON-encoded string** | `JSON.parse(row.detail)` before use |
+| Guild API `GET /api/planet-activity/player/{id}/page/{n}` | string **and** object | `row.detail` is still the string; `row.detail_json` is the parsed object (or `null`) |
 | NATS / GRASS realtime stream | **already-parsed object** | use `message.detail.*` directly |
 
 Verified: GRASS frames are parsed once via `message.json()` in webapp `src/js/framework/GrassManager.js`, and listeners access `messageData.detail.*` as an object. The REST `planet-activity` rows come straight from a PostgreSQL `detail` column and arrive as a JSON string. An integrator consuming **both** must branch on the source.
@@ -123,12 +124,12 @@ Struct **health** and the numeric **status bitmask** are NOT on the base struct 
 | Source | Returns `health`? | Returns numeric `status`? |
 |--------|-------------------|---------------------------|
 | Guild API catalog `GET /api/struct/list/{all\|owner\|location}/...` | No | No |
-| Guild API bespoke `GET /api/struct/player/{id}`, `GET /api/struct/{id}` | **Yes** (joined, default 0) | **Yes** (joined, default 0) |
+| Guild API bespoke `GET /api/struct/player/{id}`, `GET /api/struct/{id}` | **Yes** (joined, default 0) | **Yes** (joined; missing attribute is **32** if `is_destroyed`, else 0) |
 | Chain LCD struct entity (`GET /structs/struct/{id}`) | Yes (`structAttributes.health`) | Yes (`status`) |
 
 The catalog list endpoints return only base columns: `id, index, type, creator, owner, location_type, location_id, operating_ambit, slot, is_destroyed, destroyed_block, created_at, updated_at` (verified in webapp `TableReadManager::structListAll/ByOwner/ByLocation`). To get HP, built-state, or the build clock you must use a bespoke endpoint or the chain entity, where `structAttributes` exposes `health`, `isBuilt`, `blockStartBuild`, and `status`.
 
-The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row.
+The numeric `status` is a `StructState` bit-flag, not an enum. Decode it with the canonical table in [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric) (Online = `status & 4`, Destroyed = `status & 32`; e.g. `35` is a destroyed struct). The catalog list's `is_destroyed` boolean is the only destruction signal on the base row. Bespoke reads keep recently destroyed structs until `STRUCT_SWEEP_DELAY` elapses.
 
 See [api/webapp/struct.md](webapp/struct.md) for full response shapes.
 

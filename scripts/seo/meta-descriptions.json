@@ -53,7 +53,7 @@
   "/api/webapp/ledger.html": "Read the ledger from the web application: the record of value moving between players, guilds, and the Central Bank.",
   "/api/webapp/permission-guild-rank.html": "Read guild rank permissions from the web application: which authority each rank carries inside a guild.",
   "/api/webapp/permission.html": "Read permission records from the web application catalog, resolved into a form easier to inspect than the raw bitmask.",
-  "/api/webapp/planet-activity.html": "Read the planet activity log from the web application: the event history of what happened on a planet and when.",
+  "/api/webapp/planet-activity.html": "Read the planet activity log from the web application: the event history of what happened on a planet and when, plus per-player feeds and 30-day stats.",
   "/api/webapp/planet-attribute.html": "Read planet attributes from the web application catalog: the per-planet key-value values behind ore, slots, and defenses.",
   "/api/webapp/planet.html": "Read planet records from the web application catalog, with the extended response schema the webapp provides.",
   "/api/webapp/player-address.html": "Read player address records from the web application, including pending addresses, metadata, and activation codes.",

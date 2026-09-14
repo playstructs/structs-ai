@@ -7,7 +7,7 @@ description: "Read the ledger from the web application: the record of value movi
 **Category**: webapp
 **Entity**: Ledger
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: May 13, 2026
+**Last Updated**: September 14, 2026
 
 ---
 
@@ -122,7 +122,7 @@ List ledger entries for a Cosmos address.
 
 All ledger endpoints — catalog and bespoke — use the shared `{ "success", "errors", "data" }` envelope (see `protocols/webapp-api-protocol.md`):
 
-- `/api/ledger/list/...` and `/api/ledger/player/{player_id}/page/{page}` → `data` is a **flat array** of ledger rows (page size 100; fetch the next page when `data.length === 100`).
+- `/api/ledger/list/...` and `/api/ledger/player/{player_id}/page/{page}` → `data` is a **flat array** of ledger rows (page size 100; fetch the next page when `data.length === 100`). Newest first: `ORDER BY time DESC, id DESC`.
 - `/api/ledger/player/{player_id}/count` → `data` is a single object `{ "count": N }`.
 - `/api/ledger/{tx_id}` → `data` is a single ledger row object (or `null`).
 

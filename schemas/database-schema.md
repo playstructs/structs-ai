@@ -109,12 +109,12 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 | **Core entities** | `player`, `planet`, `fleet`, `struct`, `struct_type`, `guild`, `guild_meta`, `reactor`, `substation`, `allocation`, `infusion`, `provider`, `agreement` |
 | **Attributes & grid** | `grid`, `struct_attribute`, `planet_attribute`, `struct_defender` |
 | **Permissions** | `permission`, `permission_guild_rank` |
-| **Planet activity** | `planet_activity`, `planet_activity_sequence`, `planet_raid` |
+| **Planet activity** | `planet_activity`, `planet_activity_sequence`, `planet_activity_player`, `planet_raid` |
 | **Player addresses** | `player_address`, `player_address_activity`, `player_address_meta`, `player_address_pending`, `player_address_activation_code`, `player_object` |
 | **Onboarding / pending** | `player_pending`, `player_internal_pending`, `player_external_pending`, `guild_membership_application` |
 | **Integrations** | `player_discord` |
 | **Economy / ledger** | `ledger`, `defusion` |
-| **Stats (TimescaleDB)** | `stat_ore`, `stat_fuel`, `stat_capacity`, `stat_load`, `stat_structs_load`, `stat_power`, `stat_connection_count`, `stat_connection_capacity`, `stat_struct_health`, `stat_struct_status` |
+| **Stats (TimescaleDB)** | `stat_ore`, `stat_fuel`, `stat_capacity`, `stat_load`, `stat_structs_load`, `stat_power`, `stat_connection_count`, `stat_connection_capacity`, `stat_struct_health`, `stat_struct_status`, `stat_rollup`; caggs `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily` |
 | **Config / moderation** | `setting`, `banned_word`, `address_tag`, `current_block` |
 
 **Dropped tables** (migrated 2026-05-25): `player_meta` → columns on `player`; `planet_meta` → `name` on `planet`.
