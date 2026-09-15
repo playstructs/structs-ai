@@ -136,6 +136,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 
 - [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — full catalog (HP, charge, limits, weapons)
 - [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — PoW decay, charge table
+- [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) — hash types, universal input, difficulty decay
 - [playbooks/phases/early-game](https://structs.ai/playbooks/phases/early-game) / [playbooks/meta/economy-of-force](https://structs.ai/playbooks/meta/economy-of-force) — build priorities
 - [structs-energy](https://structs.ai/skills/structs-energy/SKILL) — power for builds; [structs-combat](https://structs.ai/skills/structs-combat/SKILL) — what to build vs threats
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW

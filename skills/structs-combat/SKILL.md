@@ -212,6 +212,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 ## See also
 
 - [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — damage, evasion, raid phases, SHIELDS_VULNERABLE
+- [knowledge/mechanics/defense](https://structs.ai/knowledge/mechanics/defense) — raid loot limits, shield vulnerability, minimum posture
 - [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — fleet status, raid window
 - [playbooks/situations/under-attack](https://structs.ai/playbooks/situations/under-attack) / [guild-war](https://structs.ai/playbooks/situations/guild-war) / [counter-strategies](https://structs.ai/playbooks/meta/counter-strategies)
 - [structs-intel](https://structs.ai/skills/structs-intel/SKILL) — scouting + raid-worthiness scoring; [structs-production](https://structs.ai/skills/structs-production/SKILL) — refine to protect ore
