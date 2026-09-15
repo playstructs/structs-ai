@@ -18033,19 +18033,19 @@ Emitted when the keeper writes or deletes that entity. `EventDelete` is the gene
 
 | Proto | `type` | Payload |
 |-------|--------|---------|
-| `EventPlayer` | `structs.structs.EventPlayer` | `player` |
-| `EventPlanet` | `structs.structs.EventPlanet` | `planet` |
-| `EventStruct` | `structs.structs.EventStruct` | `structure` |
-| `EventFleet` | `structs.structs.EventFleet` | `fleet` |
-| `EventGuild` | `structs.structs.EventGuild` | `guild` |
-| `EventReactor` | `structs.structs.EventReactor` | `reactor` |
-| `EventSubstation` | `structs.structs.EventSubstation` | `substation` |
-| `EventProvider` | `structs.structs.EventProvider` | `provider` |
-| `EventAllocation` | `structs.structs.EventAllocation` | `allocation` |
-| `EventAgreement` | `structs.structs.EventAgreement` | `agreement` |
-| `EventInfusion` | `structs.structs.EventInfusion` | `infusion` |
-| `EventStructType` | `structs.structs.EventStructType` | `structType` |
-| `EventDelete` | `structs.structs.EventDelete` | `objectId` |
+| `EventPlayer` | `structs.structs.EventPlayer` | [`player`](../schemas/entities/player.md) |
+| `EventPlanet` | `structs.structs.EventPlanet` | [`planet`](../schemas/entities/planet.md) |
+| `EventStruct` | `structs.structs.EventStruct` | [`structure`](../schemas/entities/struct.md) |
+| `EventFleet` | `structs.structs.EventFleet` | [`fleet`](../schemas/entities/fleet.md) |
+| `EventGuild` | `structs.structs.EventGuild` | [`guild`](../schemas/entities/guild.md) |
+| `EventReactor` | `structs.structs.EventReactor` | [`reactor`](../schemas/entities/reactor.md) |
+| `EventSubstation` | `structs.structs.EventSubstation` | [`substation`](../schemas/entities/substation.md) |
+| `EventProvider` | `structs.structs.EventProvider` | [`provider`](../schemas/entities/provider.md) |
+| `EventAllocation` | `structs.structs.EventAllocation` | [`allocation`](../schemas/entities/allocation.md) |
+| `EventAgreement` | `structs.structs.EventAgreement` | [`agreement`](../schemas/entities/agreement.md) |
+| `EventInfusion` | `structs.structs.EventInfusion` | [`infusion`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) |
+| `EventStructType` | `structs.structs.EventStructType` | [`structType`](../schemas/entities/struct-type.md) |
+| `EventDelete` | `structs.structs.EventDelete` | [`objectId`](../knowledge/entities/entity-relationships.md#id-format) |
 
 On block height 1 the keeper also **replays genesis** (`EventAllGenesis`) as the same typed events so an indexer can bootstrap without scanning history.
 
@@ -18053,20 +18053,20 @@ On block height 1 the keeper also **replays genesis** (`EventAllGenesis`) as the
 
 | Proto | `type` | Payload |
 |-------|--------|---------|
-| `EventGrid` | `structs.structs.EventGrid` | `gridRecord` (`attributeId`, `value`) |
-| `EventStructAttribute` | `structs.structs.EventStructAttribute` | `structAttributeRecord` |
-| `EventPlanetAttribute` | `structs.structs.EventPlanetAttribute` | `planetAttributeRecord` |
-| `EventStructDefender` | `structs.structs.EventStructDefender` | `structDefender` |
-| `EventStructDefenderClear` | `structs.structs.EventStructDefenderClear` | `structDefenderClearDetail.defendingStructId` |
-| `EventPermission` | `structs.structs.EventPermission` | `permissionRecord` |
-| `EventGuildRankPermission` | `structs.structs.EventGuildRankPermission` | `guildRankPermissionRecord` |
+| `EventGrid` | `structs.structs.EventGrid` | [`gridRecord`](../knowledge/mechanics/energy.md) (`attributeId`, `value`) |
+| `EventStructAttribute` | `structs.structs.EventStructAttribute` | [`structAttributeRecord`](integration-notes.md#where-struct-hp-and-status-live) |
+| `EventPlanetAttribute` | `structs.structs.EventPlanetAttribute` | [`planetAttributeRecord`](../knowledge/mechanics/planet.md) |
+| `EventStructDefender` | `structs.structs.EventStructDefender` | [`structDefender`](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set) |
+| `EventStructDefenderClear` | `structs.structs.EventStructDefenderClear` | [`structDefenderClearDetail.defendingStructId`](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set) |
+| `EventPermission` | `structs.structs.EventPermission` | [`permissionRecord`](../knowledge/mechanics/permissions.md) |
+| `EventGuildRankPermission` | `structs.structs.EventGuildRankPermission` | [`guildRankPermissionRecord`](../knowledge/mechanics/permissions.md#guild-rank-permission-system) |
 
 ### Combat and raids
 
 | Proto | `type` | When | Payload |
 |-------|--------|------|---------|
-| `EventAttack` | `structs.structs.EventAttack` | `struct-attack` resolves | `eventAttackDetail` — attacker block plus `eventAttackShotDetail[]` (one row per projectile). Health before/after **are** on the proto. Shot schema: [integration-notes](integration-notes.md#struct_attack-event-detail-schema). |
-| `EventRaid` | `structs.structs.EventRaid` | Raid status transitions | `eventRaidDetail`: `fleetId`, `planetId`, `status` (`initiated`, `attackerDefeated`, `ongoing`, `raidSuccessful`, `demilitarized`, `attackerRetreated`, `shieldsVulnerable`), `seized_ore` (proto JSON may also appear as `seizedOre`) |
+| `EventAttack` | `structs.structs.EventAttack` | `struct-attack` resolves | [`eventAttackDetail`](integration-notes.md#struct_attack-event-detail-schema) — attacker block plus [`eventAttackShotDetail[]`](../knowledge/mechanics/combat.md#attack-resolution-sequence) (one row per projectile). Health before/after **are** on the proto. |
+| `EventRaid` | `structs.structs.EventRaid` | Raid status transitions | `eventRaidDetail`: [`fleetId`](../schemas/entities/fleet.md), [`planetId`](../schemas/entities/planet.md), [`status`](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable) (`initiated`, `attackerDefeated`, `ongoing`, `raidSuccessful`, `demilitarized`, `attackerRetreated`, `shieldsVulnerable`), [`seized_ore`](../knowledge/mechanics/resources.md#the-ore-vulnerability-window) (proto JSON may also appear as `seizedOre`) |
 
 GRASS `struct_attack` can be a **stub** (~8 KB NATS cap). The chain `EventAttack` is the full proto.
 
@@ -18074,39 +18074,39 @@ GRASS `struct_attack` can be a **stub** (~8 KB NATS cap). The chain `EventAttack
 
 | Proto | `type` | When | Payload |
 |-------|--------|------|---------|
-| `EventOreMine` | `structs.structs.EventOreMine` | Ore miner complete | `playerId`, `primaryAddress`, `amount` |
-| `EventAlphaRefine` | `structs.structs.EventAlphaRefine` | Refinery complete | same shape |
-| `EventAlphaInfuse` | `structs.structs.EventAlphaInfuse` | Generator or reactor infuse | `playerId`, `primaryAddress`, `amount` |
-| `EventOreTheft` | `structs.structs.EventOreTheft` | Raid complete steals ore | victim / thief ids and addresses, `amount` |
-| `EventOreMigrate` | `structs.structs.EventOreMigrate` | Primary address change | `playerId`, new/old primary, `amount` |
-| `EventHashSuccess` | `structs.structs.EventHashSuccess` | PoW complete | `callerAddress`, `category` (`mine`, `refine`, `build`, `raid`, `guild_charter`), `difficulty`, `objectId`; `planetId` is set on raid completes |
+| `EventOreMine` | `structs.structs.EventOreMine` | Ore miner complete | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/resources.md) |
+| `EventAlphaRefine` | `structs.structs.EventAlphaRefine` | Refinery complete | same shape ([`amount`](../knowledge/mechanics/resources.md#alpha-matter) is Alpha) |
+| `EventAlphaInfuse` | `structs.structs.EventAlphaInfuse` | Generator or reactor infuse | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) |
+| `EventOreTheft` | `structs.structs.EventOreTheft` | Raid complete steals ore | victim / thief [`playerId`](../schemas/entities/player.md) and addresses, [`amount`](../knowledge/mechanics/resources.md#the-ore-vulnerability-window) |
+| `EventOreMigrate` | `structs.structs.EventOreMigrate` | Primary address change | [`playerId`](../schemas/entities/player.md), new/old primary, [`amount`](../knowledge/mechanics/resources.md) |
+| `EventHashSuccess` | `structs.structs.EventHashSuccess` | PoW complete | `callerAddress`, [`category`](../knowledge/mechanics/hashing.md) (`mine`, `refine`, `build`, `raid`, `guild_charter`), `difficulty`, [`objectId`](../knowledge/entities/entity-relationships.md#id-format); [`planetId`](../schemas/entities/planet.md) is set on raid completes |
 
 ### Guild bank
 
 | Proto | `type` | Notes |
 |-------|--------|--------|
-| `EventGuildBankMint` | `structs.structs.EventGuildBankMint` | `guildId`, `amountAlpha`, `amountToken`, `playerId` |
-| `EventGuildBankRedeem` | `structs.structs.EventGuildBankRedeem` | `amountAlpha` is **net** after `fee` |
-| `EventGuildBankConvert` | `structs.structs.EventGuildBankConvert` | `amountAlpha` is **gross** ualpha into collateral; `fee` is the convert-in cut |
+| `EventGuildBankMint` | `structs.structs.EventGuildBankMint` | [`guildId`](../schemas/entities/guild.md), [`amountAlpha`](../knowledge/economy/guild-banking.md), `amountToken`, [`playerId`](../schemas/entities/player.md) |
+| `EventGuildBankRedeem` | `structs.structs.EventGuildBankRedeem` | [`amountAlpha`](../knowledge/economy/guild-banking.md) is **net** after `fee` |
+| `EventGuildBankConvert` | `structs.structs.EventGuildBankConvert` | [`amountAlpha`](../knowledge/economy/guild-banking.md) is **gross** ualpha into collateral; `fee` is the convert-in cut |
 | `EventGuildBankConvertToken` | `structs.structs.EventGuildBankConvertToken` | Cross-guild: also emits Redeem + Convert legs |
-| `EventGuildBankConfiscateAndBurn` | `structs.structs.EventGuildBankConfiscateAndBurn` | `address` rather than `playerId` |
-| `EventGuildBankAddress` | `structs.structs.EventGuildBankAddress` | `bankCollateralPool`, `bankTokenPool` |
+| `EventGuildBankConfiscateAndBurn` | `structs.structs.EventGuildBankConfiscateAndBurn` | [`address`](queries/address.md) rather than [`playerId`](../schemas/entities/player.md) |
+| `EventGuildBankAddress` | `structs.structs.EventGuildBankAddress` | [`bankCollateralPool`](../knowledge/economy/guild-banking.md), `bankTokenPool` |
 
 ### Provider extras
 
 | Proto | `type` | Payload |
 |-------|--------|---------|
-| `EventProviderAddress` | `structs.structs.EventProviderAddress` | `providerId`, `collateralPool`, `earningPool` |
-| `EventProviderGrantGuild` | `structs.structs.EventProviderGrantGuild` | `providerId`, `guildId` — **genesis replay only** (grant/revoke keeper methods were removed) |
-| `EventProviderRevenueShortfall` | `structs.structs.EventProviderRevenueShortfall` | `requested` / `paid` / `shortfall`; `agreementId` empty when the sweep is not one agreement |
+| `EventProviderAddress` | `structs.structs.EventProviderAddress` | [`providerId`](../schemas/entities/provider.md), `collateralPool`, `earningPool` |
+| `EventProviderGrantGuild` | `structs.structs.EventProviderGrantGuild` | [`providerId`](../schemas/entities/provider.md), [`guildId`](../schemas/entities/guild.md) — **genesis replay only** (grant/revoke keeper methods were removed) |
+| `EventProviderRevenueShortfall` | `structs.structs.EventProviderRevenueShortfall` | `requested` / `paid` / `shortfall`; [`agreementId`](../schemas/entities/agreement.md) empty when the sweep is not one agreement |
 
 ### Addresses and membership
 
 | Proto | `type` | Payload |
 |-------|--------|---------|
-| `EventAddressAssociation` | `structs.structs.EventAddressAssociation` | `address`, `playerIndex`, `registrationStatus` |
-| `EventAddressActivity` | `structs.structs.EventAddressActivity` | `address`, `blockHeight`, `blockTime` |
-| `EventGuildMembershipApplication` | `structs.structs.EventGuildMembershipApplication` | `guildMembershipApplication` |
+| `EventAddressAssociation` | `structs.structs.EventAddressAssociation` | [`address`](queries/address.md), `playerIndex`, `registrationStatus` |
+| `EventAddressActivity` | `structs.structs.EventAddressActivity` | [`address`](queries/address.md), `blockHeight`, `blockTime` |
+| `EventGuildMembershipApplication` | `structs.structs.EventGuildMembershipApplication` | [`guildMembershipApplication`](webapp/guild-membership-application.md) |
 
 ### Block
 
