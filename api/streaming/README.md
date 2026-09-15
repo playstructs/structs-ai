@@ -17,6 +17,8 @@ redirect_from:
 
 GRASS provides real-time game state updates through NATS messaging. This directory contains all documentation needed for AI agents to connect to and consume GRASS events.
 
+These pages are **not** the Cosmos/Tendermint event log. For typed `structs.structs.Event*` messages and untyped `ugc_moderated`, see [chain-events.md](../chain-events.md).
+
 ---
 
 ## Files in This Directory
@@ -114,6 +116,7 @@ Follow these patterns for reliable event subscriptions.
 ## Related Documentation
 
 - **Protocol**: `../../protocols/streaming.md`
+- **Chain events (Tendermint)**: [`../chain-events.md`](../chain-events.md)
 - **API Reference**: `../../../technical/api-reference.md#grass-api`
 - **Examples**: `../../examples/` (check for streaming examples)
 

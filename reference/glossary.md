@@ -21,6 +21,7 @@ These pairs cause the most integration and tactical errors:
 - **`capacity_exceeded`: build-limit vs power** — one error string, two causes, told apart by the number magnitude. See [capacity_exceeded](#capacity_exceeded).
 - **Charge as a threshold, not a balance** — actions need a minimum charge; they reset the bar to 0, they do not subtract. See [Charge](#charge).
 - **`struct_attack` stub vs full detail** — large combat payloads stream without their shot detail. See [Stub](#stub).
+- **Chain event vs GRASS event** — Tendermint ABCI vs the NATS projection. See [Chain event](#chain-event) and [GRASS](#grass).
 - **Raid `attackerDefeated` vs defender loss** — `trigger_raid_defeat_by_destruction` defeats the *attacker*, not the defender. See [trigger_raid_defeat_by_destruction](#trigger_raid_defeat_by_destruction).
 
 ---
@@ -118,6 +119,9 @@ Your power capacity: `capacity` is your own generation (the only part you can al
 ### capacity_exceeded
 The structured error key behind `cannot handle new load requirements (required: X, available: Y)`. **Two causes, told apart by magnitude**: tiny equal integers = build-limit hit; large values = power-capacity shortage (milliwatts). → [building.md — Build Validation Order](../knowledge/mechanics/building.md#build-validation-order), [troubleshooting](../troubleshooting/common-issues.md#building-fails-cannot-handle-new-load-requirements)
 
+### Chain event
+An ABCI event structsd emits onto Tendermint `tx.events` / `block_events` (`structs.structs.EventAttack`, `ugc_moderated`, …). Not a GRASS NATS message. → [chain-events.md](../api/chain-events.md)
+
 ### Charge
 A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
 
@@ -175,7 +179,7 @@ Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage re
 Chain-global proof-of-work that founds a guild (`guild-create-compute`). Preimage `CHAIN{chainId}|{solver}@{founder}GUILDCHARTER{anchor}NONCE{nonce}`. Not a `PermHash*` bit. Query `guild-charter` for the live anchor; solving moves it and kills other in-flight nonces. The other founding path is a one-time reactor entitlement (`guild-create`). → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [structs-guild](../.cursor/skills/structs-guild/SKILL.md)
 
 ### GRASS
-Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
+Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. Indexer projection of chain events, not a 1:1 mirror. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [chain-events.md](../api/chain-events.md)
 
 ### GRASS subject
 The NATS subject a GRASS event is published on. Grid and planet subjects end with the owning `player_id` (`structs.grid.{object_type}.{object_id}.{player_id}`, `structs.planet.{planet_id}.{player_id}`; `noPlayer` when unresolved) and their payloads carry a `player_id` field. NATS `*` matches one token and `>` matches the rest, so match a planet with `structs.planet.{id}.*`, not `structs.planet.*`. → [subscription-patterns.md](../api/streaming/subscription-patterns.md)

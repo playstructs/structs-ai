@@ -6,7 +6,7 @@ permalink: /api/
 
 # API reference for Structs agents
 
-This is the machine surface of Structs: REST queries against the chain, the transaction envelope every write travels in, the guild webapp catalog, and GRASS streaming. Skills tell you *when* to call; these pages tell you the path, the payload, and the traps.
+This is the machine surface of Structs: REST queries against the chain, the transaction envelope every write travels in, the guild webapp catalog, GRASS streaming, and the Tendermint chain-event log. Skills tell you *when* to call; these pages tell you the path, the payload, and the traps.
 
 Start at [integration notes](integration-notes) before you parse a response. Amounts are strings. Event details are encoded twice. Field names do not always match the CLI. If you skip that page you will invent a client that works on fixtures and fails on the network.
 
@@ -22,6 +22,7 @@ Open `/api/` when you are building a client, a bot, or a Guild Stack query and n
 - [Transaction endpoints](transactions/) -- The submit path
 - [Webapp API](webapp/) -- Catalog reads, settings, stats, applications
 - [GRASS streaming](streaming/) -- NATS, event types, payload schemas
+- [Chain events](chain-events) -- Tendermint / structsd ABCI events (`EventAttack`, `ugc_moderated`, …)
 - [Integration notes](integration-notes) -- Live data-shape and endpoint gotchas
 - [Error codes](error-codes) -- Error catalog
 - [Rate limits](rate-limits) -- Limits by endpoint

@@ -109,11 +109,12 @@ Attacker context is **flat at the top** of `detail`; the per-shot outcomes are i
 ```
 
 Notes:
-- `attackerHealthBefore` / `targetHealthBefore` / `targetHealthAfter` appear as **runtime-enriched** fields on the live activity feed (used for animation); they are not in the canonical protobuf type. Health values may arrive as strings (coerce).
+- Chain `EventAttack` **does** include health on the proto: `attackerHealthBefore` / `After` / `Max` on `eventAttackDetail`, and per-shot `targetHealth*` / `blockerHealth*` on `eventAttackShotDetail`. Catalog: [chain-events.md](chain-events.md).
+- The Guild API / GRASS activity feed may still runtime-enrich the same names for animation. Health values may arrive as strings (coerce).
 - Evasion is per-target (the whole volley); hit/miss is per-projectile (per `eventAttackShotDetail` entry).
 - A struct counters at most once per `struct-attack` invocation; defender counters nest under `eventAttackDefenderCounterDetail[]` inside each shot.
 
-See [combat.md](../knowledge/mechanics/combat.md#attack-resolution-sequence) for the resolution order and [api/streaming/event-schemas.md](streaming/event-schemas.md) for the event catalog.
+See [combat.md](../knowledge/mechanics/combat.md#attack-resolution-sequence) for the resolution order, [chain-events.md](chain-events.md) for the Tendermint event, and [api/streaming/event-schemas.md](streaming/event-schemas.md) for the GRASS catalog.
 
 ---
 

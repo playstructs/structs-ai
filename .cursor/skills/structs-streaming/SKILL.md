@@ -51,7 +51,7 @@ A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / S
 
 ### Tendermint WebSocket vs GRASS
 
-These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries game-level events. Tendermint's own WebSocket at `wss://public.testnet.structs.network:26657/websocket` carries chain events (txs, blocks, validator updates). Use Tendermint subscriptions when you need to audit `ugc_moderated` or other untyped chain events that GRASS does not republish.
+These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries the indexer projection (NATS). Tendermint at `wss://public.testnet.structs.network:26657/websocket` carries the original structsd events. Catalog, typed `Event*` types, and `ugc_moderated`: [api/chain-events](https://structs.ai/api/chain-events). GRASS is not a 1:1 mirror of that log.
 
 ---
 
@@ -147,21 +147,7 @@ All of the above (and the struct categories below) are `planet_activity` rows th
 UGC name/pfp updates emit two distinct streams:
 
 1. **GRASS DB-trigger events** (the table above): `player_consensus` fires when sync-state commits player UGC (`username`/`pfp` on `structs.player`). `guild_meta` fires for off-chain guild config updates. Chain UGC `name`/`pfp` on guilds live on `structs.guild`. Planet and substation UGC reach observers via chain events and `planet_activity` entries.
-2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates).
-
-Subscribe to chain events via Tendermint's `tx.events` or `block_events` subscription (separate from GRASS) when you want a complete audit trail of moderation activity. Schema:
-
-| Attribute | Description |
-|-----------|-------------|
-| `actor_player_id` | Player ID of the moderator who performed the override |
-| `actor_address` | Signing address that authored the tx |
-| `target_object_id` | Player / planet / substation / guild ID being moderated |
-| `target_owner_player_id` | Owner player ID at the time of the update |
-| `field` | `name` or `pfp` |
-| `old_value` | Field value before the update |
-| `new_value` | Field value after the update |
-
-Use this stream as a moderation audit log — see `knowledge/mechanics/ugc-moderation.md` for context.
+2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates). Subscribe and attributes: [api/chain-events](https://structs.ai/api/chain-events). Validation rules: `knowledge/mechanics/ugc-moderation.md`.
 
 ### Inventory Events
 

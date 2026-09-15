@@ -269,6 +269,7 @@ Endpoint specifications and streaming protocols.
 | [error-codes.md](api/error-codes.md) | Error code reference |
 | [rate-limits.md](api/rate-limits.md) | Rate limiting behavior |
 | [integration-notes.md](api/integration-notes.md) | Live data-shape & endpoint gotchas for integrators |
+| [chain-events.md](api/chain-events.md) | structsd Tendermint event catalog (not GRASS) |
 
 ### Queries (`api/queries/`)
 
@@ -281,6 +282,8 @@ Per-entity query endpoints: [address](api/queries/address.md), [agreement](api/q
 | [submit-transaction.md](api/transactions/submit-transaction.md) | Transaction submission flow |
 
 ### Streaming (`api/streaming/`)
+
+GRASS over NATS. For Cosmos/Tendermint events emitted by structsd, see [chain-events.md](api/chain-events.md).
 
 | File | Topic |
 |------|-------|

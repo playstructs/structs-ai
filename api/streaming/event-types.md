@@ -8,6 +8,8 @@ description: The catalog of GRASS event types and categories, their subject patt
 **Last Updated**: 2026-07-07
 **Description**: Complete catalog of GRASS event types and categories
 
+This page is GRASS (NATS) only. For structsd Tendermint events (`structs.structs.EventAttack`, `ugc_moderated`, …) see [chain-events.md](../chain-events.md).
+
 ---
 
 ## Event Categories
@@ -79,15 +81,9 @@ These are `planet_activity` rows and arrive on the **planet subject** `structs.p
 
 ### UGC Moderation Events (Cosmos chain events, not GRASS)
 
-`ugc_moderated` is emitted as a regular Cosmos `sdk.Event` by the keeper (not by the GRASS DB-trigger pipeline) whenever a UGC name/pfp update is performed by an actor who is not the target object's owner. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`), not via NATS.
+`ugc_moderated` is **not** a GRASS event. Catalog, subscribe query, and attributes: [chain-events.md](../chain-events.md#untyped). Attribute table: [ugc-moderation.md](../../knowledge/mechanics/ugc-moderation.md#the-ugc_moderated-event).
 
-| Event Name | Description | Source | Schema |
-|------------|-------------|--------|--------|
-| ugc_moderated | A guild moderator overwrote another player's name/pfp, or the name/pfp of a planet/substation owned by a guild-mate | Cosmos chain event (`sdk.Event`, type `ugc_moderated`) | `event-schemas.md#UGCModeratedEvent` |
-
-The chain only emits this event when `actor_player_id != target_owner_player_id`. Self-service updates (a player renaming themselves, a guild owner renaming their own guild) are silent.
-
-The corresponding `player_consensus` GRASS events fire when sync-state commits UGC updates to `structs.player`. `guild_meta` fires for off-chain guild config on `structs.guild_meta`. Chain UGC on `structs.guild`, `structs.planet`, and `structs.substation` surface through chain events and `planet_activity`.
+The corresponding `player_consensus` GRASS events fire when sync-state commits UGC updates to `structs.player`. `guild_meta` fires for off-chain guild config on `structs.guild_meta`.
 
 ---
 

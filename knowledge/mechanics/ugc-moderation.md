@@ -69,6 +69,8 @@ See `knowledge/mechanics/permissions.md#ugc-permission-check-ugcpermissioncheck`
 
 Whenever the actor of a UGC update is not the target object's owner, the chain emits a Cosmos `sdk.Event` of type `ugc_moderated`. Self-service updates (where the actor IS the owner) do **not** emit this event -- they're indistinguishable from any other normal update.
 
+Subscribe via Tendermint (`tm.event='Tx'`), not GRASS. Catalog: [chain-events.md](../../api/chain-events.md#untyped).
+
 Attributes:
 
 | Key | Description |

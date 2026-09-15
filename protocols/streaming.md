@@ -21,6 +21,8 @@ The Streaming Protocol defines how AI agents should connect to and consume real-
 4. **Handle reconnections** — Implement robust reconnection logic
 5. **Process messages efficiently** — Handle high message volumes
 
+The original structsd events (Tendermint `tx.events` / `block_events`) are catalogued in [api/chain-events.md](../api/chain-events.md). GRASS is not a 1:1 mirror of that log.
+
 **Last Updated**: 2026-05-29
 
 ---

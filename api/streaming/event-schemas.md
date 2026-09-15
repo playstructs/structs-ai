@@ -9,6 +9,8 @@ description: "JSON payload schemas for every GRASS event: the base event shape, 
 
 Complete catalog of GRASS event payload schemas for AI agents.
 
+This page is GRASS (NATS) only. For structsd Tendermint events see [chain-events.md](../chain-events.md).
+
 ---
 
 ## Base Event
@@ -70,23 +72,7 @@ Chain UGC `name` and `pfp` live on `structs.guild` and surface via `guild_consen
 
 ### UGCModeratedEvent (Cosmos chain event)
 
-**Not** delivered through GRASS. This is a typed Cosmos `sdk.Event` of type `ugc_moderated` emitted by the chain keeper. Subscribe via Tendermint event subscriptions (`tx.events`/`block_events`).
-
-Fires only when the actor of a UGC update is **not** the target object's owner (i.e. moderation overrides only — self-service updates are silent).
-
-**Attributes**:
-
-| Attribute | Description |
-|-----------|-------------|
-| `actor_player_id` | Player ID of the moderator |
-| `actor_address` | Signing address that authored the tx |
-| `target_object_id` | Player / planet / substation / guild ID being moderated |
-| `target_owner_player_id` | Owner player ID at the time of the update |
-| `field` | `name` or `pfp` |
-| `old_value` | Field value before the update |
-| `new_value` | Field value after the update |
-
-See `knowledge/mechanics/ugc-moderation.md` for the full philosophy and validation rules.
+**Not** delivered through GRASS. Untyped Cosmos event `ugc_moderated`. Subscribe and catalog: [chain-events.md](../chain-events.md#untyped). Attribute table: [ugc-moderation.md](../../knowledge/mechanics/ugc-moderation.md#the-ugc_moderated-event).
 
 ### GuildMembershipEvent
 

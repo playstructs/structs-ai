@@ -11,6 +11,14 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2026-09-14
+
+structsd Tendermint event catalog.
+
+### Added
+
+- **Chain events** — [`api/chain-events.md`](api/chain-events.md). Typed `structs.structs.Event*` messages plus untyped `ugc_moderated`, verified against structsd `48686a9` (v0.21.0). GRASS remains a separate, non-1:1 projection.
+
 ## [1.27.0] - 2026-09-14
 
 Webapp API against structs-webapp `9ac438f3`: per-player planet-activity, precomputed stat rollups, raid-launch count, destroyed-struct status.

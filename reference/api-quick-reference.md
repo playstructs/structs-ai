@@ -264,7 +264,7 @@ GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix}&e
 
 ### Tendermint WebSocket — chain events
 
-For untyped chain events (e.g. `ugc_moderated`) subscribe to `wss://public.testnet.structs.network:26657/websocket`.
+For structsd ABCI events (`structs.structs.EventAttack`, `ugc_moderated`, `EventTime` on `NewBlock`) subscribe to `wss://public.testnet.structs.network:26657/websocket`. Catalog: [chain-events.md](../api/chain-events.md). This is not GRASS.
 
 ### Event Categories
 
