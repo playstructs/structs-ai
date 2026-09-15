@@ -38,7 +38,7 @@ Returns a single reactor by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/reactor.md`
+- **Schema**: [reactor](../../schemas/entities/reactor.md)
 
 #### Example
 
@@ -71,4 +71,4 @@ Returns a paginated list of all reactors.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/reactor.md` (array)
+- **Schema**: [reactor](../../schemas/entities/reactor.md) (array)

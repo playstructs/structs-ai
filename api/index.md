@@ -18,8 +18,9 @@ Open `/api/` when you are building a client, a bot, or a Guild Stack query and n
 
 - [REST endpoints](endpoints) -- Base URLs, consensus queries, transactions, webapp
 - [Endpoints by entity](endpoints-by-entity) -- The same surface grouped per entity
-- [Query endpoints](queries/) -- One file per entity for small context windows
+- [Query endpoints](queries/) -- One file per entity for small context windows (includes grid, infusion, struct-type, attributes)
 - [Transaction endpoints](transactions/) -- The submit path
+- [Message catalog](transactions/messages) -- Live `Msg*` RPCs with CLI verbs (not the old 33-action indexes)
 - [Webapp API](webapp/) -- Catalog reads, settings, stats, applications
 - [GRASS streaming](streaming/) -- NATS, event types, payload schemas
 - [Chain events](chain-events) -- Tendermint / structsd ABCI events (`EventAttack`, `ugc_moderated`, …)

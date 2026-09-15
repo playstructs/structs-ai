@@ -42,7 +42,7 @@ All query endpoints use the Consensus Network REST API (`http://localhost:1317` 
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^1-[0-9]+$` | Player identifier in format `type-index` (e.g., `1-11`). Type 1 = Player. |
 
-Response schema: `schemas/entities.md#Player`
+Response schema: [Player](../schemas/entities/player.md)
 
 ```json
 // Example request: GET /structs/player/1-11
@@ -69,7 +69,7 @@ No `halted` field — online is capacity vs load (see [integration-notes.md](int
 | pagination.key | string | No | Pagination key |
 | pagination.limit | integer | No | Page size |
 
-Response schema: `schemas/entities.md#Player[]`
+Response schema: [Player](../schemas/entities/player.md) (array)
 
 ### Planet Queries
 
@@ -85,7 +85,7 @@ Response schema: `schemas/entities.md#Player[]`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^2-[0-9]+$` | Planet identifier in format `type-index` (e.g., `2-1`). Type 2 = Planet. |
 
-Response schema: `schemas/entities.md#Planet`
+Response schema: [Planet](../schemas/entities/planet.md)
 
 **`GET /structs/planet_by_player/{playerId}`** (`planet-by-player`)
 
@@ -93,7 +93,7 @@ Response schema: `schemas/entities.md#Planet`
 |-----------|------|----------|--------|-------------|
 | playerId | string | Yes | `^1-[0-9]+$` | Player identifier in format `type-index` (e.g., `1-11`). Type 1 = Player. |
 
-Response schema: `schemas/entities.md#Planet[]`
+Response schema: [Planet](../schemas/entities/planet.md) (array)
 
 ### Struct Queries
 
@@ -108,7 +108,7 @@ Response schema: `schemas/entities.md#Planet[]`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^5-[0-9]+$` | Struct identifier in format `type-index` (e.g., `5-42`). Type 5 = Struct. |
 
-Response schema: `schemas/entities.md#Struct`
+Response schema: [Struct](../schemas/entities/struct.md)
 
 ### Fleet Queries
 
@@ -124,7 +124,7 @@ Response schema: `schemas/entities.md#Struct`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^9-[0-9]+$` | Fleet identifier in format `type-index` (e.g., `9-11`). Type 9 = Fleet. |
 
-Response schema: `schemas/entities.md#Fleet`
+Response schema: [Fleet](../schemas/entities/fleet.md)
 
 **`GET /structs/fleet_by_index/{index}`** (`fleet-by-index`)
 
@@ -132,7 +132,7 @@ Response schema: `schemas/entities.md#Fleet`
 |-----------|------|----------|-------------|
 | index | integer | Yes | Fleet index |
 
-Response schema: `schemas/entities.md#Fleet`
+Response schema: [Fleet](../schemas/entities/fleet.md)
 
 ### Guild Queries
 
@@ -147,7 +147,7 @@ Response schema: `schemas/entities.md#Fleet`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^0-[0-9]+$` | Guild identifier in format `type-index` (e.g., `0-1`). Type 0 = Guild. |
 
-Response schema: `schemas/entities.md#Guild`
+Response schema: [Guild](../schemas/entities/guild.md)
 
 ### Reactor Queries
 
@@ -162,7 +162,7 @@ Response schema: `schemas/entities.md#Guild`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^3-[0-9]+$` | Reactor identifier in format `type-index` (e.g., `3-1`). Type 3 = Reactor. |
 
-Response schema: `schemas/entities.md#Reactor`
+Response schema: [Reactor](../schemas/entities/reactor.md)
 
 ### Substation Queries
 
@@ -177,7 +177,7 @@ Response schema: `schemas/entities.md#Reactor`
 |-----------|------|----------|--------|-------------|
 | id | string | Yes | `^4-[0-9]+$` | Substation identifier in format `type-index` (e.g., `4-3`). Type 4 = Substation. |
 
-Response schema: `schemas/entities.md#Substation`
+Response schema: [Substation](../schemas/entities/substation.md)
 
 ### Provider Queries
 
@@ -192,7 +192,7 @@ Response schema: `schemas/entities.md#Substation`
 |-----------|------|----------|-------------|
 | id | string | Yes | Provider identifier |
 
-Response schema: `schemas/entities.md#Provider`
+Response schema: [Provider](../schemas/entities/provider.md)
 
 ### Agreement Queries
 
@@ -208,7 +208,7 @@ Response schema: `schemas/entities.md#Provider`
 |-----------|------|----------|-------------|
 | id | string | Yes | Agreement identifier |
 
-Response schema: `schemas/entities.md#Agreement`
+Response schema: [Agreement](../schemas/entities/agreement.md)
 
 **`GET /structs/agreement_by_provider/{providerId}`** (`agreement-by-provider`)
 
@@ -216,7 +216,7 @@ Response schema: `schemas/entities.md#Agreement`
 |-----------|------|----------|-------------|
 | providerId | string | Yes | Provider identifier |
 
-Response schema: `schemas/entities.md#Agreement[]`
+Response schema: [Agreement](../schemas/entities/agreement.md) (array)
 
 ### Allocation Queries
 
@@ -233,7 +233,7 @@ Response schema: `schemas/entities.md#Agreement[]`
 |-----------|------|----------|-------------|
 | id | string | Yes | Allocation identifier |
 
-Response schema: `schemas/entities.md#Allocation`
+Response schema: [Allocation](../schemas/entities/allocation.md)
 
 **`GET /structs/allocation_by_source/{sourceId}`** (`allocation-by-source`)
 
@@ -241,7 +241,7 @@ Response schema: `schemas/entities.md#Allocation`
 |-----------|------|----------|-------------|
 | sourceId | string | Yes | Source identifier |
 
-Response schema: `schemas/entities.md#Allocation[]`
+Response schema: [Allocation](../schemas/entities/allocation.md) (array)
 
 **`GET /structs/allocation_by_destination/{destinationId}`** (`allocation-by-destination`)
 
@@ -249,7 +249,7 @@ Response schema: `schemas/entities.md#Allocation[]`
 |-----------|------|----------|-------------|
 | destinationId | string | Yes | Destination identifier |
 
-Response schema: `schemas/entities.md#Allocation[]`
+Response schema: [Allocation](../schemas/entities/allocation.md) (array)
 
 ### Address Queries
 
@@ -265,7 +265,7 @@ Response schema: `schemas/entities.md#Allocation[]`
 |-----------|------|----------|--------|-------------|
 | address | string | Yes | blockchain-address | Blockchain address |
 
-Response schema: `schemas/entities.md#Address`
+Response schema: [Address](../schemas/entities/address.md)
 
 **`GET /structs/address_by_player/{playerId}`** (`address-by-player`)
 
@@ -273,7 +273,7 @@ Response schema: `schemas/entities.md#Address`
 |-----------|------|----------|--------|-------------|
 | playerId | string | Yes | `^1-[0-9]+$` | Player identifier in format `type-index` (e.g., `1-11`). Type 1 = Player. |
 
-Response schema: `schemas/entities.md#Address[]`
+Response schema: [Address](../schemas/entities/address.md) (array)
 
 ### Permission Queries
 
@@ -292,7 +292,7 @@ Response schema: `schemas/entities.md#Address[]`
 |-----------|------|----------|-------------|
 | permissionId | string | Yes | Permission identifier |
 
-Response schema: `schemas/entities.md#Permission`
+Response schema: [Permission](../schemas/entities/permission.md)
 
 **`GET /structs/permission/object/{objectId}`** (`permission-by-object`)
 
@@ -300,7 +300,7 @@ Response schema: `schemas/entities.md#Permission`
 |-----------|------|----------|-------------|
 | objectId | string | Yes | Object identifier |
 
-Response schema: `schemas/entities.md#Permission[]`
+Response schema: [Permission](../schemas/entities/permission.md) (array)
 
 **`GET /structs/permission/player/{playerId}`** (`permission-by-player`)
 
@@ -308,7 +308,7 @@ Response schema: `schemas/entities.md#Permission[]`
 |-----------|------|----------|--------|-------------|
 | playerId | string | Yes | `^1-[0-9]+$` | Player identifier in format `type-index` (e.g., `1-11`). Type 1 = Player. |
 
-Response schema: `schemas/entities.md#Permission[]`
+Response schema: [Permission](../schemas/entities/permission.md) (array)
 
 **`GET /structs/guild_rank_permission/object/{object_id}`** (`guild-rank-permission-by-object`)
 
@@ -318,7 +318,7 @@ Response schema: `schemas/entities.md#Permission[]`
 | pagination.key | string | No | Pagination key |
 | pagination.limit | integer | No | Page size |
 
-Response schema: Guild rank permission records array
+Response schema: guild rank permission records ([permissions](../knowledge/mechanics/permissions.md#guild-rank-permission-system))
 
 **`GET /structs/guild_rank_permission/object/{object_id}/guild/{guild_id}`** (`guild-rank-permission-by-object-and-guild`)
 
@@ -327,7 +327,7 @@ Response schema: Guild rank permission records array
 | objectId | string | Yes | Object identifier |
 | guildId | string | Yes | Guild identifier |
 
-Response schema: Guild rank permission records array (at most 24 records)
+Response schema: guild rank permission records ([permissions](../knowledge/mechanics/permissions.md#guild-rank-permission-system); at most 24 records)
 
 ### Block Height and Parameters
 
@@ -338,7 +338,7 @@ Response schema: Guild rank permission records array (at most 24 records)
 
 **`GET /blockheight`** (`block-height`)
 
-Response schema: `schemas/entities.md#BlockHeight`
+Response schema: block height (`height`)
 
 ```json
 // Example request: GET /blockheight
@@ -350,7 +350,9 @@ Response schema: `schemas/entities.md#BlockHeight`
 
 **`GET /structs/structs/params`** (`params`)
 
-Response schema: `schemas/entities.md#Params`
+Response schema: module [params](../knowledge/mechanics/transactions.md)
+
+Per-entity query files also cover LCD families not expanded above: [grid](queries/grid.md), [infusion](queries/infusion.md), [struct-type](queries/struct-type.md), [struct-attribute](queries/struct-attribute.md), [planet-attribute](queries/planet-attribute.md), [guild-membership-application](queries/guild-membership-application.md), plus collateral/charter/validate on [guild](queries/guild.md), [provider](queries/provider.md), and [system](queries/system.md). The webapp catalog is [webapp/](webapp/), not the short list later on this page.
 
 ---
 
@@ -364,10 +366,10 @@ Response schema: `schemas/entities.md#Params`
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| body | object | Yes | Transaction body with messages (see `schemas/actions.md`) |
+| body | object | Yes | Transaction body with messages (see [message catalog](transactions/messages.md)) |
 
-Request schema: `schemas/actions.md`
-Response schema: `schemas/responses.md#TransactionResponse`
+Request schema: [messages.md](transactions/messages.md) (live Msg list). Field notes for a subset: [schemas/actions.md](../schemas/actions.md).
+Response schema: [TransactionResponse](../schemas/responses.md)
 
 ```json
 // Example request:
@@ -515,7 +517,7 @@ Response schema: `schemas/responses.md#OreStatsResponse`
 |-----------|------|----------|-------------|
 | planet_id | string | Yes | Planet identifier |
 
-Response schema: `schemas/entities.md#Planet`
+Response schema: [Planet](../schemas/entities/planet.md)
 
 ```json
 // Example response (envelope):
@@ -573,7 +575,7 @@ Response schema: `schemas/responses.md#ShieldHealthResponse`
 |-----------|------|----------|-------------|
 | guild_id | string | Yes | Guild identifier |
 
-Response schema: `schemas/entities.md#Guild`
+Response schema: [Guild](../schemas/entities/guild.md)
 
 ```json
 // Example response (envelope; guild IDs are type 0):

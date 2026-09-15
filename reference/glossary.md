@@ -28,6 +28,12 @@ These pairs cause the most integration and tactical errors:
 
 ## A
 
+### Address
+A Cosmos `structs1…` signing key bound to a player. The player has one **primary** address; additional addresses can be registered. Permission bits live on the address as well as on objects. → [permissions.md](../knowledge/mechanics/permissions.md), [address queries](../api/queries/address.md)
+
+### Agreement
+A paid energy subscription between a [provider](#provider) and a consumer: contracted `capacity` for a block window, backed by an allocation. → [energy-market.md](../knowledge/economy/energy-market.md), [agreement schema](../schemas/entities/agreement.md)
+
 ### Allocation
 A routing of power capacity from a source (player, reactor, struct, or substation) to a destination, adding to the destination's `capacity` and the source's `load`. Types: `static` (fixed), `dynamic` (updatable), `automated` (one per source, auto-resizes to the source's full capacity), `provider-agreement` (system). Connecting one to a substation needs permission only on **your own** allocation. → [energy.md — Allocations](../knowledge/mechanics/energy.md#allocations)
 
@@ -51,6 +57,9 @@ The ambit numbering used by transaction messages and a struct's stored `operatin
 
 ### Ambit reach bitmask
 The ambit numbering used by `possibleAmbit` and weapon-reach fields, where `bit = 1 << enum`: `none=1, water=2, land=4, air=8, space=16, local=32`. Combined with OR (e.g. `6` = land+water). **Not** the enum. → [api/integration-notes.md — Ambit](../api/integration-notes.md#ambit-enum-vs-reach-bitmask)
+
+### Ante
+The Cosmos ante handler that classifies a tx as free (Structs gameplay / selected staking) or paid. Free msgs still need sequence, signatures, and charge. → [transactions.md](../knowledge/mechanics/transactions.md)
 
 ### Armour
 A unit defense (Tank, and the power generators) that reduces incoming damage by 1. Negated by armour-piercing weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
@@ -134,6 +143,9 @@ The chain's short label for a struct type (`CMD Ship`, `PDC`, `Orb. Shield`, …
 ### Command Ship
 The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
 
+### Commission
+The reactor's cut of an infusion (default 4%). The infuser keeps `1 − commission` on their own `capacity`. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
+
 ### connectionCapacity
 The per-connection share a substation gives each connected player (its `capacitySecondary`): `(capacity − load) / connectionCount` (count defaults to 1; 0 if capacity ≤ load). Recomputed on every connect/disconnect — each new connection **dilutes** everyone's share. → [energy.md — Substations](../knowledge/mechanics/energy.md#substations-connectioncapacity-dilutes)
 
@@ -153,6 +165,9 @@ A unit defense (High Altitude Interceptor) that evades **unguided** weapons 66% 
 
 ### demilitarized
 A raid status: the planet has no defenders to resolve against. → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
+
+### Defusion
+Withdrawing infused Alpha from a reactor (`reactor-defuse`). Fuel stays until the unbonding cooldown finishes; then Alpha returns. Not the unused chain event `EventAlphaDefuse`. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ### Difficulty
 The proof-of-work target = number of leading hex zeros required. Decays with the operation's age from 64 (fresh, impossible) toward 1 (aged, instant). The D=8→D=9 jump is the "cliff". → [hashing.md — Difficulty and Decay](../knowledge/mechanics/hashing.md#difficulty-and-decay)
@@ -212,7 +227,13 @@ Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [st
 ### Infusion
 Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram = 1 kW). A reactor infusion splits ~96/4: the infuser keeps `1 − commission` (default 4%) on their **own** capacity, the reactor keeps the commission. It does **not** raise any substation's capacity. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
+### is_owner
+Error when a player who **already owns a guild** tries to found another. Transfer the existing guild first. → [play/errors.md](../play/errors.md)
+
 ## J
+
+### Jail
+A jailed or missing validator zeros that reactor's infusion **ratio** (fuel stays). Unjail/rebond restores from live staking; `reactor-restart` resyncs if hooks cannot. → [energy.md](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ### Jamming Satellite
 Planet struct (type 17, 1 per player, `noUnitDefenses`, built in the space ambit) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network), which evades incoming **guided** ordnance aimed at planetary structs on their own planet (ambit-irrelevant; unguided passes through). → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
@@ -252,16 +273,28 @@ The two PoW fields on a `*-complete` message: `nonce` (the value found by brute 
 
 ## O
 
+### Object type code
+The first number in a `type-index` ID: `0` guild, `1` player, `2` planet, `3` reactor, `4` substation, `5` struct, `6` allocation, `7` infusion, `8` address, `9` fleet, `10` provider, `11` agreement. StructType uses integer IDs only. → [entity-relationships.md — ID Format](../knowledge/entities/entity-relationships.md#id-format)
+
 ### onStation
 A fleet state: the fleet is at its home planet, so the Command Ship defends it (shields up). → [fleet.md](../knowledge/mechanics/fleet.md)
 
 ### Ore (storedOre / planet ore)
 `storedOre` is mined, stealable ore held by a player (the only raid loot) — on the wire it is the player's `gridAttributes.ore`. Unmined ore is the *planet's* `gridAttributes.ore`; there is no `remainingOre` field on either. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
 
+### Ore Bunker
+Planet struct (type 16). It does **not** vault or hide ore. Planetary types have `canDefend: false`. → [struct-types.md](../knowledge/entities/struct-types.md)
+
 ## P
 
 ### PassiveDraw
 See [BuildDraw / PassiveDraw](#builddraw--passivedraw).
+
+### PermAll
+The 25-bit mask of every permission (`33554431`). `player-update-primary-address` must be signed by an address that holds `PermAll`. → [permissions.md](../knowledge/mechanics/permissions.md), [play/errors.md](../play/errors.md)
+
+### Permission
+A 25-bit flag set stored on an address or on an object (plus guild-rank worst-allowed ranks). `PermissionCheck` is the gate for every state-changing tx. → [permissions.md](../knowledge/mechanics/permissions.md)
 
 ### planet_activity
 The PostgreSQL table whose inserts fire the GRASS stream; the source of full `struct_attack` shot detail when the live payload is [stubbed](#stub). → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [database-schema.md](../schemas/database-schema.md)
@@ -281,6 +314,14 @@ The SHA-256 puzzle that finalizes build/mine/refine/raid. Difficulty decays with
 ### Proxy signup
 Guild-fronted player creation (`MsgGuildMembershipJoinProxy`): sign a payload, POST to the guild, poll for your player id. Idempotent — a repeat returns `resource_already_exists` (treat as success). → [integration-notes.md — Proxy signup](../api/integration-notes.md#proxy-signup-is-idempotent)
 
+### Provider
+An energy seller attached to a substation: pricing, access policy, capacity/duration bounds. Opens [agreements](#agreement). → [energy-market.md](../knowledge/economy/energy-market.md)
+
+## Q
+
+### queue_full
+Visiting-fleet slot full (`1 + locationListExtra`, default one visitor). Wait for a departure or send a fleet home. → [fleet.md](../knowledge/mechanics/fleet.md), [play/errors.md](../play/errors.md)
+
 ## R
 
 ### Raid
@@ -295,7 +336,13 @@ A chain energy source — Alpha staked into a validator. Infusing it grants the 
 ### Recoil damage
 Self-damage the attacker takes after firing, applied only if it survives the whole sequence (including counters). → [combat.md — Recoil Damage](../knowledge/mechanics/combat.md#recoil-damage)
 
+### recipient_not_eligible
+`uguild.*` send rejected: destination is IBC, escrow, or an unregistered address. Send only to a registered player, the structs module, or a provider pool. → [guild-banking.md](../knowledge/economy/guild-banking.md), [play/errors.md](../play/errors.md)
+
 ## S
+
+### Sequence mismatch
+`account sequence mismatch` — two txs from the same key before the first landed. One tx per key; wait ~6s. → [play/errors.md](../play/errors.md)
 
 ### shieldsVulnerable
 The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate — and a state you can **create** (see [siege raid](#siege-raid)), not only wait for. Distinct from an owner being merely [idle](#idle-vs-vulnerable). → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
@@ -326,6 +373,9 @@ A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1
 
 ### Stub
 The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+
+### StructCannotDefend
+Error assigning a planetary type (`canDefend: false`, including Ore Bunker) as a defender. Only fleet types work. → [combat.md](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set), [play/errors.md](../play/errors.md)
 
 ### struct_attack
 The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` — unless [stubbed](#stub). → [integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema)
@@ -359,6 +409,9 @@ See [Guided / Unguided](#guided--unguided).
 
 ### warfighter
 A `structs_doctrine` preset that bundles max defense with both autonomous combat loops armed but advising (`autonomy: advise`). Explicit fields override the preset. → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
+
+### work-failure
+Guild charter compute died because the global charter **anchor moved** (someone else founded) or entitlement checks failed. Re-query `guild-charter` and restart against the new anchor. → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [play/errors.md](../play/errors.md)
 
 ---
 

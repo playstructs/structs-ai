@@ -48,7 +48,7 @@ Returns a single permission by its ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Permission`
+- **Schema**: [Permission](../../schemas/entities/permission.md)
 
 ---
 
@@ -61,7 +61,7 @@ Returns a paginated list of all permissions.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Permission` (array)
+- **Schema**: [Permission](../../schemas/entities/permission.md) (array)
 
 ---
 
@@ -80,7 +80,7 @@ Returns all permissions associated with a specific object.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Permission` (array)
+- **Schema**: [Permission](../../schemas/entities/permission.md) (array)
 
 ---
 
@@ -99,7 +99,7 @@ Returns all permissions granted to a specific player.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Permission` (array)
+- **Schema**: [Permission](../../schemas/entities/permission.md) (array)
 
 ---
 

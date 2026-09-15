@@ -187,6 +187,7 @@ For deep technical details, the original documentation remains available:
 - `api/` -- API specifications (endpoints, queries, transactions, streaming)
 - [`api/integration-notes.md`](api/integration-notes.md) -- Live data-shape & endpoint gotchas for integrators/MCP builders (string numerics, dual event-detail encoding, `struct_attack` schema, where HP/status live, address shape, field-name traps, ambit enum vs bitmask, proxy-signup idempotency, auth scope)
 - [`api/chain-events.md`](api/chain-events.md) -- structsd Tendermint event catalog (typed `Event*`, `ugc_moderated`)
+- [`api/transactions/messages.md`](api/transactions/messages.md) -- live Msg catalog (CLI verb + `@type`)
 - `protocols/` -- Communication protocols (query, action, error handling, auth)
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)

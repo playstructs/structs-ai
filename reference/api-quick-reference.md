@@ -388,9 +388,9 @@ GET /structs/player?pagination.limit=10&pagination.offset=0
 - `examples/auth/` - Authentication examples
 
 **Reference**:
-- `reference/endpoint-index.md` - Endpoint index
-- `reference/action-index.md` - Action index
-- `reference/action-quick-reference.md` - Action quick reference
+- `reference/endpoint-index.md` - Endpoint lookup table (not a completeness claim)
+- `api/transactions/messages.md` - Live Msg catalog
+- `reference/action-quick-reference.md` - Action skim
 - `reference/api-quick-reference.md` - This file
 
 ---

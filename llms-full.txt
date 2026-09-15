@@ -255,6 +255,7 @@ For deep technical details, the original documentation remains available:
 - `api/` -- API specifications (endpoints, queries, transactions, streaming)
 - [`api/integration-notes.md`](api/integration-notes.md) -- Live data-shape & endpoint gotchas for integrators/MCP builders (string numerics, dual event-detail encoding, `struct_attack` schema, where HP/status live, address shape, field-name traps, ambit enum vs bitmask, proxy-signup idempotency, auth scope)
 - [`api/chain-events.md`](api/chain-events.md) -- structsd Tendermint event catalog (typed `Event*`, `ugc_moderated`)
+- [`api/transactions/messages.md`](api/transactions/messages.md) -- live Msg catalog (CLI verb + `@type`)
 - `protocols/` -- Communication protocols (query, action, error handling, auth)
 - `patterns/` -- Implementation patterns (caching, retry, rate limiting, workflows)
 - `examples/` -- Working examples (bots, workflows, error handling)
@@ -1484,7 +1485,10 @@ You're mining. Now expand your capabilities:
 |-------|------|
 | Combat mechanics | [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) |
 | All struct types | [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) |
-| Power system | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |
+| Power (quick card) | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |
+| Energy system | [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) |
+| Defense (quick card) | [knowledge/mechanics/defense](https://structs.ai/knowledge/mechanics/defense) |
+| Proof-of-work | [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) |
 | Energy market | [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) |
 | Fleet movement | [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) |
 | Early game strategy | [playbooks/phases/early-game](https://structs.ai/playbooks/phases/early-game) |
@@ -2098,7 +2102,8 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
 - [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
 - [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
-- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status (quick card)
+- [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) — Infusion, allocations, substations, brownout
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy
 
 </document>
@@ -2226,6 +2231,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 ## See also
 
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — conversion rates, vulnerability window, security model
+- [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) — mine/refine clocks, raid pause, difficulty decay
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — depletion, raid vulnerability
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) / [resource-scarce](https://structs.ai/playbooks/situations/resource-scarce) — production strategy
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW, job tracking, pipeline scheduling
@@ -2373,6 +2379,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 
 - [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — full catalog (HP, charge, limits, weapons)
 - [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building) — PoW decay, charge table
+- [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) — hash types, universal input, difficulty decay
 - [playbooks/phases/early-game](https://structs.ai/playbooks/phases/early-game) / [playbooks/meta/economy-of-force](https://structs.ai/playbooks/meta/economy-of-force) — build priorities
 - [structs-energy](https://structs.ai/skills/structs-energy/SKILL) — power for builds; [structs-combat](https://structs.ai/skills/structs-combat/SKILL) — what to build vs threats
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW
@@ -2887,6 +2894,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 ## See also
 
 - [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) — damage, evasion, raid phases, SHIELDS_VULNERABLE
+- [knowledge/mechanics/defense](https://structs.ai/knowledge/mechanics/defense) — raid loot limits, shield vulnerability, minimum posture
 - [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — fleet status, raid window
 - [playbooks/situations/under-attack](https://structs.ai/playbooks/situations/under-attack) / [guild-war](https://structs.ai/playbooks/situations/guild-war) / [counter-strategies](https://structs.ai/playbooks/meta/counter-strategies)
 - [structs-intel](https://structs.ai/skills/structs-intel/SKILL) — scouting + raid-worthiness scoring; [structs-production](https://structs.ai/skills/structs-production/SKILL) — refine to protect ore
@@ -18043,7 +18051,7 @@ Emitted when the keeper writes or deletes that entity. `EventDelete` is the gene
 | `EventProvider` | `structs.structs.EventProvider` | [`provider`](../schemas/entities/provider.md) |
 | `EventAllocation` | `structs.structs.EventAllocation` | [`allocation`](../schemas/entities/allocation.md) |
 | `EventAgreement` | `structs.structs.EventAgreement` | [`agreement`](../schemas/entities/agreement.md) |
-| `EventInfusion` | `structs.structs.EventInfusion` | [`infusion`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) |
+| `EventInfusion` | `structs.structs.EventInfusion` | [`infusion`](../schemas/entities/infusion.md) |
 | `EventStructType` | `structs.structs.EventStructType` | [`structType`](../schemas/entities/struct-type.md) |
 | `EventDelete` | `structs.structs.EventDelete` | [`objectId`](../knowledge/entities/entity-relationships.md#id-format) |
 
@@ -18130,7 +18138,7 @@ These messages exist in `events.proto` and are **not** currently passed to `Emit
 
 | Proto | Notes |
 |-------|--------|
-| `EventPlayerHalted` | Halt queries were removed from LCD (`/structs/player_halted` is gone) |
+| `EventPlayerHalted` | Halt queries were removed from the module (no such LCD query) |
 | `EventPlayerResumed` | Same |
 | `EventProviderRevokeGuild` | No emit site; grant/revoke keeper methods were removed |
 | `EventAlphaDefuse` | Defusion still happens; this event is unused |
@@ -18144,6 +18152,176 @@ Do not subscribe to these as a live signal.
 `structs-sync-state` consumes this log and writes tables. Some `planet_activity` categories (`shield_change`, `block_raid_start`) are **derived** from attribute writes and have no chain event of their own. A GRASS `struct_attack` stub has no shot `detail`; `structs.structs.EventAttack` on the tx does.
 
 See [event-types.md](streaming/event-types.md) for GRASS categories and [database-schema.md](../knowledge/infrastructure/database-schema.md) for `unknown_event_log` when a new chain type has no indexer handler yet.
+
+</document>
+
+<document>
+<source>api/transactions/messages.md</source>
+---
+title: "structsd message catalog | Structs AI"
+description: "Every live Msg RPC structsd accepts, with CLI verb and @type, verified against tx.proto v0.21.0."
+permalink: /api/transactions/messages
+---
+
+# Message catalog (structsd)
+
+**Verified against**: structsd `48686a9` (v0.21.0) `proto/structs/structs/tx.proto`
+**CLI names**: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md)
+
+This is the write surface. [api/transactions/](./) is the **submit envelope**. There is no `MsgStructBuild` — builds are `struct-build-initiate` then complete (or `struct-build-compute`).
+
+`@type` is `/structs.structs.MsgName`. Compute helpers (`*-compute`, `guild-create-compute`, `planet-raid-compute`, `guild-charter-consent`) are CLI wrappers, not extra RPCs.
+
+Skills: [play-structs](https://structs.ai/skills/play-structs/SKILL) for the first path; pick the domain skill for the rest.
+
+## Address and player
+
+| Msg | CLI | Skill / notes |
+|-----|-----|----------------|
+| `MsgAddressRegister` | `address-register` | [permissions](https://structs.ai/skills/structs-permissions/SKILL) |
+| `MsgAddressRevoke` | `address-revoke` | |
+| `MsgPlayerUpdatePrimaryAddress` | `player-update-primary-address` | Needs `PermAll` on the signer |
+| `MsgPlayerUpdateGuildRank` | `player-update-guild-rank` | [guild](https://structs.ai/skills/structs-guild/SKILL) |
+| `MsgPlayerUpdateName` | `player-update-name` | [ugc-moderation](../../knowledge/mechanics/ugc-moderation.md) |
+| `MsgPlayerUpdatePfp` | `player-update-pfp` | |
+| `MsgPlayerUpdatePfpClientRenderAttributes` | `player-update-pfp-cr-attributes` | Owner-only; CLI abbreviates `cr` |
+| `MsgPlayerSend` | `player-send` | Token send |
+
+## Permissions
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgPermissionGrantOnAddress` | `permission-grant-on-address` | [permissions.md](../../knowledge/mechanics/permissions.md) |
+| `MsgPermissionGrantOnObject` | `permission-grant-on-object` | |
+| `MsgPermissionRevokeOnAddress` | `permission-revoke-on-address` | |
+| `MsgPermissionRevokeOnObject` | `permission-revoke-on-object` | |
+| `MsgPermissionSetOnAddress` | `permission-set-on-address` | Replace mask |
+| `MsgPermissionSetOnObject` | `permission-set-on-object` | |
+| `MsgPermissionGuildRankSet` | `permission-guild-rank-set` | |
+| `MsgPermissionGuildRankRevoke` | `permission-guild-rank-revoke` | |
+
+## Guild
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgGuildCreate` | `guild-create` | Entitlement path; charter uses `guild-create-compute` |
+| `MsgGuildBankMint` | `guild-bank-mint` | [guild-banking](../../knowledge/economy/guild-banking.md) |
+| `MsgGuildBankRedeem` | `guild-bank-redeem` | |
+| `MsgGuildBankConvert` | `guild-bank-convert` | |
+| `MsgGuildBankConvertToken` | `guild-bank-convert-token` | |
+| `MsgGuildBankConfiscateAndBurn` | `guild-bank-confiscate-and-burn` | |
+| `MsgGuildUpdateBankConvertInFee` | `guild-update-bank-convert-in-fee` | |
+| `MsgGuildUpdateBankConvertOutFee` | `guild-update-bank-convert-out-fee` | |
+| `MsgGuildUpdateOwnerId` | `guild-update-owner-id` | |
+| `MsgGuildUpdateEntrySubstationId` | `guild-update-entry-substation-id` | New joins only |
+| `MsgGuildUpdateEndpoint` | `guild-update-endpoint` | |
+| `MsgGuildUpdatePrimaryReactor` | `guild-update-primary-reactor` | |
+| `MsgGuildUpdateJoinInfusionMinimum` | `guild-update-join-infusion-minimum` | |
+| `MsgGuildUpdateJoinInfusionMinimumBypassByInvite` | `guild-update-join-infusion-minimum-by-invite` | |
+| `MsgGuildUpdateJoinInfusionMinimumBypassByRequest` | `guild-update-join-infusion-minimum-by-request` | |
+| `MsgGuildUpdateEntryRank` | `guild-update-entry-rank` | |
+| `MsgGuildUpdateName` | `guild-update-name` | UGC |
+| `MsgGuildUpdatePfp` | `guild-update-pfp` | |
+
+### Membership
+
+| Msg | CLI |
+|-----|------|
+| `MsgGuildMembershipInvite` | `guild-membership-invite` |
+| `MsgGuildMembershipInviteApprove` | `guild-membership-invite-approve` |
+| `MsgGuildMembershipInviteDeny` | `guild-membership-invite-deny` |
+| `MsgGuildMembershipInviteRevoke` | `guild-membership-invite-revoke` |
+| `MsgGuildMembershipJoin` | `guild-membership-join` |
+| `MsgGuildMembershipJoinProxy` | `guild-membership-join-proxy` |
+| `MsgGuildMembershipKick` | `guild-membership-kick` |
+| `MsgGuildMembershipRequest` | `guild-membership-request` |
+| `MsgGuildMembershipRequestApprove` | `guild-membership-request-approve` |
+| `MsgGuildMembershipRequestDeny` | `guild-membership-request-deny` |
+| `MsgGuildMembershipRequestRevoke` | `guild-membership-request-revoke` |
+
+## Planet, fleet, combat
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgPlanetExplore` | `planet-explore` | [onboarding](https://structs.ai/skills/structs-onboarding/SKILL) |
+| `MsgPlanetUpdateName` | `planet-update-name` | |
+| `MsgPlanetRaidComplete` | `planet-raid-complete` | Prefer `planet-raid-compute`; [combat](https://structs.ai/skills/structs-combat/SKILL) |
+| `MsgFleetMove` | `fleet-move` | |
+| `MsgStructAttack` | `struct-attack` | |
+
+## Structs (build / status)
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgStructBuildInitiate` | `struct-build-initiate` | [building](https://structs.ai/skills/structs-building/SKILL) |
+| `MsgStructBuildComplete` | `struct-build-complete` | Prefer `struct-build-compute` |
+| `MsgStructBuildCancel` | `struct-build-cancel` | |
+| `MsgStructTrash` | `struct-trash` | Irreversible |
+| `MsgStructActivate` | `struct-activate` | |
+| `MsgStructDeactivate` | `struct-deactivate` | |
+| `MsgStructDeactivateBatch` | `struct-deactivate-batch` | ≤65 ids |
+| `MsgStructDefenseSet` | `struct-defense-set` | |
+| `MsgStructDefenseClear` | `struct-defense-clear` | |
+| `MsgStructMove` | `struct-move` | Command Ship ambit |
+| `MsgStructStealthActivate` | `struct-stealth-activate` | |
+| `MsgStructStealthDeactivate` | `struct-stealth-deactivate` | |
+| `MsgStructGeneratorInfuse` | `struct-generator-infuse` | |
+| `MsgStructOreMinerComplete` | `struct-ore-mine-complete` | Prefer `struct-ore-mine-compute` |
+| `MsgStructOreRefineryComplete` | `struct-ore-refine-complete` | Prefer `struct-ore-refine-compute` |
+
+Commented out in proto (not live): `StructBuildCompleteAndStash`, `StructStorageStash`, `StructStorageRecall`.
+
+## Energy, allocations, providers
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgReactorInfuse` | `reactor-infuse` | [energy](https://structs.ai/skills/structs-energy/SKILL) |
+| `MsgReactorDefuse` | `reactor-defuse` | Cooldown |
+| `MsgReactorBeginMigration` | `reactor-begin-migration` | |
+| `MsgReactorCancelDefusion` | `reactor-cancel-defusion` | |
+| `MsgReactorRestart` | `reactor-restart` | After jail |
+| `MsgAllocationCreate` | `allocation-create` | |
+| `MsgAllocationUpdate` | `allocation-update` | Dynamic only |
+| `MsgAllocationDelete` | `allocation-delete` | |
+| `MsgAllocationTransfer` | `allocation-transfer` | |
+| `MsgSubstationCreate` | `substation-create` | |
+| `MsgSubstationDelete` | `substation-delete` | |
+| `MsgSubstationAllocationConnect` | `substation-allocation-connect` | |
+| `MsgSubstationAllocationDisconnect` | `substation-allocation-disconnect` | |
+| `MsgSubstationPlayerConnect` | `substation-player-connect` | Needs `PermSubstationConnection` on player too |
+| `MsgSubstationPlayerDisconnect` | `substation-player-disconnect` | |
+| `MsgSubstationPlayerMigrate` | `substation-player-migrate` | |
+| `MsgSubstationUpdateName` | `substation-update-name` | |
+| `MsgSubstationUpdatePfp` | `substation-update-pfp` | |
+| `MsgProviderCreate` | `provider-create` | [commerce](https://structs.ai/skills/structs-commerce/SKILL) |
+| `MsgProviderDelete` | `provider-delete` | |
+| `MsgProviderWithdrawBalance` | `provider-withdraw-balance` | |
+| `MsgProviderUpdateCapacityMinimum` | `provider-update-capacity-minimum` | |
+| `MsgProviderUpdateCapacityMaximum` | `provider-update-capacity-maximum` | |
+| `MsgProviderUpdateDurationMinimum` | `provider-update-duration-minimum` | |
+| `MsgProviderUpdateDurationMaximum` | `provider-update-duration-maximum` | |
+| `MsgProviderUpdateAccessPolicy` | `provider-update-access-policy` | |
+
+## Agreements
+
+| Msg | CLI |
+|-----|------|
+| `MsgAgreementOpen` | `agreement-open` |
+| `MsgAgreementClose` | `agreement-close` |
+| `MsgAgreementCapacityIncrease` | `agreement-capacity-increase` |
+| `MsgAgreementCapacityDecrease` | `agreement-capacity-decrease` |
+| `MsgAgreementDurationIncrease` | `agreement-duration-increase` |
+
+## Governance
+
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgUpdateParams` | *(gov)* | Module params; not a player play action |
+
+## Not in this catalog
+
+- **CLI compute wrappers** — `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`, `guild-charter-consent`. See [conventions](https://structs.ai/skills/conventions) and [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md).
+- **Stale docs** that still say 33 actions or list `MsgStructBuild` — ignore them; this page plus the generated CLI catalog win.
 
 </document>
 
@@ -19047,6 +19225,12 @@ These pairs cause the most integration and tactical errors:
 
 ## A
 
+### Address
+A Cosmos `structs1…` signing key bound to a player. The player has one **primary** address; additional addresses can be registered. Permission bits live on the address as well as on objects. → [permissions.md](../knowledge/mechanics/permissions.md), [address queries](../api/queries/address.md)
+
+### Agreement
+A paid energy subscription between a [provider](#provider) and a consumer: contracted `capacity` for a block window, backed by an allocation. → [energy-market.md](../knowledge/economy/energy-market.md), [agreement schema](../schemas/entities/agreement.md)
+
 ### Allocation
 A routing of power capacity from a source (player, reactor, struct, or substation) to a destination, adding to the destination's `capacity` and the source's `load`. Types: `static` (fixed), `dynamic` (updatable), `automated` (one per source, auto-resizes to the source's full capacity), `provider-agreement` (system). Connecting one to a substation needs permission only on **your own** allocation. → [energy.md — Allocations](../knowledge/mechanics/energy.md#allocations)
 
@@ -19070,6 +19254,9 @@ The ambit numbering used by transaction messages and a struct's stored `operatin
 
 ### Ambit reach bitmask
 The ambit numbering used by `possibleAmbit` and weapon-reach fields, where `bit = 1 << enum`: `none=1, water=2, land=4, air=8, space=16, local=32`. Combined with OR (e.g. `6` = land+water). **Not** the enum. → [api/integration-notes.md — Ambit](../api/integration-notes.md#ambit-enum-vs-reach-bitmask)
+
+### Ante
+The Cosmos ante handler that classifies a tx as free (Structs gameplay / selected staking) or paid. Free msgs still need sequence, signatures, and charge. → [transactions.md](../knowledge/mechanics/transactions.md)
 
 ### Armour
 A unit defense (Tank, and the power generators) that reduces incoming damage by 1. Negated by armour-piercing weapons. → [combat.md — Weapon Control vs Defense Type](../knowledge/mechanics/combat.md#weapon-control-vs-defense-type)
@@ -19153,6 +19340,9 @@ The chain's short label for a struct type (`CMD Ship`, `PDC`, `Orb. Shield`, …
 ### Command Ship
 The single movable struct (type 1, 1 per player, 6 HP). Required for planet ops; defends the home planet while the fleet is on station. Destroyable but rebuildable. → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Struct Destruction](../knowledge/mechanics/combat.md#struct-destruction)
 
+### Commission
+The reactor's cut of an infusion (default 4%). The infuser keeps `1 − commission` on their own `capacity`. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
+
 ### connectionCapacity
 The per-connection share a substation gives each connected player (its `capacitySecondary`): `(capacity − load) / connectionCount` (count defaults to 1; 0 if capacity ≤ load). Recomputed on every connect/disconnect — each new connection **dilutes** everyone's share. → [energy.md — Substations](../knowledge/mechanics/energy.md#substations-connectioncapacity-dilutes)
 
@@ -19172,6 +19362,9 @@ A unit defense (High Altitude Interceptor) that evades **unguided** weapons 66% 
 
 ### demilitarized
 A raid status: the planet has no defenders to resolve against. → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
+
+### Defusion
+Withdrawing infused Alpha from a reactor (`reactor-defuse`). Fuel stays until the unbonding cooldown finishes; then Alpha returns. Not the unused chain event `EventAlphaDefuse`. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ### Difficulty
 The proof-of-work target = number of leading hex zeros required. Decays with the operation's age from 64 (fresh, impossible) toward 1 (aged, instant). The D=8→D=9 jump is the "cliff". → [hashing.md — Difficulty and Decay](../knowledge/mechanics/hashing.md#difficulty-and-decay)
@@ -19231,7 +19424,13 @@ Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [st
 ### Infusion
 Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram = 1 kW). A reactor infusion splits ~96/4: the infuser keeps `1 − commission` (default 4%) on their **own** capacity, the reactor keeps the commission. It does **not** raise any substation's capacity. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
+### is_owner
+Error when a player who **already owns a guild** tries to found another. Transfer the existing guild first. → [play/errors.md](../play/errors.md)
+
 ## J
+
+### Jail
+A jailed or missing validator zeros that reactor's infusion **ratio** (fuel stays). Unjail/rebond restores from live staking; `reactor-restart` resyncs if hooks cannot. → [energy.md](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ### Jamming Satellite
 Planet struct (type 17, 1 per player, `noUnitDefenses`, built in the space ambit) that provides the planet's [low-orbit ballistic interceptor network](#low-orbit-ballistic-interceptor-network), which evades incoming **guided** ordnance aimed at planetary structs on their own planet (ambit-irrelevant; unguided passes through). → [struct-types.md](../knowledge/entities/struct-types.md), [combat.md — Other Planetary Defense Structs](../knowledge/mechanics/combat.md#other-planetary-defense-structs)
@@ -19271,16 +19470,28 @@ The two PoW fields on a `*-complete` message: `nonce` (the value found by brute 
 
 ## O
 
+### Object type code
+The first number in a `type-index` ID: `0` guild, `1` player, `2` planet, `3` reactor, `4` substation, `5` struct, `6` allocation, `7` infusion, `8` address, `9` fleet, `10` provider, `11` agreement. StructType uses integer IDs only. → [entity-relationships.md — ID Format](../knowledge/entities/entity-relationships.md#id-format)
+
 ### onStation
 A fleet state: the fleet is at its home planet, so the Command Ship defends it (shields up). → [fleet.md](../knowledge/mechanics/fleet.md)
 
 ### Ore (storedOre / planet ore)
 `storedOre` is mined, stealable ore held by a player (the only raid loot) — on the wire it is the player's `gridAttributes.ore`. Unmined ore is the *planet's* `gridAttributes.ore`; there is no `remainingOre` field on either. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
 
+### Ore Bunker
+Planet struct (type 16). It does **not** vault or hide ore. Planetary types have `canDefend: false`. → [struct-types.md](../knowledge/entities/struct-types.md)
+
 ## P
 
 ### PassiveDraw
 See [BuildDraw / PassiveDraw](#builddraw--passivedraw).
+
+### PermAll
+The 25-bit mask of every permission (`33554431`). `player-update-primary-address` must be signed by an address that holds `PermAll`. → [permissions.md](../knowledge/mechanics/permissions.md), [play/errors.md](../play/errors.md)
+
+### Permission
+A 25-bit flag set stored on an address or on an object (plus guild-rank worst-allowed ranks). `PermissionCheck` is the gate for every state-changing tx. → [permissions.md](../knowledge/mechanics/permissions.md)
 
 ### planet_activity
 The PostgreSQL table whose inserts fire the GRASS stream; the source of full `struct_attack` shot detail when the live payload is [stubbed](#stub). → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [database-schema.md](../schemas/database-schema.md)
@@ -19300,6 +19511,14 @@ The SHA-256 puzzle that finalizes build/mine/refine/raid. Difficulty decays with
 ### Proxy signup
 Guild-fronted player creation (`MsgGuildMembershipJoinProxy`): sign a payload, POST to the guild, poll for your player id. Idempotent — a repeat returns `resource_already_exists` (treat as success). → [integration-notes.md — Proxy signup](../api/integration-notes.md#proxy-signup-is-idempotent)
 
+### Provider
+An energy seller attached to a substation: pricing, access policy, capacity/duration bounds. Opens [agreements](#agreement). → [energy-market.md](../knowledge/economy/energy-market.md)
+
+## Q
+
+### queue_full
+Visiting-fleet slot full (`1 + locationListExtra`, default one visitor). Wait for a departure or send a fleet home. → [fleet.md](../knowledge/mechanics/fleet.md), [play/errors.md](../play/errors.md)
+
 ## R
 
 ### Raid
@@ -19314,7 +19533,13 @@ A chain energy source — Alpha staked into a validator. Infusing it grants the 
 ### Recoil damage
 Self-damage the attacker takes after firing, applied only if it survives the whole sequence (including counters). → [combat.md — Recoil Damage](../knowledge/mechanics/combat.md#recoil-damage)
 
+### recipient_not_eligible
+`uguild.*` send rejected: destination is IBC, escrow, or an unregistered address. Send only to a registered player, the structs module, or a provider pool. → [guild-banking.md](../knowledge/economy/guild-banking.md), [play/errors.md](../play/errors.md)
+
 ## S
+
+### Sequence mismatch
+`account sequence mismatch` — two txs from the same key before the first landed. One tx per key; wait ~6s. → [play/errors.md](../play/errors.md)
 
 ### shieldsVulnerable
 The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate — and a state you can **create** (see [siege raid](#siege-raid)), not only wait for. Distinct from an owner being merely [idle](#idle-vs-vulnerable). → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
@@ -19345,6 +19570,9 @@ A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1
 
 ### Stub
 The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+
+### StructCannotDefend
+Error assigning a planetary type (`canDefend: false`, including Ore Bunker) as a defender. Only fleet types work. → [combat.md](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set), [play/errors.md](../play/errors.md)
 
 ### struct_attack
 The GRASS category for an attack, carrying per-shot `eventAttackShotDetail[]` — unless [stubbed](#stub). → [integration-notes.md — struct_attack event detail schema](../api/integration-notes.md#struct_attack-event-detail-schema)
@@ -19378,6 +19606,9 @@ See [Guided / Unguided](#guided--unguided).
 
 ### warfighter
 A `structs_doctrine` preset that bundles max defense with both autonomous combat loops armed but advising (`autonomy: advise`). Explicit fields override the preset. → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
+
+### work-failure
+Guild charter compute died because the global charter **anchor moved** (someone else founded) or entitlement checks failed. Re-query `guild-charter` and restart against the new anchor. → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [play/errors.md](../play/errors.md)
 
 ---
 

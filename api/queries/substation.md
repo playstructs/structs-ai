@@ -38,7 +38,7 @@ Returns a single substation by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/substation.md`
+- **Schema**: [substation](../../schemas/entities/substation.md)
 
 ---
 
@@ -51,4 +51,4 @@ Returns a paginated list of all substations.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/substation.md` (array)
+- **Schema**: [substation](../../schemas/entities/substation.md) (array)

@@ -1,12 +1,13 @@
 ---
-title: "Endpoint index: every API route in one list"
-description: Every API endpoint in one index, across the consensus network and the web application, with query patterns and categories.
+title: "Endpoint index: a route lookup table"
+description: "Lookup table of API routes across consensus and webapp. LCD families live under api/queries, not this table."
 ---
 
-# Endpoint index: every API route in one list
+# Endpoint index: a route lookup table
 
-**Last Updated**: May 13, 2026
-**Description**: Complete index of all API endpoints for AI agents
+**Last Updated**: 2026-09-15
+
+**Canonical routes**: [api/endpoints.md](../api/endpoints.md) (index) and [api/queries/](../api/queries/) (per-entity LCD). This table is a lookup, not a completeness claim — grid, infusion, attributes, and charter live on the query pages.
 
 ---
 

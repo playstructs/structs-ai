@@ -37,7 +37,7 @@ Planet activity (including the per-player feed and stats) and per-planet attribu
 Get planet information from web application.
 
 - **ID**: `webapp-planet-by-id`
-- **Response Schema**: `schemas/entities.md#Planet`
+- **Response Schema**: [Planet](../../schemas/entities/planet.md)
 - **Content Type**: `application/json`
 
 #### Parameters

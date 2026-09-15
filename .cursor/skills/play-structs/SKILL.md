@@ -179,7 +179,10 @@ You're mining. Now expand your capabilities:
 |-------|------|
 | Combat mechanics | [knowledge/mechanics/combat](https://structs.ai/knowledge/mechanics/combat) |
 | All struct types | [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) |
-| Power system | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |
+| Power (quick card) | [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) |
+| Energy system | [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) |
+| Defense (quick card) | [knowledge/mechanics/defense](https://structs.ai/knowledge/mechanics/defense) |
+| Proof-of-work | [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) |
 | Energy market | [knowledge/economy/energy-market](https://structs.ai/knowledge/economy/energy-market) |
 | Fleet movement | [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) |
 | Early game strategy | [playbooks/phases/early-game](https://structs.ai/playbooks/phases/early-game) |

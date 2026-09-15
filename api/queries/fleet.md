@@ -39,7 +39,7 @@ Returns a single fleet by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/fleet.md`
+- **Schema**: [fleet](../../schemas/entities/fleet.md)
 
 ---
 
@@ -52,7 +52,7 @@ Returns a paginated list of all fleets.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/fleet.md` (array)
+- **Schema**: [fleet](../../schemas/entities/fleet.md) (array)
 
 ---
 
@@ -71,4 +71,4 @@ Returns a fleet by its index value.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/fleet.md`
+- **Schema**: [fleet](../../schemas/entities/fleet.md)

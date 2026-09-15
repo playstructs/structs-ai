@@ -11,6 +11,22 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] - 2026-09-15
+
+LCD query pages, live Msg catalog, and schema splits that were missing after the chain-events pass.
+
+### Added
+
+- **LCD query pages** — [`api/queries/grid.md`](api/queries/grid.md), [infusion](api/queries/infusion.md), [struct-type](api/queries/struct-type.md), [struct-attribute](api/queries/struct-attribute.md), [planet-attribute](api/queries/planet-attribute.md), [guild-membership-application](api/queries/guild-membership-application.md). Charter, `validate-signature`, and collateral addresses on [system](api/queries/system.md), [guild](api/queries/guild.md), and [provider](api/queries/provider.md).
+- **Message catalog** — [`api/transactions/messages.md`](api/transactions/messages.md). Every live `Msg*` RPC with CLI verb, verified against structsd `48686a9` (v0.21.0). CLI names remain in [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md).
+- **Entity schemas** — [infusion](schemas/entities/infusion.md), [permission](schemas/entities/permission.md), [address](schemas/entities/address.md).
+
+### Changed
+
+- **Action indexes** no longer claim 33 complete actions. [action-index.md](reference/action-index.md) and [schemas/actions.md](schemas/actions.md) point at the message catalog. Ghost `MsgStructBuild` removed.
+- **Agreement schema** lists the proto fields (`allocationId`, `capacity`, blocks, `creator`, `owner`). There is no `consumerId`.
+- **formats.md** power strings are milliwatts, matching [energy.md](knowledge/mechanics/energy.md).
+
 ## [1.28.0] - 2026-09-14
 
 structsd Tendermint event catalog.

@@ -39,7 +39,7 @@ Returns a single planet by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/planet.md`
+- **Schema**: [planet](../../schemas/entities/planet.md)
 
 #### Example
 
@@ -92,7 +92,7 @@ Returns a paginated list of all planets.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/planet.md` (array)
+- **Schema**: [planet](../../schemas/entities/planet.md) (array)
 
 ---
 
@@ -113,4 +113,4 @@ Returns planets owned by a specific player.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/planet.md` (array)
+- **Schema**: [planet](../../schemas/entities/planet.md) (array)

@@ -69,6 +69,7 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 | structs-intel | [SKILL.md](.cursor/skills/structs-intel/SKILL.md) | Query catalog, scouting, intelligence persistence to memory/ |
 | structs-streaming | [SKILL.md](.cursor/skills/structs-streaming/SKILL.md) | GRASS real-time events via NATS WebSocket |
 | structs-guild-stack | [SKILL.md](.cursor/skills/structs-guild-stack/SKILL.md) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, real-time monitoring |
+| structs-ui | [SKILL.md](.cursor/skills/structs-ui/SKILL.md) | **(Building, not playing)** Dashboards and clients using SUI |
 
 Supporting files:
 - `.cursor/skills/structs-onboarding/scripts/create-player.mjs` — Guild signup script (Node.js)
@@ -273,12 +274,13 @@ Endpoint specifications and streaming protocols.
 
 ### Queries (`api/queries/`)
 
-Per-entity query endpoints: [address](api/queries/address.md), [agreement](api/queries/agreement.md), [allocation](api/queries/allocation.md), [fleet](api/queries/fleet.md), [guild](api/queries/guild.md), [permission](api/queries/permission.md), [planet](api/queries/planet.md), [player](api/queries/player.md), [provider](api/queries/provider.md), [reactor](api/queries/reactor.md), [struct](api/queries/struct.md), [substation](api/queries/substation.md), [system](api/queries/system.md)
+Per-entity query endpoints: [address](api/queries/address.md), [agreement](api/queries/agreement.md), [allocation](api/queries/allocation.md), [fleet](api/queries/fleet.md), [guild](api/queries/guild.md), [guild-membership-application](api/queries/guild-membership-application.md), [grid](api/queries/grid.md), [infusion](api/queries/infusion.md), [permission](api/queries/permission.md), [planet](api/queries/planet.md), [planet-attribute](api/queries/planet-attribute.md), [player](api/queries/player.md), [provider](api/queries/provider.md), [reactor](api/queries/reactor.md), [struct](api/queries/struct.md), [struct-attribute](api/queries/struct-attribute.md), [struct-type](api/queries/struct-type.md), [substation](api/queries/substation.md), [system](api/queries/system.md)
 
 ### Transactions (`api/transactions/`)
 
 | File | Topic |
 |------|-------|
+| [messages.md](api/transactions/messages.md) | Live Msg catalog (CLI + `@type`) |
 | [submit-transaction.md](api/transactions/submit-transaction.md) | Transaction submission flow |
 
 ### Streaming (`api/streaming/`)
@@ -328,7 +330,7 @@ Data structure definitions and formulas.
 | [code-structures.md](schemas/code-structures.md) | Code structure patterns |
 ### Entity Schemas (`schemas/entities/`)
 
-Per-entity schemas: [agreement](schemas/entities/agreement.md), [allocation](schemas/entities/allocation.md), [fleet](schemas/entities/fleet.md), [guild](schemas/entities/guild.md), [planet](schemas/entities/planet.md), [player](schemas/entities/player.md), [provider](schemas/entities/provider.md), [reactor](schemas/entities/reactor.md), [struct-type](schemas/entities/struct-type.md), [struct](schemas/entities/struct.md), [substation](schemas/entities/substation.md)
+Per-entity schemas: [address](schemas/entities/address.md), [agreement](schemas/entities/agreement.md), [allocation](schemas/entities/allocation.md), [fleet](schemas/entities/fleet.md), [guild](schemas/entities/guild.md), [infusion](schemas/entities/infusion.md), [permission](schemas/entities/permission.md), [planet](schemas/entities/planet.md), [player](schemas/entities/player.md), [provider](schemas/entities/provider.md), [reactor](schemas/entities/reactor.md), [struct-type](schemas/entities/struct-type.md), [struct](schemas/entities/struct.md), [substation](schemas/entities/substation.md)
 
 ### Minimal Schemas (`schemas/minimal/`)
 
@@ -427,11 +429,11 @@ Quick-lookup indexes.
 | [glossary.md](reference/glossary.md) | Lexical index — every key term with a definition and a link to its canonical page |
 | [codex-crosswalk.md](reference/codex-crosswalk.md) | Maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds, Battery, Alpha Ore, …) to canonical pages |
 | [local-devnet.md](reference/local-devnet.md) | Local Guild Stack / chain endpoints for development and review |
-| [action-quick-reference.md](reference/action-quick-reference.md) | All game actions at a glance |
-| [action-index.md](reference/action-index.md) | Action index |
-| [api-quick-reference.md](reference/api-quick-reference.md) | API endpoint quick lookup |
-| [endpoint-index.md](reference/endpoint-index.md) | Endpoint index |
-| [endpoint-quick-lookup.md](reference/endpoint-quick-lookup.md) | Endpoint quick lookup |
+| [action-quick-reference.md](reference/action-quick-reference.md) | Skim of common verbs |
+| [action-index.md](reference/action-index.md) | Subset with keeper notes (not complete) |
+| [api-quick-reference.md](reference/api-quick-reference.md) | One-page API card |
+| [endpoint-index.md](reference/endpoint-index.md) | Endpoint lookup table |
+| [endpoint-quick-lookup.md](reference/endpoint-quick-lookup.md) | Consensus vs webapp use-case pairs |
 | [entity-index.md](reference/entity-index.md) | Entity index |
 | [gameplay-index.md](reference/gameplay-index.md) | Gameplay index |
 

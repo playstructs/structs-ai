@@ -26,7 +26,7 @@ Player entity endpoints.
 
 ### Actions
 
-Player UGC updates (username, pfp) are on-chain transactions, not webapp endpoints. The webapp's signing client manager queues `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp` directly. See `schemas/actions.md#ugc-actions` and `knowledge/mechanics/ugc-moderation.md`.
+Player UGC updates (username, pfp) are on-chain transactions, not webapp endpoints. The webapp's signing client manager queues `MsgPlayerUpdateName` and `MsgPlayerUpdatePfp` directly. See [messages.md](transactions/messages.md) and [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
 
 ### Dependencies
 

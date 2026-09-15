@@ -39,7 +39,7 @@ Returns a single agreement by its ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/agreement.md`
+- **Schema**: [agreement](../../schemas/entities/agreement.md)
 
 ---
 
@@ -52,7 +52,7 @@ Returns a paginated list of all agreements.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/agreement.md` (array)
+- **Schema**: [agreement](../../schemas/entities/agreement.md) (array)
 
 ---
 
@@ -71,4 +71,4 @@ Returns all agreements associated with a specific provider.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/agreement.md` (array)
+- **Schema**: [agreement](../../schemas/entities/agreement.md) (array)

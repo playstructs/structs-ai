@@ -40,8 +40,11 @@ The action and entity indexes are for “what is the name of this thing.” Loca
 
 - [Glossary](glossary.md) — disambiguates tricky terms (ambit enum vs bitmask, block vs counter, …)
 - [Codex crosswalk](codex-crosswalk.md) — maps human [Codex](https://www.playstructs.com/codex) terms (Battlegrounds, Battery, Alpha Ore, …) to these pages
-- [Action index](action-index.md) · [Action quick reference](action-quick-reference.md)
+- [Message catalog](../api/transactions/messages.md) — live `Msg*` RPCs and CLI verbs
+- [Action quick reference](action-quick-reference.md) — skim of common verbs
+- [Action index](action-index.md) — subset with keeper notes (not complete)
 - [Local devnet](local-devnet.md)
+- [Endpoint index](endpoint-index.md) · [Endpoint quick lookup](endpoint-quick-lookup.md) — lookup desks; LCD families live under [api/queries/](../api/queries/)
 
 ## Errors
 

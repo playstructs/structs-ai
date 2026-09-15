@@ -1,13 +1,13 @@
 ---
-title: "Action catalog: messages an agent can send"
-description: The complete catalog of game actions an agent can take, with categories, common requirements, and the transaction flow each follows.
+title: "Action field notes, not the live catalog"
+description: "Per-message field notes for a subset of Msgs. Not complete — use the message catalog and generated CLI list."
 ---
 
 # Structs Action Definitions
 
-**Version**: 1.1.0
 **Category**: actions
-**Description**: Complete catalog of all game actions/commands for AI agents
+
+This page is **field notes for a subset** of messages. There is no `MsgStructBuild` RPC. The live list is [messages.md](../api/transactions/messages.md). CLI names: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md).
 
 ---
 
@@ -15,7 +15,7 @@ description: The complete catalog of game actions an agent can take, with catego
 
 | Category | Actions |
 |----------|---------|
-| construction | MsgStructBuild, MsgStructBuildInitiate, MsgStructBuildComplete |
+| construction | MsgStructBuildInitiate, MsgStructBuildComplete |
 | combat | MsgStructAttack, MsgPlanetRaidComplete |
 | resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgReactorRestart, MsgAllocationCreate, MsgAllocationUpdate, MsgAllocationDelete, MsgAllocationTransfer, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
 | economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse |
@@ -60,45 +60,6 @@ See `patterns/validation-patterns.md` for detailed validation patterns.
 ---
 
 ## Construction Actions
-
-### MsgStructBuild
-
-- **ID**: `struct-build`
-- **Name**: Build Struct
-- **Message Type**: `/structs.structs.MsgStructBuild`
-- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Start building a struct
-
-**Required Fields**: `creator`, `structType`, `locationType`, `locationId`
-**Optional Fields**: `gridAttributes`
-**Follow-Up Action**: MsgStructBuildComplete
-
-| Requirement | Details |
-|-------------|---------|
-| playerOnline | true |
-| sufficientResources | true |
-| validLocation | true |
-| commandShipOnline | If building on planet: Command Ship must be built AND online in fleet. Check: query fleet for Command Ship struct, verify status is 'online'. |
-| fleetOnStation | If building on planet: fleet must be 'onStation' (not 'away'). Check: query fleet status. |
-| sufficientPower | Must have power capacity > struct passive draw. Check: query player power capacity vs struct requirements. |
-
-Transaction may broadcast but struct not created if requirements not met. Always verify game state after broadcast.
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgStructBuild",
-        "creator": "structs1...",
-        "structType": "1",
-        "locationType": 1,
-        "locationId": "1-1"
-      }
-    ]
-  }
-}
-```
 
 ### MsgStructBuildInitiate
 

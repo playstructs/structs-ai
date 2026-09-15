@@ -38,7 +38,7 @@ Returns a single player by their entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/player.md`
+- **Schema**: [player](../../schemas/entities/player.md)
 
 #### Example
 
@@ -91,4 +91,4 @@ Returns a paginated list of all players.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/player.md` (array)
+- **Schema**: [player](../../schemas/entities/player.md) (array)

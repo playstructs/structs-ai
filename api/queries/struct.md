@@ -38,7 +38,7 @@ Returns a single struct by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/struct.md`
+- **Schema**: [struct](../../schemas/entities/struct.md)
 
 ---
 
@@ -58,4 +58,4 @@ Returns a paginated list of all structs.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/struct.md` (array)
+- **Schema**: [struct](../../schemas/entities/struct.md) (array)

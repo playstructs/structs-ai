@@ -91,7 +91,7 @@ Emitted when the keeper writes or deletes that entity. `EventDelete` is the gene
 | `EventProvider` | `structs.structs.EventProvider` | [`provider`](../schemas/entities/provider.md) |
 | `EventAllocation` | `structs.structs.EventAllocation` | [`allocation`](../schemas/entities/allocation.md) |
 | `EventAgreement` | `structs.structs.EventAgreement` | [`agreement`](../schemas/entities/agreement.md) |
-| `EventInfusion` | `structs.structs.EventInfusion` | [`infusion`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) |
+| `EventInfusion` | `structs.structs.EventInfusion` | [`infusion`](../schemas/entities/infusion.md) |
 | `EventStructType` | `structs.structs.EventStructType` | [`structType`](../schemas/entities/struct-type.md) |
 | `EventDelete` | `structs.structs.EventDelete` | [`objectId`](../knowledge/entities/entity-relationships.md#id-format) |
 
@@ -178,7 +178,7 @@ These messages exist in `events.proto` and are **not** currently passed to `Emit
 
 | Proto | Notes |
 |-------|--------|
-| `EventPlayerHalted` | Halt queries were removed from LCD (`/structs/player_halted` is gone) |
+| `EventPlayerHalted` | Halt queries were removed from the module (no such LCD query) |
 | `EventPlayerResumed` | Same |
 | `EventProviderRevokeGuild` | No emit site; grant/revoke keeper methods were removed |
 | `EventAlphaDefuse` | Defusion still happens; this event is unused |

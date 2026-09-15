@@ -130,7 +130,7 @@ Get guild directory.
 Get guild by ID.
 
 - **ID**: `webapp-guild-by-id`
-- **Response Schema**: `schemas/entities.md#Guild`
+- **Response Schema**: [Guild](../../schemas/entities/guild.md)
 - **Content Type**: `application/json`
 
 #### Parameters

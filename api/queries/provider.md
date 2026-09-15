@@ -18,6 +18,10 @@ description: "Query energy providers on the consensus network: what they sell, a
 |--------|------|-------------|------|-----------|
 | GET | `/structs/provider/{id}` | Get provider by ID | No | No |
 | GET | `/structs/provider` | List all providers | No | Yes |
+| GET | `/structs/provider_collateral_address/{providerId}` | Collateral module account | No | No |
+| GET | `/structs/provider_collateral_address` | List collateral addresses | No | Yes |
+| GET | `/structs/provider_earnings_address/{providerId}` | Earnings module account | No | No |
+| GET | `/structs/provider_earnings_address` | List earnings addresses | No | Yes |
 
 ---
 
@@ -38,7 +42,7 @@ Returns a single provider by its ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/provider.md`
+- **Schema**: [provider](../../schemas/entities/provider.md)
 
 ---
 
@@ -51,4 +55,14 @@ Returns a paginated list of all providers.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/provider.md` (array)
+- **Schema**: [provider](../../schemas/entities/provider.md) (array)
+
+---
+
+### Provider Collateral and Earnings Addresses
+
+`GET /structs/provider_collateral_address/{providerId}` · `GET /structs/provider_collateral_address`
+
+`GET /structs/provider_earnings_address/{providerId}` · `GET /structs/provider_earnings_address`
+
+Module accounts for provider collateral and earnings pools. **CLI**: `provider-collateral-address`, `provider-collateral-address-all`, `provider-earnings-address`, `provider-earnings-address-all`. Reverse lookup RPCs are commented out in proto.

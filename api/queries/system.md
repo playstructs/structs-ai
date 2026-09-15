@@ -1,5 +1,5 @@
 ---
-description: "Query system-level state on the consensus network: chain parameters, timestamps, and other global values."
+description: "Query system-level state on the consensus network: chain parameters, guild charter puzzle, and signature validation."
 ---
 
 # System Query Endpoints
@@ -18,6 +18,8 @@ description: "Query system-level state on the consensus network: chain parameter
 |--------|------|-------------|------|-----------|
 | GET | `/blockheight` | Get current block height | No | No |
 | GET | `/structs/structs/params` | Get module parameters | No | No |
+| GET | `/structs/structs/guild_charter` | Guild charter puzzle | No | No |
+| GET | `/structs/validate_signature/{address}/{proofPubKey}/{proofSignature}/{message}` | Validate a signature | No | No |
 
 ---
 
@@ -32,7 +34,7 @@ Returns the current block height of the blockchain.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#BlockHeight`
+- **Schema**: [BlockHeight](../../schemas/entities.md)
 
 #### Example
 
@@ -57,4 +59,18 @@ Returns the current module parameters for the Structs module.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Params`
+- **Schema**: [Params](../../schemas/entities.md)
+
+---
+
+### Guild Charter
+
+`GET /structs/structs/guild_charter`
+
+Global charter puzzle: current **anchor** and difficulty. **CLI**: `guild-charter`. See [hashing.md — Guild Charter](../../knowledge/mechanics/hashing.md#guild-charter).
+
+### Validate Signature
+
+`GET /structs/validate_signature/{address}/{proofPubKey}/{proofSignature}/{message}`
+
+**CLI**: `validate-signature`. Used by guild proxy signup verification, not gameplay.

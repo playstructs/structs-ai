@@ -119,6 +119,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 ## See also
 
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — conversion rates, vulnerability window, security model
+- [knowledge/mechanics/hashing](https://structs.ai/knowledge/mechanics/hashing) — mine/refine clocks, raid pause, difficulty decay
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — depletion, raid vulnerability
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) / [resource-scarce](https://structs.ai/playbooks/situations/resource-scarce) — production strategy
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW, job tracking, pipeline scheduling

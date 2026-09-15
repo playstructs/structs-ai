@@ -40,7 +40,7 @@ Returns a single allocation by its ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/allocation.md`
+- **Schema**: [allocation](../../schemas/entities/allocation.md)
 
 ---
 
@@ -53,7 +53,7 @@ Returns a paginated list of all allocations.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/allocation.md` (array)
+- **Schema**: [allocation](../../schemas/entities/allocation.md) (array)
 
 ---
 
@@ -72,7 +72,7 @@ Returns all allocations originating from a specific source.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/allocation.md` (array)
+- **Schema**: [allocation](../../schemas/entities/allocation.md) (array)
 
 ---
 
@@ -91,4 +91,4 @@ Returns all allocations directed to a specific destination.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/allocation.md` (array)
+- **Schema**: [allocation](../../schemas/entities/allocation.md) (array)

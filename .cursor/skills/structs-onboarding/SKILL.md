@@ -367,5 +367,6 @@ Build order: Command Ship (type 1, fleet) → Ore Extractor (type 14, planet) �
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — Planet properties, ore, slots
 - [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — Fleet movement, on-station rules
 - [knowledge/entities/struct-types](https://structs.ai/knowledge/entities/struct-types) — All struct type IDs and properties
-- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status
+- [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — Capacity, load, online status (quick card)
+- [knowledge/mechanics/energy](https://structs.ai/knowledge/mechanics/energy) — Infusion, allocations, substations, brownout
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — Background PoW, pipeline strategy

@@ -39,7 +39,7 @@ Returns address information for a specific blockchain address.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Address`
+- **Schema**: [Address](../../schemas/entities/address.md)
 
 The response is a **flat** object with `playerId` at the top level (camelCase) — not nested under an `Address` wrapper. `permissions` is a `uint64` and is serialized as a **string** in proto JSON:
 
@@ -64,7 +64,7 @@ Returns a paginated list of all addresses.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Address` (array)
+- **Schema**: [Address](../../schemas/entities/address.md) (array)
 
 ---
 
@@ -83,4 +83,4 @@ Returns all addresses associated with a specific player.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities.md#Address` (array)
+- **Schema**: [Address](../../schemas/entities/address.md) (array)

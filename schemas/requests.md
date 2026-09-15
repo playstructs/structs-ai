@@ -200,11 +200,10 @@ Each message type has specific required fields beyond what is listed here.
 
 #### Available Message Types
 
-The `@type` field must be one of the following message types:
+The `@type` field must be a live `/structs.structs.Msg*` (see [messages.md](../api/transactions/messages.md)). This table is a **subset**. There is no `MsgStructBuild`.
 
 | Message Type | Description |
 |-------------|-------------|
-| `/structs.structs.MsgStructBuild` | Build a struct |
 | `/structs.structs.MsgStructBuildInitiate` | Initiate struct build |
 | `/structs.structs.MsgStructBuildComplete` | Complete struct build |
 | `/structs.structs.MsgStructActivate` | Activate a struct |

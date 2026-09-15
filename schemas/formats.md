@@ -1,5 +1,5 @@
 ---
-description: "Format specifications for every data type in the Structs API: entity IDs, struct type IDs, blockchain addresses, and micrograms."
+description: "Format specifications for Structs API types: entity IDs, struct type IDs, addresses, micrograms, and milliwatt power strings."
 ---
 
 # Structs Data Format Specifications
@@ -81,16 +81,18 @@ General object identifier used across all Structs APIs.
 
 ---
 
-## Watts
+## Watts (milliwatts on chain)
+
+The chain stores power as integer **milliwatts (mW)** encoded as a JSON string. Spoken watts/kW are for humans: 1 W = 1,000 chain units, 1 kW = 1,000,000. See [energy.md — Units](../knowledge/mechanics/energy.md#units).
 
 | Property | Value |
 |----------|-------|
 | Type | string |
 | Format | integer-string |
 | Pattern | `^[0-9]+$` |
-| Description | Energy amount in kilowatts (kW) |
+| Description | Energy amount in milliwatts (mW) |
 
-**Examples**: `"1000"`, `"500000"`
+**Examples**: `"25000"` (25 W player base draw), `"1000000"` (1 kW)
 
 ---
 
@@ -102,4 +104,4 @@ General object identifier used across all Structs APIs.
 | `struct-type-id` | Only for struct_type identifiers |
 | `blockchain-address` | Cosmos addresses |
 | `micrograms` | Alpha Matter amounts in API responses |
-| `watts` | Energy amounts in API responses |
+| `watts` | Energy amounts in API responses (milliwatts as a string) |

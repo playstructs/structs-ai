@@ -1,40 +1,11 @@
 ---
-title: "Action index: every command an agent can run"
-description: "Every game action an agent can take, indexed by category: construction, struct management, combat, and resources. Verified against game code."
+title: "Action index: a subset of common verbs"
+description: "Subset of common CLI verbs with keeper notes. Incomplete — the live Msg list is the message catalog."
 ---
 
-# Action index: every command an agent can run
+# Action index: a subset of common verbs
 
-**Version**: 1.1.0
-**Last Updated**: 2026-01-01
-**Description**: Complete index of all game actions for AI agents
-**Verified**: Yes (by GameCodeAnalyst, 2026-01-01, method: code-analysis, confidence: high)
-
----
-
-## Summary
-
-| Metric | Count |
-|--------|-------|
-| Total Actions | 33 |
-| Verified | 33 |
-| Requires Proof-of-Work | 3 |
-| Requires Charge | 5 |
-| Requires Power | 1 |
-
-### Actions by Category
-
-| Category | Count |
-|----------|-------|
-| construction | 2 |
-| combat | 2 |
-| resource | 10 |
-| economic | 2 |
-| exploration | 1 |
-| fleet | 1 |
-| guild | 5 |
-| struct-management | 7 |
-| player-identity | 3 |
+**Canonical list**: [message catalog](../api/transactions/messages.md) (every live `Msg*` RPC) and [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) (CLI names from `structsd` 0.21.0). This page is a **subset** with keeper/proto notes, not a complete catalog.
 
 ---
 

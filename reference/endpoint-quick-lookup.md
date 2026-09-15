@@ -5,8 +5,9 @@ description: "Find the right endpoint by use case: entity lookups across consens
 # API Endpoint Quick Lookup
 
 **Category**: reference
-**Last Updated**: May 13, 2026
-**Description**: Quick lookup table for common API endpoints by use case
+**Last Updated**: 2026-09-15
+
+Use-case pairs (consensus vs webapp). Canonical LCD families: [api/queries/](../api/queries/). One-page card: [api-quick-reference.md](api-quick-reference.md).
 
 ---
 

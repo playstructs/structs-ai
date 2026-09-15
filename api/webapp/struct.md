@@ -37,7 +37,7 @@ Per-struct attributes and defender relationships live in [`struct-attribute.md`]
 Get structs by player ID.
 
 - **ID**: `webapp-struct-by-player`
-- **Response Schema**: `schemas/entities.md#Struct`
+- **Response Schema**: [Struct](../../schemas/entities/struct.md)
 - **Content Type**: `application/json`
 
 #### Parameters
@@ -81,7 +81,7 @@ Get structs by player ID.
 Get struct types.
 
 - **ID**: `webapp-struct-type`
-- **Response Schema**: `schemas/entities.md#StructType`
+- **Response Schema**: [StructType](../../schemas/entities/struct-type.md)
 - **Content Type**: `application/json`
 
 #### Example
@@ -116,7 +116,7 @@ Get struct types.
 Get struct by ID.
 
 - **ID**: `webapp-struct-by-id`
-- **Response Schema**: `schemas/entities.md#Struct`
+- **Response Schema**: [Struct](../../schemas/entities/struct.md)
 - **Content Type**: `application/json`
 
 #### Parameters

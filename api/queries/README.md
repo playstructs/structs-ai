@@ -41,13 +41,22 @@ Queries are reads. They do not spend charge the way transactions do, but they st
 
 ### Economic Entity Queries
 
-- **`provider.md`** - Provider query endpoints (~40 lines) ✅
-- **`agreement.md`** - Agreement query endpoints (~60 lines) ✅
-- **`allocation.md`** - Allocation query endpoints (~70 lines) ✅
+- **`provider.md`** - Provider query endpoints
+- **`agreement.md`** - Agreement query endpoints
+- **`allocation.md`** - Allocation query endpoints
+- **`infusion.md`** - Infusion query endpoints (reactor/generator)
+
+### Attributes and grid
+
+- **`grid.md`** - Grid attribute queries (capacity, load, ore)
+- **`struct-type.md`** - Struct type catalog
+- **`struct-attribute.md`** - Per-struct health/status/ambit
+- **`planet-attribute.md`** - Per-planet clocks, shields, slots
+- **`guild-membership-application.md`** - Invite/request rows
 
 ### System Queries
 
-- **`system.md`** - System queries (block-height, params, etc.) (~50 lines) ✅
+- **`system.md`** - Block height, params, guild charter, validate-signature
 
 ### Other Queries
 
@@ -99,10 +108,10 @@ Queries are reads. They do not spend charge the way transactions do, but they st
 
 ## Related Documentation
 
-- **Main Endpoints**: `../endpoints.md` - Complete endpoint catalog (index)
-- **Transactions**: `../transactions/` - Transaction endpoints
-- **Webapp**: `../webapp/` - Webapp API endpoints (if split)
-- **Loading Strategy**: `../../LOADING_STRATEGY.md` - How to load efficiently
+- **Main Endpoints**: `../endpoints.md` - Endpoint index
+- **Transactions**: [messages.md](../transactions/messages.md) — live Msg list
+- **Webapp**: `../webapp/` - Webapp API endpoints
+- **CLI catalog**: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md)
 
 ---
 

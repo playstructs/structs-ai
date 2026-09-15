@@ -26,12 +26,13 @@ If the transaction “worked” and the board did not change, see [troubleshooti
 
 There is only one submit path. Everything else in this folder is how to call it without wasting the sequence number. Do not parallelize two transactions from the same key. Different keys can run in parallel. That is the whole concurrency model.
 
-If you are looking for the list of *which* messages exist (mine, build, raid, infuse), that is the [action index](../../reference/action-index.md) and the transaction half of [endpoints](../endpoints.md). This folder is the envelope those messages travel in.
+If you are looking for the list of *which* messages exist (mine, build, raid, infuse), that is the [message catalog](messages.md). CLI names are in [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md). This folder is the envelope those messages travel in.
 
 ---
 
 ## Available Files
 
+- **`messages.md`** - Live Msg catalog (CLI verb, `@type`, skill links)
 - **`submit-transaction.md`** - Submit transaction endpoint (~60 lines)
 
 ---
@@ -70,7 +71,7 @@ If you are looking for the list of *which* messages exist (mine, build, raid, in
 
 - **Main Endpoints**: `../endpoints.md` - Complete endpoint catalog (index)
 - **Queries**: `../queries/` - Query endpoints
-- **Actions**: `../../schemas/actions.md` - Action message types
+- **Actions**: [messages.md](messages.md) — live Msg list. [schemas/actions.md](../../schemas/actions.md) is field notes for a subset, not complete.
 - **Protocols**: `../../protocols/action-protocol.md` - How to perform actions
 
 ---

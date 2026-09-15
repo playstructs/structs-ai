@@ -18,6 +18,8 @@ description: "Query guilds on the consensus network: membership, ranks, the guil
 |--------|------|-------------|------|-----------|
 | GET | `/structs/guild/{id}` | Get guild by ID | No | No |
 | GET | `/structs/guild` | List all guilds | No | Yes |
+| GET | `/structs/guild_bank_collateral_address/{guildId}` | Guild bank collateral address | No | No |
+| GET | `/structs/guild_bank_collateral_address` | List collateral addresses | No | Yes |
 
 ---
 
@@ -38,7 +40,7 @@ Returns a single guild by its entity ID.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/guild.md`
+- **Schema**: [guild](../../schemas/entities/guild.md)
 
 #### Example
 
@@ -72,4 +74,12 @@ Returns a paginated list of all guilds.
 #### Response
 
 - **Content-Type**: `application/json`
-- **Schema**: `schemas/entities/guild.md` (array)
+- **Schema**: [guild](../../schemas/entities/guild.md) (array)
+
+---
+
+### Guild Bank Collateral Address
+
+`GET /structs/guild_bank_collateral_address/{guildId}` · `GET /structs/guild_bank_collateral_address`
+
+Module account that holds the guild bank's Alpha collateral. **CLI**: `guild-bank-collateral-address` · `guild-bank-collateral-address-all`. Reverse lookup by address is **not** an active LCD RPC.

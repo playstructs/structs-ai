@@ -164,6 +164,7 @@
 - [Webapp analytics](https://structs.ai/api/webapp/analytics): Charting hub — leaderboards, inventory, guild banks, aggregates, per-player activity
 - [Integration Notes](https://structs.ai/api/integration-notes): Live data-shape & endpoint gotchas (string numerics, event detail, field-name traps, auth scope)
 - [Chain Events](https://structs.ai/api/chain-events): structsd Tendermint events (`EventAttack`, `ugc_moderated`, …); not GRASS
+- [Message catalog](https://structs.ai/api/transactions/messages): live `Msg*` RPCs with CLI verbs; not the old 33-action indexes
 - [Streaming Events](https://structs.ai/api/streaming/event-types): Real-time event type catalog (grass categories, struct_attack stubbing)
 - [Streaming Event Schemas](https://structs.ai/api/streaming/event-schemas): JSON payload schemas for GRASS events
 - [Troubleshooting](https://structs.ai/troubleshooting/common-issues): Common build/exploration/transaction failures and fixes

@@ -1,6 +1,6 @@
 ---
-title: "Action quick reference for every command"
-description: "Fast lookup for performing game actions: categories, common requirements, action patterns, and the transaction flow each one follows."
+title: "Action quick reference: common verbs"
+description: "Fast lookup for common game verbs: categories, requirements, and the transaction envelope each one uses."
 ---
 
 # Action Quick Reference
@@ -13,7 +13,7 @@ description: "Fast lookup for performing game actions: categories, common requir
 
 ## Overview
 
-This guide provides a quick reference for all game actions available to AI agents. For complete action definitions, see `schemas/actions.md` and `reference/action-index.md`.
+This guide is a **skim of common verbs**. The live Msg list is [messages.md](../api/transactions/messages.md). CLI names: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md). Field notes: [schemas/actions.md](../schemas/actions.md) (subset).
 
 **All actions are submitted as transactions** to: `POST /cosmos/tx/v1beta1/txs`
 
@@ -37,7 +37,7 @@ This guide provides a quick reference for all game actions available to AI agent
 - Fleet on station (if building on planet)
 - Sufficient power capacity
 
-**See**: `reference/action-index.md#struct-build-initiate`
+**See**: [messages.md](../api/transactions/messages.md) (live catalog) · [action-index.md](action-index.md) (keeper notes)
 
 ---
 
@@ -563,8 +563,9 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 ## Related Documentation
 
 **Action Definitions**:
-- `schemas/actions.md` - Complete action schemas
-- `reference/action-index.md` - Action index with metadata
+- [messages.md](../api/transactions/messages.md) — live Msg catalog
+- `schemas/actions.md` — field notes for a subset
+- `reference/action-index.md` — subset with keeper notes
 
 **Protocols**:
 - `protocols/action-protocol.md` - Complete action protocol
