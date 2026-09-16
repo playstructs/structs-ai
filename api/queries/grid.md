@@ -1,6 +1,8 @@
 ---
 title: Grid query endpoints
 description: "Query grid attributes on the consensus network: the per-object key-value store for capacity, load, ore, and charge."
+sitemap: false
+robots: noindex
 ---
 
 # Grid Query Endpoints

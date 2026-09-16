@@ -1,6 +1,8 @@
 ---
 title: Struct attribute query endpoints
 description: "Query struct attributes on the consensus network: health, status, ambit, and other per-struct scalars."
+sitemap: false
+robots: noindex
 ---
 
 # Struct Attribute Query Endpoints

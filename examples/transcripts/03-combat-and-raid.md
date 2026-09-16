@@ -6,7 +6,7 @@ description: "A full transcript of clearing a vulnerable planet's defenders and 
 # Transcript 03 — Combat and Raid
 
 **Goal**: Clear a vulnerable planet's defenders and complete a raid, applying the combat levers that actually decide the fight.
-**Skills**: [structs-intel](../../.cursor/skills/structs-intel/SKILL.md), [structs-combat](../../.cursor/skills/structs-combat/SKILL.md), [structs-streaming](../../.cursor/skills/structs-streaming/SKILL.md).
+**Skills**: [structs-intel](/skills/structs-intel/SKILL.html), [structs-combat](/skills/structs-combat/SKILL.html), [structs-streaming](/skills/structs-streaming/SKILL.html).
 **Why it's "golden"**: the agent picks **attacking ambits that take zero counter damage**, matches **weapon control to enemy defense** (unguided vs Signal Jamming), respects the **per-player charge bar**, reads the **numeric struct status** to confirm kills, knows the live `struct_attack` payload is **stubbed** (so it watches effect events instead), and completes the raid while keeping its **own Command Ship safe** from `attackerDefeated`.
 
 This builds on [Transcript 02 — Raid Go/No-Go](02-raid-go-no-go.md): there the agent decided *whether* to raid. Here it executes one against an **offline** defender — the only reliably winnable case, because an offline owner cannot rebuild a downed Command Ship to re-raise shields.

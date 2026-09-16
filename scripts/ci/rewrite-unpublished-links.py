@@ -84,11 +84,15 @@ def rewrite_href(from_file: Path, href: str) -> str | None:
     m = re.search(r"(?:\.cursor/)?skills/([^/]+)/SKILL(?:\.md)?$", rel)
     if m:
         name = m.group(1)
-        if name in DELETED_SKILLS:
-            return f"/skills/{DELETED_SKILLS[name]}/SKILL.html{fragment}"
-        return None
+        name = DELETED_SKILLS.get(name, name)
+        return f"/skills/{name}/SKILL.html{fragment}"
 
-    if rel in {".cursor/skills", "skills"} or rel.endswith(".cursor/skills"):
+    if re.search(r"(?:\.cursor/)?skills/conventions(?:\.md)?$", rel):
+        return "/skills/conventions.html" + fragment
+
+    if rel in {".cursor/skills", "skills", ".cursor/skills/index.md", "skills/index.md"} or rel.endswith(
+        ".cursor/skills"
+    ):
         return "/skills/"
 
     if rel == "memory" or rel.startswith("memory"):

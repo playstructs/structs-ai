@@ -1,6 +1,8 @@
 ---
 title: Infusion query endpoints
 description: "Query infusions on the consensus network: Alpha committed to a reactor or generator, keyed by destination and address."
+sitemap: false
+robots: noindex
 ---
 
 # Infusion Query Endpoints

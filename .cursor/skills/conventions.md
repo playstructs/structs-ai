@@ -35,7 +35,7 @@ once per session to detect what's available (it writes `config/environment.json`
 |------|-------------------|-------------------|
 | Read state / execute an action / hash | **Structs Desktop MCP** (`structs_action`, `structs_intel`, `structs_hash`) | `structsd` CLI (`tx`/`query`) |
 | Real-time threat/event response | **GRASS** / `structs_events` | poll with `structsd query` |
-| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](https://structs.ai/skills/structs-intel/SKILL) |
+| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](/skills/structs-intel/SKILL.html) |
 | Build a tool / integrate | webapp/chain **API** | — |
 
 Rules of thumb: prefer **MCP** when it's connected (it adds preflight checks, GPU hashing,
@@ -61,7 +61,7 @@ structsd tx structs struct-activate TX_FLAGS -- 6-10
 Build, mine, refine, and raid all require proof-of-work. Difficulty decays with age, so the cheapest path is to **initiate early and compute later**. The `-D` flag (1-64) tells the compute helper to wait until difficulty drops to that level before hashing.
 
 - **`-D 3` is the canonical default for every operation.** At D=3 the hash is trivially instant and **zero CPU is wasted** — the wait is just the age clock, not grinding. Use this unless you have a specific reason not to.
-- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](https://structs.ai/skills/play-structs/SKILL)). Do not scatter other `-D` values through your work.
+- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](/skills/play-structs/SKILL.html)). Do not scatter other `-D` values through your work.
 - Higher `-D` values (8+) start sooner but burn exponentially more compute. The cliff between D=8 and D=9 is the single most important PoW fact — never set `-D` above 8.
 
 Full decay tables: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building). **Never block on PoW** — launch compute in a background terminal and track it in `memory/jobs/` (see [awareness/async-operations](https://structs.ai/awareness/async-operations)).
@@ -84,7 +84,7 @@ Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command S
 
 ## One transaction at a time per account
 
-The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](/skills/structs-permissions/SKILL.html)).
 
 ---
 

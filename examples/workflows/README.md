@@ -18,7 +18,27 @@ redirect_from:
 
 This directory contains complete, runnable workflow examples demonstrating multi-step API operations. Each workflow shows how to chain API calls, handle dependencies, and manage state across multiple steps.
 
-**All workflows follow the workflow patterns documented in**: `patterns/workflow-patterns.md`
+**All workflows follow the workflow patterns documented in**: [patterns/workflow-patterns.md](../../patterns/workflow-patterns.md)
+
+Every workflow in this directory:
+
+- [get-player-and-planets.md](get-player-and-planets.md)
+- [query-guild-stats.md](query-guild-stats.md)
+- [query-and-monitor-planet.md](query-and-monitor-planet.md)
+- [authenticated-guild-query.md](authenticated-guild-query.md)
+- [monitor-planet-shield.md](monitor-planet-shield.md)
+- [energy-agreement-setup.md](energy-agreement-setup.md)
+- [guild-token-lifecycle.md](guild-token-lifecycle.md)
+- [trade-alpha-matter.md](trade-alpha-matter.md)
+- [raid-attacker-retreated.md](raid-attacker-retreated.md)
+- [planet-setup.md](planet-setup.md)
+- [mine-refine-convert.md](mine-refine-convert.md)
+- [permission-checking.md](permission-checking.md)
+- [struct-lifecycle-sweep-delay.md](struct-lifecycle-sweep-delay.md)
+- [reactor-staking-infuse.md](reactor-staking-infuse.md)
+- [reactor-staking-defuse.md](reactor-staking-defuse.md)
+- [reactor-staking-cancel-defusion.md](reactor-staking-cancel-defusion.md)
+- [reactor-staking-begin-migration.md](reactor-staking-begin-migration.md)
 
 ---
 
@@ -28,7 +48,7 @@ This directory contains complete, runnable workflow examples demonstrating multi
 
 Workflows focused on retrieving and querying game state data.
 
-#### `get-player-and-planets.md`
+#### [get-player-and-planets.md](get-player-and-planets.md)
 **Pattern**: Linear Chain  
 **Purpose**: Get player information and their planets
 
@@ -46,7 +66,7 @@ Workflows focused on retrieving and querying game state data.
 
 ---
 
-#### `query-guild-stats.md`
+#### [query-guild-stats.md](query-guild-stats.md)
 **Pattern**: Parallel with Dependency  
 **Purpose**: Query comprehensive guild statistics
 
@@ -65,7 +85,7 @@ Workflows focused on retrieving and querying game state data.
 
 ---
 
-#### `query-and-monitor-planet.md`
+#### [query-and-monitor-planet.md](query-and-monitor-planet.md)
 **Pattern**: Hybrid (Query + Streaming)  
 **Purpose**: Query planet data and monitor for updates
 
@@ -88,7 +108,7 @@ Workflows focused on retrieving and querying game state data.
 
 Workflows demonstrating authentication and authenticated operations.
 
-#### `authenticated-guild-query.md`
+#### [authenticated-guild-query.md](authenticated-guild-query.md)
 **Pattern**: Linear Chain with Authentication  
 **Purpose**: Authenticate and query guild information
 
@@ -113,7 +133,7 @@ Workflows demonstrating authentication and authenticated operations.
 
 Workflows for monitoring game state in real-time.
 
-#### `monitor-planet-shield.md`
+#### [monitor-planet-shield.md](monitor-planet-shield.md)
 **Pattern**: Streaming  
 **Purpose**: Monitor planet shield health in real-time
 
@@ -130,7 +150,39 @@ Workflows for monitoring game state in real-time.
 
 **Dependencies**: Planet ID, NATS connection
 
-**Related**: See `patterns/polling-vs-streaming.md` for streaming patterns
+**Related**: See [patterns/polling-vs-streaming.md](../../patterns/polling-vs-streaming.md) for streaming patterns
+
+---
+
+### Economic Workflows
+
+#### [energy-agreement-setup.md](energy-agreement-setup.md)
+**Pattern**: Linear Chain  
+**Purpose**: Open an energy agreement with a provider
+
+**Use When**: Buying capacity instead of infusing your own reactor.
+
+#### [guild-token-lifecycle.md](guild-token-lifecycle.md)
+**Pattern**: Linear Chain  
+**Purpose**: Mint, convert, and redeem guild bank tokens
+
+**Use When**: Running Central Bank operations end to end.
+
+#### [trade-alpha-matter.md](trade-alpha-matter.md)
+**Pattern**: Linear Chain  
+**Purpose**: Transfer Alpha Matter between players
+
+**Use When**: Sending `ualpha` after a sale or stipend.
+
+---
+
+### Combat Workflows
+
+#### [raid-attacker-retreated.md](raid-attacker-retreated.md)
+**Pattern**: Conditional Chain  
+**Purpose**: Handle the `attackerRetreated` raid outcome
+
+**Use When**: A raid ended without a seizure and you need the follow-up.
 
 ---
 
@@ -266,11 +318,11 @@ Use the workflow as a template for your implementation:
 
 ## Related Documentation
 
-- **Workflow Patterns**: `patterns/workflow-patterns.md` - Complete workflow pattern guide
-- **Retry Strategies**: `patterns/retry-strategies.md` - Retry patterns for failed steps
-- **Error Handling**: `protocols/error-handling.md` - Error handling protocol
-- **Authentication**: `protocols/authentication.md` - Authentication protocol
-- **Streaming**: `protocols/streaming.md` - GRASS/NATS streaming protocol
+- **Workflow Patterns**: [patterns/workflow-patterns.md](../../patterns/workflow-patterns.md) - Complete workflow pattern guide
+- **Retry Strategies**: [patterns/retry-strategies.md](../../patterns/retry-strategies.md) - Retry patterns for failed steps
+- **Error Handling**: [protocols/error-handling.md](../../protocols/error-handling.md) - Error handling protocol
+- **Authentication**: [protocols/authentication.md](../../protocols/authentication.md) - Authentication protocol
+- **Streaming**: [protocols/streaming.md](../../protocols/streaming.md) - GRASS/NATS streaming protocol
 
 ---
 

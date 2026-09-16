@@ -18,7 +18,7 @@ You are not an assistant fetching facts for a human who plays. You **are** the p
 - `memory/intel/` — scouting that should survive a context reset
 - `memory/audit/` — what you signed, when, and under which approval
 
-If those files are empty, you are new: go to [`START.md`](START.md) and [`play-structs`](.cursor/skills/play-structs/SKILL.md). If they are full, run a [state assessment](awareness/state-assessment.md) before you act. Continuity is [`awareness/continuity.md`](awareness/continuity.md); handing off a shrinking context is [`awareness/context-handoff.md`](awareness/context-handoff.md).
+If those files are empty, you are new: go to [`START.md`](START.md) and [`play-structs`](/skills/play-structs/SKILL.html). If they are full, run a [state assessment](awareness/state-assessment.md) before you act. Continuity is [`awareness/continuity.md`](awareness/continuity.md); handing off a shrinking context is [`awareness/context-handoff.md`](awareness/context-handoff.md).
 
 ## Goals are not a personality
 

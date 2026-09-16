@@ -166,7 +166,7 @@ Verified in `x/structs/keeper/query_*.go` for `player`, `struct`, `substation`, 
 The practical consequences:
 
 - **`allocation-all` never reports `power`.** Allocation power is a grid attribute, so a list row looks like a zero-power allocation. Fetch the individual allocation for its real value. (This is why Structs Desktop's `guild_power.rs::find_dynamic_allocation` lists to find the ID, then GETs it.)
-- **You cannot read charge from `player-all`.** Charge is derived from the `lastAction` grid attribute — see [Charge is per-player](../.cursor/skills/conventions.md#charge-is-per-player-not-per-struct).
+- **You cannot read charge from `player-all`.** Charge is derived from the `lastAction` grid attribute — see [Charge is per-player](/skills/conventions.html#charge-is-per-player-not-per-struct).
 - **Do not build a scan-and-decide loop on list output.** Listing is for discovering IDs; commit only after a single-entity read. For galaxy-wide numeric scans use the Guild Stack, where grid attributes are already projected into columns — see [database-schema.md](../knowledge/infrastructure/database-schema.md).
 
 Compounding this: grid attributes are `uint64` with `omitempty`, so a **zero-valued attribute is absent from the JSON entirely**. Treat a missing key as `0` rather than as an error or an unsupported field.
@@ -215,7 +215,7 @@ Do not assume the error is always about power — a `1/1` is the build-count lim
 
 ## Proxy signup is idempotent
 
-The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` → `POST /api/auth/signup` → guild fronts `MsgGuildMembershipJoinProxy` → poll `/structs/address/{addr}` for the player id) is safe to re-run. Re-running for an address that already joined returns `{resource_already_exists}`. **Treat this as success** (adopt the existing player) rather than a hard failure. See [structs-onboarding](../.cursor/skills/structs-onboarding/SKILL.md).
+The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` → `POST /api/auth/signup` → guild fronts `MsgGuildMembershipJoinProxy` → poll `/structs/address/{addr}` for the player id) is safe to re-run. Re-running for an address that already joined returns `{resource_already_exists}`. **Treat this as success** (adopt the existing player) rather than a hard failure. See [structs-onboarding](/skills/structs-onboarding/SKILL.html).
 
 ---
 

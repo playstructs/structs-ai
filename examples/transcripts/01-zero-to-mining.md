@@ -6,7 +6,7 @@ description: A full transcript from a fresh workspace to a running mine and refi
 # Transcript 01 — Zero to Mining
 
 **Goal**: From a fresh workspace to a running mine→refine pipeline.
-**Skills**: [play-structs](../../.cursor/skills/play-structs/SKILL.md), [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md), [structs-production](../../.cursor/skills/structs-production/SKILL.md).
+**Skills**: [play-structs](/skills/play-structs/SKILL.html), [structs-onboarding](/skills/structs-onboarding/SKILL.html), [structs-production](/skills/structs-production/SKILL.html).
 **Why it's "golden"**: the agent initiates work early, never blocks on proof-of-work, verifies on-chain (not on broadcast), and writes durable memory so the next session can resume.
 
 ---

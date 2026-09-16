@@ -12,6 +12,6 @@ Do not treat this folder as a reason to skip the schema page. The examples assum
 
 ## When to open this page
 
-Open database examples when Guild Stack is up and you need a starting SELECT. If you have not deployed the stack, start at [guild-stack](/knowledge/infrastructure/guild-stack) and the [guild-stack skill](/skills/structs-guild-stack/SKILL). If you only need REST, go to [api](/api/).
+Open database examples when Guild Stack is up and you need a starting SELECT. If you have not deployed the stack, start at [guild-stack](/knowledge/infrastructure/guild-stack) and the [guild-stack skill](/skills/structs-guild-stack/SKILL.html). If you only need REST, go to [api](/api/).
 
 - [Query examples](query-examples) -- Worked PostgreSQL against indexed game state

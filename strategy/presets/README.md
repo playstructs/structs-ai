@@ -33,7 +33,7 @@ Weights are 0–3 (0 = ignore, 3 = primary focus), matching the operator profile
 Balanced, momentum-first. Keep multiple operations running — mine while building, explore
 while refining — and avoid downtime.
 
-- **Lean on skills:** [play-structs](../../.cursor/skills/play-structs/SKILL.md), [production](../../.cursor/skills/structs-production/SKILL.md), [building](../../.cursor/skills/structs-building/SKILL.md), [energy](../../.cursor/skills/structs-energy/SKILL.md)
+- **Lean on skills:** [play-structs](/skills/play-structs/SKILL.html), [production](/skills/structs-production/SKILL.html), [building](/skills/structs-building/SKILL.html), [energy](/skills/structs-energy/SKILL.html)
 - **Watch out:** chasing counts (planets, structs) while neglecting defense or the power grid; grinding without direction. Not every goal is worth finishing.
 
 ## Industrialist
@@ -41,7 +41,7 @@ while refining — and avoid downtime.
 Build empires and supply chains: ore → refine → power → build → export. Specialize planets;
 found or join guilds early for shared infrastructure.
 
-- **Lean on skills:** [building](../../.cursor/skills/structs-building/SKILL.md), [production](../../.cursor/skills/structs-production/SKILL.md), [energy](../../.cursor/skills/structs-energy/SKILL.md), [commerce](../../.cursor/skills/structs-commerce/SKILL.md), [guild](../../.cursor/skills/structs-guild/SKILL.md)
+- **Lean on skills:** [building](/skills/structs-building/SKILL.html), [production](/skills/structs-production/SKILL.html), [energy](/skills/structs-energy/SKILL.html), [commerce](/skills/structs-commerce/SKILL.html), [guild](/skills/structs-guild/SKILL.html)
 - **Watch out:** over-expansion straining the power grid and thinning defenses; over-trusting permissions/agreements; building what nobody wants (watch prices).
 
 ## Raider
@@ -49,7 +49,7 @@ found or join guilds early for shared infrastructure.
 Take what isn't defended. Prioritize intel on targets; strike when shields are low, power is
 strained, or miners are exposed; hit and run.
 
-- **Lean on skills:** [combat](../../.cursor/skills/structs-combat/SKILL.md), [intel](../../.cursor/skills/structs-intel/SKILL.md), [energy](../../.cursor/skills/structs-energy/SKILL.md), [planets-fleet](../../.cursor/skills/structs-planets-fleet/SKILL.md)
+- **Lean on skills:** [combat](/skills/structs-combat/SKILL.html), [intel](/skills/structs-intel/SKILL.html), [energy](/skills/structs-energy/SKILL.html), [planets-fleet](/skills/structs-planets-fleet/SKILL.html)
 - **Watch out:** raiding brilliantly with nothing at home (no reactors, structs, or allies); reputation catches up; raw ore doesn't refine itself — refine stolen ore immediately.
 
 ## Merchant
@@ -57,7 +57,7 @@ strained, or miners are exposed; hit and run.
 Capture the spread. Prefer staking, LP positions, and energy trading over direct production;
 read agreements and guild Central Bank activity as price signals.
 
-- **Lean on skills:** [commerce](../../.cursor/skills/structs-commerce/SKILL.md), [intel](../../.cursor/skills/structs-intel/SKILL.md), [energy](../../.cursor/skills/structs-energy/SKILL.md), [guild](../../.cursor/skills/structs-guild/SKILL.md)
+- **Lean on skills:** [commerce](/skills/structs-commerce/SKILL.html), [intel](/skills/structs-intel/SKILL.html), [energy](/skills/structs-energy/SKILL.html), [guild](/skills/structs-guild/SKILL.html)
 - **Watch out:** under-investing in *making* the market (mining/building); a thin or manipulated market erases your edge; refine ore fast — it's a liability until refined.
 
 ## Explorer
@@ -65,7 +65,7 @@ read agreements and guild Central Bank activity as price signals.
 Map the unknown. Prioritize planet discovery and ambit mapping; scan before landing; share
 intel; stay mobile.
 
-- **Lean on skills:** [planets-fleet](../../.cursor/skills/structs-planets-fleet/SKILL.md), [intel](../../.cursor/skills/structs-intel/SKILL.md), [production](../../.cursor/skills/structs-production/SKILL.md)
+- **Lean on skills:** [planets-fleet](/skills/structs-planets-fleet/SKILL.html), [intel](/skills/structs-intel/SKILL.html), [production](/skills/structs-production/SKILL.html)
 - **Watch out:** wandering without building — ore sits in the ground while you scan; under-investing in power; knowledge without leverage (seeing a target ≠ being able to take it).
 
 ## Diplomat
@@ -73,7 +73,7 @@ intel; stay mobile.
 Guild-first. Broker energy agreements and trades before combat; invest in reputation;
 leverage the Central Bank for collective action.
 
-- **Lean on skills:** [guild](../../.cursor/skills/structs-guild/SKILL.md), [commerce](../../.cursor/skills/structs-commerce/SKILL.md), [intel](../../.cursor/skills/structs-intel/SKILL.md), [permissions](../../.cursor/skills/structs-permissions/SKILL.md)
+- **Lean on skills:** [guild](/skills/structs-guild/SKILL.html), [commerce](/skills/structs-commerce/SKILL.html), [intel](/skills/structs-intel/SKILL.html), [permissions](/skills/structs-permissions/SKILL.html)
 - **Watch out:** talking when you should act; over-trusting (agreements break, loyalty can be performative); under-investing in defense and power — diplomacy won't always stop a raid.
 
 ---

@@ -429,5 +429,5 @@ Sqitch migration registry. Do not modify manually.
 
 - [`knowledge/infrastructure/database-schema.md`](../knowledge/infrastructure/database-schema.md) — Agent query guide (grid patterns, planet_activity polling, energy commerce)
 - [`knowledge/infrastructure/guild-stack.md`](../knowledge/infrastructure/guild-stack.md) — Architecture and service topology
-- [`.cursor/skills/structs-guild-stack/SKILL.md`](../.cursor/skills/structs-guild-stack/SKILL.md) — Local deployment and common queries
+- [`.cursor/skills/structs-guild-stack/SKILL.md`](/skills/structs-guild-stack/SKILL.html) — Local deployment and common queries
 - [`knowledge/mechanics/permissions.md`](../knowledge/mechanics/permissions.md) — 25-bit permission flag reference

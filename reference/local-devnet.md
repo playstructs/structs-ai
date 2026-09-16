@@ -18,7 +18,7 @@ The public testnet is shared and persistent: every transaction is final and visi
 
 ## Option A: Ignite serve (chain only)
 
-The simplest devnet — a single local node, no indexer or GRASS. Requires building `structsd` from source (see [structsd-install](../.cursor/skills/structsd-install/SKILL.md)).
+The simplest devnet — a single local node, no indexer or GRASS. Requires building `structsd` from source (see [structsd-install](/skills/structsd-install/SKILL.html)).
 
 ```bash
 # One-time: install Ignite
@@ -29,7 +29,7 @@ make serve              # runs `ignite chain serve`
 make serve-reset        # wipe state and start fresh
 ```
 
-`make serve` provisions genesis accounts with tokens, so you can `reactor-infuse` to create a player immediately (Path A in [structs-onboarding](../.cursor/skills/structs-onboarding/SKILL.md)) without a guild API. Point queries/transactions at the local node:
+`make serve` provisions genesis accounts with tokens, so you can `reactor-infuse` to create a player immediately (Path A in [structs-onboarding](/skills/structs-onboarding/SKILL.html)) without a guild API. Point queries/transactions at the local node:
 
 ```bash
 structsd query structs guild-all --node tcp://localhost:26657
@@ -40,7 +40,7 @@ Set `STRUCTS_NODE=tcp://localhost:26657` to make the [script toolkit](https://gi
 
 ## Option B: Guild Stack (full local environment)
 
-When you also want PostgreSQL game-state reads and GRASS events locally, run the [Guild Stack](../.cursor/skills/structs-guild-stack/SKILL.md) pointed at your own node. Heavier, but it mirrors a real guild deployment — ideal for testing intel queries and real-time automation. Use `docker compose down -v` to reset to a clean slate.
+When you also want PostgreSQL game-state reads and GRASS events locally, run the [Guild Stack](/skills/structs-guild-stack/SKILL.html) pointed at your own node. Heavier, but it mirrors a real guild deployment — ideal for testing intel queries and real-time automation. Use `docker compose down -v` to reset to a clean slate.
 
 ## Practice loop
 
@@ -59,6 +59,6 @@ When you also want PostgreSQL game-state reads and GRASS events locally, run the
 
 ## See also
 
-- [structsd-install](../.cursor/skills/structsd-install/SKILL.md) — building from source, `make serve`
-- [structs-guild-stack](../.cursor/skills/structs-guild-stack/SKILL.md) — full local stack with PG + GRASS
+- [structsd-install](/skills/structsd-install/SKILL.html) — building from source, `make serve`
+- [structs-guild-stack](/skills/structs-guild-stack/SKILL.html) — full local stack with PG + GRASS
 - [examples/transcripts](../examples/transcripts/README.md) — end-to-end worked sessions

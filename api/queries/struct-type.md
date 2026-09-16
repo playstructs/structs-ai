@@ -1,6 +1,8 @@
 ---
 title: Struct type query endpoints
 description: "Query struct types on the consensus network: the catalog of buildable types, stats, and weapon fields."
+sitemap: false
+robots: noindex
 ---
 
 # Struct Type Query Endpoints

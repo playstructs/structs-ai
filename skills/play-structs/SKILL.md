@@ -17,7 +17,7 @@ Read your operator profile `config/operator.md` (copy it from `config/operator.e
 
 Run `structsd version`. If it works, skip ahead.
 
-If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-install/SKILL).
+If not, follow the [structsd-install skill](/skills/structsd-install/SKILL.html).
 
 ---
 
@@ -35,7 +35,7 @@ Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](https:/
 
 ## Step 3: Create Your Account
 
-Follow the [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL). It handles key creation, guild signup, and player ID confirmation.
+Follow the [structs-onboarding skill](/skills/structs-onboarding/SKILL.html). It handles key creation, guild signup, and player ID confirmation.
 
 Short version:
 
@@ -71,7 +71,7 @@ structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5
 
 Planet builds need CMD online + fleet `onStation` (gifted at creation — verify before initiate). You need an Ore Extractor and Ore Refinery. Use `-D 1` here for gentlest CPU.
 
-> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](https://structs.ai/skills/conventions)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
+> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](/skills/conventions.html)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
 
 ### Ore Extractor (type 14)
 
@@ -151,27 +151,27 @@ You're mining. Now expand your capabilities:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-production](https://structs.ai/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
-| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth, generator infusion |
-| [structs-planets-fleet](https://structs.ai/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
-| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Capacity management, offline recovery, substations, infusion |
-| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
+| [structs-production](/skills/structs-production/SKILL.html) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
+| [structs-building](/skills/structs-building/SKILL.html) | Build any struct type, defense placement, stealth, generator infusion |
+| [structs-planets-fleet](/skills/structs-planets-fleet/SKILL.html) | Planet evaluation, exploration, fleet movement, evacuation |
+| [structs-energy](/skills/structs-energy/SKILL.html) | Capacity management, offline recovery, substations, infusion |
+| [structs-combat](/skills/structs-combat/SKILL.html) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
 
 **Economy & social**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
-| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
-| [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) | Permissions, multi-address management, delegate agents |
-| [structs-intel](https://structs.ai/skills/structs-intel/SKILL) | Scouting players/planets/guilds; persisting intel to memory |
+| [structs-commerce](/skills/structs-commerce/SKILL.html) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [structs-guild](/skills/structs-guild/SKILL.html) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
+| [structs-permissions](/skills/structs-permissions/SKILL.html) | Permissions, multi-address management, delegate agents |
+| [structs-intel](/skills/structs-intel/SKILL.html) | Scouting players/planets/guilds; persisting intel to memory |
 
 **Advanced infra**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |
-| [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |
+| [structs-streaming](/skills/structs-streaming/SKILL.html) | Real-time GRASS/NATS events for automation |
+| [structs-guild-stack](/skills/structs-guild-stack/SKILL.html) | Local node + PostgreSQL for advanced queries |
 
 ### Knowledge Base
 

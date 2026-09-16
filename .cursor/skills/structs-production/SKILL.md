@@ -16,7 +16,7 @@ redirect_from:
 
 Production is the engine of everything: you mine **ore** from your planet, refine it into **Alpha Matter**, and Alpha Matter funds power, structs, trade, and guild collateral. The whole game's PvP tension lives in one fact — **ore is stealable, Alpha Matter is not** — and mining/refining are multi-hour proof-of-work expeditions, so production is fundamentally a *scheduling and risk* problem, not a clicking problem.
 
-Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player charge bar, one-tx-at-a-time) are assumed from [`conventions.md`](https://structs.ai/skills/conventions). Read it once.
+Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player charge bar, one-tx-at-a-time) are assumed from [`conventions.md`](/skills/conventions.html). Read it once.
 
 ## When to use it
 
@@ -28,12 +28,12 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 ## Decisions
 
-**Beginner default**: One Ore Extractor + one Ore Refinery (both 1-per-player). Mine, and the *instant* mining lands, start refining — never let ore sit. Refine at `-D 3`. Keep your Command Ship online the whole time so the planet is unraidable (see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL)). That alone wins the early resource game.
+**Beginner default**: One Ore Extractor + one Ore Refinery (both 1-per-player). Mine, and the *instant* mining lands, start refining — never let ore sit. Refine at `-D 3`. Keep your Command Ship online the whole time so the planet is unraidable (see [`structs-combat`](/skills/structs-combat/SKILL.html)). That alone wins the early resource game.
 
 **The core trade-off — ore exposure vs. CPU**: mined ore is vulnerable for the entire refine window. At `-D 3` that's ~34 hours but zero wasted CPU; at `-D 8` it's ~15 hours but burns real compute. Default to `-D 3` *and protect the window* rather than racing it.
 
 **Advanced considerations**:
-- **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+- **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](/skills/structs-permissions/SKILL.html)).
 - **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mine and refine are **rejected** while a visitor heads the raid queue (`under_raid`); do not retry compute mid-raid. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
@@ -70,8 +70,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/refine-[refinery-id].log 2>&1 & echo $! > memory/jobs/refine-[refinery-id].pid
    ```
 
-6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
-7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](https://structs.ai/skills/structs-energy/SKILL)), stake/sell ([`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL)), or hold reserve.
+6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](/skills/structs-combat/SKILL.html).
+7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](/skills/structs-energy/SKILL.html)), stake/sell ([`structs-commerce`](/skills/structs-commerce/SKILL.html)), or hold reserve.
 
 ### Charge-bar scheduling
 
@@ -84,7 +84,7 @@ When `currentOre` hits 0 the planet becomes `complete`: all its structs are dest
 - **Squeeze** the last ore if you can refine it before depletion forces you off, **or**
 - **Move first** — relocate critical structs / evacuate, then explore.
 
-Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-planets-fleet/SKILL) to chart and claim a new planet. If an extractor/refinery is destroyed mid-job, progress **pauses** (mined/refined amounts aren't lost) until you rebuild.
+Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.html) to chart and claim a new planet. If an extractor/refinery is destroyed mid-job, progress **pauses** (mined/refined amounts aren't lost) until you rebuild.
 
 ## Commands reference
 
@@ -97,9 +97,9 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 | Query struct | `structsd query structs struct [id]` |
 | Query player (Alpha + storedOre) | `structsd query structs player [player-id]` |
 
-`TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](https://structs.ai/skills/conventions). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
+`TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](/skills/conventions.html). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
 
-**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
+**Requires**: [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a configured signing key.
 
 ## Verification
 
@@ -123,4 +123,4 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — depletion, raid vulnerability
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) / [resource-scarce](https://structs.ai/playbooks/situations/resource-scarce) — production strategy
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW, job tracking, pipeline scheduling
-- [structs-combat](https://structs.ai/skills/structs-combat/SKILL) — protecting the ore window; [structs-energy](https://structs.ai/skills/structs-energy/SKILL) / [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — spending Alpha
+- [structs-combat](/skills/structs-combat/SKILL.html) — protecting the ore window; [structs-energy](/skills/structs-energy/SKILL.html) / [structs-commerce](/skills/structs-commerce/SKILL.html) — spending Alpha

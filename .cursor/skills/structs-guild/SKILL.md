@@ -16,7 +16,7 @@ redirect_from:
 
 A guild is your faction: it gives you a reactor to infuse, a substation to draw power from, a market to sell into, a token to mint, and allies (or moderators). For a new player, **which guild you join is one of your most consequential early choices** — it shapes your power source, your economy, and who has your back. This skill covers choosing/joining, running a guild, ranks/permissions, identity moderation, and the Central Bank.
 
-Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](https://structs.ai/skills/conventions).
+Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html).
 
 ## When to use it
 
@@ -49,7 +49,7 @@ Numeric ranks, **lower number = higher privilege**:
 | 101 | Default on join |
 | 0 | Unset |
 
-A player can only modify members whose rank is strictly **worse** (higher number) than their own. Rank-permissions (granting a permission to everyone at/above a rank) are the scalable way to delegate — see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL).
+A player can only modify members whose rank is strictly **worse** (higher number) than their own. Rank-permissions (granting a permission to everyone at/above a rank) are the scalable way to delegate — see [`structs-permissions`](/skills/structs-permissions/SKILL.html).
 
 ## Procedure
 
@@ -109,7 +109,7 @@ Mint/redeem are Tier 1 within your standing-order caps, Tier 2 above. Convert is
 | Bank mint / redeem / convert / confiscate | `structsd tx structs guild-bank-mint \| guild-bank-redeem \| guild-bank-convert \| guild-bank-convert-token \| guild-bank-confiscate-and-burn TX_FLAGS -- ...` |
 | Guild rank permission set/revoke | `structsd tx structs permission-guild-rank-set \| permission-guild-rank-revoke TX_FLAGS -- [object-id] [guild-id] [permission] [rank]` |
 
-`TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions). **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html). **Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -136,4 +136,4 @@ Mint/redeem are Tier 1 within your standing-order caps, Tier 2 above. Convert is
 - [knowledge/mechanics/permissions](https://structs.ai/knowledge/mechanics/permissions) — 25-bit values, guild rank permissions
 - [knowledge/mechanics/ugc-moderation](https://structs.ai/knowledge/mechanics/ugc-moderation) — name/pfp moderation & validation
 - [knowledge/lore/factions](https://structs.ai/knowledge/lore/factions) — guild politics
-- [playbooks/situations/guild-war](https://structs.ai/playbooks/situations/guild-war) — coordinated conflict; [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) — delegating authority
+- [playbooks/situations/guild-war](https://structs.ai/playbooks/situations/guild-war) — coordinated conflict; [structs-permissions](/skills/structs-permissions/SKILL.html) — delegating authority

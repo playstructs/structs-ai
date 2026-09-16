@@ -40,4 +40,4 @@ ps -p "$(cat memory/jobs/<job>.pid)" 2>/dev/null && echo running || echo not run
 ## See also
 
 - [async operations](../../awareness/async-operations.md) · [hashing](../../knowledge/mechanics/hashing.md)
-- Skills: [production](../../.cursor/skills/structs-production/SKILL.md) · [building](../../.cursor/skills/structs-building/SKILL.md) · [combat](../../.cursor/skills/structs-combat/SKILL.md)
+- Skills: [production](/skills/structs-production/SKILL.html) · [building](/skills/structs-building/SKILL.html) · [combat](/skills/structs-combat/SKILL.html)

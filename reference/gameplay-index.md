@@ -55,10 +55,10 @@ description: "An index of the gameplay documentation: schemas, protocols, strate
 
 | ID | Name | File | Description |
 |----|------|------|-------------|
-| onboarding | Player Onboarding Task | [onboarding.md](../.cursor/skills/structs-onboarding/SKILL.md) | Complete workflow for new player onboarding - first 1-2 days |
-| building | Building Task | [building.md](../.cursor/skills/structs-building/SKILL.md) | Complete workflow for building structures on planets or in fleets |
-| exploration | Exploration Task | [exploration.md](../.cursor/skills/structs-planets-fleet/SKILL.md) | Complete workflow for exploring and charting planets |
-| resource-management | Resource Management Task | [resource-management.md](../.cursor/skills/structs-production/SKILL.md) | Complete workflow for managing resources (mining, refining, converting) |
+| onboarding | Player Onboarding Task | [onboarding.md](/skills/structs-onboarding/SKILL.html) | Complete workflow for new player onboarding - first 1-2 days |
+| building | Building Task | [building.md](/skills/structs-building/SKILL.html) | Complete workflow for building structures on planets or in fleets |
+| exploration | Exploration Task | [exploration.md](/skills/structs-planets-fleet/SKILL.html) | Complete workflow for exploring and charting planets |
+| resource-management | Resource Management Task | [resource-management.md](/skills/structs-production/SKILL.html) | Complete workflow for managing resources (mining, refining, converting) |
 
 ---
 

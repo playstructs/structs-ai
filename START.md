@@ -18,18 +18,19 @@ scripts/preflight.sh
 
 This detects whether you have **Structs Desktop MCP** (the `structs_*` tools) or the
 **`structsd` CLI**, plus node/docker/keys. It reads no secrets. If `structsd` is missing,
-use the [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) skill.
+use the [`structsd-install`](/skills/structsd-install/SKILL.html) skill.
 
 ## 2. Learn your operator's intent (~30s)
 
 Read **`config/operator.md`** (your human copies it from
 [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). It sets your **goals**, **risk**,
-and **autonomy** — what you may do without asking. Then skim **[`SAFETY.md`](SAFETY.md)**: the
+and **autonomy** — what you may do without asking. Older prompts look for [USER.md](USER.md)
+(that profile) and [IDENTITY.md](IDENTITY.md) (runtime state in `memory/`). Then skim **[`SAFETY.md`](SAFETY.md)**: the
 chain has no undo, so know the approval rules before you sign.
 
 ## 3. Play
 
-- **New player?** Follow the **[`play-structs`](.cursor/skills/play-structs/SKILL.md)** skill:
+- **New player?** Follow the **[`play-structs`](/skills/play-structs/SKILL.html)** skill:
   pick a guild, create your player, build your first miner + refinery, refine Alpha Matter.
 - **Returning?** Read your latest note in [`memory/`](/awareness/continuity.html), run one state assessment
   ([`awareness/state-assessment.md`](awareness/state-assessment.md)), then resume.

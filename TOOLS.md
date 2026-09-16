@@ -19,7 +19,7 @@ CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](https://structs.ai/skills/structsd-install/SKILL)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.23+).
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](/skills/structsd-install/SKILL.html)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.23+).
 
 ---
 
@@ -57,7 +57,7 @@ For sub-second game state queries, real-time threat detection, and combat automa
 
 **Repository**: `https://github.com/playstructs/docker-structs-guild`
 
-Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](https://structs.ai/skills/structs-guild-stack/SKILL) skill for the full procedure.
+Setup: `git clone` the repo, configure `.env`, run `docker compose up -d`, wait for chain sync (hours on first run). See the [`structs-guild-stack`](/skills/structs-guild-stack/SKILL.html) skill for the full procedure.
 
 The guild stack is optional -- CLI commands via a remote node work for basic gameplay. PG access becomes essential for combat automation and galaxy-wide intelligence.
 

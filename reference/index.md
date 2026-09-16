@@ -44,6 +44,7 @@ The action and entity indexes are for “what is the name of this thing.” Loca
 - [Action quick reference](action-quick-reference.md) — skim of common verbs
 - [Action index](action-index.md) — subset with keeper notes (not complete)
 - [Local devnet](local-devnet.md)
+- [Entity index](entity-index.md) — names and type codes
 - [Endpoint index](endpoint-index.md) · [Endpoint quick lookup](endpoint-quick-lookup.md) — lookup desks; LCD families live under [api/queries/](../api/queries/)
 
 ## Errors

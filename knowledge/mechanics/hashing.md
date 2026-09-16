@@ -5,7 +5,7 @@ description: "Four struct-bound proofs plus the chain-global guild charter: inpu
 
 # Hashing (Proof-of-Work)
 
-**Purpose**: The single canonical reference for the Structs proof-of-work hashing mechanism. Covers the four struct-bound hash types, the chain-global guild charter puzzle, the universal input format, the algorithm, age-based difficulty, planet ore clocks, raid pause, the permission model, and the CLI/client surfaces. If you only read one PoW doc, read this one. Build-specific framing lives in [building.md](building.md); guild founding lives in the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL); strategy and job-tracking live in [async-operations.md](../../awareness/async-operations.md).
+**Purpose**: The single canonical reference for the Structs proof-of-work hashing mechanism. Covers the four struct-bound hash types, the chain-global guild charter puzzle, the universal input format, the algorithm, age-based difficulty, planet ore clocks, raid pause, the permission model, and the CLI/client surfaces. If you only read one PoW doc, read this one. Build-specific framing lives in [building.md](building.md); guild founding lives in the [structs-guild skill](/skills/structs-guild/SKILL.html); strategy and job-tracking live in [async-operations.md](../../awareness/async-operations.md).
 
 ---
 
@@ -248,7 +248,7 @@ The charter is **not** gated by `PermHash*`. The entitlement path (`guild-create
 
 A founder who **owns** a guild must transfer it before founding another (`is_owner`). Founding leaves the founder's current guild if they are only a member.
 
-See the [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL) for the full founding procedure.
+See the [structs-guild skill](/skills/structs-guild/SKILL.html) for the full founding procedure.
 
 ---
 
@@ -300,7 +300,7 @@ structsd tx structs permission-set-on-address cosmos1worker... 15728641 \
 # 15728641 = PermPlay (1) | PermHashAll (15728640)
 ```
 
-That worker can now submit `*-complete` proofs on your behalf but cannot move tokens or restructure your account. See [structs-permissions](../../.cursor/skills/structs-permissions/SKILL.md) for the full delegation model.
+That worker can now submit `*-complete` proofs on your behalf but cannot move tokens or restructure your account. See [structs-permissions](/skills/structs-permissions/SKILL.html) for the full delegation model.
 
 ### Throttle
 
@@ -325,7 +325,7 @@ The ante also throttles proofs to **one attempt per object per block** (keyed by
 | `struct-ore-refine-complete [struct id] [proof] [nonce]` | Manual refine completion | same |
 | `planet-raid-complete [fleet id] [proof] [nonce]` | Manual raid completion | same |
 
-The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dropped to that level. The CLI polls block height and sleeps until the target is reached. **Use `-D 3`** for instant, zero-waste hashing on struct-bound jobs. Charter at range 2,500,000 stays hard for weeks; `-D 3` still means "wait for cheap," not "fast." The `*-compute` commands auto-submit hours (or weeks) later, so they always run in the auto-approved form — see [conventions](../../.cursor/skills/conventions.md) and [SAFETY.md](../../SAFETY.md).
+The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dropped to that level. The CLI polls block height and sleeps until the target is reached. **Use `-D 3`** for instant, zero-waste hashing on struct-bound jobs. Charter at range 2,500,000 stays hard for weeks; `-D 3` still means "wait for cheap," not "fast." The `*-compute` commands auto-submit hours (or weeks) later, so they always run in the auto-approved form — see [conventions](/skills/conventions.html) and [SAFETY.md](../../SAFETY.md).
 
 ### Client — the webapp TaskManager
 
@@ -396,7 +396,7 @@ For verification against the chain and client implementations.
 - [fleet.md](fleet.md) — Visiting-fleet queue that arms `under_raid`
 - [resources.md](resources.md) — Ore vulnerability window driven by the refine clock
 - [permissions.md](permissions.md) — Full 25-bit permission model and handler reference
-- [structs-guild skill](https://structs.ai/skills/structs-guild/SKILL) — Charter vs entitlement founding
+- [structs-guild skill](/skills/structs-guild/SKILL.html) — Charter vs entitlement founding
 - [schemas/formulas.md](../../schemas/formulas.md) — Difficulty formulas alongside other game math
 - [api/integration-notes.md](../../api/integration-notes.md) — Live data-shape gotchas for integrators (endpoints, event detail, field-name traps)
-- [conventions](../../.cursor/skills/conventions.md) — Proof-of-work policy and the `-D 3` default
+- [conventions](/skills/conventions.html) — Proof-of-work policy and the `-D 3` default

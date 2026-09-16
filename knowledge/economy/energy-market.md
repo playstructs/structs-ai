@@ -76,7 +76,7 @@ This automatic capacity increase makes reactor infusion the fastest and simplest
 
 > **Staking pays capacity, not a yield.** The return on infusing a reactor is the **energy capacity** credited above — there is no delegator reward stream, APR, or passive token income. Income is realized only *indirectly*, by selling that capacity as energy through a provider.
 
-For step-by-step energy management workflows, see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+For step-by-step energy management workflows, see the [structs-energy skill](/skills/structs-energy/SKILL.html).
 
 ---
 

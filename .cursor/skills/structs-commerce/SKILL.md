@@ -14,9 +14,9 @@ redirect_from:
 
 # Commerce skill: energy, banks, transfers
 
-Commerce is how Alpha Matter compounds into economic power. The core loop: refine Alpha → infuse a reactor (capacity) → route it through an **allocation** to a **substation** → sell it through a **provider** → buyers pay in tokens via **agreements** → reinvest. Layered on top are guild Central Bank tokens (mint/redeem) and direct transfers. Where [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL) is "power my own structs", this skill is "make Alpha and energy *earn*."
+Commerce is how Alpha Matter compounds into economic power. The core loop: refine Alpha → infuse a reactor (capacity) → route it through an **allocation** to a **substation** → sell it through a **provider** → buyers pay in tokens via **agreements** → reinvest. Layered on top are guild Central Bank tokens (mint/redeem) and direct transfers. Where [`structs-energy`](/skills/structs-energy/SKILL.html) is "power my own structs", this skill is "make Alpha and energy *earn*."
 
-Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time, `ualpha` denom suffix) are in [`conventions.md`](https://structs.ai/skills/conventions). Every command here is Tier 1 or Tier 2 — default to interactive.
+Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time, `ualpha` denom suffix) are in [`conventions.md`](/skills/conventions.html). Every command here is Tier 1 or Tier 2 — default to interactive.
 
 ## When to use it
 
@@ -50,7 +50,7 @@ Only the **controlling** player can delete/transfer an allocation (`--controller
 
 ## Procedure — sell energy (provider pipeline)
 
-1. **Have capacity** — infuse a reactor first ([`structs-energy`](https://structs.ai/skills/structs-energy/SKILL)).
+1. **Have capacity** — infuse a reactor first ([`structs-energy`](/skills/structs-energy/SKILL.html)).
 2. **Automated allocation** (auto-grows as you infuse more):
    ```
    structsd tx structs allocation-create --allocation-type automated TX_FLAGS -- [your-player-id] [power]
@@ -88,7 +88,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 
 ## Procedure — guild Central Bank & transfers
 
-- **Mint** (guild-privileged) / **redeem** (`floor` payout plus `min-amount-alpha`) / **convert** ualpha→token or token→token — see [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`knowledge/economy/guild-banking`](https://structs.ai/knowledge/economy/guild-banking). Convert needs `min-amount-token` slippage. `uguild.*` cannot go to IBC.
+- **Mint** (guild-privileged) / **redeem** (`floor` payout plus `min-amount-alpha`) / **convert** ualpha→token or token→token — see [`structs-guild`](/skills/structs-guild/SKILL.html) and [`knowledge/economy/guild-banking`](https://structs.ai/knowledge/economy/guild-banking). Convert needs `min-amount-token` slippage. `uguild.*` cannot go to IBC.
 - **Transfer tokens**: `player-send [from-address] [to-address] [amount] TX_FLAGS`. A typo in the destination is permanent — to a brand-new address this is Tier 2. Guild denoms additionally require an eligible recipient.
 
 ## Commands reference
@@ -104,7 +104,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 | Token transfer | `structsd tx structs player-send [from] [to] [amount] TX_FLAGS` |
 | Query provider / agreement / reactor | `structsd query structs provider \| agreement \| reactor [id]` |
 
-`TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions). **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html). **Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -120,7 +120,7 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 - **Defusion cooldown** — `reactor-cancel-defusion` to re-stake, or wait it out.
 - **recipient_not_eligible** — `uguild.*` cannot go to IBC escrow or an unregistered address.
 - **Automated allocation limit** — one per source; use dynamic for additional routing.
-- **Generator infuse / staking irreversibility** — staking has a cooldown; generator infusion has none (see [`structs-energy`](https://structs.ai/skills/structs-energy/SKILL)).
+- **Generator infuse / staking irreversibility** — staking has a cooldown; generator infusion has none (see [`structs-energy`](/skills/structs-energy/SKILL.html)).
 
 ## See also
 
@@ -129,4 +129,4 @@ Validator address is `structsvaloper1...` (from `structsd query structs reactor 
 - [api/webapp/analytics](https://structs.ai/api/webapp/analytics) — live `GET /api/guild-bank`, inventory, leaderboards
 - [knowledge/economy/valuation](https://structs.ai/knowledge/economy/valuation) / [trading](https://structs.ai/knowledge/economy/trading) — what things are worth
 - [playbooks/phases/late-game](https://structs.ai/playbooks/phases/late-game) — market control
-- [structs-energy](https://structs.ai/skills/structs-energy/SKILL) — capacity for your own use; [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) — provider access grants
+- [structs-energy](/skills/structs-energy/SKILL.html) — capacity for your own use; [structs-permissions](/skills/structs-permissions/SKILL.html) — provider access grants

@@ -1,6 +1,8 @@
 ---
 title: Permission entity schema
 description: "Permission records: a permissionId plus a 25-bit value, and guild-rank rows (object, guild, bit, rank)."
+sitemap: false
+robots: noindex
 ---
 
 # Permission Entity Schema

@@ -19,7 +19,7 @@ These are the events **structsd** writes onto the Tendermint ABCI log. They are 
 | React live with a stubbed combat payload | [GRASS](streaming/event-types.md) |
 | Page historical planet activity | [`/api/planet-activity`](webapp/planet-activity.md) |
 
-Canonical proto: [playstructs/structsd `events.proto`](https://github.com/playstructs/structsd/blob/main/proto/structs/structs/events.proto). Combat shot fields: [integration-notes](integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../knowledge/mechanics/combat.md). UGC attributes: [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
+Canonical proto: [playstructs/structsd `events.proto`](https://github.com/playstructs/structsd/blob/master/proto/structs/structs/events.proto). Combat shot fields: [integration-notes](integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../knowledge/mechanics/combat.md). UGC attributes: [ugc-moderation.md](../knowledge/mechanics/ugc-moderation.md).
 
 ---
 

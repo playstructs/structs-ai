@@ -37,7 +37,7 @@ Read it when you need to know what the chain *actually enforces*: message handle
 `x/structs/types/work.go`, permission bits, and the event definitions that become GRASS
 messages.
 
-Install: [structsd-install skill](../.cursor/skills/structsd-install/SKILL.md).
+Install: [structsd-install skill](/skills/structsd-install/SKILL.html).
 
 ## structs-webapp — the flagship client
 
@@ -80,7 +80,7 @@ Using it: [TOOLS.md](../TOOLS.md).
 PostgreSQL schema and views backing the Guild API. Read it when you need query shapes or
 want to understand where a REST field comes from.
 See [knowledge/infrastructure/database-schema.md](../knowledge/infrastructure/database-schema.md)
-and the [guild-stack skill](../.cursor/skills/structs-guild-stack/SKILL.md).
+and the [guild-stack skill](/skills/structs-guild-stack/SKILL.html).
 
 ## structs-grass — the event fan-out
 

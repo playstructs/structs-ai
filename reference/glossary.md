@@ -191,10 +191,10 @@ A category present in the enum but **not emitted** by the current indexer; fleet
 Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage reduction 1). They raise capacity, not neighbours' HP. → [struct-types.md](../knowledge/entities/struct-types.md)
 
 ### Guild charter
-Chain-global proof-of-work that founds a guild (`guild-create-compute`). Preimage `CHAIN{chainId}|{solver}@{founder}GUILDCHARTER{anchor}NONCE{nonce}`. Not a `PermHash*` bit. Query `guild-charter` for the live anchor; solving moves it and kills other in-flight nonces. The other founding path is a one-time reactor entitlement (`guild-create`). → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [structs-guild](../.cursor/skills/structs-guild/SKILL.md)
+Chain-global proof-of-work that founds a guild (`guild-create-compute`). Preimage `CHAIN{chainId}|{solver}@{founder}GUILDCHARTER{anchor}NONCE{nonce}`. Not a `PermHash*` bit. Query `guild-charter` for the live anchor; solving moves it and kills other in-flight nonces. The other founding path is a one-time reactor entitlement (`guild-create`). → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [structs-guild](/skills/structs-guild/SKILL.html)
 
 ### GRASS
-Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. Indexer projection of chain events, not a 1:1 mirror. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [chain-events.md](../api/chain-events.md)
+Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. Indexer projection of chain events, not a 1:1 mirror. → [structs-streaming SKILL](/skills/structs-streaming/SKILL.html), [chain-events.md](../api/chain-events.md)
 
 ### GRASS subject
 The NATS subject a GRASS event is published on. Grid and planet subjects end with the owning `player_id` (`structs.grid.{object_type}.{object_id}.{player_id}`, `structs.planet.{planet_id}.{player_id}`; `noPlayer` when unresolved) and their payloads carry a `player_id` field. NATS `*` matches one token and `>` matches the rest, so match a planet with `structs.planet.{id}.*`, not `structs.planet.*`. → [subscription-patterns.md](../api/streaming/subscription-patterns.md)
@@ -266,7 +266,7 @@ Hitting more than one target per volley (`primaryWeaponTargets`). **No weapon do
 ## N
 
 ### NATS
-The messaging system GRASS rides on; agents subscribe over WebSocket. → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md)
+The messaging system GRASS rides on; agents subscribe over WebSocket. → [structs-streaming SKILL](/skills/structs-streaming/SKILL.html)
 
 ### Nonce / Proof
 The two PoW fields on a `*-complete` message: `nonce` (the value found by brute force) and `proof` (the lowercase-hex SHA-256 digest that clears difficulty). → [hashing.md — Universal Input Format](../knowledge/mechanics/hashing.md#universal-input-format)
@@ -297,7 +297,7 @@ The 25-bit mask of every permission (`33554431`). `player-update-primary-address
 A 25-bit flag set stored on an address or on an object (plus guild-rank worst-allowed ranks). `PermissionCheck` is the gate for every state-changing tx. → [permissions.md](../knowledge/mechanics/permissions.md)
 
 ### planet_activity
-The PostgreSQL table whose inserts fire the GRASS stream; the source of full `struct_attack` shot detail when the live payload is [stubbed](#stub). → [structs-streaming SKILL](../.cursor/skills/structs-streaming/SKILL.md), [database-schema.md](../schemas/database-schema.md)
+The PostgreSQL table whose inserts fire the GRASS stream; the source of full `struct_attack` shot detail when the live payload is [stubbed](#stub). → [structs-streaming SKILL](/skills/structs-streaming/SKILL.html), [database-schema.md](../schemas/database-schema.md)
 
 ### Planetary Defense Cannon (PDC)
 Planet struct (type 19, 1 per player) that auto-fires at any attacker of planetary structs after all targets resolve. Multiple players' PDCs stack. → [combat.md — Planetary Defense Cannon](../knowledge/mechanics/combat.md#planetary-defense-cannon)
@@ -372,7 +372,7 @@ A unit defense (Stealth Bomber, Submersible) that blocks cross-ambit targeting o
 A struct's `status` is a `StructState` **bit-flag**, not an enum: Materialized 1, Built 2, Online 4, Stored 8, Hidden 16, Destroyed 32, Locked 64. E.g. `7` = online, `35` = destroyed. → [building.md — Status field (numeric)](../knowledge/mechanics/building.md#status-field-numeric)
 
 ### Stub
-The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](../.cursor/skills/structs-streaming/SKILL.md#combat-event-payloads)
+The reduced envelope the GRASS stream sends in place of a `planet_activity` payload (e.g. a large `struct_attack`) that exceeds ~7995 bytes. It keeps `{subject, planet_id, player_id, seq, category, time, stub:'true'}` (note `stub` is the string `'true'`) and drops the heavy `detail`. Pull the full shot detail from `planet_activity` by `seq`/`planet_id`. → [structs-streaming SKILL — Combat Event Payloads](/skills/structs-streaming/SKILL.html#combat-event-payloads)
 
 ### StructCannotDefend
 Error assigning a planetary type (`canDefend: false`, including Ore Bunker) as a defender. Only fleet types work. → [combat.md](../knowledge/mechanics/combat.md#assigning-defenders-struct-defense-set), [play/errors.md](../play/errors.md)

@@ -14,9 +14,9 @@ redirect_from:
 
 # Energy skill: capacity, load, infusion
 
-Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
+Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](/skills/structs-commerce/SKILL.html).
 
-Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](https://structs.ai/skills/conventions). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (power/economy reads) and `structs_action` (infuse, connect) — the `structsd` commands below are the complete fallback. See [interface routing](https://structs.ai/skills/conventions#choosing-your-interface-capability-aware).
+Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (power/economy reads) and `structs_action` (infuse, connect) — the `structsd` commands below are the complete fallback. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
 > **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx.
 
@@ -130,7 +130,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 | Query reactor | `structsd query structs reactor [id]` |
 | Query substation / allocations | `structsd query structs substation [id]` / `allocation-all-by-source [id]` |
 
-`TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions); power ops cascade, so default to interactive even on routine ones. **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html); power ops cascade, so default to interactive even on routine ones. **Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -151,4 +151,4 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 - [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online quick formula card
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha → energy conversion rates
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) — infusion strategy
-- [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — selling energy, buying via agreement, the flywheel; [structs-building](https://structs.ai/skills/structs-building/SKILL) — power pre-check
+- [structs-commerce](/skills/structs-commerce/SKILL.html) — selling energy, buying via agreement, the flywheel; [structs-building](/skills/structs-building/SKILL.html) — power pre-check

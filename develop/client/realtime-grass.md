@@ -9,7 +9,7 @@ the listener contract, the full listener catalogue, and what the stream will not
 for you.
 
 For the event schema and subject taxonomy from the server side, see the
-[structs-streaming skill](../../.cursor/skills/structs-streaming/SKILL.md) and
+[structs-streaming skill](/skills/structs-streaming/SKILL.html) and
 [api/streaming/event-types.md](../../api/streaming/event-types.md). This page is how a
 client wires it up.
 

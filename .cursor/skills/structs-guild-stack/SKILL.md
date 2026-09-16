@@ -244,7 +244,7 @@ WHERE g_ore.val > 0
 ORDER BY g_ore.val DESC, shield ASC;
 ```
 
-A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status`, `command_destroyed`, and `command_online` columns are for; a target with `fleet_status = 'onStation'` and a live online Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](https://structs.ai/skills/structs-combat/SKILL).
+A high ore balance and low shield are only half the picture: a raid can **only complete while the owner's shields are vulnerable** (`shieldsVulnerable`) — their fleet off-station, or their Command Ship offline/destroyed. That is what the `fleet_status`, `command_destroyed`, and `command_online` columns are for; a target with `fleet_status = 'onStation'` and a live online Command Ship cannot be raided to completion no matter how much ore it holds. Confirm before committing PoW — see [structs-combat](/skills/structs-combat/SKILL.html).
 
 `fleet.status` values are **camelCase**: `onStation` and `away`. `WHERE f.status = 'on_station'` matches nothing and silently makes every target look raidable.
 
@@ -445,5 +445,5 @@ If you spun the stack up to investigate something, tear it down when you're done
 - [knowledge/infrastructure/guild-stack](https://structs.ai/knowledge/infrastructure/guild-stack) — Architecture overview and data flow
 - [knowledge/infrastructure/database-schema](https://structs.ai/knowledge/infrastructure/database-schema) — Table schemas and query patterns
 - [schemas/database-schema](https://structs.ai/schemas/database-schema) — Full structural schema catalog
-- [structs-intel skill](https://structs.ai/skills/structs-intel/SKILL) — Intelligence gathering (CLI + PG)
-- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS real-time events via NATS
+- [structs-intel skill](/skills/structs-intel/SKILL.html) — Intelligence gathering (CLI + PG)
+- [structs-streaming skill](/skills/structs-streaming/SKILL.html) — GRASS real-time events via NATS

@@ -1,6 +1,8 @@
 ---
 title: Address entity schema
 description: "The Address association: a Cosmos key bound to a player, with registration status and permission bits."
+sitemap: false
+robots: noindex
 ---
 
 # Address Entity Schema

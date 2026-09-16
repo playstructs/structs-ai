@@ -129,5 +129,5 @@ See [Priority Framework](priority-framework.md) for full decision hierarchy.
 - [State Assessment](state-assessment.md) — Baseline before threat monitoring
 - [Opportunity Identification](opportunity-identification.md) — Flip side of threats
 - [Priority Framework](priority-framework.md) — When threats conflict
-- [structs-streaming skill](https://structs.ai/skills/structs-streaming/SKILL) — GRASS / NATS real-time events
+- [structs-streaming skill](/skills/structs-streaming/SKILL.html) — GRASS / NATS real-time events
 - [defense.md](../knowledge/mechanics/defense.md) — Raid clock and survival posture

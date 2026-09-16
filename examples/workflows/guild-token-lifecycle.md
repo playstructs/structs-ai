@@ -88,4 +88,4 @@ Audited forever. Damages reputation.
 | Send to IBC / raw address | `recipient_not_eligible` | Send only to registered players or provider pools |
 | Confiscate-and-burn | Holder balance gone, reputation hit | Rank revocation is usually enough |
 
-`TX_FLAGS` per [`conventions.md`](../../.cursor/skills/conventions.md). Canonical economics: [`knowledge/economy/guild-banking.md`](../../knowledge/economy/guild-banking.md).
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html). Canonical economics: [`knowledge/economy/guild-banking.md`](../../knowledge/economy/guild-banking.md).

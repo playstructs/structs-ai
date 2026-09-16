@@ -21,7 +21,7 @@ This directory contains pattern documentation for common API interaction scenari
 
 ## Patterns
 
-### `pagination.md`
+### [pagination.md](pagination.md)
 Complete guide to handling paginated API responses.
 
 **Covers**:
@@ -36,7 +36,7 @@ Complete guide to handling paginated API responses.
 - Handling large datasets
 - Implementing incremental loading
 
-### `rate-limiting.md`
+### [rate-limiting.md](rate-limiting.md)
 Complete guide to handling API rate limits effectively.
 
 **Covers**:
@@ -52,7 +52,7 @@ Complete guide to handling API rate limits effectively.
 - Implementing request throttling
 - Monitoring API usage
 
-### `caching.md`
+### [caching.md](caching.md)
 Complete guide to implementing effective response caching strategies.
 
 **Covers**:
@@ -70,7 +70,7 @@ Complete guide to implementing effective response caching strategies.
 - Handling frequently accessed data
 - Implementing offline capability
 
-### `polling-vs-streaming.md`
+### [polling-vs-streaming.md](polling-vs-streaming.md)
 Complete guide to choosing between polling and streaming for real-time data.
 
 **Covers**:
@@ -89,7 +89,7 @@ Complete guide to choosing between polling and streaming for real-time data.
 - Balancing latency and resource usage
 - Implementing update mechanisms
 
-### `retry-strategies.md`
+### [retry-strategies.md](retry-strategies.md)
 Comprehensive guide to implementing effective retry strategies for API requests.
 
 **Covers**:
@@ -107,7 +107,7 @@ Comprehensive guide to implementing effective retry strategies for API requests.
 - Preventing cascading failures
 - Optimizing retry behavior
 
-### `workflow-patterns.md`
+### [workflow-patterns.md](workflow-patterns.md)
 Complete guide to implementing multi-step API workflows and parallel request patterns.
 
 **Covers**:
@@ -126,7 +126,7 @@ Complete guide to implementing multi-step API workflows and parallel request pat
 - Executing parallel requests
 - Handling workflow state
 
-### `security.md`
+### [security.md](security.md)
 Security best practices and patterns for AI agents.
 
 **Covers**:
@@ -147,7 +147,7 @@ Security best practices and patterns for AI agents.
 - Logging and error handling
 - Monitoring security events
 
-### `validation-patterns.md`
+### [validation-patterns.md](validation-patterns.md)
 Complete guide to transaction validation and verification patterns.
 
 **Covers**:
@@ -164,7 +164,7 @@ Complete guide to transaction validation and verification patterns.
 - Checking requirements before actions
 - Debugging failed actions
 
-### `state-sync.md`
+### [state-sync.md](state-sync.md)
 Complete guide to synchronizing AI agent state with game state.
 
 **Covers**:
@@ -181,7 +181,7 @@ Complete guide to synchronizing AI agent state with game state.
 - Managing state consistency
 - Handling state conflicts
 
-### `gameplay-strategies.md`
+### [gameplay-strategies.md](gameplay-strategies.md)
 Gameplay strategy patterns for AI agents.
 
 **Covers**:
@@ -200,7 +200,7 @@ Gameplay strategy patterns for AI agents.
 - Managing expansion
 - Following proven gameplay patterns
 
-### `performance-optimization.md`
+### [performance-optimization.md](performance-optimization.md)
 Performance optimization tips for AI agents.
 
 **Covers**:
@@ -222,14 +222,14 @@ Performance optimization tips for AI agents.
 
 Structured JSON decision trees for common gameplay scenarios:
 
-- **`decision-tree-resource-security.md`** - Resource security decision tree
-- **`decision-tree-power-management.md`** - Power management decision tree
-- **`decision-tree-build-requirements.md`** - Build requirements decision tree
-- **`decision-tree-combat.md`** - Combat decision tree
-- **`decision-tree-5x-framework.md`** - 5X Framework decision tree
-- **`decision-tree-resource-allocation.md`** - Resource allocation decision tree
-- **`decision-tree-reactor-vs-generator.md`** - Reactor vs Generator decision tree
-- **`decision-tree-trading.md`** - Trading decision tree
+- **[decision-tree-resource-security.md](decision-tree-resource-security.md)** - Resource security decision tree
+- **[decision-tree-power-management.md](decision-tree-power-management.md)** - Power management decision tree
+- **[decision-tree-build-requirements.md](decision-tree-build-requirements.md)** - Build requirements decision tree
+- **[decision-tree-combat.md](decision-tree-combat.md)** - Combat decision tree
+- **[decision-tree-5x-framework.md](decision-tree-5x-framework.md)** - 5X Framework decision tree
+- **[decision-tree-resource-allocation.md](decision-tree-resource-allocation.md)** - Resource allocation decision tree
+- **[decision-tree-reactor-vs-generator.md](decision-tree-reactor-vs-generator.md)** - Reactor vs Generator decision tree
+- **[decision-tree-trading.md](decision-tree-trading.md)** - Trading decision tree
 
 **Use When**:
 - Implementing decision logic
@@ -370,7 +370,7 @@ When adding new patterns:
 ## Quick Reference
 
 For a quick lookup guide to find the right pattern, see:
-- **`QUICK_REFERENCE.md`** - Quick pattern lookup by problem or use case
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick pattern lookup by problem or use case
 
 ---
 

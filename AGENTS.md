@@ -32,10 +32,10 @@ This gives you everything: skills, the `create-player.mjs` script (required for 
 
 ## First Session
 
-1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill. (Or run `scripts/preflight.sh` to detect this plus Desktop MCP, node, and keys.)
-2. **Read your operator profile** -- `config/operator.md` (copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)): goals, risk, autonomy, guild preference, connection details.
+1. **Verify `structsd` is installed** -- Run `structsd version`. If not found, use the [`structsd-install`](/skills/structsd-install/SKILL.html) skill. (Or run `scripts/preflight.sh` to detect this plus Desktop MCP, node, and keys.)
+2. **Read your operator profile** -- `config/operator.md` (copy from [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)): goals, risk, autonomy, guild preference, connection details. Older prompts look for [USER.md](USER.md) (alias of that profile) and [IDENTITY.md](IDENTITY.md) (runtime identity lives in `memory/`).
 3. **Read [`SAFETY.md`](SAFETY.md)** -- The trust contract and approval tiers. The chain has no undo.
-4. **Use [`play-structs`](.cursor/skills/play-structs/SKILL)** -- Pick a guild, create your player, explore a planet, build your first miner + refinery.
+4. **Use [`play-structs`](/skills/play-structs/SKILL.html)** -- Pick a guild, create your player, explore a planet, build your first miner + refinery.
 5. **Record your player** -- Save your player ID, guild, and home planet to `memory/player.json`.
 
 Optional: pick a playstyle preset from [`strategy/presets/`](strategy/presets/) to set goal weights and suggested skills. No personality is required.
@@ -61,22 +61,22 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 
 | Skill | Purpose |
 |-------|---------|
-| [`play-structs`](.cursor/skills/play-structs/SKILL) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
-| [`conventions`](.cursor/skills/conventions) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
-| [`structsd-install`](.cursor/skills/structsd-install/SKILL) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds) |
-| [`structs-onboarding`](.cursor/skills/structs-onboarding/SKILL) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
-| [`structs-production`](.cursor/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
-| [`structs-building`](.cursor/skills/structs-building/SKILL) | Construction, activation, movement, defense positioning, stealth, generator infusion |
-| [`structs-planets-fleet`](.cursor/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
-| [`structs-energy`](.cursor/skills/structs-energy/SKILL) | Capacity management — offline recovery, substations, allocations, reactor/generator infusion |
-| [`structs-combat`](.cursor/skills/structs-combat/SKILL) | Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup |
-| [`structs-commerce`](.cursor/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
-| [`structs-guild`](.cursor/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, settings, UGC moderation, Central Bank |
-| [`structs-permissions`](.cursor/skills/structs-permissions/SKILL) | Object/address permissions, address registration, multi-address & delegate agents |
-| [`structs-intel`](.cursor/skills/structs-intel/SKILL) | Full query catalog, scouting, intelligence persistence to memory/intel/ |
-| [`structs-streaming`](.cursor/skills/structs-streaming/SKILL) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
-| [`structs-guild-stack`](.cursor/skills/structs-guild-stack/SKILL) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
-| [`structs-ui`](.cursor/skills/structs-ui/SKILL) | **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI — the design system the game itself is built with |
+| [`play-structs`](/skills/play-structs/SKILL.html) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
+| [`conventions`](/skills/conventions.html) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
+| [`structsd-install`](/skills/structsd-install/SKILL.html) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds) |
+| [`structs-onboarding`](/skills/structs-onboarding/SKILL.html) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
+| [`structs-production`](/skills/structs-production/SKILL.html) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
+| [`structs-building`](/skills/structs-building/SKILL.html) | Construction, activation, movement, defense positioning, stealth, generator infusion |
+| [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.html) | Planet evaluation, exploration, fleet movement, evacuation |
+| [`structs-energy`](/skills/structs-energy/SKILL.html) | Capacity management — offline recovery, substations, allocations, reactor/generator infusion |
+| [`structs-combat`](/skills/structs-combat/SKILL.html) | Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup |
+| [`structs-commerce`](/skills/structs-commerce/SKILL.html) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [`structs-guild`](/skills/structs-guild/SKILL.html) | Choosing/joining a guild, ranks, membership, settings, UGC moderation, Central Bank |
+| [`structs-permissions`](/skills/structs-permissions/SKILL.html) | Object/address permissions, address registration, multi-address & delegate agents |
+| [`structs-intel`](/skills/structs-intel/SKILL.html) | Full query catalog, scouting, intelligence persistence to memory/intel/ |
+| [`structs-streaming`](/skills/structs-streaming/SKILL.html) | GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools |
+| [`structs-guild-stack`](/skills/structs-guild-stack/SKILL.html) | **(Advanced)** Guild Stack deployment, PostgreSQL queries, sub-second game state reads, real-time monitoring |
+| [`structs-ui`](/skills/structs-ui/SKILL.html) | **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI — the design system the game itself is built with |
 
 ---
 
@@ -193,6 +193,7 @@ For deep technical details, the original documentation remains available:
 - `examples/` -- Working examples (bots, workflows, error handling)
 - `reference/` -- Quick reference guides and indexes
 - [`reference/glossary.md`](reference/glossary.md) -- Lexical index: look up any term (ambit enum vs bitmask, charge, shieldsVulnerable, stub, counter vs block, …) and jump to its canonical page
+- [`CHANGELOG.md`](CHANGELOG.md) -- Documentation release history
 
 ---
 

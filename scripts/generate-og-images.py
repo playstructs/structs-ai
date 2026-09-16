@@ -89,8 +89,12 @@ def og_key(canonical_path: str) -> str:
 
 
 def canonical_from_source(rel: Path, fm: dict[str, str]) -> str | None:
+    # SITEMAP.md is a noindex hub, not a share card. Thin LCD/schema stubs still
+    # get OG images even when sitemap: false (they stay as agent-facing pages).
     if fm.get("sitemap", "").lower() in {"false", "no"}:
-        return None
+        posix = rel.as_posix()
+        if posix in {"SITEMAP.md", "develop/ui/examples/starter.html"}:
+            return None
     permalink = fm.get("permalink", "").strip()
     if permalink:
         return permalink if permalink.startswith("/") else "/" + permalink

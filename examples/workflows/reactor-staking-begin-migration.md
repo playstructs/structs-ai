@@ -102,7 +102,7 @@ Query reactor to confirm migration is in progress.
 
 Migration completes automatically when joining guild or changing destination.
 
-> **Note**: Migration is typically completed as part of the guild membership join process. See [structs-guild skill](../../.cursor/skills/structs-guild/SKILL.md).
+> **Note**: Migration is typically completed as part of the guild membership join process. See [structs-guild skill](/skills/structs-guild/SKILL.html).
 
 ---
 
@@ -141,4 +141,4 @@ Migration completes automatically when joining guild or changing destination.
 
 - **Scenario**: Migration as part of guild membership join
 - **Note**: Migration happens automatically during guild join
-- **Workflow**: See [structs-guild skill](../../.cursor/skills/structs-guild/SKILL.md)
+- **Workflow**: See [structs-guild skill](/skills/structs-guild/SKILL.html)

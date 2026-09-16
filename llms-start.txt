@@ -20,18 +20,19 @@ scripts/preflight.sh
 
 This detects whether you have **Structs Desktop MCP** (the `structs_*` tools) or the
 **`structsd` CLI**, plus node/docker/keys. It reads no secrets. If `structsd` is missing,
-use the [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) skill.
+use the [`structsd-install`](/skills/structsd-install/SKILL.html) skill.
 
 ## 2. Learn your operator's intent (~30s)
 
 Read **`config/operator.md`** (your human copies it from
 [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). It sets your **goals**, **risk**,
-and **autonomy** — what you may do without asking. Then skim **[`SAFETY.md`](SAFETY.md)**: the
+and **autonomy** — what you may do without asking. Older prompts look for [USER.md](USER.md)
+(that profile) and [IDENTITY.md](IDENTITY.md) (runtime state in `memory/`). Then skim **[`SAFETY.md`](SAFETY.md)**: the
 chain has no undo, so know the approval rules before you sign.
 
 ## 3. Play
 
-- **New player?** Follow the **[`play-structs`](.cursor/skills/play-structs/SKILL.md)** skill:
+- **New player?** Follow the **[`play-structs`](/skills/play-structs/SKILL.html)** skill:
   pick a guild, create your player, build your first miner + refinery, refine Alpha Matter.
 - **Returning?** Read your latest note in [`memory/`](/awareness/continuity.html), run one state assessment
   ([`awareness/state-assessment.md`](awareness/state-assessment.md)), then resume.
@@ -202,7 +203,7 @@ once per session to detect what's available (it writes `config/environment.json`
 |------|-------------------|-------------------|
 | Read state / execute an action / hash | **Structs Desktop MCP** (`structs_action`, `structs_intel`, `structs_hash`) | `structsd` CLI (`tx`/`query`) |
 | Real-time threat/event response | **GRASS** / `structs_events` | poll with `structsd query` |
-| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](https://structs.ai/skills/structs-intel/SKILL) |
+| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](/skills/structs-intel/SKILL.html) |
 | Build a tool / integrate | webapp/chain **API** | — |
 
 Rules of thumb: prefer **MCP** when it's connected (it adds preflight checks, GPU hashing,
@@ -228,7 +229,7 @@ structsd tx structs struct-activate TX_FLAGS -- 6-10
 Build, mine, refine, and raid all require proof-of-work. Difficulty decays with age, so the cheapest path is to **initiate early and compute later**. The `-D` flag (1-64) tells the compute helper to wait until difficulty drops to that level before hashing.
 
 - **`-D 3` is the canonical default for every operation.** At D=3 the hash is trivially instant and **zero CPU is wasted** — the wait is just the age clock, not grinding. Use this unless you have a specific reason not to.
-- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](https://structs.ai/skills/play-structs/SKILL)). Do not scatter other `-D` values through your work.
+- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](/skills/play-structs/SKILL.html)). Do not scatter other `-D` values through your work.
 - Higher `-D` values (8+) start sooner but burn exponentially more compute. The cliff between D=8 and D=9 is the single most important PoW fact — never set `-D` above 8.
 
 Full decay tables: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building). **Never block on PoW** — launch compute in a background terminal and track it in `memory/jobs/` (see [awareness/async-operations](https://structs.ai/awareness/async-operations)).
@@ -251,7 +252,7 @@ Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command S
 
 ## One transaction at a time per account
 
-The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](/skills/structs-permissions/SKILL.html)).
 
 ---
 
@@ -339,7 +340,7 @@ Read your operator profile `config/operator.md` (copy it from `config/operator.e
 
 Run `structsd version`. If it works, skip ahead.
 
-If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-install/SKILL).
+If not, follow the [structsd-install skill](/skills/structsd-install/SKILL.html).
 
 ---
 
@@ -357,7 +358,7 @@ Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](https:/
 
 ## Step 3: Create Your Account
 
-Follow the [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL). It handles key creation, guild signup, and player ID confirmation.
+Follow the [structs-onboarding skill](/skills/structs-onboarding/SKILL.html). It handles key creation, guild signup, and player ID confirmation.
 
 Short version:
 
@@ -393,7 +394,7 @@ structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5
 
 Planet builds need CMD online + fleet `onStation` (gifted at creation — verify before initiate). You need an Ore Extractor and Ore Refinery. Use `-D 1` here for gentlest CPU.
 
-> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](https://structs.ai/skills/conventions)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
+> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](/skills/conventions.html)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
 
 ### Ore Extractor (type 14)
 
@@ -473,27 +474,27 @@ You're mining. Now expand your capabilities:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-production](https://structs.ai/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
-| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth, generator infusion |
-| [structs-planets-fleet](https://structs.ai/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
-| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Capacity management, offline recovery, substations, infusion |
-| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
+| [structs-production](/skills/structs-production/SKILL.html) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
+| [structs-building](/skills/structs-building/SKILL.html) | Build any struct type, defense placement, stealth, generator infusion |
+| [structs-planets-fleet](/skills/structs-planets-fleet/SKILL.html) | Planet evaluation, exploration, fleet movement, evacuation |
+| [structs-energy](/skills/structs-energy/SKILL.html) | Capacity management, offline recovery, substations, infusion |
+| [structs-combat](/skills/structs-combat/SKILL.html) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
 
 **Economy & social**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
-| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
-| [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) | Permissions, multi-address management, delegate agents |
-| [structs-intel](https://structs.ai/skills/structs-intel/SKILL) | Scouting players/planets/guilds; persisting intel to memory |
+| [structs-commerce](/skills/structs-commerce/SKILL.html) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [structs-guild](/skills/structs-guild/SKILL.html) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
+| [structs-permissions](/skills/structs-permissions/SKILL.html) | Permissions, multi-address management, delegate agents |
+| [structs-intel](/skills/structs-intel/SKILL.html) | Scouting players/planets/guilds; persisting intel to memory |
 
 **Advanced infra**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |
-| [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |
+| [structs-streaming](/skills/structs-streaming/SKILL.html) | Real-time GRASS/NATS events for automation |
+| [structs-guild-stack](/skills/structs-guild-stack/SKILL.html) | Local node + PostgreSQL for advanced queries |
 
 ### Knowledge Base
 

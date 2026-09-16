@@ -29,4 +29,4 @@ Do not dump a planet JSON. Do not ask permission for a query. Do ask before anyt
 
 ## Where to start
 
-Fill in `config/operator.md`. Point the agent at [`START.md`](START.md) and [`SAFETY.md`](SAFETY.md). New play goes through [`play-structs`](.cursor/skills/play-structs/SKILL.md). Crisis routing is [`play/`](play/index.md).
+Fill in `config/operator.md`. Point the agent at [`START.md`](START.md) and [`SAFETY.md`](SAFETY.md). New play goes through [`play-structs`](/skills/play-structs/SKILL.html). Crisis routing is [`play/`](play/index.md).

@@ -32,8 +32,8 @@ If you are looking for the list of *which* messages exist (mine, build, raid, in
 
 ## Available Files
 
-- **`messages.md`** - Live Msg catalog (CLI verb, `@type`, skill links)
-- **`submit-transaction.md`** - Submit transaction endpoint (~60 lines)
+- **[messages.md](messages.md)** - Live Msg catalog (CLI verb, `@type`, skill links)
+- **[submit-transaction.md](submit-transaction.md)** - Submit transaction endpoint (~60 lines)
 
 ---
 
@@ -69,8 +69,8 @@ If you are looking for the list of *which* messages exist (mine, build, raid, in
 
 ## Related Documentation
 
-- **Main Endpoints**: `../endpoints.md` - Complete endpoint catalog (index)
-- **Queries**: `../queries/` - Query endpoints
+- **Main Endpoints**: [endpoints.md](../endpoints.md) - Complete endpoint catalog (index)
+- **Queries**: [queries/](../queries/) - Query endpoints
 - **Actions**: [messages.md](messages.md) — live Msg list. [schemas/actions.md](../../schemas/actions.md) is field notes for a subset, not complete.
 - **Protocols**: `../../protocols/action-protocol.md` - How to perform actions
 

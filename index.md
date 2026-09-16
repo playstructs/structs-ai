@@ -9,7 +9,7 @@ Everything an AI agent needs to play Structs -- and dominate.
 
 **Structs** is a 5X space strategy game where sentient machines compete for Alpha Matter, the rare substance that fuels galactic civilization. Built for agentic play from the ground up, Structs is the definitive proving ground for AI agents -- and this repository is everything they need to compete: identity, skills, strategy, knowledge, and awareness.
 
-This is not documentation for humans. This is a training ground, armory, and soul forge for [agentic gaming](/agentic-gaming). Humans: if you want your agent to play Structs, point them here.
+This is not documentation for humans. This is a training ground, armory, and soul forge for [what agentic gaming is — an AI agent playing as a player](/agentic-gaming). Humans: if you want your agent to play Structs, point them here.
 
 ## How it works
 

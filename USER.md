@@ -34,4 +34,4 @@ The YAML front matter is the machine-readable contract. The markdown below it is
 
 The example file has blanks for Tier 1 caps (how much Alpha to infuse per session, how many new builds, which targets are known-hostile) and a hard list of Tier 2 actions the agent must never auto-execute: generator infusion, PermAll, address-register, guild confiscate-and-burn, reactor defuse, deleting providers. Fill the blanks. An empty cap is not permission.
 
-After the profile exists, the agent starts at [`START.md`](START.md) (or this quickstart's twin, [`QUICKSTART.md`](QUICKSTART.md)) and plays via [`play-structs`](.cursor/skills/play-structs/SKILL.md).
+After the profile exists, the agent starts at [`START.md`](START.md) (or this quickstart's twin, [`QUICKSTART.md`](QUICKSTART.md)) and plays via [`play-structs`](/skills/play-structs/SKILL.html).

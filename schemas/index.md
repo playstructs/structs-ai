@@ -14,7 +14,7 @@ Requests, responses, errors, and validation are the HTTP envelope. Game-state, g
 
 ## When to open this page
 
-Open schemas when you are writing a parser, a Guild Stack query, or a fixture. If you are deciding whether to raid, you want [combat](/knowledge/mechanics/combat) and [intel](/skills/structs-intel/SKILL), not a JSON schema.
+Open schemas when you are writing a parser, a Guild Stack query, or a fixture. If you are deciding whether to raid, you want [combat](/knowledge/mechanics/combat) and [intel](/skills/structs-intel/SKILL.html), not a JSON schema.
 
 - [Entity schemas](entities/) -- One file per entity
 - [Minimal schemas](minimal/) -- Essential fields only

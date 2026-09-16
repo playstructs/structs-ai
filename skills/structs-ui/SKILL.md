@@ -18,7 +18,7 @@ the flagship client — not inferred from the API surface. When a doc and that c
 disagree, the codebase wins.
 
 **Not this skill?** If you want to build *structs* — the in-game machines — that is
-[`structs-building`](https://structs.ai/skills/structs-building/SKILL). If you want to
+[`structs-building`](/skills/structs-building/SKILL.html). If you want to
 use the Desktop MCP tools, that is [`TOOLS.md`](https://structs.ai/TOOLS).
 
 ## When to use it

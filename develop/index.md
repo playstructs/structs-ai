@@ -26,7 +26,7 @@ component contracts, and runnable examples.
 - [Tokens](ui/tokens.md) · [Icons](ui/icons.md) · [Components](ui/components.md) · [Runtime](ui/runtime.md)
 - [Gotchas](ui/gotchas.md) — the things that cost real debugging time
 - [Patterns](ui/patterns.md) · [Recipes](ui/recipes.md) · [Examples](ui/examples/README.md)
-- Skill: [structs-ui](../.cursor/skills/structs-ui/SKILL.md)
+- Skill: [structs-ui](/skills/structs-ui/SKILL.html)
 
 ## Build a client
 
@@ -62,7 +62,7 @@ How the flagship client actually works, verified against its source.
 ## Streaming (GRASS)
 
 - [Event types](../api/streaming/event-types.md) · [Event schemas](../api/streaming/event-schemas.md)
-- Skill: [streaming](../.cursor/skills/structs-streaming/SKILL.md)
+- Skill: [streaming](/skills/structs-streaming/SKILL.html)
 
 ## Schemas
 

@@ -176,7 +176,7 @@ Two `auto_build` behaviors matter when reading its logs. It is **command-struct-
 
 **`panic_refine` is the one part of `auto_response` that acts in `advise` mode**, and deliberately so: refining the threatened ore is purely defensive, removes the entire prize, and cannot harm anyone. It also runs in `harden` mode and even when no shot is possible. The three `mode` values are `harden` (refine and alert only), `counter`, and `decapitate` (default — go for the raider's Command Ship).
 
-Two design choices in `auto_response` follow from constraints documented elsewhere in this repo. Shooter selection is limited to the attacked player's own on-station fleet plus anyone already parked at that planet, because **combat is co-located** — the other virtual players' charge bars are irrelevant no matter how full. And detection runs off effect events rather than `struct_attack`, because a real multi-shot exchange exceeds the ~8 KB NATS payload ceiling and arrives as a stub with no attacker fields; the attacker identity is pulled from the Guild API `planet-activity` feed. See [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL).
+Two design choices in `auto_response` follow from constraints documented elsewhere in this repo. Shooter selection is limited to the attacked player's own on-station fleet plus anyone already parked at that planet, because **combat is co-located** — the other virtual players' charge bars are irrelevant no matter how full. And detection runs off effect events rather than `struct_attack`, because a real multi-shot exchange exceeds the ~8 KB NATS payload ceiling and arrives as a stub with no attacker fields; the attacker identity is pulled from the Guild API `planet-activity` feed. See [structs-streaming](/skills/structs-streaming/SKILL.html).
 
 `auto_raid` applies a **friend-or-foe veto before scoring**: your own accounts, allied guilds, and protected players are never targets regardless of what they hold. Those lists are managed with `structs_doctrine {command:"lists"}`.
 
@@ -258,5 +258,5 @@ Switching active guild reloads the frontend against the new config; a cooldown +
 - [`TOOLS.md`](../../TOOLS.md) — environment configuration and how to point an agent at this MCP
 - [`awareness/agent-security.md`](../../awareness/agent-security.md) — agent threat model (localhost auth, adversarial UGC)
 - [`knowledge/infrastructure/guild-stack.md`](guild-stack.md) — the PostgreSQL + GRASS backend this client talks to
-- [`.cursor/skills/structs-streaming/SKILL.md`](../../.cursor/skills/structs-streaming/SKILL.md) — GRASS real-time events the notifications/event feed consume
+- [`.cursor/skills/structs-streaming/SKILL.md`](/skills/structs-streaming/SKILL.html) — GRASS real-time events the notifications/event feed consume
 - [`playbooks/meta/team-operations.md`](../../playbooks/meta/team-operations.md) — multi-player (virtual-player) coordination

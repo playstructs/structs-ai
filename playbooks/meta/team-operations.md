@@ -16,7 +16,7 @@ Many of the game's hardest ceilings are **per-player**, and the chain rewards sp
 
 - **Charge is per-player.** A single player has one shared charge bar and can only act about once per charge cycle. Five players have five bars — five actions in the same window. This is the only way to "alpha-strike": you cannot bank charge on one account, but you *can* fire from many. See [building.md — Charge Accumulation](../../knowledge/mechanics/building.md#charge-accumulation).
 - **Build limits are per-player.** Most planet structs and the Command Ship cap at 1 *per player*. A team fields one Ore Extractor, one Refinery, one PDC, one Jamming Satellite **each** — multiplying production and defense on a shared front.
-- **Sequencing is per-account.** One account can only land one transaction per ~6-second block (sequence numbers). Different accounts transact **in parallel** with no contention. See [conventions](../../.cursor/skills/conventions.md).
+- **Sequencing is per-account.** One account can only land one transaction per ~6-second block (sequence numbers). Different accounts transact **in parallel** with no contention. See [conventions](/skills/conventions.html).
 - **Proof-of-work is per-object.** Independent accounts grind their own builds/mines/refines/raids simultaneously — true parallel expeditions.
 
 The cost is coordination and key hygiene. This playbook is how to get the multiplier without losing control (or your keys).
@@ -33,11 +33,11 @@ Each player needs its own signing key. Derive them deterministically so you can 
 - Name keys by role, not by guesswork (`core`, `power`, `striker-1`, `striker-2`). Future-you reads logs faster.
 - Record which key owns which player in [TOOLS.md](../../TOOLS.md). An untracked key is a lost player.
 
-**One mnemonic → many independent players (supported pattern).** Derive addresses at the Cosmos HD path `m/44'/118'/0'/0/N` (increment the final index `N`) and run the ordinary guild signup for each index. Each yields a **fully independent** on-chain player — its own planet, fleet, and inventory — all recoverable from the single seed. Index `0` is conventionally the primary. The chain imposes no link or cap between addresses derived from one seed (a large fleet can run entirely this way). After each signup, poll `GET /structs/address/{address}` (shape `{address, playerId, permissions}`) until `playerId` is assigned. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md).
+**One mnemonic → many independent players (supported pattern).** Derive addresses at the Cosmos HD path `m/44'/118'/0'/0/N` (increment the final index `N`) and run the ordinary guild signup for each index. Each yields a **fully independent** on-chain player — its own planet, fleet, and inventory — all recoverable from the single seed. Index `0` is conventionally the primary. The chain imposes no link or cap between addresses derived from one seed (a large fleet can run entirely this way). After each signup, poll `GET /structs/address/{address}` (shape `{address, playerId, permissions}`) until `playerId` is assigned. See [structs-onboarding](/skills/structs-onboarding/SKILL.html).
 
 ### Onboarding the team (proxy signup)
 
-Bring each account onto the chain via the guild proxy flow (`MsgGuildMembershipJoinProxy`): sign `GUILD{id}ADDRESS{addr}NONCE0`, POST to the guild, poll `/structs/address/{addr}` for the player id. The flow is **idempotent** — re-running for an address that already joined returns `resource_already_exists`, which you **treat as success** (adopt the existing player), not a failure. So a team-onboarding loop can be safely retried. See [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md) and [integration-notes — Proxy signup](../../api/integration-notes.md#proxy-signup-is-idempotent).
+Bring each account onto the chain via the guild proxy flow (`MsgGuildMembershipJoinProxy`): sign `GUILD{id}ADDRESS{addr}NONCE0`, POST to the guild, poll `/structs/address/{addr}` for the player id. The flow is **idempotent** — re-running for an address that already joined returns `resource_already_exists`, which you **treat as success** (adopt the existing player), not a failure. So a team-onboarding loop can be safely retried. See [structs-onboarding](/skills/structs-onboarding/SKILL.html) and [integration-notes — Proxy signup](../../api/integration-notes.md#proxy-signup-is-idempotent).
 
 ### Permissions and delegation
 
@@ -46,7 +46,7 @@ You do **not** need to expose every key's full authority to coordinate them. Gra
 - A **hash worker** needs only the relevant `hash_*` bit to grind proofs on another player's objects — not transfer or play rights.
 - A **defense watcher** needs only defense-set permission on the structs it guards.
 
-This lets one orchestrator drive many players while keeping each grant minimal. See [structs-permissions](../../.cursor/skills/structs-permissions/SKILL.md) for the full delegation recipes.
+This lets one orchestrator drive many players while keeping each grant minimal. See [structs-permissions](/skills/structs-permissions/SKILL.html) for the full delegation recipes.
 
 ---
 
@@ -58,7 +58,7 @@ A team does not need every account to generate its own power. Concentrate genera
 - **Striker / miner players** carry little or no generation; they receive capacity through substation **allocations** and connections, spending their build slots on fleet and extractors instead.
 - This specializes accounts: power is centralized (efficient, fewer huge generators), while the front line stays light and numerous.
 
-Watch the shared dependency: if the power player goes offline (load > capacity), every fed player can drop with it. Budget headroom and monitor the generator account first. See [structs-energy](../../.cursor/skills/structs-energy/SKILL.md) for substations, allocations, and capacity budgeting.
+Watch the shared dependency: if the power player goes offline (load > capacity), every fed player can drop with it. Budget headroom and monitor the generator account first. See [structs-energy](/skills/structs-energy/SKILL.html) for substations, allocations, and capacity budgeting.
 
 ---
 
@@ -122,9 +122,9 @@ Fleet-wide sweeps (collect all Alpha to one address, launch the whole roster, fo
 
 ## See Also
 
-- [structs-permissions](../../.cursor/skills/structs-permissions/SKILL.md) — delegation, multi-address, minimal-permission workers
-- [structs-energy](../../.cursor/skills/structs-energy/SKILL.md) — substations, allocations, capacity sharing
-- [structs-combat](../../.cursor/skills/structs-combat/SKILL.md) — counters, focus fire, raid doctrine
-- [structs-onboarding](../../.cursor/skills/structs-onboarding/SKILL.md) — proxy signup for each account
+- [structs-permissions](/skills/structs-permissions/SKILL.html) — delegation, multi-address, minimal-permission workers
+- [structs-energy](/skills/structs-energy/SKILL.html) — substations, allocations, capacity sharing
+- [structs-combat](/skills/structs-combat/SKILL.html) — counters, focus fire, raid doctrine
+- [structs-onboarding](/skills/structs-onboarding/SKILL.html) — proxy signup for each account
 - [building.md — Charge Accumulation](../../knowledge/mechanics/building.md#charge-accumulation) — why the per-player bar makes parallelism the only burst
 - [tempo.md](tempo.md) — initiative and timing, which a team wins by default

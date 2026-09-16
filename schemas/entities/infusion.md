@@ -1,6 +1,8 @@
 ---
 title: Infusion entity schema
 description: "The Infusion record: Alpha committed to a reactor or generator, with fuel, power, commission, and defusing."
+sitemap: false
+robots: noindex
 ---
 
 # Infusion Entity Schema

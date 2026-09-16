@@ -5,7 +5,7 @@ description: "Fast formula card for capacity, load, and online status, plus stru
 
 # Power (Quick Reference)
 
-**Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+**Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](/skills/structs-energy/SKILL.html).
 
 ---
 
@@ -89,4 +89,4 @@ Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/
 - [building.md](building.md) — Build power requirements
 - [struct-types.md](../entities/struct-types.md) — Per-struct BuildDraw/PassiveDraw, limits
 - [resources.md](resources.md) — Energy from Alpha Matter
-- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
+- [structs-energy skill](/skills/structs-energy/SKILL.html) — Infusion, substations, offline recovery

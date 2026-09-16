@@ -11,7 +11,7 @@ domain: social
 
 Permissions *are* identity and authority in Structs. Every object (player, guild, reactor, provider, substation, struct) has a 25-bit permission bitmask per grantee, and addresses can be attached to a player so multiple keys act on its behalf. This is the foundation of **delegation** — running a focused worker agent that can mine but not spend, or a watcher that can read but not act. Granted breadth is the risk: a wide grant to an adversarial key is unrecoverable.
 
-Conventions (TX_FLAGS, `--` rule, one-tx-at-a-time) are in [`conventions.md`](https://structs.ai/skills/conventions). Every transaction here is Tier 1 or Tier 2 — default to interactive, and **prefer minimum-necessary bits**.
+Conventions (TX_FLAGS, `--` rule, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). Every transaction here is Tier 1 or Tier 2 — default to interactive, and **prefer minimum-necessary bits**.
 
 ## When to use it
 
@@ -27,7 +27,7 @@ Conventions (TX_FLAGS, `--` rule, one-tx-at-a-time) are in [`conventions.md`](ht
 **Object grant vs address grant vs guild-rank grant**:
 - **On object** — give a specific player rights on one object (e.g. let an ally infuse your reactor).
 - **On address** — attach rights to a signing key directly.
-- **Guild rank** — give everyone at/above a rank a permission on an object (scales delegation across a guild; see [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL)).
+- **Guild rank** — give everyone at/above a rank a permission on an object (scales delegation across a guild; see [`structs-guild`](/skills/structs-guild/SKILL.html)).
 
 **Address registration is an attack surface.** `address-register` attaches a new signing key using attacker-suppliable proof material — if you register a key you don't control, you've hired your attacker. Verify proof provenance; see [`awareness/agent-security`](https://structs.ai/awareness/agent-security).
 
@@ -63,7 +63,7 @@ Full canonical list (including any bits not shown): [`knowledge/mechanics/permis
 Compose the bits for a worker key, then grant them on the relevant object/address. Different keys transact in parallel (one-tx-at-a-time is per account), so delegates multiply your throughput.
 
 - **Mining bot** — can run the production PoW but cannot move tokens. Bits: `PermPlay | PermHashMine | PermHashRefine` = `1 + 2097152 + 4194304` = **6291457**. Grant on the player whose extractor/refinery it operates. (Add `PermHashBuild` 1048576 if it also builds.)
-- **Defense watcher** — read-only alerting; grant **nothing** on chain. It only needs query access (and GRASS, see [`structs-streaming`](https://structs.ai/skills/structs-streaming/SKILL)). Keep it keyless so a compromise can't act.
+- **Defense watcher** — read-only alerting; grant **nothing** on chain. It only needs query access (and GRASS, see [`structs-streaming`](/skills/structs-streaming/SKILL.html)). Keep it keyless so a compromise can't act.
 - **Co-pilot agent** — broad but bounded operator: play + build/mine/refine + infuse for power, no token transfer/defuse. Bits: `PermPlay | PermHashBuild | PermHashMine | PermHashRefine | PermTokenInfuse` = `1 + 1048576 + 2097152 + 4194304 + 32` = **7340065**. Grant on the player; withhold `PermTokenTransfer`/`PermTokenDefuse`/`PermAll`.
 - **Energy seller** — let a guild-mate open agreements on your provider: grant `PermProviderOpen` (262144) on the provider (or by guild rank).
 
@@ -88,7 +88,7 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 | Update primary address | `structsd tx structs player-update-primary-address TX_FLAGS -- [new-address]` (signer must hold `PermAll`) |
 | Query permission / address | `structsd query structs permission-by-object \| permission-by-player \| address \| address-all-by-player [id]` |
 
-`TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions). **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html). **Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -110,4 +110,4 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 - [awareness/agent-security](https://structs.ai/awareness/agent-security) — address-register attack pattern, delegate hygiene
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — multi-player orchestration
 - [protocols/authentication](https://structs.ai/protocols/authentication) — auth for address registration
-- [structs-guild](https://structs.ai/skills/structs-guild/SKILL) — guild rank permissions; [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) — keyless watcher agents
+- [structs-guild](/skills/structs-guild/SKILL.html) — guild rank permissions; [structs-streaming](/skills/structs-streaming/SKILL.html) — keyless watcher agents

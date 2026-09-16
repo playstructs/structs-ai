@@ -8,7 +8,7 @@ This directory is yours. Files here persist across sessions. See [`awareness/con
 
 ## Why some files are JSON
 
-Operational state that scripts and agents read every tick is stored as **JSON** so it can be parsed without guessing. Narrative (session logs, intel dossiers, handoffs) stays **Markdown**. The charge model is baked into the shapes below: charge is a **per-player** bar (`CurrentBlockHeight - lastActionBlock`), never per-struct — see [`conventions.md`](../.cursor/skills/conventions.md#charge-is-per-player-not-per-struct).
+Operational state that scripts and agents read every tick is stored as **JSON** so it can be parsed without guessing. Narrative (session logs, intel dossiers, handoffs) stays **Markdown**. The charge model is baked into the shapes below: charge is a **per-player** bar (`CurrentBlockHeight - lastActionBlock`), never per-struct — see [`conventions.md`](/skills/conventions.html#charge-is-per-player-not-per-struct).
 
 ---
 
@@ -91,7 +91,7 @@ Written at session end to measure whether you are excelling. Template lives in t
 
 - `YYYY-MM-DD-HHMM-context-handoff.md` — handoff snapshots (template in context-handoff.md)
 - `YYYY-MM-DD-*.md` — session logs: key actions, decisions, outcomes
-- `intel/` — target dossiers and territory notes (see [`structs-intel`](../.cursor/skills/structs-intel/SKILL.md) and `intel/README.md`)
+- `intel/` — target dossiers and territory notes (see [`structs-intel`](/skills/structs-intel/SKILL.html) and `intel/README.md`)
 - `charge-tracker.md` — optional human-readable view of `player.json`'s charge plan (per-player)
 
 ---

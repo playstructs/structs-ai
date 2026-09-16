@@ -196,6 +196,6 @@ If any command fails, revisit the corresponding step above.
 ## See Also
 
 - [TOOLS](https://structs.ai/TOOLS) — Environment configuration (servers, account, after structsd is installed)
-- [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL) — Player creation and first builds (requires structsd)
+- [structs-onboarding skill](/skills/structs-onboarding/SKILL.html) — Player creation and first builds (requires structsd)
 - [structs-desktop](https://github.com/playstructs/structs-desktop) — Desktop app for human players; embeds the MCP server agents connect to (see [TOOLS](https://structs.ai/TOOLS))
 - [structsd releases](https://github.com/playstructs/structsd/releases) — Prebuilt binaries per OS/arch and changelog per tag

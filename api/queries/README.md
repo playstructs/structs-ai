@@ -28,40 +28,40 @@ Queries are reads. They do not spend charge the way transactions do, but they st
 
 ### Core Entity Queries
 
-- **`player.md`** - Player query endpoints (~50 lines)
-- **`planet.md`** - Planet query endpoints (~60 lines)
-- **`struct.md`** - Struct query endpoints (~40 lines)
-- **`fleet.md`** - Fleet query endpoints (~50 lines)
-- **`guild.md`** - Guild query endpoints (~40 lines)
+- **[player.md](player.md)** - Player query endpoints (~50 lines)
+- **[planet.md](planet.md)** - Planet query endpoints (~60 lines)
+- **[struct.md](struct.md)** - Struct query endpoints (~40 lines)
+- **[fleet.md](fleet.md)** - Fleet query endpoints (~50 lines)
+- **[guild.md](guild.md)** - Guild query endpoints (~40 lines)
 
 ### Resource Entity Queries
 
-- **`reactor.md`** - Reactor query endpoints (~40 lines) ✅
-- **`substation.md`** - Substation query endpoints (~40 lines) ✅
+- **[reactor.md](reactor.md)** - Reactor query endpoints (~40 lines)
+- **[substation.md](substation.md)** - Substation query endpoints (~40 lines)
 
 ### Economic Entity Queries
 
-- **`provider.md`** - Provider query endpoints
-- **`agreement.md`** - Agreement query endpoints
-- **`allocation.md`** - Allocation query endpoints
-- **`infusion.md`** - Infusion query endpoints (reactor/generator)
+- **[provider.md](provider.md)** - Provider query endpoints
+- **[agreement.md](agreement.md)** - Agreement query endpoints
+- **[allocation.md](allocation.md)** - Allocation query endpoints
+- **[infusion.md](infusion.md)** - Infusion query endpoints (reactor/generator)
 
 ### Attributes and grid
 
-- **`grid.md`** - Grid attribute queries (capacity, load, ore)
-- **`struct-type.md`** - Struct type catalog
-- **`struct-attribute.md`** - Per-struct health/status/ambit
-- **`planet-attribute.md`** - Per-planet clocks, shields, slots
-- **`guild-membership-application.md`** - Invite/request rows
+- **[grid.md](grid.md)** - Grid attribute queries (capacity, load, ore)
+- **[struct-type.md](struct-type.md)** - Struct type catalog
+- **[struct-attribute.md](struct-attribute.md)** - Per-struct health/status/ambit
+- **[planet-attribute.md](planet-attribute.md)** - Per-planet clocks, shields, slots
+- **[guild-membership-application.md](guild-membership-application.md)** - Invite/request rows
 
 ### System Queries
 
-- **`system.md`** - Block height, params, guild charter, validate-signature
+- **[system.md](system.md)** - Block height, params, guild charter, validate-signature
 
 ### Other Queries
 
-- **`address.md`** - Address query endpoints (~50 lines) ✅
-- **`permission.md`** - Permission query endpoints (~70 lines) ✅
+- **[address.md](address.md)** - Address query endpoints (~50 lines)
+- **[permission.md](permission.md)** - Permission query endpoints (~70 lines)
 
 ---
 
@@ -108,9 +108,9 @@ Queries are reads. They do not spend charge the way transactions do, but they st
 
 ## Related Documentation
 
-- **Main Endpoints**: `../endpoints.md` - Endpoint index
+- **Main Endpoints**: [endpoints.md](../endpoints.md) - Endpoint index
 - **Transactions**: [messages.md](../transactions/messages.md) — live Msg list
-- **Webapp**: `../webapp/` - Webapp API endpoints
+- **Webapp**: [webapp/](../webapp/) - Webapp API endpoints
 - **CLI catalog**: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md)
 
 ---

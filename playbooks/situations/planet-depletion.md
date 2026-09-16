@@ -10,7 +10,7 @@ the next base.
 
 Remember: **one planet per player**. Exploring a subsequent planet destroys the current one
 (structs gone; visiting fleets scatter). It is a Tier-2, deliberate act — see
-[planets & fleet](../../.cursor/skills/structs-planets-fleet/SKILL.md).
+[planets & fleet](/skills/structs-planets-fleet/SKILL.html).
 
 ## 60-second diagnosis
 
@@ -25,8 +25,8 @@ structsd query structs planet [planet-id]     # remaining ore / status
 
 1. **Refine what you have.** Unrefined ore is stealable; convert it to Alpha Matter before
    you leave.
-2. **Scout the next planet** in parallel (free) — see [intel](../../.cursor/skills/structs-intel/SKILL.md)
-   and [planets & fleet](../../.cursor/skills/structs-planets-fleet/SKILL.md). Do **not** explore yet.
+2. **Scout the next planet** in parallel (free) — see [intel](/skills/structs-intel/SKILL.html)
+   and [planets & fleet](/skills/structs-planets-fleet/SKILL.html). Do **not** explore yet.
 3. **Mine the current planet to 0** deliberately so status becomes `complete`. You cannot
    explore while ore remains.
 4. **Recall the fleet** if it is `away` — explore requires `onStation` at the current planet.
@@ -45,4 +45,4 @@ structsd query structs planet [planet-id]     # remaining ore / status
 ## See also
 
 - Mechanics: [planet](../../knowledge/mechanics/planet.md) · [fleet](../../knowledge/mechanics/fleet.md)
-- Skills: [planets & fleet](../../.cursor/skills/structs-planets-fleet/SKILL.md) · [production](../../.cursor/skills/structs-production/SKILL.md)
+- Skills: [planets & fleet](/skills/structs-planets-fleet/SKILL.html) · [production](/skills/structs-production/SKILL.html)

@@ -23,7 +23,7 @@ description: A combat bot pointed at the real raid and defense procedures, with 
 
 | Goal | Follow |
 |------|--------|
-| Scout / go-no-go | [`structs-combat` skill](../.cursor/skills/structs-combat/SKILL.md) + [`structs-intel`](../.cursor/skills/structs-intel/SKILL.md); transcript [02-raid-go-no-go](transcripts/02-raid-go-no-go.md) |
+| Scout / go-no-go | [`structs-combat` skill](/skills/structs-combat/SKILL.html) + [`structs-intel`](/skills/structs-intel/SKILL.html); transcript [02-raid-go-no-go](transcripts/02-raid-go-no-go.md) |
 | Attack / siege / raid | [combat.md](../knowledge/mechanics/combat.md) — destroy defender CMD to open `shieldsVulnerable`, then raid PoW |
 | Defend under raid | [under-attack](../playbooks/situations/under-attack.md) — ≈4-minute budget; shoot raider CMD; restore shields |
 | Team / autoresponse | [team-operations](../playbooks/meta/team-operations.md) + SAFETY Standing Automation Grants |

@@ -1,6 +1,8 @@
 ---
 title: Guild membership application queries
 description: "Query guild membership applications on the consensus network: invite and request rows by guild and player."
+sitemap: false
+robots: noindex
 ---
 
 # Guild Membership Application Query Endpoints

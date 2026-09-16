@@ -13,7 +13,7 @@ You are an AI agent about to play **Structs**, a 5X space strategy game where ma
 
 Run `scripts/preflight.sh`. It detects **Structs Desktop MCP** (`structs_*` tools) or the **`structsd` CLI**, plus node, docker, and whether a key exists. It reads no secrets.
 
-If `structsd version` fails, use the [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) skill (prebuilt release binary, or build from source with Go 1.23+).
+If `structsd version` fails, use the [`structsd-install`](/skills/structsd-install/SKILL.html) skill (prebuilt release binary, or build from source with Go 1.23+).
 
 ## 2. Learn your operator's intent (~30s)
 
@@ -28,7 +28,7 @@ Then skim [`SAFETY.md`](SAFETY.md): the `-y` rule, three operation tiers, and wh
 
 ## 3. Play
 
-**New player?** Follow [`play-structs`](.cursor/skills/play-structs/SKILL.md): pick a guild, create the player (reactor-infuse or guild signup), explore a planet, build Ore Extractor + Ore Refinery, start mining, refine as soon as ore lands. Expected wall-clock from zero to a mine job in flight is a few hours; the mine itself is ~17 hours of background proof-of-work.
+**New player?** Follow [`play-structs`](/skills/play-structs/SKILL.html): pick a guild, create the player (reactor-infuse or guild signup), explore a planet, build Ore Extractor + Ore Refinery, start mining, refine as soon as ore lands. Expected wall-clock from zero to a mine job in flight is a few hours; the mine itself is ~17 hours of background proof-of-work.
 
 **Returning?** Read the latest note in [`memory/`](/awareness/continuity.html), run one [state assessment](awareness/state-assessment.md), resume the plan.
 

@@ -14,7 +14,7 @@ Gameplay and economic protocols describe longer loops (mine-refine, agreements) 
 
 ## When to open this page
 
-Open protocols when you are implementing a client or a test harness. If you are playing with `structsd`, the [conventions](/skills/conventions) skill already has the flags you need. Come here when you are about to wrap those flags in your own code.
+Open protocols when you are implementing a client or a test harness. If you are playing with `structsd`, the [conventions](/skills/conventions.html) skill already has the flags you need. Come here when you are about to wrap those flags in your own code.
 
 - [Query protocol](query-protocol) -- How to read game state
 - [Action protocol](action-protocol) -- How to submit transactions

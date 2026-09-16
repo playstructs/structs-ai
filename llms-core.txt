@@ -20,18 +20,19 @@ scripts/preflight.sh
 
 This detects whether you have **Structs Desktop MCP** (the `structs_*` tools) or the
 **`structsd` CLI**, plus node/docker/keys. It reads no secrets. If `structsd` is missing,
-use the [`structsd-install`](.cursor/skills/structsd-install/SKILL.md) skill.
+use the [`structsd-install`](/skills/structsd-install/SKILL.html) skill.
 
 ## 2. Learn your operator's intent (~30s)
 
 Read **`config/operator.md`** (your human copies it from
 [`config/operator.example.md`](https://github.com/playstructs/structs-ai/blob/main/config/operator.example.md)). It sets your **goals**, **risk**,
-and **autonomy** — what you may do without asking. Then skim **[`SAFETY.md`](SAFETY.md)**: the
+and **autonomy** — what you may do without asking. Older prompts look for [USER.md](USER.md)
+(that profile) and [IDENTITY.md](IDENTITY.md) (runtime state in `memory/`). Then skim **[`SAFETY.md`](SAFETY.md)**: the
 chain has no undo, so know the approval rules before you sign.
 
 ## 3. Play
 
-- **New player?** Follow the **[`play-structs`](.cursor/skills/play-structs/SKILL.md)** skill:
+- **New player?** Follow the **[`play-structs`](/skills/play-structs/SKILL.html)** skill:
   pick a guild, create your player, build your first miner + refinery, refine Alpha Matter.
 - **Returning?** Read your latest note in [`memory/`](/awareness/continuity.html), run one state assessment
   ([`awareness/state-assessment.md`](awareness/state-assessment.md)), then resume.
@@ -255,7 +256,7 @@ The signing key authorizes everything. Treat it accordingly.
 
 `structsd` is the boundary between you and the chain. Install only via the audited path:
 
-- [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill (ClawScan **Pass**)
+- [`structsd-install`](/skills/structsd-install/SKILL.html) skill (ClawScan **Pass**)
 - Prebuilt releases at <https://github.com/playstructs/structsd/releases>
 
 A malicious or modified `structsd` can sign anything in your name. Do not run binaries from untrusted sources.
@@ -477,7 +478,7 @@ once per session to detect what's available (it writes `config/environment.json`
 |------|-------------------|-------------------|
 | Read state / execute an action / hash | **Structs Desktop MCP** (`structs_action`, `structs_intel`, `structs_hash`) | `structsd` CLI (`tx`/`query`) |
 | Real-time threat/event response | **GRASS** / `structs_events` | poll with `structsd query` |
-| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](https://structs.ai/skills/structs-intel/SKILL) |
+| Galaxy-scale / low-latency intel | **Guild Stack** (PostgreSQL) | `structsd query` + [intel skill](/skills/structs-intel/SKILL.html) |
 | Build a tool / integrate | webapp/chain **API** | — |
 
 Rules of thumb: prefer **MCP** when it's connected (it adds preflight checks, GPU hashing,
@@ -503,7 +504,7 @@ structsd tx structs struct-activate TX_FLAGS -- 6-10
 Build, mine, refine, and raid all require proof-of-work. Difficulty decays with age, so the cheapest path is to **initiate early and compute later**. The `-D` flag (1-64) tells the compute helper to wait until difficulty drops to that level before hashing.
 
 - **`-D 3` is the canonical default for every operation.** At D=3 the hash is trivially instant and **zero CPU is wasted** — the wait is just the age clock, not grinding. Use this unless you have a specific reason not to.
-- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](https://structs.ai/skills/play-structs/SKILL)). Do not scatter other `-D` values through your work.
+- **`-D 1`** is the only documented override: it waits slightly longer for an even lower target. It exists for the most CPU-constrained environments (e.g. the low-power onboarding path in [`play-structs`](/skills/play-structs/SKILL.html)). Do not scatter other `-D` values through your work.
 - Higher `-D` values (8+) start sooner but burn exponentially more compute. The cliff between D=8 and D=9 is the single most important PoW fact — never set `-D` above 8.
 
 Full decay tables: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building). **Never block on PoW** — launch compute in a background terminal and track it in `memory/jobs/` (see [awareness/async-operations](https://structs.ai/awareness/async-operations)).
@@ -526,7 +527,7 @@ Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command S
 
 ## One transaction at a time per account
 
-The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+The chain tracks a sequence number per account. Submitting two transactions from the **same** account before the first is included causes `account sequence mismatch`. Wait ~6 seconds (one block) between transactions from one key. Different accounts can transact in parallel — this is the basis of multi-agent and delegation play (see [`structs-permissions`](/skills/structs-permissions/SKILL.html)).
 
 ---
 
@@ -614,7 +615,7 @@ Read your operator profile `config/operator.md` (copy it from `config/operator.e
 
 Run `structsd version`. If it works, skip ahead.
 
-If not, follow the [structsd-install skill](https://structs.ai/skills/structsd-install/SKILL).
+If not, follow the [structsd-install skill](/skills/structsd-install/SKILL.html).
 
 ---
 
@@ -632,7 +633,7 @@ Pick one with a `guild_api` service (needed for signup). [Orbital Hydro](https:/
 
 ## Step 3: Create Your Account
 
-Follow the [structs-onboarding skill](https://structs.ai/skills/structs-onboarding/SKILL). It handles key creation, guild signup, and player ID confirmation.
+Follow the [structs-onboarding skill](/skills/structs-onboarding/SKILL.html). It handles key creation, guild signup, and player ID confirmation.
 
 Short version:
 
@@ -668,7 +669,7 @@ structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5
 
 Planet builds need CMD online + fleet `onStation` (gifted at creation — verify before initiate). You need an Ore Extractor and Ore Refinery. Use `-D 1` here for gentlest CPU.
 
-> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](https://structs.ai/skills/conventions)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
+> Note on `-D`: `-D 3` is the canonical default everywhere else (see [conventions](/skills/conventions.html)). This onboarding path deliberately uses `-D 1`, the one documented override for the most CPU-constrained environments — it waits slightly longer for an even lower target. Both waste effectively zero CPU; the wait is the age clock, not grinding.
 
 ### Ore Extractor (type 14)
 
@@ -748,27 +749,27 @@ You're mining. Now expand your capabilities:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-production](https://structs.ai/skills/structs-production/SKILL) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
-| [structs-building](https://structs.ai/skills/structs-building/SKILL) | Build any struct type, defense placement, stealth, generator infusion |
-| [structs-planets-fleet](https://structs.ai/skills/structs-planets-fleet/SKILL) | Planet evaluation, exploration, fleet movement, evacuation |
-| [structs-energy](https://structs.ai/skills/structs-energy/SKILL) | Capacity management, offline recovery, substations, infusion |
-| [structs-combat](https://structs.ai/skills/structs-combat/SKILL) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
+| [structs-production](/skills/structs-production/SKILL.html) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
+| [structs-building](/skills/structs-building/SKILL.html) | Build any struct type, defense placement, stealth, generator infusion |
+| [structs-planets-fleet](/skills/structs-planets-fleet/SKILL.html) | Planet evaluation, exploration, fleet movement, evacuation |
+| [structs-energy](/skills/structs-energy/SKILL.html) | Capacity management, offline recovery, substations, infusion |
+| [structs-combat](/skills/structs-combat/SKILL.html) | Attacks, raids (shield-vulnerability doctrine), defense, ambit targeting |
 
 **Economy & social**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
-| [structs-guild](https://structs.ai/skills/structs-guild/SKILL) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
-| [structs-permissions](https://structs.ai/skills/structs-permissions/SKILL) | Permissions, multi-address management, delegate agents |
-| [structs-intel](https://structs.ai/skills/structs-intel/SKILL) | Scouting players/planets/guilds; persisting intel to memory |
+| [structs-commerce](/skills/structs-commerce/SKILL.html) | Providers, agreements, reactor staking, guild Central Bank, token transfers |
+| [structs-guild](/skills/structs-guild/SKILL.html) | Choosing/joining a guild, ranks, membership, UGC moderation, banking |
+| [structs-permissions](/skills/structs-permissions/SKILL.html) | Permissions, multi-address management, delegate agents |
+| [structs-intel](/skills/structs-intel/SKILL.html) | Scouting players/planets/guilds; persisting intel to memory |
 
 **Advanced infra**:
 
 | Skill | What It Does |
 |-------|-------------|
-| [structs-streaming](https://structs.ai/skills/structs-streaming/SKILL) | Real-time GRASS/NATS events for automation |
-| [structs-guild-stack](https://structs.ai/skills/structs-guild-stack/SKILL) | Local node + PostgreSQL for advanced queries |
+| [structs-streaming](/skills/structs-streaming/SKILL.html) | Real-time GRASS/NATS events for automation |
+| [structs-guild-stack](/skills/structs-guild-stack/SKILL.html) | Local node + PostgreSQL for advanced queries |
 
 ### Knowledge Base
 
@@ -836,7 +837,7 @@ redirect_from:
 
 Production is the engine of everything: you mine **ore** from your planet, refine it into **Alpha Matter**, and Alpha Matter funds power, structs, trade, and guild collateral. The whole game's PvP tension lives in one fact — **ore is stealable, Alpha Matter is not** — and mining/refining are multi-hour proof-of-work expeditions, so production is fundamentally a *scheduling and risk* problem, not a clicking problem.
 
-Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player charge bar, one-tx-at-a-time) are assumed from [`conventions.md`](https://structs.ai/skills/conventions). Read it once.
+Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player charge bar, one-tx-at-a-time) are assumed from [`conventions.md`](/skills/conventions.html). Read it once.
 
 ## When to use it
 
@@ -848,12 +849,12 @@ Conventions (TX_FLAGS, the `--` rule, the `-D 3` PoW policy, the per-player char
 
 ## Decisions
 
-**Beginner default**: One Ore Extractor + one Ore Refinery (both 1-per-player). Mine, and the *instant* mining lands, start refining — never let ore sit. Refine at `-D 3`. Keep your Command Ship online the whole time so the planet is unraidable (see [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL)). That alone wins the early resource game.
+**Beginner default**: One Ore Extractor + one Ore Refinery (both 1-per-player). Mine, and the *instant* mining lands, start refining — never let ore sit. Refine at `-D 3`. Keep your Command Ship online the whole time so the planet is unraidable (see [`structs-combat`](/skills/structs-combat/SKILL.html)). That alone wins the early resource game.
 
 **The core trade-off — ore exposure vs. CPU**: mined ore is vulnerable for the entire refine window. At `-D 3` that's ~34 hours but zero wasted CPU; at `-D 8` it's ~15 hours but burns real compute. Default to `-D 3` *and protect the window* rather than racing it.
 
 **Advanced considerations**:
-- **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](https://structs.ai/skills/structs-permissions/SKILL)).
+- **Throughput is capped per player** — 1 Ore Extractor, 1 Ore Refinery, fixed 1 ore/cycle. You don't scale by building more extractors (you can't). You scale by: tighter cycle cadence (always have something aging), refining during the owner's off-hours, and **multi-account orchestration** (separate keys mine in parallel — different accounts transact independently; see [`structs-permissions`](/skills/structs-permissions/SKILL.html)).
 - **Harden the window** with bunkers/OSGs (shield/PoW only — not ore vaults). Real protection: refine promptly + CMD online + fleet onStation. Mine and refine are **rejected** while a visitor heads the raid queue (`under_raid`); do not retry compute mid-raid. See [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Keep a reserve.** Hold ~20-30% of Alpha Matter liquid for emergencies (power, rebuilds) rather than infusing everything.
 - Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich) and [`resource-scarce`](https://structs.ai/playbooks/situations/resource-scarce).
@@ -890,8 +891,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
      > memory/jobs/refine-[refinery-id].log 2>&1 & echo $! > memory/jobs/refine-[refinery-id].pid
    ```
 
-6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](https://structs.ai/skills/structs-combat/SKILL).
-7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](https://structs.ai/skills/structs-energy/SKILL)), stake/sell ([`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL)), or hold reserve.
+6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](/skills/structs-combat/SKILL.html).
+7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](/skills/structs-energy/SKILL.html)), stake/sell ([`structs-commerce`](/skills/structs-commerce/SKILL.html)), or hold reserve.
 
 ### Charge-bar scheduling
 
@@ -904,7 +905,7 @@ When `currentOre` hits 0 the planet becomes `complete`: all its structs are dest
 - **Squeeze** the last ore if you can refine it before depletion forces you off, **or**
 - **Move first** — relocate critical structs / evacuate, then explore.
 
-Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-planets-fleet/SKILL) to chart and claim a new planet. If an extractor/refinery is destroyed mid-job, progress **pauses** (mined/refined amounts aren't lost) until you rebuild.
+Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.html) to chart and claim a new planet. If an extractor/refinery is destroyed mid-job, progress **pauses** (mined/refined amounts aren't lost) until you rebuild.
 
 ## Commands reference
 
@@ -917,9 +918,9 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 | Query struct | `structsd query structs struct [id]` |
 | Query player (Alpha + storedOre) | `structsd query structs player [player-id]` |
 
-`TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](https://structs.ai/skills/conventions). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
+`TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](/skills/conventions.html). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
 
-**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a configured signing key.
+**Requires**: [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a configured signing key.
 
 ## Verification
 
@@ -943,7 +944,7 @@ Then hand off to [`structs-planets-fleet`](https://structs.ai/skills/structs-pla
 - [knowledge/mechanics/planet](https://structs.ai/knowledge/mechanics/planet) — depletion, raid vulnerability
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) / [resource-scarce](https://structs.ai/playbooks/situations/resource-scarce) — production strategy
 - [awareness/async-operations](https://structs.ai/awareness/async-operations) — background PoW, job tracking, pipeline scheduling
-- [structs-combat](https://structs.ai/skills/structs-combat/SKILL) — protecting the ore window; [structs-energy](https://structs.ai/skills/structs-energy/SKILL) / [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — spending Alpha
+- [structs-combat](/skills/structs-combat/SKILL.html) — protecting the ore window; [structs-energy](/skills/structs-energy/SKILL.html) / [structs-commerce](/skills/structs-commerce/SKILL.html) — spending Alpha
 
 </document>
 
@@ -965,9 +966,9 @@ redirect_from:
 
 # Energy skill: capacity, load, infusion
 
-Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
+Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](/skills/structs-commerce/SKILL.html).
 
-Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](https://structs.ai/skills/conventions). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (power/economy reads) and `structs_action` (infuse, connect) — the `structsd` commands below are the complete fallback. See [interface routing](https://structs.ai/skills/conventions#choosing-your-interface-capability-aware).
+Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (power/economy reads) and `structs_action` (infuse, connect) — the `structsd` commands below are the complete fallback. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
 > **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx.
 
@@ -1081,7 +1082,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 | Query reactor | `structsd query structs reactor [id]` |
 | Query substation / allocations | `structsd query structs substation [id]` / `allocation-all-by-source [id]` |
 
-`TX_FLAGS` per [`conventions.md`](https://structs.ai/skills/conventions); power ops cascade, so default to interactive even on routine ones. **Requires** [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+`TX_FLAGS` per [`conventions.md`](/skills/conventions.html); power ops cascade, so default to interactive even on routine ones. **Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -1102,7 +1103,7 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 - [knowledge/mechanics/power](https://structs.ai/knowledge/mechanics/power) — capacity/load/online quick formula card
 - [knowledge/mechanics/resources](https://structs.ai/knowledge/mechanics/resources) — Alpha → energy conversion rates
 - [playbooks/situations/resource-rich](https://structs.ai/playbooks/situations/resource-rich) — infusion strategy
-- [structs-commerce](https://structs.ai/skills/structs-commerce/SKILL) — selling energy, buying via agreement, the flywheel; [structs-building](https://structs.ai/skills/structs-building/SKILL) — power pre-check
+- [structs-commerce](/skills/structs-commerce/SKILL.html) — selling energy, buying via agreement, the flywheel; [structs-building](/skills/structs-building/SKILL.html) — power pre-check
 
 </document>
 
@@ -1239,7 +1240,7 @@ description: "Fast formula card for capacity, load, and online status, plus stru
 
 # Power (Quick Reference)
 
-**Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL).
+**Purpose**: Fast formula card for capacity, load, and online status. For the full system — units, infusion 96/4, substation `connectionCapacity` dilution, allocations, and the `GridCascade` brownout — see [energy.md](energy.md). For workflows (infusing, wiring substations, offline recovery) see the [structs-energy skill](/skills/structs-energy/SKILL.html).
 
 ---
 
@@ -1323,7 +1324,7 @@ Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/
 - [building.md](building.md) — Build power requirements
 - [struct-types.md](../entities/struct-types.md) — Per-struct BuildDraw/PassiveDraw, limits
 - [resources.md](resources.md) — Energy from Alpha Matter
-- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
+- [structs-energy skill](/skills/structs-energy/SKILL.html) — Infusion, substations, offline recovery
 
 </document>
 
@@ -1336,7 +1337,7 @@ description: "The canonical energy system: units, the online equation, the 96/4 
 
 # Energy mechanics: infusion and brownout
 
-**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
+**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](/skills/structs-energy/SKILL.html) is the action playbook.
 
 ---
 
@@ -1476,7 +1477,7 @@ When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it *
 | Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
 | Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
 
-Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) for the full workflows and offline-recovery procedure.
+Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](/skills/structs-energy/SKILL.html) for the full workflows and offline-recovery procedure.
 
 Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Limit` are in [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
 
@@ -1489,7 +1490,7 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 - [building.md](building.md) — Build power requirements, charge, slots
 - [resources.md](resources.md) — Alpha → energy conversion
 - [energy-market.md](../economy/energy-market.md) — Agreements, providers, pricing
-- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
+- [structs-energy skill](/skills/structs-energy/SKILL.html) — Infusion, substations, offline recovery
 
 </document>
 
@@ -1502,7 +1503,7 @@ description: "The survival card: what an attacker can actually take, what stops 
 
 # Defense (Quick Reference)
 
-**Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](https://structs.ai/skills/structs-combat/SKILL).
+**Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](/skills/structs-combat/SKILL.html).
 
 ---
 

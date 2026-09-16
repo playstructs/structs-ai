@@ -6,7 +6,7 @@ description: A full transcript of deciding whether to raid a neighbour for ore. 
 # Transcript 02 — Raid Go/No-Go
 
 **Goal**: Decide whether to raid a neighbor's planet for ore.
-**Skills**: [structs-intel](../../.cursor/skills/structs-intel/SKILL.md), [structs-combat](../../.cursor/skills/structs-combat/SKILL.md).
+**Skills**: [structs-intel](/skills/structs-intel/SKILL.html), [structs-combat](/skills/structs-combat/SKILL.html).
 **Why it's "golden"**: the agent scouts before committing hours of proof-of-work, applies the shield-vulnerability gate, does the target economics, and **walks away** when the numbers don't work — discipline, not reflex.
 
 ---

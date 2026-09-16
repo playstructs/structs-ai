@@ -66,8 +66,8 @@ This directory contains machine-readable visual content for AI agents. Visual co
 
 ### Reference
 
-- **`reference/`** - Visual content index
-  - `visual-index.md` - All visual content indexed
+- **[reference/](reference/visual-index.md)** - Visual content index
+  - [visual-index.md](reference/visual-index.md) - All visual content indexed
 
 ---
 

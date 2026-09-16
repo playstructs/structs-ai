@@ -24,8 +24,8 @@ If you have an error *string*, start at the [error index](../play/errors.md) or 
 ## Quick Start
 
 1. **Identify Issue**: What action failed?
-2. **Check Common Issues**: `common-issues.md` - Find your issue
-3. **Check Error Codes**: `error-codes.md` - Understand error codes
+2. **Check Common Issues**: [common-issues.md](common-issues.md) - Find your issue
+3. **Check Error Codes**: [error-codes.md](error-codes.md) - Understand error codes
 4. **Follow Solution**: Apply recommended solution
 5. **Verify Fix**: Confirm issue resolved
 
@@ -35,14 +35,14 @@ If you have an error *string*, start at the [error index](../play/errors.md) or 
 
 ### Core Guides
 
-- **`common-issues.md`** - Common issues and solutions
-- **`error-codes.md`** - Error code reference
+- **[common-issues.md](common-issues.md)** - Common issues and solutions
+- **[error-codes.md](error-codes.md)** - Error code reference
 
 ### Feature-Specific Troubleshooting
 
-- **`reactor-staking-issues.md`** - Reactor staking and validation delegation troubleshooting
-- **`permission-issues.md`** - Hash permission and permission bit manipulation troubleshooting
-- **`edge-cases.md`** - Edge cases and gotchas
+- **[reactor-staking-issues.md](reactor-staking-issues.md)** - Reactor staking and validation delegation troubleshooting
+- **[permission-issues.md](permission-issues.md)** - Hash permission and permission bit manipulation troubleshooting
+- **[edge-cases.md](edge-cases.md)** - Edge cases and gotchas
 
 ---
 

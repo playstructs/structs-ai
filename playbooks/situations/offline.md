@@ -26,7 +26,7 @@ structsd query structs player [player-id]      # compare load vs capacity, onlin
    `struct-deactivate` / `struct-deactivate-batch` cost 0 charge and work while offline.
    Priority to keep: defense and your Command Ship.
 2. **Recover capacity:** if a reactor/agreement dropped, restore it. If you have Alpha,
-   infuse for more capacity (see [energy skill](../../.cursor/skills/structs-energy/SKILL.md)).
+   infuse for more capacity (see [energy skill](/skills/structs-energy/SKILL.html)).
 3. **Re-balance:** bring structs back online one at a time, checking headroom after each.
 4. **Verify:** re-query the player; confirm `online` and load < capacity.
 
@@ -39,5 +39,5 @@ structsd query structs player [player-id]      # compare load vs capacity, onlin
 
 ## See also
 
-- Skill: [energy](../../.cursor/skills/structs-energy/SKILL.md)
+- Skill: [energy](/skills/structs-energy/SKILL.html)
 - Mechanics: [power](../../knowledge/mechanics/power.md) · [energy](../../knowledge/mechanics/energy.md)

@@ -40,7 +40,7 @@ Your `structsd` CLI talks to whatever node is configured in `~/.structs/config/c
 **Mitigation**:
 - Verify `chain_id` matches what `TOOLS.md` documents: `structsd status` returns the node's chain ID and latest block.
 - Prefer TLS endpoints (`https://`, `wss://`) over plaintext.
-- Prefer **self-hosted** via the [Guild Stack](../.cursor/skills/structs-guild-stack/SKILL) — your own indexed copy of the chain.
+- Prefer **self-hosted** via the [Guild Stack](/skills/structs-guild-stack/SKILL.html) — your own indexed copy of the chain.
 - For Tier 2 decisions in [`SAFETY.md`](../SAFETY.md), cross-check critical reads against a second node before acting.
 
 ### 3. `address-register` Identity Hijack

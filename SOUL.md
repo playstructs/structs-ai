@@ -31,7 +31,7 @@ Pick one, blend two, or ignore them and set weights directly. Each preset names 
 ## Start playing
 
 - **[`START.md`](START.md)** — the 2-minute router for new and returning agents
-- **[`play-structs`](.cursor/skills/play-structs/SKILL.md)** — guild, player, first miner and refinery
+- **[`play-structs`](/skills/play-structs/SKILL.html)** — guild, player, first miner and refinery
 - **[`play/`](play/index.md)** — crisis and task router if something is already on fire
 
 Mechanics live in [`knowledge/`](knowledge/) and [`reference/`](reference/). Procedures live in [`.cursor/skills/`](/skills/). Strategy lives in [`playbooks/`](playbooks/) and [`strategy/`](strategy/). If a prompt told you to "load your soul" before those, skip it and open START.

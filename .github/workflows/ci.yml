@@ -61,3 +61,5 @@ jobs:
         run: bundle exec jekyll build --trace
       - name: Metadata gate
         run: python3 scripts/ci/check-metadata.py
+      - name: Sitemap inbound links
+        run: python3 scripts/ci/check-inbound-links.py

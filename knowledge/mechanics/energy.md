@@ -5,7 +5,7 @@ description: "The canonical energy system: units, the online equation, the 96/4 
 
 # Energy mechanics: infusion and brownout
 
-**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) is the action playbook.
+**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](/skills/structs-energy/SKILL.html) is the action playbook.
 
 ---
 
@@ -145,7 +145,7 @@ When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it *
 | Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
 | Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
 
-Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) for the full workflows and offline-recovery procedure.
+Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](/skills/structs-energy/SKILL.html) for the full workflows and offline-recovery procedure.
 
 Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Limit` are in [struct-types.md](../entities/struct-types.md#complete-struct-type-table).
 
@@ -158,4 +158,4 @@ Per-struct `passiveDraw` and `buildDraw` (in watts) and the per-player build `Li
 - [building.md](building.md) — Build power requirements, charge, slots
 - [resources.md](resources.md) — Alpha → energy conversion
 - [energy-market.md](../economy/energy-market.md) — Agreements, providers, pricing
-- [structs-energy skill](https://structs.ai/skills/structs-energy/SKILL) — Infusion, substations, offline recovery
+- [structs-energy skill](/skills/structs-energy/SKILL.html) — Infusion, substations, offline recovery

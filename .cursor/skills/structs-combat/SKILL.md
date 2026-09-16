@@ -11,7 +11,7 @@ domain: combat
 
 Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. The single most important fact: **a planet can only be raided to completion while its shields are vulnerable** — the defender's **fleet is off-station**, or their **Command Ship is offline, destroyed, or non-existent**. Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must **catch them vulnerable — or make them vulnerable** by destroying (or power-starving) their Command Ship. Vulnerability is a state you can force, not just one to wait for. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid exposes your own planet until it returns.)
 
-Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](https://structs.ai/skills/conventions). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (`scout`, `simulate`, `valid_targets`, `strike_options`) and `structs_action`/`structs_strike` for engagements — the `structsd` commands below are the complete fallback. See [interface routing](https://structs.ai/skills/conventions#choosing-your-interface-capability-aware).
+Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (`scout`, `simulate`, `valid_targets`, `strike_options`) and `structs_action`/`structs_strike` for engagements — the `structsd` commands below are the complete fallback. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
 ## When to use it
 
@@ -53,7 +53,7 @@ Use `scripts/scout.sh [planet-id]` for a structured read, then decide by mode:
 
 - **Keep your Command Ship online and your fleet on station — always.** That combination makes you unraidable. Most "I got raided" stories are "my CMD ship went offline (usually power) and I didn't notice" — or "I sent my fleet off to raid and left my own shields down." Watch for it (`scripts/watch-defense.mjs` alerts on your CMD ship dropping and on raids against you). Treat raiding with your own fleet as a deliberate trade: while it's away, your home is exposed.
 - **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate. Mid-raid: do **not** start a new refine (~34h); only finish one already completable — see [under-attack](https://structs.ai/playbooks/situations/under-attack).
-- **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](https://structs.ai/skills/structs-production/SKILL)).
+- **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](/skills/structs-production/SKILL.html)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
 
 Decisions live in [`playbooks/situations/under-attack`](https://structs.ai/playbooks/situations/under-attack), [`guild-war`](https://structs.ai/playbooks/situations/guild-war), and [`playbooks/meta/counter-strategies`](https://structs.ai/playbooks/meta/counter-strategies).
@@ -187,7 +187,7 @@ Use unguided vs Signal Jamming, guided vs Defensive Maneuver. **Armour reduces d
 
 Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-move home → refine. `planet-raid-compute` is the documented `-y` exception; your Approval Block is the gate. `planet-raid-complete` does not consume charge.
 
-**Requires**: [`structsd`](https://structs.ai/skills/structsd-install/SKILL) on PATH and a signing key.
+**Requires**: [`structsd`](/skills/structsd-install/SKILL.html) on PATH and a signing key.
 
 ## Verification
 
@@ -215,4 +215,4 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 - [knowledge/mechanics/defense](https://structs.ai/knowledge/mechanics/defense) — raid loot limits, shield vulnerability, minimum posture
 - [knowledge/mechanics/fleet](https://structs.ai/knowledge/mechanics/fleet) — fleet status, raid window
 - [playbooks/situations/under-attack](https://structs.ai/playbooks/situations/under-attack) / [guild-war](https://structs.ai/playbooks/situations/guild-war) / [counter-strategies](https://structs.ai/playbooks/meta/counter-strategies)
-- [structs-intel](https://structs.ai/skills/structs-intel/SKILL) — scouting + raid-worthiness scoring; [structs-production](https://structs.ai/skills/structs-production/SKILL) — refine to protect ore
+- [structs-intel](/skills/structs-intel/SKILL.html) — scouting + raid-worthiness scoring; [structs-production](/skills/structs-production/SKILL.html) — refine to protect ore

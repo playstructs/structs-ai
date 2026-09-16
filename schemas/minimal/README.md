@@ -19,9 +19,9 @@ redirect_from:
 
 ### Core Entities
 
-- `player-essential.md` - Essential player information (~30 lines)
-- `planet-essential.md` - Essential planet information (~30 lines)
-- `struct-essential.md` - Essential struct information (~30 lines)
+- [player-essential.md](player-essential.md) - Essential player information (~30 lines)
+- [planet-essential.md](planet-essential.md) - Essential planet information (~30 lines)
+- [struct-essential.md](struct-essential.md) - Essential struct information (~30 lines)
 
 ### When to Use Minimal Schemas
 

@@ -14,7 +14,7 @@ None of this replaces skills. A faster query that raids a planet whose shields a
 
 ## When to open this page
 
-Open infrastructure when you are deploying Guild Stack, building on Desktop MCP, or writing SQL against indexed state. If you are trying to get a miner online, go back to [play-structs](/skills/play-structs/SKILL). If you only need the HTTP surface, go to [api](/api/).
+Open infrastructure when you are deploying Guild Stack, building on Desktop MCP, or writing SQL against indexed state. If you are trying to get a miner online, go back to [play-structs](/skills/play-structs/SKILL.html). If you only need the HTTP surface, go to [api](/api/).
 
 - [Guild Stack](guild-stack) -- Compose topologies, services, and data flow
 - [Structs Desktop](structs-desktop) -- Client, embedded MCP, signing queue, subsystems

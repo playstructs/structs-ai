@@ -1,6 +1,8 @@
 ---
 title: Planet attribute query endpoints
 description: "Query planet attributes on the consensus network: shields, slots, and the mine/refine clocks."
+sitemap: false
+robots: noindex
 ---
 
 # Planet Attribute Query Endpoints

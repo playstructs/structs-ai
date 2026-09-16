@@ -82,7 +82,7 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 > **HTTP bank read.** Mint, redeem, and convert are still chain transactions. Live collateral, supply, and ratio are on the guild webapp: `GET /api/guild-bank` (every guild) and `GET /api/guild-bank/{guild_id}/history?bucket=` (30-day mint/burn/infuse volume). Holder balances: `GET /api/inventory/denom/{denom}/page/{n}` or `GET /api/inventory/owner/{owner_type}/{owner_id}`. Format amounts from `GET /api/denom`. Charting map: [`api/webapp/analytics.md`](../../api/webapp/analytics.md). Chain `bank` queries remain authoritative if the indexer lags (`meta.height` vs `/api/block`).
 
-Commands: [`structs-guild`](https://structs.ai/skills/structs-guild/SKILL) and [`structs-commerce`](https://structs.ai/skills/structs-commerce/SKILL).
+Commands: [`structs-guild`](/skills/structs-guild/SKILL.html) and [`structs-commerce`](/skills/structs-commerce/SKILL.html).
 
 ---
 

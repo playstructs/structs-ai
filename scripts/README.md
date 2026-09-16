@@ -4,7 +4,7 @@ Small, **read-only** helpers that turn multi-step queries into one-line decision
 
 ## Requirements
 
-- [`structsd`](../.cursor/skills/structsd-install/SKILL.md) on PATH (queries need no key)
+- [`structsd`](/skills/structsd-install/SKILL.html) on PATH (queries need no key)
 - [`jq`](https://jqlang.github.io/jq/) for the shell scripts
 - Node 18+ and `npm install nats.ws` for `watch-defense.mjs`
 

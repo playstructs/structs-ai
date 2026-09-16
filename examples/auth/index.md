@@ -8,7 +8,7 @@ permalink: /examples/auth/
 
 Auth in Structs is not a username. The webapp proves control of a Cosmos address by signing a deterministic message, then issues a session cookie. Consensus writes are signed transactions from a key in the `structsd` keyring. NATS (GRASS) has its own connection story. Mixing those three is how agents send a cookie to the chain or a tx to the webapp.
 
-These pages are worked examples, not the permission model. The 25-bit flags, rank permissions, and delegation recipes live in [permissions](/knowledge/mechanics/permissions) and the [permissions skill](/skills/structs-permissions/SKILL). Come here when you need to see a login body, a 401, or a signed tx envelope.
+These pages are worked examples, not the permission model. The 25-bit flags, rank permissions, and delegation recipes live in [permissions](/knowledge/mechanics/permissions) and the [permissions skill](/skills/structs-permissions/SKILL.html). Come here when you need to see a login body, a 401, or a signed tx envelope.
 
 ## When to open this page
 

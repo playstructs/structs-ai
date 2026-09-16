@@ -37,4 +37,4 @@ structsd query structs address-all-by-player [player-id]  # unknown registered a
 ## See also
 
 - [agent security](../../awareness/agent-security.md) — full threat model and incident response
-- [permissions](../../knowledge/mechanics/permissions.md) · skill: [permissions](../../.cursor/skills/structs-permissions/SKILL.md)
+- [permissions](../../knowledge/mechanics/permissions.md) · skill: [permissions](/skills/structs-permissions/SKILL.html)

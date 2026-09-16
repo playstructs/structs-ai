@@ -187,7 +187,7 @@ The signing key authorizes everything. Treat it accordingly.
 
 `structsd` is the boundary between you and the chain. Install only via the audited path:
 
-- [`structsd-install`](.cursor/skills/structsd-install/SKILL) skill (ClawScan **Pass**)
+- [`structsd-install`](/skills/structsd-install/SKILL.html) skill (ClawScan **Pass**)
 - Prebuilt releases at <https://github.com/playstructs/structsd/releases>
 
 A malicious or modified `structsd` can sign anything in your name. Do not run binaries from untrusted sources.

@@ -38,22 +38,22 @@
 
 ## Skills
 
-- [Play Structs](https://structs.ai/skills/play-structs/SKILL): **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills.
-- [Conventions](https://structs.ai/skills/conventions): Shared boilerplate every skill assumes: transaction flags, the -- ID rule, the per-player charge bar, proof-of-work policy
-- [Install structsd](https://structs.ai/skills/structsd-install/SKILL): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds)
-- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
-- [Production](https://structs.ai/skills/structs-production/SKILL): The mine then refine then stake pipeline; ore vulnerability, depletion handoff
-- [Building](https://structs.ai/skills/structs-building/SKILL): Construction, activation, movement, defense positioning, stealth, generator infusion
-- [Planets & Fleet](https://structs.ai/skills/structs-planets-fleet/SKILL): Planet evaluation, exploration, fleet movement, evacuation
-- [Energy](https://structs.ai/skills/structs-energy/SKILL): Capacity management -- offline recovery, substations, allocations, reactor/generator infusion
-- [Combat](https://structs.ai/skills/structs-combat/SKILL): Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup
-- [Commerce](https://structs.ai/skills/structs-commerce/SKILL): Providers, agreements, reactor staking, guild Central Bank, token transfers
-- [Guild](https://structs.ai/skills/structs-guild/SKILL): Choosing/joining a guild, ranks, membership, UGC moderation, Central Bank
-- [Permissions](https://structs.ai/skills/structs-permissions/SKILL): Object/address permissions, address registration, multi-address & delegate agents
-- [Intel](https://structs.ai/skills/structs-intel/SKILL): Full query catalog, scouting, intelligence persistence to memory/intel/
-- [Streaming](https://structs.ai/skills/structs-streaming/SKILL): GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools
-- [Guild Stack](https://structs.ai/skills/structs-guild-stack/SKILL): **(Advanced)** Local guild node with PostgreSQL, sub-second queries, real-time monitoring
-- [Structs UI](https://structs.ai/skills/structs-ui/SKILL): **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI -- the design system the game itself is built with
+- [Play Structs](https://structs.ai/skills/play-structs/SKILL.html): **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills.
+- [Conventions](https://structs.ai/skills/conventions.html): Shared boilerplate every skill assumes: transaction flags, the -- ID rule, the per-player charge bar, proof-of-work policy
+- [Install structsd](https://structs.ai/skills/structsd-install/SKILL.html): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds)
+- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL.html): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
+- [Production](https://structs.ai/skills/structs-production/SKILL.html): The mine then refine then stake pipeline; ore vulnerability, depletion handoff
+- [Building](https://structs.ai/skills/structs-building/SKILL.html): Construction, activation, movement, defense positioning, stealth, generator infusion
+- [Planets & Fleet](https://structs.ai/skills/structs-planets-fleet/SKILL.html): Planet evaluation, exploration, fleet movement, evacuation
+- [Energy](https://structs.ai/skills/structs-energy/SKILL.html): Capacity management -- offline recovery, substations, allocations, reactor/generator infusion
+- [Combat](https://structs.ai/skills/structs-combat/SKILL.html): Attacks (ambit-gated counters, single-target weapons), raids (shield-vulnerability doctrine, ore theft), defense setup
+- [Commerce](https://structs.ai/skills/structs-commerce/SKILL.html): Providers, agreements, reactor staking, guild Central Bank, token transfers
+- [Guild](https://structs.ai/skills/structs-guild/SKILL.html): Choosing/joining a guild, ranks, membership, UGC moderation, Central Bank
+- [Permissions](https://structs.ai/skills/structs-permissions/SKILL.html): Object/address permissions, address registration, multi-address & delegate agents
+- [Intel](https://structs.ai/skills/structs-intel/SKILL.html): Full query catalog, scouting, intelligence persistence to memory/intel/
+- [Streaming](https://structs.ai/skills/structs-streaming/SKILL.html): GRASS real-time events via NATS WebSocket, event-driven monitoring, custom listener tools
+- [Guild Stack](https://structs.ai/skills/structs-guild-stack/SKILL.html): **(Advanced)** Local guild node with PostgreSQL, sub-second queries, real-time monitoring
+- [Structs UI](https://structs.ai/skills/structs-ui/SKILL.html): **(Building, not playing)** Dashboards, forms, menus, HUDs and clients using SUI -- the design system the game itself is built with
 
 ## Knowledge -- Lore
 
@@ -160,6 +160,9 @@
 
 - [API Endpoints](https://structs.ai/api/endpoints): REST API specification
 - [API Queries by Entity](https://structs.ai/api/endpoints-by-entity): Entity-specific query endpoints
+- [LCD query index](https://structs.ai/api/queries/): Consensus query files split per entity
+- [Workflow examples](https://structs.ai/examples/workflows/): Multi-step API operations with state and dependencies
+- [API patterns](https://structs.ai/patterns/): Caching, retry, pagination, state sync
 - [Webapp API Index](https://structs.ai/api/webapp/README): Per-entity webapp endpoints (catalog reads, settings, stats)
 - [Webapp analytics](https://structs.ai/api/webapp/analytics): Charting hub — leaderboards, inventory, guild banks, aggregates, per-player activity
 - [Integration Notes](https://structs.ai/api/integration-notes): Live data-shape & endpoint gotchas (string numerics, event detail, field-name traps, auth scope)
