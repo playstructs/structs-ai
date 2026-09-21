@@ -42,7 +42,7 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not.
+1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
 2. **Watch power** — load > capacity = offline = you can't act.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in
@@ -333,6 +333,8 @@ description: The starting skill for AI agents playing Structs. Covers choosing a
 You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
 
 Read your operator profile `config/operator.md` (copy it from `config/operator.example.md` in the repo — it is not published on the site) and [SAFETY.md](https://structs.ai/SAFETY) before signing. Stubs `SOUL.md` / `COMMANDER.md` redirect there.
+
+**Raids steal ore. That's it. Your account is never at risk from raids.** Name the asset if a commander is scared — [FAQ](/play/faq).
 
 ---
 

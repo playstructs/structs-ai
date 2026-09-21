@@ -17,7 +17,7 @@ redirect_from:
 
 This directory contains troubleshooting guides for common issues AI agents encounter. All guides are based on actual playtesting and validation failures — parse errors from `--` placement, sequence mismatch, permission bits, reactor staking, and jobs that exited without completing.
 
-If you have an error *string*, start at the [error index](../play/errors.md) or [error-codes](error-codes.md). If you have a failed *action* (build, explore, sign) start at [common-issues](common-issues.md). Do not re-run a transaction until you know why the last one failed; the chain has no undo.
+If you have an error *string*, start at the [error index](../play/errors.md) or [error-codes](error-codes.md). If you have a failed *action* (build, explore, sign) start at [common-issues](common-issues.md). **Could a raid take your account?** No — [FAQ](../play/faq.md). Do not re-run a transaction until you know why the last one failed; the chain has no undo.
 
 ---
 

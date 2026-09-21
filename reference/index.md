@@ -50,6 +50,7 @@ The action and entity indexes are for “what is the name of this thing.” Loca
 ## Errors
 
 - [Error index](../play/errors.md) · [Troubleshooting](../troubleshooting/common-issues.md)
+- [FAQ: what a raid can take](../play/faq.md) — raids steal ore, never the account
 
 ## When to open this page
 

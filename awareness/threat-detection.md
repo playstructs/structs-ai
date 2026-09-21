@@ -30,7 +30,18 @@ description: "Identify dangers before they land: threat categories, how to set u
 
 ### 2. Unrefined Ore Exposure
 
-**Threat**: Unrefined ore on the **player** (`gridAttributes.ore` / `storedOre`) is stealable. Raiders target planets whose owner holds ore. The Ore Bunker raises planetary shield; it does not store ore.
+**Threat**: Unrefined ore on the **player** (`storedOre` / `StoredOreAttributeId`) is stealable. Raiders target planets whose owner holds ore. The Ore Bunker raises planetary shield; it does not store ore.
+
+**A raid cannot take the account.** Name the asset before you treat this as existential:
+
+| Asset | Raid outcome |
+|-------|----------------|
+| Stored ore | Seized in full at `planet-raid-complete` |
+| Structs | Destroyable by combat in the window; rebuild, not "lost account" |
+| Fleet | Attacker's CMD dying away = `attackerDefeated`; defenders killable |
+| Account / wallet / keys / planet / guild | **Never** |
+
+See [FAQ: what a raid can take](../play/faq.md).
 
 | Monitor | MCP Tool | Threshold |
 |---------|----------|-----------|

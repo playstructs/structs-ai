@@ -21,7 +21,7 @@ If you are your own commander, write the standing orders anyway. Future-you, mid
 
 A report that is technically complete and unreadable is a failed report. Lead with the decision, not the raw state. [`awareness/briefing.md`](awareness/briefing.md) is the shape:
 
-- Name the stake in your terms ("1,200 unrefined ore is stealable") not field names (`storedOre`).
+- Name the stake in your terms ("1,200 unrefined ore is stealable") not field names (`storedOre`). A raid is never "we might lose the account" — [FAQ](play/faq.md).
 - Say what you recommend and what happens if nothing is done.
 - Date the claim (block height or clock time). Pick one of the three report shapes on that page: status, ask, or incident.
 

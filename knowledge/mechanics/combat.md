@@ -413,7 +413,7 @@ Status values are the `RaidStatus_*` enum emitted on `EventRaid`. The most a def
 
 ### What a raid does
 
-A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs.
+A successful `planet-raid-complete` seizes **all** of the defender's `storedOre`, sends the raider's fleet home, and emits `raidSuccessful`. Ore is the only thing a raid takes — a raid does not destroy the defending player or their structs. **Account, wallet, keys, planet, and guild membership are never a raid outcome.** If someone is asking "could I lose my account," send them to [FAQ: what a raid can take](/play/faq).
 
 Destroying the defender's Command Ship (or catching their fleet off-station) makes the planet's shields vulnerable (`shieldsVulnerable`), which is the condition that lets a raid complete. If the defender restores their shields before completion — Command Ship back online with the fleet on station — the shields return and `planet-raid-complete` is rejected with `shields_active`. So the planet is either vulnerable at completion — and the raider takes all the ore — or shielded, and the raid is rejected.
 

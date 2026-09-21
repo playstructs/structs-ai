@@ -40,7 +40,7 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not.
+1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
 2. **Watch power** — load > capacity = offline = you can't act.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in

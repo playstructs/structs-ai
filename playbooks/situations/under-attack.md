@@ -9,6 +9,8 @@ description: "Hostile action against your territory. Act in priority order: chec
 **Goal**: Minimize losses, protect critical assets, survive to fight another day  
 **Principle**: Act in priority order. Panic loses more than the attacker takes.
 
+**Raids steal ore. That's it. Your account is never at risk from raids.** The prize is unrefined `storedOre`. Structs can die in combat during the window. Keys, planet, and guild membership are not on the table. [FAQ](../../play/faq.md)
+
 ---
 
 ## Immediate Response Protocol

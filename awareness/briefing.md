@@ -20,8 +20,9 @@ The first sentence should answer "what do you need from me, or what changed that
 | "Player 1-42: storedOre 1200, gridAttributes.load 912960000, capacity 912960000, fleet 9-42 onStation false" | "Your fleet is away, which leaves 1,200 unrefined ore exposed to theft. I recommend refining first (ore stays stealable until refine finishes — ~34 h at D=3), then recalling the fleet." |
 | "shieldsVulnerable on 2-117, blockStartRaid 1284551" | "Someone is raiding us and our shields are down. They can take all 1,200 unrefined ore within roughly four minutes unless we restore the Command Ship or destroy theirs. Mining and refining are paused until the raid ends." |
 | "struct 5-310 destroyed, trigger_raid_defeat_by_destruction fired" | "We lost the Planetary Defense Cannon. Nothing else was taken — a raid can only steal unrefined ore — but the planet is now easier to attack." |
+| "we got raided, we lost everything / the account" | "They can take the unrefined ore only. Account, planet, keys, and guild membership are safe. Name the grams at risk." |
 
-Three habits do most of the work: name the stake in the human's terms ("1,200 ore" not "storedOre"), say what you recommend, and say what happens if nothing is done.
+Three habits do most of the work: name the stake in the human's terms ("1,200 ore" not "storedOre"), say what you recommend, and say what happens if nothing is done. **Never frame a raid as account loss.** A raid cannot take the account, wallet, keys, planet, or guild. If the commander says "we could lose everything," force the asset name — it is almost always unrefined ore or a rebuildable struct. [FAQ](../play/faq.md).
 
 ---
 

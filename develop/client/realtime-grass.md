@@ -211,6 +211,12 @@ All on `structs.>` except `BlockListener`, which is on `consensus`.
 | `PlayerAddressRevokedListener` | `player_address` revoked | Logs out or refreshes devices. One-shot |
 | `RecoverAccountAddressApprovedListener` | `player_address` approved for recovery | Completes mnemonic login. One-shot |
 
+On `block_raid_start` / defensive `raid_status` that opens the window (`PlanetRaidStatusListener`, `KeyPlayerShieldChangeStatusListener`), the HUD should name the **real** exposure, not imply account loss. Suggested copy:
+
+> Raid window open. Exposed: unrefined ore (all of it if they finish) and structs in combat. Not exposed: your account, keys, planet, or guild.
+
+The flagship client does not yet show this toast — ship it there; do not invent a chain rule. Player-facing FAQ: [what a raid can take](/play/faq).
+
 Registration is spread across `index.js` (block), `AuthManager` (auth and device flows),
 `RaidManager`, and several view models that register a one-shot listener for the event
 they are waiting on and then navigate.

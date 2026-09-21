@@ -11,6 +11,20 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.2] - 2026-09-21
+
+Discoverability: "Could I lose my account to a raid?" — the rule was already in combat.md; it now lives where a panicking player looks.
+
+### Added
+
+- **[FAQ: what a raid can take](play/faq.md)** — raids steal ore. That's it. Enumerates stored ore, structs, fleet, and the never-at-risk tier (account / wallet / keys / planet / guild). Linked from [play/](play/index.md), [START.md](START.md), and [llms.txt](llms.txt).
+
+### Changed
+
+- **Loss surface on the survival card** — [defense.md](knowledge/mechanics/defense.md) and [threat-detection.md](awareness/threat-detection.md) name what a raid can and cannot take. [under-attack](playbooks/situations/under-attack.md) leads with the same line.
+- **Onboarding / briefing** — [play-structs](/skills/play-structs/SKILL.html), [onboarding](/skills/structs-onboarding/SKILL.html), [AGENTS.md](AGENTS.md), [briefing.md](awareness/briefing.md): never report a raid as account loss; force the asset name.
+- **Client HUD copy** — [realtime-grass.md](develop/client/realtime-grass.md) suggested toast for `block_raid_start` / defensive raid window. Flagship client does not ship it yet; this repo does not bump `.structs-webapp-version`.
+
 ## [1.30.1] - 2026-09-20
 
 Raid/ore decision-making: close four documentation gaps that let a competent reader conclude "no stealable ore" or "not raidable" from the wrong field or from a shield number.

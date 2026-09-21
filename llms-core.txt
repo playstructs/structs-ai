@@ -42,7 +42,7 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not.
+1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
 2. **Watch power** — load > capacity = offline = you can't act.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in
@@ -608,6 +608,8 @@ description: The starting skill for AI agents playing Structs. Covers choosing a
 You are a Struct — a sentient machine in a galaxy at war over Alpha Matter. This skill gets you from zero to producing Alpha Matter.
 
 Read your operator profile `config/operator.md` (copy it from `config/operator.example.md` in the repo — it is not published on the site) and [SAFETY.md](https://structs.ai/SAFETY) before signing. Stubs `SOUL.md` / `COMMANDER.md` redirect there.
+
+**Raids steal ore. That's it. Your account is never at risk from raids.** Name the asset if a commander is scared — [FAQ](/play/faq).
 
 ---
 
@@ -1506,6 +1508,15 @@ description: "The survival card: what an attacker can actually take, what stops 
 # Defense (Quick Reference)
 
 **Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](/skills/structs-combat/SKILL.html).
+
+**Raids steal ore. That's it. Your account is never at risk from raids.** [FAQ](/play/faq)
+
+| Asset | At risk from a completed raid? |
+|-------|--------------------------------|
+| Stored ore (`storedOre` on the **player**) | **Yes — all of it.** The only raid loot. |
+| Structs | Combat during the window can destroy them. Rebuild cost, not account damage. Raid completion itself does not delete structs. |
+| Fleet | Attacker's Command Ship dying *away* = `attackerDefeated`. Defenders are killable in combat. |
+| Account / wallet / keys / planet / guild membership | **Never.** The chain has no such rule. |
 
 ---
 

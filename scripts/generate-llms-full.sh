@@ -63,6 +63,7 @@ FULL_FILES=(
   SAFETY.md
   OPENCLAW.md
   TOOLS.md
+  play/faq.md
   config/operator.example.md
   identity/manifesto.md
 

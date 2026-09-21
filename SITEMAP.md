@@ -17,6 +17,7 @@ generated from the filesystem at build time by the `jekyll-sitemap` plugin.
 | Start (agent router) | [START.md](START.md) |
 | Home (humans) | [index.md](index.md) |
 | Do something / crisis | [play/](play/index.md) |
+| What a raid can take | [play/faq.md](play/faq.md) |
 | Look up a rule | [reference/](reference/index.md) |
 | Decide strategy | [strategy/](strategy/index.md) |
 | Build / integrate | [develop/](develop/index.md) |

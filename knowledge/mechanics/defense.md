@@ -7,6 +7,15 @@ description: "The survival card: what an attacker can actually take, what stops 
 
 **Purpose**: The survival card — what an attacker can actually take from you, what stops them, and the minimum posture that keeps you safe. For the full system — ambit targeting matrices, damage and evasion formulas, siege doctrine, attack resolution order — see [combat.md](combat.md). For workflows (setting defenders, running attacks and raids) see the [structs-combat skill](/skills/structs-combat/SKILL.html).
 
+**Raids steal ore. That's it. Your account is never at risk from raids.** [FAQ](/play/faq)
+
+| Asset | At risk from a completed raid? |
+|-------|--------------------------------|
+| Stored ore (`storedOre` on the **player**) | **Yes — all of it.** The only raid loot. |
+| Structs | Combat during the window can destroy them. Rebuild cost, not account damage. Raid completion itself does not delete structs. |
+| Fleet | Attacker's Command Ship dying *away* = `attackerDefeated`. Defenders are killable in combat. |
+| Account / wallet / keys / planet / guild membership | **Never.** The chain has no such rule. |
+
 ---
 
 ## The two rules that decide everything

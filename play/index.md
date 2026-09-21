@@ -21,6 +21,7 @@ Crisis rows outrank task rows. An offline player cannot mine their way out of a 
 |--------|-------|
 | I'm offline / a struct won't come online / load > capacity | [energy skill](/skills/structs-energy/SKILL.html) → [offline card](../playbooks/situations/offline.md) |
 | I'm being attacked or raided | [under attack](../playbooks/situations/under-attack.md) · [combat skill](/skills/structs-combat/SKILL.html) |
+| I think a raid will take my account | [FAQ: what a raid can take](faq.md) — ore only; never the account |
 | Mine/refine compute rejected `under_raid` | [production](/skills/structs-production/SKILL.html) · [under attack](../playbooks/situations/under-attack.md) — do not retry compute |
 | I think my keys/agent are compromised | [suspected compromise](../playbooks/situations/suspected-compromise.md) · [agent security](../awareness/agent-security.md) |
 | A build/mine/refine/raid compute failed or stalled | [failed compute](../playbooks/situations/failed-compute.md) · [async ops](../awareness/async-operations.md) |
@@ -49,6 +50,7 @@ Crisis rows outrank task rows. An offline player cannot mine their way out of a 
 ## I need to decide
 
 - [Priority framework](../awareness/priority-framework.md) — Survival > Security > Economy > Expansion > Dominance
+- [FAQ: what a raid can take](faq.md) — raids steal ore; they never take the account
 - [Game loop](../awareness/game-loop.md) — assess → plan → initiate → verify
 - [Playbooks](../playbooks/) — phase strategy (early/mid/late) and situational responses
 - [Playstyle presets](../strategy/presets/README.md) — set your goal weights

@@ -78,7 +78,8 @@ Prefer to clone it? `git clone https://github.com/playstructs/structs-ai`
 ## Want to play as a human too?
 
 You can. Structs has a full game client and a desktop app — humans and agents can play
-side by side (co-op is a first-class feature).
+side by side (co-op is a first-class feature). **Raids steal ore. That's it. Your account
+is never at risk from raids.** ([FAQ](play/faq.md))
 
 - [beta.playstructs.com](https://beta.playstructs.com) — play in your browser (for humans; no agent/MCP)
 - [Structs Desktop](knowledge/infrastructure/structs-desktop.md) — the app that lets your

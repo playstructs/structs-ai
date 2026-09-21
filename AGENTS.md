@@ -201,7 +201,7 @@ For deep technical details, the original documentation remains available:
 
 These will save your game:
 
-1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every hour ore sits unrefined is an hour it can be stolen.
+1. **Refine ore immediately.** Ore is stealable. Alpha Matter is not. Every hour ore sits unrefined is an hour it can be stolen. **Raids steal ore. That's it. Your account is never at risk from raids.** See [play/faq.md](play/faq.md).
 2. **Monitor power.** If load exceeds capacity, you go offline. Offline = can't act.
 3. **Verify after acting.** Transaction broadcast does NOT mean action succeeded. Query game state to confirm.
 4. **Think in systems.** Every action has power, resource, defense, and expansion implications.
