@@ -12,17 +12,19 @@ description: "Ore, Alpha Matter, and energy: resource types, how they flow, conv
 
 | Resource | Unit | Stealable | Refinement | Location |
 |----------|------|-----------|------------|----------|
-| Alpha Ore (unmined) | grams | No | Required | Planet (`gridAttributes.ore`) — extracted by Ore Extractor |
-| Alpha Ore (mined) | grams | **Yes** | Required | Player inventory (`storedOre`) — stolen in raids |
+| Alpha Ore (unmined) | grams | No | Required | Planet — `buriedOre` (`BuriedOreAttributeId`); extracted by Ore Extractor |
+| Alpha Ore (mined) | grams | **Yes** | Required | Player — `storedOre` (`StoredOreAttributeId`); stolen in raids |
 | Alpha Matter | grams | No | Output | Player inventory (on-chain) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
+
+These are **different attribute ids on different objects**. LCD/query payloads often expose both as `gridAttributes.ore`. The planet's `ore` and the player's `ore` are not the same field even though they share a display name. A raider checking loot must read the **player** field (`storedOre` / `StoredOreAttributeId`).
 
 ---
 
 ## Alpha Ore
 
 - Mined from planets via Ore Extractor
-- Stored in the player's `gridAttributes.ore` field (also referred to as `storedOre`). This is NOT the bank balance — bank balance holds only refined Alpha Matter (`ualpha`). Query `gridAttributes.ore` to check unrefined ore holdings.
+- Stored as `storedOre` (`StoredOreAttributeId`) on the **player** object. Player queries still label this `gridAttributes.ore` — that is not the planet's buried ore, and it is not the bank balance (`ualpha`). Query the **player** to check stealable holdings.
 - Must be refined to Alpha Matter before secure use
 - **Extraction rate**: 1 ore per mining operation (fixed)
 - **Planet starting ore**: 5 (fixed for all planets)
@@ -70,7 +72,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `gridAttributes.ore` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -90,8 +92,8 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 | State | Location | Stealable | Action |
 |-------|----------|-----------|--------|
-| Unmined ore (planet `gridAttributes.ore`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
-| Mined ore (`storedOre`) | Player | **Yes** | Refine immediately — this is what raiders steal |
+| Unmined ore (`buriedOre` / `BuriedOreAttributeId`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
+| Mined ore (`storedOre` / `StoredOreAttributeId`) | Player | **Yes** | Refine immediately — this is what raiders steal |
 | Alpha Matter | Player | No | Secure — cryptographically bound to owner |
 
 **Strategy**: Refine ore as soon as mined to minimize raid exposure. Maintain a 20-30% Alpha Matter reserve for emergencies.

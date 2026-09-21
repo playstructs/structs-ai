@@ -11,6 +11,17 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.1] - 2026-09-20
+
+Raid/ore decision-making: close four documentation gaps that let a competent reader conclude "no stealable ore" or "not raidable" from the wrong field or from a shield number.
+
+### Changed
+
+- **Ore field collision** — [resources.md](knowledge/mechanics/resources.md) names `buriedOre` (`BuriedOreAttributeId`, planet) vs `storedOre` (`StoredOreAttributeId`, player). LCD may still show both as `gridAttributes.ore`; a raider must read the **player** field. Same split in [combat.md](knowledge/mechanics/combat.md), [defense.md](knowledge/mechanics/defense.md), [planet.md](knowledge/mechanics/planet.md), [glossary](reference/glossary.md).
+- **Raidability vs shield level** — the gate is `IsDefenderCommandStructVulnerable()` (fleet/CMD state). The displayed shield value is PoW difficulty only. "Shields are up" does not mean "cannot be raided."
+- **Atomic settlement** — `MsgPlanetRaidComplete` seizes the player's current `storedOre` with no partial loot and no refund. "Refine promptly" is a defender incentive, not a network-level fact.
+- **Offensive checklist** — [combat.md — Scouting a raid target](knowledge/mechanics/combat.md#scouting-a-raid-target): player `storedOre` + gate + `blockStartRaid`; no planet-raid simulator (`simulate`/`strike_options` are struct-scoped). Network-wide claims require enumeration. Mirrored in [`structs-combat`](/skills/structs-combat/SKILL.html) and [`structs-intel`](/skills/structs-intel/SKILL.html).
+
 ## [1.30.0] - 2026-09-16
 
 Findability: section indexes are the inbound hubs now that SITEMAP.md is noindex.

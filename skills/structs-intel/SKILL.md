@@ -14,7 +14,7 @@ redirect_from:
 
 # Intel skill: scout players and planets
 
-Information is the cheapest weapon in Structs — queries are free and instant. Before you commit hours of proof-of-work to a raid or a build, **scout**. The most valuable single fact for a raid is whether a target's shields are vulnerable — its owner's **fleet is off-station, or their Command Ship is offline or destroyed**: a planet can only be raided to completion while its shields are vulnerable (see [`structs-combat`](/skills/structs-combat/SKILL.html)). Intel that isn't written down dies with your context window — persist it to `memory/intel/`.
+Information is the cheapest weapon in Structs — queries are free and instant. Before you commit hours of proof-of-work to a raid or a build, **scout**. Raidability is a live **fleet/Command-Ship** predicate, not the displayed shield number: the owner's **fleet is off-station, or their Command Ship is offline or destroyed** (`IsDefenderCommandStructVulnerable()`). Loot is **player**-scoped `storedOre`, not the planet's buried ore. See [`structs-combat`](/skills/structs-combat/SKILL.html). Intel that isn't written down dies with your context window — persist it to `memory/intel/`.
 
 Conventions are in [`conventions.md`](/skills/conventions.html). Everything here is read-only (queries) — no transactions, no charge, no risk.
 
@@ -28,10 +28,10 @@ Conventions are in [`conventions.md`](/skills/conventions.html). Everything here
 ## Decisions
 
 **Scout before you commit.** A raid is ~hours of PoW; a single query tells you if it's even possible. Always check, in order:
-1. **Shield vulnerability** — is the owner's fleet off-station, or their Command Ship offline/destroyed/absent? If **yes**, an opportunistic raid is on the table. If **no** (Command Ship online, fleet on station), an opportunistic raid can't complete — but this is *not* a dead end: it's a **siege decision** (can you reach and destroy their Command Ship?). See [`structs-combat`](/skills/structs-combat/SKILL.html). Note: **idle is not vulnerable** — a dormant owner's powered Command Ship keeps defending, so never read raidability off an inactivity signal.
-2. **Defenders** — Planetary Defense Cannons, Tanks, generators (armoured: damage-reduction 1), shield contribution. Can your fleet out-damage the defense within the vulnerability window (and, for a siege, kill the Command Ship before an active defender rebuilds it)?
-3. **Reward** — unrefined ore on the planet (stealable) vs. your cost. Refined Alpha can't be raided.
-4. **Power** — is the target online at all? An offline/power-starved owner is already vulnerable *and* can't react — the ideal target; but confirm there's ore worth taking.
+1. **Raidability gate** — is the owner's fleet off-station, or their Command Ship offline/destroyed/absent? This is **not** the shield number (that number is only PoW difficulty). If **yes**, an opportunistic raid is on the table. If **no** (Command Ship online, fleet on station), an opportunistic raid can't complete — but this is *not* a dead end: it's a **siege decision** (can you reach and destroy their Command Ship?). See [`structs-combat`](/skills/structs-combat/SKILL.html). Note: **idle is not vulnerable** — a dormant owner's powered Command Ship keeps defending, so never read raidability off an inactivity signal, a badge, or a shield value.
+2. **Defenders** — Planetary Defense Cannons, Tanks, generators (armoured: damage-reduction 1), shield contribution (timer). Can your fleet out-damage the defense within the window (and, for a siege, kill the Command Ship before an active defender rebuilds it)?
+3. **Reward** — the **player's** `storedOre` (`StoredOreAttributeId`; stealable) vs. your cost. Do not read the planet's `buriedOre`. Refined Alpha can't be raided. `simulate` / `strike_options` are struct-scoped — there is no planet-raid preflight; run these reads per candidate.
+4. **Power** — is the target online at all? An offline/power-starved owner is already vulnerable *and* can't react — the ideal target; but confirm there's player `storedOre` worth taking. Do not conclude "no raidable targets" from a partial sample — enumerate before declaring the network empty.
 
 **Read playstyle, then counter it.** Map observations to an archetype with [`playbooks/meta/reading-opponents`](https://structs.ai/playbooks/meta/reading-opponents) and pick a response from [`playbooks/meta/counter-strategies`](https://structs.ai/playbooks/meta/counter-strategies).
 
@@ -50,7 +50,7 @@ structsd query structs struct [commandStruct-id]          # Command Ship status/
 # (they route through the Guild Stack / webapp query API — see scripts/BASELINE.md):
 #   Guild Stack: select id,type,operating_ambit from struct where location_id='[planet-id]';
 ```
-Determine: Command Ship online? defenders & armour? ore present? Use [`scout.sh`](https://github.com/playstructs/structs-ai/blob/main/scripts/scout.sh) for a one-shot bundle when available.
+Determine: Command Ship online? fleet on-station? **player** `storedOre` (not planet buried ore)? Use [`scout.sh`](https://github.com/playstructs/structs-ai/blob/main/scripts/scout.sh) for a one-shot bundle when available.
 
 ### 2. Profile a guild
 

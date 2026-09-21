@@ -47,7 +47,7 @@ A routing of power capacity from a source (player, reactor, struct, or substatio
 The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Alpha Ore
-*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--planet-ore) (player `storedOre`; unmined ore is the planet's `gridAttributes.ore`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
+*(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--planet-ore) (player `storedOre` / `StoredOreAttributeId`; unmined ore is the planet's `buriedOre` / `BuriedOreAttributeId`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Ambit
 One of four combat layers — **Water, Land, Air, Space** — plus two special values (`none`, `local`). A struct operates in one ambit; weapons reach specific ambits. → [combat.md — Ambit Targeting](../knowledge/mechanics/combat.md#ambit-targeting)
@@ -280,7 +280,7 @@ The first number in a `type-index` ID: `0` guild, `1` player, `2` planet, `3` re
 A fleet state: the fleet is at its home planet, so the Command Ship defends it (shields up). → [fleet.md](../knowledge/mechanics/fleet.md)
 
 ### Ore (storedOre / planet ore)
-`storedOre` is mined, stealable ore held by a player (the only raid loot) — on the wire it is the player's `gridAttributes.ore`. Unmined ore is the *planet's* `gridAttributes.ore`; there is no `remainingOre` field on either. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
+`storedOre` (`StoredOreAttributeId`) is mined, stealable ore held by a **player** (the only raid loot). `buriedOre` (`BuriedOreAttributeId`) is unmined ore on the **planet**. LCD payloads often expose **both** as `gridAttributes.ore` — they are different attribute ids on different objects; a raider must read the **player** field. There is no `remainingOre` field on either. Refine `storedOre` to secure it as Alpha. → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Ore Bunker
 Planet struct (type 16). It does **not** vault or hide ore. Planetary types have `canDefend: false`. → [struct-types.md](../knowledge/entities/struct-types.md)
@@ -306,7 +306,7 @@ Planet struct (type 19, 1 per player) that auto-fires at any attacker of planeta
 *(Codex term)* The human Codex's framing of raid defense: an on-station Command Ship keeps a planet's defenses "Secure" (unbreachable); when it is away or destroyed they become "Vulnerable." Maps to our [Planetary shield](#planetary-shield) plus the [shieldsVulnerable](#shieldsvulnerable) predicate. → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
 
 ### Planetary shield
-A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW. Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
+A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW (a **timer**). It is **not** the raidability gate — that is fleet/CMD state (`IsDefenderCommandStructVulnerable()`). Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
 
 ### Proof-of-work (PoW)
 The SHA-256 puzzle that finalizes build/mine/refine/raid. Difficulty decays with age. → [hashing.md](../knowledge/mechanics/hashing.md)
@@ -345,7 +345,7 @@ Self-damage the attacker takes after firing, applied only if it survives the who
 `account sequence mismatch` — two txs from the same key before the first landed. One tx per key; wait ~6s. → [play/errors.md](../play/errors.md)
 
 ### shieldsVulnerable
-The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent. The single most important raid gate — and a state you can **create** (see [siege raid](#siege-raid)), not only wait for. Distinct from an owner being merely [idle](#idle-vs-vulnerable). → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
+The raid-winnable state: the defender's fleet is off-station, or their Command Ship is offline/destroyed/absent (`IsDefenderCommandStructVulnerable()`). **Not** the displayed planetary shield number (that number is PoW difficulty only). A state you can **create** (see [siege raid](#siege-raid)), not only wait for. Distinct from an owner being merely [idle](#idle-vs-vulnerable). → [combat.md — Raid Phases and SHIELDS_VULNERABLE](../knowledge/mechanics/combat.md#raid-phases-and-shields_vulnerable)
 
 ### siege raid
 Forcing shieldsVulnerable open on a shielded defender: with your fleet present at the target, strip same-ambit blockers and destroy (or power-starve) the defender's Command Ship, then complete the raid before they rebuild it. The active counterpart to an **opportunistic raid** (catching a defender already vulnerable). Most reliable against a dormant defender who won't rebuild. → [combat.md — Raid attack doctrine](../knowledge/mechanics/combat.md#raid-attack-doctrine)

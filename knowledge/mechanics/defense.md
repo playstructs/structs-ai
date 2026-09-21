@@ -11,9 +11,9 @@ description: "The survival card: what an attacker can actually take, what stops 
 
 ## The two rules that decide everything
 
-**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (its `gridAttributes.ore`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
+**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` (`StoredOreAttributeId` on the **player**) and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (`buriedOre` / `BuriedOreAttributeId`) is also safe. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
 
-**2. A raid can only complete while your shields are vulnerable.** Shields are vulnerable when *any* of these is true (chain predicate `IsDefenderCommandStructVulnerable()`):
+**2. Raidability is a live state predicate about the defender's fleet and Command Ship — NOT the shield level number.** The displayed shield value (e.g. 25–125) only sets the raid's PoW difficulty (a timer). "Shields are up" does not mean "cannot be raided." Gate = `IsDefenderCommandStructVulnerable()` — a raid can only complete when *any* of these is true:
 
 - you have no fleet, or your **fleet is off-station**
 - you have **no Command Ship**, or it is **destroyed**, or it is **offline**
@@ -26,7 +26,7 @@ While your fleet is on station with a built, online Command Ship, `planet-raid-c
 
 **Online is power math, not activity.** A struct or player is online when capacity covers load — see [power.md](power.md). Going quiet does not take your Command Ship offline; running out of capacity does.
 
-**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their shields stay up. Never infer raidability from an inactivity signal or a UI badge — gate on the live predicate. The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
+**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and the raidability gate stays shut. Never infer raidability from an inactivity signal, a UI badge, or the **shield number**. Confirm live: fleet on-station, CMD ship present + online + not destroyed. See [combat.md — Scouting a raid target](combat.md#scouting-a-raid-target). The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
 
 **Raiding drops your own shields.** Sending your fleet to someone else's planet takes it off-station, which makes *you* vulnerable until it returns. Never move your fleet out while holding meaningful unrefined ore.
 

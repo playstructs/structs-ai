@@ -313,7 +313,7 @@ In the live `struct_attack` event `detail`, the attacker context is **flat** at 
 | Target struct built (a struct cannot be attacked until it finishes building) | ✓ | — |
 | Raider fleet away (at the target) | — | ✓ |
 | Raider fleet first in the target's queue (`LocationListForward == ""`) | — | ✓ |
-| **Defender's shields vulnerable** (defender's fleet off-station, or their Command Ship offline / destroyed / non-existent) | — | ✓ |
+| **Defender raidable** (`IsDefenderCommandStructVulnerable()` — fleet/CMD state, **not** the shield number) | — | ✓ |
 | Raid clock started (`blockStartRaid` != 0) | — | ✓ |
 | Proof-of-work | — | ✓ |
 
@@ -331,9 +331,9 @@ Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work 
 
 ## Raid Phases and SHIELDS_VULNERABLE
 
-> **A raid cannot eliminate a player — the only prize is stored ore.** No matter how one-sided the outcome, a successful raid seizes the defender's **unrefined stored ore** and nothing more: it does not destroy the player, take their planet, capture structs, or touch refined Alpha Matter. Refined Alpha is untouchable; refine promptly and a raid can win you nothing. (This is the single most common combat misconception — treat raids as ore theft, not conquest.)
+> **A raid cannot eliminate a player — the only prize is stored ore.** No matter how one-sided the outcome, a successful raid seizes the defender's **unrefined stored ore** and nothing more: it does not destroy the player, take their planet, capture structs, or touch refined Alpha Matter. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. Refined Alpha is untouchable. (This is the single most common combat misconception — treat raids as ore theft, not conquest.)
 
-A raid is only winnable while the **defending planet's shields are vulnerable**. Shields are vulnerable whenever the defender's **fleet is off-station** (the Command Ship only defends the home planet while the fleet is on station), or the defender's **Command Ship is offline, destroyed, or non-existent**. While the defender's fleet is on station with a built, online Command Ship, the planet's shields are up and `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else leaves your planet's shields vulnerable until it returns.
+**Raidability is a live state predicate about the defender's fleet and Command Ship — NOT the shield level number.** The displayed shield value (e.g. 25–125) only sets the raid's PoW difficulty (a timer). "Shields are up" does not mean "cannot be raided." Gate = `IsDefenderCommandStructVulnerable()` (no owner / no fleet / fleet off-station / no CMD ship / CMD destroyed / CMD offline). A raid is only winnable while that predicate is true. While the defender's fleet is on station with a built, online Command Ship, `planet-raid-complete` is rejected (`shields_active`) no matter how much work the raider does. The single most effective raid defense is therefore keeping your fleet on station with the Command Ship online — and note that sending your own fleet away to raid someone else opens **your** gate until it returns.
 
 This predicate is the chain function `IsDefenderCommandStructVulnerable()` (verified in `structsd` source, `keeper/planet_cache.go`): it returns vulnerable when the owner has no fleet, the **defender's fleet is off-station**, there is **no Command Ship**, or the Command Ship is **destroyed or offline**. (Struct/player *online* is pure power math — load vs capacity — not recent activity; see [power.md](power.md).)
 
@@ -363,9 +363,17 @@ stateDiagram-v2
 
 A **dormant** owner (no transactions for days) is *not* the same as a **vulnerable** one. A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their fleet stays on station — `IsDefenderCommandStructVulnerable()` returns **false** and the planet is unraidable by the opportunistic path, no matter how long they've been idle. Do not infer raidability from an inactivity signal (or from a UI "vulnerable"/"inactive" badge). Gate on the **live predicate**: Command Ship online + fleet on station.
 
+**Checklist — before declaring any target unraidable, confirm live:** (1) defender fleet on-station, (2) CMD ship present + online + **not destroyed**, (3) raider-side conditions (raider fleet Away, first-in-queue, raider owner online, `blockStartRaid != 0`). Idle/inactive badges and shield numbers are not substitutes for these checks.
+
 The flip side is the key insight for offense: **a dormant owner is the *ideal siege target*.** Because they are not watching, they will not rebuild a destroyed Command Ship or restore a power-starved one — so once you force the window open it stays open. An active defender, by contrast, may rebuild the Command Ship and slam the window shut.
 
-**The trap (a strictly-negative move).** Moving your fleet to a *not-yet-vulnerable* target and expecting to raid is worse than doing nothing: your fleet is now off-station, so **your own** shields drop and your stored ore is exposed — all for a raid that can never complete until you also destroy their Command Ship. If you commit your fleet, commit to the *siege* (destroy the Command Ship), not just the fleet-move.
+**The trap (a strictly-negative move).** Moving your fleet to a *not-yet-vulnerable* target and expecting to raid is worse than doing nothing: your fleet is now off-station, so **your own** gate opens and your stored ore is exposed — all for a raid that can never complete until you also destroy their Command Ship. If you commit your fleet, commit to the *siege* (destroy the Command Ship), not just the fleet-move.
+
+### Scouting a raid target
+
+For every candidate: read **player**-scoped `storedOre` (`StoredOreAttributeId` on the **player** object — not the planet's `buriedOre`); the **gate** (open when the defender's fleet is off-station, or the CMD ship is absent / destroyed / offline — **not** when the shield number looks low); and `blockStartRaid` (a zero clock can't be solved — a real, separate non-raidable state). A live, profitable target is exactly the set where ore > 0 AND gate-open AND clock-running.
+
+There is no planet-raid simulator in the current tool surface (`simulate` / `strike_options` are **struct-scoped by design**; `raid_readiness` is defensive-only). Run these reads manually. Do not conclude "no raidable targets" from a partial sample — **network-wide claims require enumeration, not sampling**.
 
 The `blockStartRaid` attribute is the **vulnerability clock**, and raid PoW age is measured from it:
 
@@ -439,7 +447,7 @@ Everything above is derivable from the source. It is also confirmed by outcomes:
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre`) can be stolen -- not unmined ore on the planet (its `gridAttributes.ore`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. One raid = total loss.
+- **Raid loot**: Only the player's mined ore (`storedOre` / `StoredOreAttributeId` on the **player**) can be stolen — not unmined ore on the planet (`buriedOre` / `BuriedOreAttributeId`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. One raid = total loss of that snapshot.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Block does NOT fire on evaded shots. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.

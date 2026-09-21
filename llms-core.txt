@@ -1123,17 +1123,19 @@ description: "Ore, Alpha Matter, and energy: resource types, how they flow, conv
 
 | Resource | Unit | Stealable | Refinement | Location |
 |----------|------|-----------|------------|----------|
-| Alpha Ore (unmined) | grams | No | Required | Planet (`gridAttributes.ore`) — extracted by Ore Extractor |
-| Alpha Ore (mined) | grams | **Yes** | Required | Player inventory (`storedOre`) — stolen in raids |
+| Alpha Ore (unmined) | grams | No | Required | Planet — `buriedOre` (`BuriedOreAttributeId`); extracted by Ore Extractor |
+| Alpha Ore (mined) | grams | **Yes** | Required | Player — `storedOre` (`StoredOreAttributeId`); stolen in raids |
 | Alpha Matter | grams | No | Output | Player inventory (on-chain) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
+
+These are **different attribute ids on different objects**. LCD/query payloads often expose both as `gridAttributes.ore`. The planet's `ore` and the player's `ore` are not the same field even though they share a display name. A raider checking loot must read the **player** field (`storedOre` / `StoredOreAttributeId`).
 
 ---
 
 ## Alpha Ore
 
 - Mined from planets via Ore Extractor
-- Stored in the player's `gridAttributes.ore` field (also referred to as `storedOre`). This is NOT the bank balance — bank balance holds only refined Alpha Matter (`ualpha`). Query `gridAttributes.ore` to check unrefined ore holdings.
+- Stored as `storedOre` (`StoredOreAttributeId`) on the **player** object. Player queries still label this `gridAttributes.ore` — that is not the planet's buried ore, and it is not the bank balance (`ualpha`). Query the **player** to check stealable holdings.
 - Must be refined to Alpha Matter before secure use
 - **Extraction rate**: 1 ore per mining operation (fixed)
 - **Planet starting ore**: 5 (fixed for all planets)
@@ -1181,7 +1183,7 @@ Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `gridAttributes.ore` to the player's `storedOre` — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. It stays vulnerable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
@@ -1201,8 +1203,8 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 
 | State | Location | Stealable | Action |
 |-------|----------|-----------|--------|
-| Unmined ore (planet `gridAttributes.ore`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
-| Mined ore (`storedOre`) | Player | **Yes** | Refine immediately — this is what raiders steal |
+| Unmined ore (`buriedOre` / `BuriedOreAttributeId`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
+| Mined ore (`storedOre` / `StoredOreAttributeId`) | Player | **Yes** | Refine immediately — this is what raiders steal |
 | Alpha Matter | Player | No | Secure — cryptographically bound to owner |
 
 **Strategy**: Refine ore as soon as mined to minimize raid exposure. Maintain a 20-30% Alpha Matter reserve for emergencies.
@@ -1509,9 +1511,9 @@ description: "The survival card: what an attacker can actually take, what stops 
 
 ## The two rules that decide everything
 
-**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (its `gridAttributes.ore`) is also safe. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
+**1. Only unrefined ore can be stolen.** A successful raid seizes **all** of your `storedOre` (`StoredOreAttributeId` on the **player**) and nothing else. It does not destroy you, take your planet, capture your structs, or touch refined Alpha Matter. Unmined ore still in the planet (`buriedOre` / `BuriedOreAttributeId`) is also safe. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. So the strongest anti-raid measure is not a weapon — it is refining promptly, which leaves a raider nothing to win.
 
-**2. A raid can only complete while your shields are vulnerable.** Shields are vulnerable when *any* of these is true (chain predicate `IsDefenderCommandStructVulnerable()`):
+**2. Raidability is a live state predicate about the defender's fleet and Command Ship — NOT the shield level number.** The displayed shield value (e.g. 25–125) only sets the raid's PoW difficulty (a timer). "Shields are up" does not mean "cannot be raided." Gate = `IsDefenderCommandStructVulnerable()` — a raid can only complete when *any* of these is true:
 
 - you have no fleet, or your **fleet is off-station**
 - you have **no Command Ship**, or it is **destroyed**, or it is **offline**
@@ -1524,7 +1526,7 @@ While your fleet is on station with a built, online Command Ship, `planet-raid-c
 
 **Online is power math, not activity.** A struct or player is online when capacity covers load — see [power.md](power.md). Going quiet does not take your Command Ship offline; running out of capacity does.
 
-**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and their shields stay up. Never infer raidability from an inactivity signal or a UI badge — gate on the live predicate. The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
+**Idle is not vulnerable.** A player who set up correctly and walked away keeps their structs powered, so their Command Ship stays online and the raidability gate stays shut. Never infer raidability from an inactivity signal, a UI badge, or the **shield number**. Confirm live: fleet on-station, CMD ship present + online + not destroyed. See [combat.md — Scouting a raid target](combat.md#scouting-a-raid-target). The converse is the danger to you: if you *are* dormant and something knocks your Command Ship out, nobody will rebuild it, and the window stays open.
 
 **Raiding drops your own shields.** Sending your fleet to someone else's planet takes it off-station, which makes *you* vulnerable until it returns. Never move your fleet out while holding meaningful unrefined ore.
 
