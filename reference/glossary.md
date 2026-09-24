@@ -222,7 +222,7 @@ A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struc
 A **dormant** owner (no recent transactions) is not a **vulnerable** one: online status is pure power math, not activity, so a powered Command Ship keeps defending indefinitely with no player action. Never infer raidability from an inactivity signal or a UI "inactive"/"vulnerable" badge; gate on the live predicate (Command Ship online + fleet on station). A dormant owner who holds ore is a prime [siege](#siege-raid) target, not an opportunistic one. → [combat.md — Idle is not vulnerable](../knowledge/mechanics/combat.md#idle-is-not-vulnerable)
 
 ### Indirect Combat Module
-Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
+Mobile Artillery's counter trait. Its own attack cannot trigger counter-damage against the **firing MA hull** (`attackCounterable: false`), but ordinary active attacks can still hit it and the trait does not protect its Command Ship or fleetmates. Separately, its zero counter values mean it cannot counter-attack when attacked. → [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack), [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
 
 ### Infusion
 Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram = 1 kW). A reactor infusion splits ~96/4: the infuser keeps `1 − commission` (default 4%) on their **own** capacity, the reactor keeps the commission. It does **not** raise any substation's capacity. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)

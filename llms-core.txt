@@ -1730,7 +1730,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Pursuit Fighter | 3 | guided | Air | — | Cheapest air offense |
 | Stealth Bomber | 5 | guided | Land, Water | — | Stealth (2 charge to activate) |
 | High Alt Interceptor | 5 | guided | Space, Air | — | Air-to-space capability |
-| Mobile Artillery | 5 | unguided | Land, Water | — | Cannot counter-attack when attacked |
+| Mobile Artillery | 5 | unguided | Land, Water | — | Its attack cannot trigger counter-damage against the MA hull |
 | Tank | 3 | unguided | Land | — | Damage reduction 1 (takes 3 normal hits to kill; armour-piercing ignores the reduction) |
 | SAM Launcher | 5 | guided | Space, Air | — | Land-based anti-air/space |
 | Cruiser | 5 / 3 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
@@ -1752,7 +1752,7 @@ All primary weapons are blockable and counterable. **Armour-piercing** weapons (
 | Pursuit Fighter | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
 | Stealth Bomber | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
 | High Alt Interceptor | `defensiveManeuver` | 1 / 1 | 66% vs unguided | 0 | No | — |
-| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | Cannot counter-attack when attacked |
+| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | `attackCounterable: false`: its volley cannot be countered against the MA hull; fleetmates receive no protection |
 | Tank | `armour` | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
 | SAM Launcher | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
 | Cruiser | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
@@ -1760,6 +1760,8 @@ All primary weapons are blockable and counterable. **Armour-piercing** weapons (
 | Submersible | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
 
 **Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (2 charge to re-activate).
+
+**Mobile Artillery / Indirect Combat scope**: “cannot be countered” applies only when that Mobile Artillery is the **attacker**. Its `attackCounterable: false` overrides `primaryWeaponCounterable: true`, so target/defender counters do not damage the firing MA. It does not prevent ordinary active attacks against the MA, and it does not shield the fleet's Command Ship or other units.
 
 #### Charge Costs (All Struct Types)
 

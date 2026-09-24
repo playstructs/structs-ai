@@ -860,14 +860,14 @@ The bearer token is generated on first launch and stored with the app's config. 
 | `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Guild charter, bank convert, and `reactor-restart` are CLI-only |
 | `structs_intel` | Strategic intelligence + perception. `query` is one of `whoami`, `intents`, `ruleset`, `simulate`, `strike_options`, `what_can_i_build`, `power_forecast`, `economy_status`, `plan_timeline`, `planet_history`, `valid_targets`, `scout`, `battle_log`, `slot_map`, `is_active`, `market`, `metric_trend`, `query` (raw entity reads) |
 | `structs_policy` | Standing orders — `list` / `set` / `remove` / `log` over `auto_refine`, `power_alert`, `combat_alert`, `agent_ui`, `auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`, `rules_of_engagement`, `primary_home_guard`, `board_auto_open`, `watchdog_remediate` |
-| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor` |
+| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor`. `tx_settled` is an MCP action-bridge receipt, not guaranteed for PoW auto-completions |
 | `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with `abort_if` predicates; `as` runs the chain as a virtual player |
 | `structs_players` | Virtual players and the native automation loops: `list`, `roster`, `create`, `state`, `act`, `capacity`, `role`, `economy`, `infra`, `harvest`, `autobuild`, `autodefend`, `autoresponse`, `autoraid`, `infuse` |
 | `structs_board` | Team Ops board + human UI (`component` elicitation) and `web` dashboard toggle. MCP board path never signs; `web:"on"` serves a separate human dashboard that **can** sign — see below |
 | `structs_system` | Health, logs, self-tuning — `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed`, `config` |
 | `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
 | `structs_doctrine` | Standing rules of engagement, per-tick executor, and the persistent combat lists (`set` / `show` / `tick` / `lists`, autonomy advise/auto, presets `turtle` / `economy` / `balanced` / `warfighter`) |
-| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
+| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window). Reach planning is advisory; on an apparent false-negative, refresh raw attacker/target/fleet state and use chain preflight |
 
 Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`. The old names still answer with a pointer to the replacement, but are no longer advertised — `tools/list` returns exactly the 13 above.)
 
@@ -2835,6 +2835,15 @@ Watch for the defender rebuilding the Command Ship (an active defender will) —
 
 Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The attack needs only the attacking struct and its owner online — your Command Ship does not need to be online to attack, change defenders, or change stealth. The **target must be a built struct**: a struct that is still building cannot be attacked (`unbuilt`), and a destroyed one is rejected (`destroyed`); the target's online status is irrelevant. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
 
+**Planner false-negative fallback.** `structs_strike` and `structs_intel {query:"strike_options"}` are advisers, not chain authority. A 2026-09-24 playtest saw both report “no reach” while an online, land-operating Mobile Artillery was co-located with a land Command Ship; the direct attack succeeded. Before accepting an “unreachable” verdict, refresh the raw attacker, target, and fleet records and independently confirm:
+
+1. attacker is built, online, not destroyed, and its owner is online;
+2. attacker and target resolve to the same **planet** (a fleet struct's `locationId` is a fleet id, so follow that fleet's `locationId` to the planet);
+3. the selected weapon's reach bitmask includes the target's current `operatingAmbit`;
+4. target is built, not destroyed, and not hidden from that attacker.
+
+If all four hold, the planner refusal is a Desktop bug or stale-cache result, not proof that the chain will reject. Use the ordinary `struct-attack` action/preflight and let the chain arbitrate; record the planner output plus the fresh raw reads for a bug report. This fallback does **not** waive normal approval or rules of engagement.
+
 ```
 structsd tx structs struct-attack TX_FLAGS -- [operating-struct-id] [target-id,target-id2,...] [weapon-system]
 ```
@@ -2917,6 +2926,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 
 - `structsd query structs fleet [id]` — location and `onStation`/`away`.
 - After a raid: your `storedOre` rose (refine it). For the exact grams seized, the **authoritative source is `ledger` rows with `action = 'seized'`**, not `planet_raid.seized_ore` — the ledger even records 0-gram seizures (a raid that reached the planet but took nothing, e.g. a repelled probe). See [database-schema.md — planet_raid](https://structs.ai/knowledge/infrastructure/database-schema).
+- A `raidSuccessful` event plus the ore ledger/state delta proves settlement. Do **not** require a Desktop `tx_settled` row for an auto-submitted raid proof: that synthetic receipt is produced by the MCP action bridge, and PoW completions can bypass it. To recover the completion tx hash, query Tendermint/Cosmos transactions at the raid-success block and select the tx carrying `EventHashSuccess(category=raid, objectId=[fleet-id], planetId=[planet-id])` plus `EventRaid(status=raidSuccessful)`. See [chain-events — recovering a PoW completion hash](https://structs.ai/api/chain-events#recovering-a-pow-completion-transaction-hash).
 - After attacks: events include remaining-health values — use them to assess damage.
 - Broadcast ≠ success: a raid can land but resolve as `defeat`/`ongoing`. Query the raid status.
 
@@ -3595,6 +3605,8 @@ Use wildcards to discover what events exist. Narrow to specific subjects once yo
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
 All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
+
+For raid settlement, `raid_status` with `status: raidSuccessful` is the authoritative GRASS outcome signal; corroborate with player ore/state deltas. Desktop's `tx_settled` is not a GRASS category and is not guaranteed when a PoW worker auto-submits the completion outside the MCP action bridge. If you need the missing hash, query the transactions at the success block and match `EventHashSuccess(category=raid)` with `EventRaid(status=raidSuccessful)` as described in [chain events](https://structs.ai/api/chain-events#recovering-a-pow-completion-transaction-hash).
 
 ### Struct Events
 
@@ -5134,6 +5146,8 @@ The interaction between a weapon's control type (guided/unguided) and the target
 
 **Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour reduces damage by 1 regardless of weapon control — **except** against armour-piercing weapons (Battleship primary), which ignore it entirely. The Battleship is the dedicated answer to Tanks and to armoured power generators.
 
+**Indirect Combat is counter immunity, not damage immunity and not fleet protection.** Mobile Artillery's `attackCounterable: false` means that when the MA fires, that attack cannot trigger counter-damage against the **MA hull**. Incoming attacks still hit it normally (“Full hit” above), and the trait does not protect its Command Ship, fleetmates, blockers, or anything it defends. Each other hull is evaluated on its own attack and defenses.
+
 ### Stealth
 
 Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
@@ -5181,6 +5195,13 @@ A struct cannot block for a friendly in a different ambit. Blocking is strictly 
 
 Each struct can counter-attack **at most once per `struct-attack` invocation**. Counter-spent state is tracked per struct per attack command (not per target, not per shot). For a 3-shot Attack Run: the defender counters on the first shot only, but can attempt to block all 3 shots. The target counters once after all shots resolve.
 
+Two similarly named fields have different scopes:
+
+- `primaryWeaponCounterable` / `secondaryWeaponCounterable` belong to the selected weapon.
+- `attackCounterable` belongs to the **attacking hull** and can veto counters for that attack. Mobile Artillery sets it to `false`, overriding its primary weapon's `true`.
+
+“Cannot be countered” therefore means **the firing Mobile Artillery does not take counter-damage from that volley**. It does not make the fleet safe: a defender can still actively attack the Command Ship or any other fleet unit, and can attack the MA itself with a later `struct-attack`.
+
 Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct. **Defenders do not take counter-attack damage** — only the original attacker and target can be damaged by counters.
 
 **Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only **on-station fleet structs** (`canDefend: true`) can defend their home planet. Planetary structs cannot be assigned as defenders.
@@ -5195,7 +5216,7 @@ Counter damage comes from two per-type fields, not a flat number: `counterAttack
 **Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
 
 **Requirements** (all must be true):
-1. Weapon must be counterable (`GetWeaponCounterable` returns true)
+1. The selected weapon is counterable **and** the attacking hull allows counters (`GetWeaponCounterable` / `attackCounterable`; Mobile Artillery vetoes them)
 2. Neither counter-attacker nor attacker is destroyed
 3. Defender's weapons must be able to target the **attacker's ambit** (via `CanCounterTargetAmbit`)
 4. Location reachability to the attacker:
@@ -8811,7 +8832,7 @@ All fleet structs (IDs 1-13) deal 2 damage per primary weapon hit. DB-verified v
 | Pursuit Fighter | 3 | guided | Air | — | Cheapest air offense |
 | Stealth Bomber | 5 | guided | Land, Water | — | Stealth (2 charge to activate) |
 | High Alt Interceptor | 5 | guided | Space, Air | — | Air-to-space capability |
-| Mobile Artillery | 5 | unguided | Land, Water | — | Cannot counter-attack when attacked |
+| Mobile Artillery | 5 | unguided | Land, Water | — | Its attack cannot trigger counter-damage against the MA hull |
 | Tank | 3 | unguided | Land | — | Damage reduction 1 (takes 3 normal hits to kill; armour-piercing ignores the reduction) |
 | SAM Launcher | 5 | guided | Space, Air | — | Land-based anti-air/space |
 | Cruiser | 5 / 3 | guided / unguided | Land, Water / Air | Secondary: 1 shot × 2 dmg (100% hit) | Most versatile; covers 3 ambits |
@@ -8833,7 +8854,7 @@ All primary weapons are blockable and counterable. **Armour-piercing** weapons (
 | Pursuit Fighter | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
 | Stealth Bomber | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
 | High Alt Interceptor | `defensiveManeuver` | 1 / 1 | 66% vs unguided | 0 | No | — |
-| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | Cannot counter-attack when attacked |
+| Mobile Artillery | `indirectCombatModule` | **none** | — | 0 | No | `attackCounterable: false`: its volley cannot be countered against the MA hull; fleetmates receive no protection |
 | Tank | `armour` | 1 / 1 | — | **1** | No | Survives 3 hits instead of 2 |
 | SAM Launcher | `noUnitDefenses` | 1 / 1 | — | 0 | No | — |
 | Cruiser | `signalJamming` | 1 / 1 | 66% vs guided | 0 | No | — |
@@ -8841,6 +8862,8 @@ All primary weapons are blockable and counterable. **Armour-piercing** weapons (
 | Submersible | `stealthMode` | 1 / 1 | — | 0 | Yes | Same-ambit still targetable; attacking deactivates stealth |
 
 **Stealth Mode**: Stealthed structs can still be targeted by structs in the **same ambit** -- stealth only blocks cross-ambit targeting. Attacking instantly deactivates stealth (2 charge to re-activate).
+
+**Mobile Artillery / Indirect Combat scope**: “cannot be countered” applies only when that Mobile Artillery is the **attacker**. Its `attackCounterable: false` overrides `primaryWeaponCounterable: true`, so target/defender counters do not damage the firing MA. It does not prevent ordinary active attacks against the MA, and it does not shield the fleet's Command Ship or other units.
 
 #### Charge Costs (All Struct Types)
 
@@ -9412,7 +9435,7 @@ The bearer token exists because any browser page can reach `localhost` — witho
 | `structs_action` | `action`, `args` | One game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Routes through the signing bridge. Guild charter, bank convert, and `reactor-restart` are **CLI-only** — they are not in this enum |
 | `structs_intel` | `query`, `args` | Strategic intelligence + perception. Combat/recon: `scout`, `valid_targets`, `simulate`, `strike_options`, `battle_log`, `ruleset`, `is_active`. Identity/planning: `whoami`, `what_can_i_build`, `economy_status`, `plan_timeline`, `slot_map`, `intents`. Economy/trend: `power_forecast`, `planet_history`, `market`, `metric_trend`. Raw: `query` (absorbs the retired `structs_query`) |
 | `structs_policy` | `command`, `policy`, `enabled`, `config` | Standing orders: `list` / `set` / `remove` / `log`. See the policy table below |
-| `structs_events` | `since`, `category`, `mine_only`, `team`, `threats_only`, `limit`, `wait_secs` | Long-poll event feed (raids, attacks, fleet moves, completions, `tx_settled` receipts) so agents react instead of polling |
+| `structs_events` | `since`, `category`, `mine_only`, `team`, `threats_only`, `limit`, `wait_secs` | Long-poll event feed (raids, attacks, fleet moves, completions, and MCP action-bridge `tx_settled` receipts) so agents react instead of polling |
 | `structs_sequence` | `steps`, `abort_if`, `max_wait_secs`, `as` | Guarded autonomous action chains, paced to the charge cooldown, with abort predicates (e.g. CMD-ship HP floor); pass `as` to run as a virtual player |
 | `structs_players` | `command`, `name`, `index`, `guild_id`, `player`, `role`, `action`, `args` | Virtual players **and** the native automation loops. See the command table below. Keys stay in the webapp |
 | `structs_board` | `open`, `push`, `component`, `mode`, `timeout_secs`, `web` | Team Ops board + human-facing UI surfaces: the at-a-glance command view and event feed, declarative components (absorbs the retired `structs_ui`), and `web` control for the browser-served dashboard. Display/elicitation only, never signs |
@@ -9479,6 +9502,8 @@ GPU (wgpu compute shader, ~200M h/s) is auto-selected when available and falls b
 
 ### Perception + combat simulator
 `structs_intel` fronts a recon layer, a weapon-matrix `ruleset`, and a pure-math `simulate` so an agent can evaluate `valid_targets`, `strike_options`, and outcomes before committing charge. This mirrors the combat rules in [combat.md](../mechanics/combat.md).
+
+`strike_options` and `structs_strike` are planners, not chain-authoritative reach checks. Their target read can be fresher than their synced/cached team and fleet state, so an “unreachable” result can false-negative. Refresh the raw attacker, target, and both fleets; resolve fleet `locationId` to the actual planet; then verify Online status and weapon reach against the target's `operatingAmbit`. If those live checks agree, use the normal attack preflight rather than treating the planner refusal as proof that the chain will reject.
 
 ### Policy engine + watchdog
 Standing orders run on game-state transitions using **delta tracking** (previous vs current snapshot) to avoid double-triggers. Only policies the engine actually evaluates are seeded, so `structs_policy list` is an honest inventory:
@@ -9562,7 +9587,9 @@ Those pages are backed by **Tauri / web-board commands** in `board_pages.rs` (`m
 `structs_board {web:"on"}` serves those same pages over HTTP at `/board` on the MCP port so a remote human can drive the dashboard from a browser; `{web:"status"}` returns the shareable URL and `{web:"off"}` stops serving. It is opt-in and every route 404s until enabled. Authentication is the MCP bearer token, handed over once as `?token=` and swapped for an HttpOnly cookie. The server binds `127.0.0.1` only, so remote access goes through the operator's own tunnel (`ssh -L 8420:127.0.0.1:8420 user@host`). Because the web path bypasses the native window guard, **the token is full operator authority** — including mass actions that sign transactions. Web writes push the same audit entries into the event feed as native ones. Native mutating dashboard commands are gated to the `board` window label (`require_board`); the web path reuses the same handlers after bearer auth.
 
 ### Event feed
-Combat reaches `structs_events` as `struct_health` (with `health`/`health_old` and `struct_id`) and `struct_status`, alongside `shield_change`, `struct_block_build_start`, `fleet_arrive`/`fleet_depart`, `raid_status`, `player_consensus`, and `lastAction`. There is **no `struct_attack` category in the feed** — for your own attack outcomes use `structs_intel {query:"battle_log"}`. Actions you submitted come back as `tx_settled` receipts carrying the real tx hash, chain code, and succeeded/dropped status.
+Combat reaches `structs_events` as `struct_health` (with `health`/`health_old` and `struct_id`) and `struct_status`, alongside `shield_change`, `struct_block_build_start`, `fleet_arrive`/`fleet_depart`, `raid_status`, `player_consensus`, and `lastAction`. There is **no `struct_attack` category in the feed** — for your own attack outcomes use `structs_intel {query:"battle_log"}`.
+
+`tx_settled` is **Desktop-synthetic**, not a GRASS category or chain event. It carries the real tx hash, chain code, and succeeded/dropped status when the MCP action/signing bridge reports settlement. It is not guaranteed for completion transactions auto-submitted by the webapp TaskManager / PoW path. For those, treat the GRASS effect event and refreshed state as the outcome signal; if the hash is required, recover the chain transaction at that block by matching typed events as described in [chain events](../../api/chain-events.md#recovering-a-pow-completion-transaction-hash).
 
 Every GRASS event is also scanned for player (`1-…`) and struct (`5-…`) ids; unknown ones are resolved to names by background LCD reads, cached, and pushed to the board so live rows upgrade in place. `block` heartbeat events are relayed to the Grass page but deliberately **not** buffered — they would flush the 1000-entry ring within the hour — so they never appear in `structs_events` results.
 
@@ -18095,6 +18122,22 @@ Guild Stack `sync_state.raw_events` / `raw_attributes` only fill when `SYNC_STAT
 
 ---
 
+## Recovering a PoW completion transaction hash
+
+A GRASS `raid_status: raidSuccessful` proves the indexed gameplay outcome, but it is not a transaction receipt. Likewise, Desktop's `tx_settled` is a synthetic receipt produced when the MCP action/signing bridge observes one of its submitted transactions settle. A PoW worker can submit a mine, refine, build, or raid completion through the webapp TaskManager path instead, so no matching `tx_settled` row is guaranteed.
+
+To recover the chain transaction hash:
+
+1. Record the block height from the success event.
+2. Query all transactions at that height through Tendermint `tx_search` or the Cosmos tx service.
+3. Inspect each transaction's ABCI events and find the one containing `structs.structs.EventHashSuccess` with the expected `category`, `objectId`, and—on a raid—`planetId`.
+4. For a raid, corroborate it with `structs.structs.EventRaid` where the same fleet/planet pair has `status: raidSuccessful` (and, when applicable, `EventOreTheft`).
+5. Read the transaction hash from that chain response. The chain receipt, not presence in Desktop's event buffer, is authoritative.
+
+Do not match on height alone: several proof-of-work completions can settle in one block.
+
+---
+
 ## Two emission styles
 
 ### Typed proto (`EmitTypedEvent`)
@@ -19504,7 +19547,7 @@ A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struc
 A **dormant** owner (no recent transactions) is not a **vulnerable** one: online status is pure power math, not activity, so a powered Command Ship keeps defending indefinitely with no player action. Never infer raidability from an inactivity signal or a UI "inactive"/"vulnerable" badge; gate on the live predicate (Command Ship online + fleet on station). A dormant owner who holds ore is a prime [siege](#siege-raid) target, not an opportunistic one. → [combat.md — Idle is not vulnerable](../knowledge/mechanics/combat.md#idle-is-not-vulnerable)
 
 ### Indirect Combat Module
-Mobile Artillery's unit defense: it cannot counter-attack when attacked. → [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
+Mobile Artillery's counter trait. Its own attack cannot trigger counter-damage against the **firing MA hull** (`attackCounterable: false`), but ordinary active attacks can still hit it and the trait does not protect its Command Ship or fleetmates. Separately, its zero counter values mean it cannot counter-attack when attacked. → [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack), [struct-types.md — Defensive Properties](../knowledge/entities/struct-types.md)
 
 ### Infusion
 Converting Alpha Matter into power capacity at ratio 1 (1 ualpha = 1 mW; 1 gram = 1 kW). A reactor infusion splits ~96/4: the infuser keeps `1 − commission` (default 4%) on their **own** capacity, the reactor keeps the commission. It does **not** raise any substation's capacity. → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)

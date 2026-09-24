@@ -112,6 +112,8 @@ Use wildcards to discover what events exist. Narrow to specific subjects once yo
 
 All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
 
+For raid settlement, `raid_status` with `status: raidSuccessful` is the authoritative GRASS outcome signal; corroborate with player ore/state deltas. Desktop's `tx_settled` is not a GRASS category and is not guaranteed when a PoW worker auto-submits the completion outside the MCP action bridge. If you need the missing hash, query the transactions at the success block and match `EventHashSuccess(category=raid)` with `EventRaid(status=raidSuccessful)` as described in [chain events](https://structs.ai/api/chain-events#recovering-a-pow-completion-transaction-hash).
+
 ### Struct Events
 
 **Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{planet_id}.{player_id}`, i.e. subscribe `structs.planet.{planet_id}.*`) rather than the struct subject. Subscribe to both if you need complete coverage.

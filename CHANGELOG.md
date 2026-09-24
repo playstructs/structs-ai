@@ -11,6 +11,16 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.3] - 2026-09-24
+
+Combat planner and receipt caveats from a verified raid.
+
+### Changed
+
+- **Strike reach false-negatives** — `structs_strike` / `strike_options` are advisory planners and can mix fresh target reads with cached team/fleet state. [Desktop](knowledge/infrastructure/structs-desktop.md), [combat skill](/skills/structs-combat/SKILL.html), and the [error index](play/errors.md) give the raw-state fallback.
+- **PoW completion receipts** — Desktop `tx_settled` is synthetic and is not guaranteed when TaskManager auto-submits a completion outside the MCP action bridge. [Chain events](api/chain-events.md#recovering-a-pow-completion-transaction-hash) explains hash recovery using `EventHashSuccess` plus the outcome event.
+- **Mobile Artillery counter scope** — “cannot be countered” protects only the firing MA from counter-damage. It does not protect its Command Ship or fleetmates, and does not prevent ordinary attacks against the MA. The schema now distinguishes weapon counterability from hull-level `attackCounterable`.
+
 ## [1.30.2] - 2026-09-21
 
 Discoverability: "Could I lose my account to a raid?" — the rule was already in combat.md; it now lives where a panicking player looks.

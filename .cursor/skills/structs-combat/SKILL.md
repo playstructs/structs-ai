@@ -113,6 +113,15 @@ Watch for the defender rebuilding the Command Ship (an active defender will) —
 
 Scout the target's ambit and defense type, position (Command Ship only) into range, then fire. The attack needs only the attacking struct and its owner online — your Command Ship does not need to be online to attack, change defenders, or change stealth. The **target must be a built struct**: a struct that is still building cannot be attacked (`unbuilt`), and a destroyed one is rejected (`destroyed`); the target's online status is irrelevant. The CLI prompts; verify target IDs and that you aren't crossing guild lines you didn't intend to (attacking another guild's structs is a Tier 2 act of war). Note most weapons are single-target (`primaryWeaponTargets = 1`) — the comma list only spreads damage for weapons whose target count is > 1.
 
+**Planner false-negative fallback.** `structs_strike` and `structs_intel {query:"strike_options"}` are advisers, not chain authority. A 2026-09-24 playtest saw both report “no reach” while an online, land-operating Mobile Artillery was co-located with a land Command Ship; the direct attack succeeded. Before accepting an “unreachable” verdict, refresh the raw attacker, target, and fleet records and independently confirm:
+
+1. attacker is built, online, not destroyed, and its owner is online;
+2. attacker and target resolve to the same **planet** (a fleet struct's `locationId` is a fleet id, so follow that fleet's `locationId` to the planet);
+3. the selected weapon's reach bitmask includes the target's current `operatingAmbit`;
+4. target is built, not destroyed, and not hidden from that attacker.
+
+If all four hold, the planner refusal is a Desktop bug or stale-cache result, not proof that the chain will reject. Use the ordinary `struct-attack` action/preflight and let the chain arbitrate; record the planner output plus the fresh raw reads for a bug report. This fallback does **not** waive normal approval or rules of engagement.
+
 ```
 structsd tx structs struct-attack TX_FLAGS -- [operating-struct-id] [target-id,target-id2,...] [weapon-system]
 ```
@@ -195,6 +204,7 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 
 - `structsd query structs fleet [id]` — location and `onStation`/`away`.
 - After a raid: your `storedOre` rose (refine it). For the exact grams seized, the **authoritative source is `ledger` rows with `action = 'seized'`**, not `planet_raid.seized_ore` — the ledger even records 0-gram seizures (a raid that reached the planet but took nothing, e.g. a repelled probe). See [database-schema.md — planet_raid](https://structs.ai/knowledge/infrastructure/database-schema).
+- A `raidSuccessful` event plus the ore ledger/state delta proves settlement. Do **not** require a Desktop `tx_settled` row for an auto-submitted raid proof: that synthetic receipt is produced by the MCP action bridge, and PoW completions can bypass it. To recover the completion tx hash, query Tendermint/Cosmos transactions at the raid-success block and select the tx carrying `EventHashSuccess(category=raid, objectId=[fleet-id], planetId=[planet-id])` plus `EventRaid(status=raidSuccessful)`. See [chain-events — recovering a PoW completion hash](https://structs.ai/api/chain-events#recovering-a-pow-completion-transaction-hash).
 - After attacks: events include remaining-health values — use them to assess damage.
 - Broadcast ≠ success: a raid can land but resolve as `defeat`/`ongoing`. Query the raid status.
 

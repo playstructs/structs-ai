@@ -24,8 +24,9 @@ Match the substring you see to the fix. Fuller explanations live in
 | charter / `work-failure` / guild-create proof | Charter nonce died (anchor moved) or entitlement checks failed | Re-query `guild-charter`; restart compute against the new anchor. [hashing.md](../knowledge/mechanics/hashing.md). |
 | primary-address / `PermAll` | `player-update-primary-address` signed by a limited key | Sign from an address that holds `PermAll`. [permissions](../knowledge/mechanics/permissions.md) · [agent security](../awareness/agent-security.md). |
 | `not onStation` / fleet | Fleet must be on station to build/act there | Move the fleet and verify status before committing. |
+| planner says `no ... can reach` / `unreachable`, but raw state says legal | `structs_strike` reach planning can false-negative on stale or normalized attacker/fleet state | Refresh the attacker, target, and fleets. Verify attacker Online, matching weapon reach, and actual planet co-location (resolve fleet `locationId` to its planet). If those live checks hold, use the ordinary chain attack preflight; the planner refusal is advisory. [combat skill](/skills/structs-combat/SKILL.html). |
 | `no available slots` | Planet/ambit slot full | Free a slot or build elsewhere. See [building](../knowledge/mechanics/building.md). |
-| shield / raid completion rejected | Command Ship back online — shields not vulnerable | Re-scout; only raid when shields are vulnerable. [failed compute](../playbooks/situations/failed-compute.md). |
+| shield / raid completion rejected | The live fleet/Command Ship raidability gate closed; this is not determined by the displayed shield number | Re-scout the on-station fleet and Command Ship state. [failed compute](../playbooks/situations/failed-compute.md). |
 | broadcast ok but nothing changed | Broadcast ≠ success; a precondition failed | Query state to confirm. [transaction issues](../troubleshooting/common-issues.md#transaction-issues). |
 | permission / unauthorized | Missing permission bit for the action | [permissions](../knowledge/mechanics/permissions.md); skill: [permissions](/skills/structs-permissions/SKILL.html). |
 

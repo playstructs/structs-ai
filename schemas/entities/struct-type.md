@@ -4,11 +4,11 @@ description: "The StructType entity schema: the definition behind every buildabl
 
 # StructType Entity Schema
 
-**Version**: 1.1.0
+**Version**: 1.1.1
 **Category**: core
 **Entity**: StructType
 **Endpoint**: `/structs/struct_type/{id}`
-**Last Updated**: 2026-01-16
+**Last Updated**: 2026-09-24
 
 ---
 
@@ -45,6 +45,11 @@ description: "The StructType entity schema: the definition behind every buildabl
 | Field | Type | Description |
 |-------|------|-------------|
 | maxHealth | string | Maximum health points |
+| attackCounterable | boolean | Hull-level permission for counters against attacks made by this struct. Evaluated with the selected weapon's `*WeaponCounterable`; either can veto the counter. |
+| counterAttack | string | Counter damage when the counter-attacker is in a different ambit from the original attacker |
+| counterAttackSameAmbit | string | Counter damage when the counter-attacker shares the original attacker's ambit |
+
+`attackCounterable` and `primaryWeaponCounterable` / `secondaryWeaponCounterable` are not duplicates. The weapon field says whether that weapon permits a counter; the hull field says whether attacks by that struct permit one. Mobile Artillery demonstrates the distinction: its primary weapon is counterable, but its hull sets `attackCounterable: false`, so its volley cannot trigger counter-damage against the firing MA. This protection does not extend to fleetmates.
 
 ### Power Properties
 

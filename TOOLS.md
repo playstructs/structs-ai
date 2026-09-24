@@ -182,14 +182,14 @@ The bearer token is generated on first launch and stored with the app's config. 
 | `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Guild charter, bank convert, and `reactor-restart` are CLI-only |
 | `structs_intel` | Strategic intelligence + perception. `query` is one of `whoami`, `intents`, `ruleset`, `simulate`, `strike_options`, `what_can_i_build`, `power_forecast`, `economy_status`, `plan_timeline`, `planet_history`, `valid_targets`, `scout`, `battle_log`, `slot_map`, `is_active`, `market`, `metric_trend`, `query` (raw entity reads) |
 | `structs_policy` | Standing orders — `list` / `set` / `remove` / `log` over `auto_refine`, `power_alert`, `combat_alert`, `agent_ui`, `auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`, `rules_of_engagement`, `primary_home_guard`, `board_auto_open`, `watchdog_remediate` |
-| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor` |
+| `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor`. `tx_settled` is an MCP action-bridge receipt, not guaranteed for PoW auto-completions |
 | `structs_sequence` | Guarded autonomous action chains, paced to the charge cooldown, with `abort_if` predicates; `as` runs the chain as a virtual player |
 | `structs_players` | Virtual players and the native automation loops: `list`, `roster`, `create`, `state`, `act`, `capacity`, `role`, `economy`, `infra`, `harvest`, `autobuild`, `autodefend`, `autoresponse`, `autoraid`, `infuse` |
 | `structs_board` | Team Ops board + human UI (`component` elicitation) and `web` dashboard toggle. MCP board path never signs; `web:"on"` serves a separate human dashboard that **can** sign — see below |
 | `structs_system` | Health, logs, self-tuning — `status`, `logs`, `loops`, `tx`, `pow`, `watchdog`, `feed`, `config` |
 | `structs_map` | Render a planet map to PNG/GIF using the game's renderer |
 | `structs_doctrine` | Standing rules of engagement, per-tick executor, and the persistent combat lists (`set` / `show` / `tick` / `lists`, autonomy advise/auto, presets `turtle` / `economy` / `balanced` / `warfighter`) |
-| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window) |
+| `structs_strike` | Coordinated team attack + kill-chain (strip blockers → kill → raid window). Reach planning is advisory; on an apparent false-negative, refresh raw attacker/target/fleet state and use chain preflight |
 
 Full descriptions, parameters, and subsystems: **[knowledge/infrastructure/structs-desktop.md](knowledge/infrastructure/structs-desktop.md)**. (`structs_query` and `structs_ui` were folded into `structs_intel` and `structs_board`. The old names still answer with a pointer to the replacement, but are no longer advertised — `tools/list` returns exactly the 13 above.)
 

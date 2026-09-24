@@ -160,6 +160,8 @@ The interaction between a weapon's control type (guided/unguided) and the target
 
 **Tactical takeaways**: Use unguided weapons against Signal Jamming targets (Battleship, Pursuit Fighter, Cruiser). Use guided weapons against Defensive Maneuver targets (High Alt Interceptor). Armour reduces damage by 1 regardless of weapon control — **except** against armour-piercing weapons (Battleship primary), which ignore it entirely. The Battleship is the dedicated answer to Tanks and to armoured power generators.
 
+**Indirect Combat is counter immunity, not damage immunity and not fleet protection.** Mobile Artillery's `attackCounterable: false` means that when the MA fires, that attack cannot trigger counter-damage against the **MA hull**. Incoming attacks still hit it normally (“Full hit” above), and the trait does not protect its Command Ship, fleetmates, blockers, or anything it defends. Each other hull is evaluated on its own attack and defenses.
+
 ### Stealth
 
 Stealthed structs (Stealth Bomber, Submersible) are **not invisible** -- they can still be targeted by structs in the **same ambit**. Stealth blocks cross-ambit targeting only. A stealthed Submersible (water) can be attacked by other water structs, but air/land/space structs cannot target it.
@@ -207,6 +209,13 @@ A struct cannot block for a friendly in a different ambit. Blocking is strictly 
 
 Each struct can counter-attack **at most once per `struct-attack` invocation**. Counter-spent state is tracked per struct per attack command (not per target, not per shot). For a 3-shot Attack Run: the defender counters on the first shot only, but can attempt to block all 3 shots. The target counters once after all shots resolve.
 
+Two similarly named fields have different scopes:
+
+- `primaryWeaponCounterable` / `secondaryWeaponCounterable` belong to the selected weapon.
+- `attackCounterable` belongs to the **attacking hull** and can veto counters for that attack. Mobile Artillery sets it to `false`, overriding its primary weapon's `true`.
+
+“Cannot be countered” therefore means **the firing Mobile Artillery does not take counter-damage from that volley**. It does not make the fleet safe: a defender can still actively attack the Command Ship or any other fleet unit, and can attack the MA itself with a later `struct-attack`.
+
 Counter-attacks are **ambit-independent from the defended target**. A space-based defender can counter-attack a space-based attacker even while defending a land-based struct. **Defenders do not take counter-attack damage** — only the original attacker and target can be damaged by counters.
 
 **Range rule**: A struct on a fleet that is `away` from the home planet cannot defend planetary structs at that planet. Only **on-station fleet structs** (`canDefend: true`) can defend their home planet. Planetary structs cannot be assigned as defenders.
@@ -221,7 +230,7 @@ Counter damage comes from two per-type fields, not a flat number: `counterAttack
 **Counters are a backstop, not a damage plan.** The values are small (typically 1), and an attacker striking from an ambit your structs can't reach takes *no* counter at all. Real damage comes from active `struct-attack` volleys — build offense around attacking from a safe ambit, not around baiting counters.
 
 **Requirements** (all must be true):
-1. Weapon must be counterable (`GetWeaponCounterable` returns true)
+1. The selected weapon is counterable **and** the attacking hull allows counters (`GetWeaponCounterable` / `attackCounterable`; Mobile Artillery vetoes them)
 2. Neither counter-attacker nor attacker is destroyed
 3. Defender's weapons must be able to target the **attacker's ambit** (via `CanCounterTargetAmbit`)
 4. Location reachability to the attacker:

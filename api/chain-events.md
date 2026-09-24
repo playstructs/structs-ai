@@ -50,6 +50,22 @@ Guild Stack `sync_state.raw_events` / `raw_attributes` only fill when `SYNC_STAT
 
 ---
 
+## Recovering a PoW completion transaction hash
+
+A GRASS `raid_status: raidSuccessful` proves the indexed gameplay outcome, but it is not a transaction receipt. Likewise, Desktop's `tx_settled` is a synthetic receipt produced when the MCP action/signing bridge observes one of its submitted transactions settle. A PoW worker can submit a mine, refine, build, or raid completion through the webapp TaskManager path instead, so no matching `tx_settled` row is guaranteed.
+
+To recover the chain transaction hash:
+
+1. Record the block height from the success event.
+2. Query all transactions at that height through Tendermint `tx_search` or the Cosmos tx service.
+3. Inspect each transaction's ABCI events and find the one containing `structs.structs.EventHashSuccess` with the expected `category`, `objectId`, and—on a raid—`planetId`.
+4. For a raid, corroborate it with `structs.structs.EventRaid` where the same fleet/planet pair has `status: raidSuccessful` (and, when applicable, `EventOreTheft`).
+5. Read the transaction hash from that chain response. The chain receipt, not presence in Desktop's event buffer, is authoritative.
+
+Do not match on height alone: several proof-of-work completions can settle in one block.
+
+---
+
 ## Two emission styles
 
 ### Typed proto (`EmitTypedEvent`)
