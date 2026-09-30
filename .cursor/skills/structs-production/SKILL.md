@@ -63,6 +63,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
 4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock lives on the **planet** and resets after each successful mine (any extractor), so every cycle re-enters the full ~17h decay. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
 5. **Refine in parallel — don't wait for the mine.** A refinery can be activated with **0 ore**; ore mined (or received) mid-cycle counts at completion time. Activate and compute the refinery *alongside* the extractor rather than serially, and the pipeline completes faster (~34h to D=3, difficulty 28,000). Refined Alpha is secure; unrefined ore is stealable, so keep the refine cycle always running.
 
+   Same-key compute processes are safe to overlap only when their expected auto-submissions are well separated. Fresh D=3 mine/refine clocks normally settle ~17 hours apart; record both ETAs. If clocks are already aged enough that completions could land together, sequence them or use a signing queue to avoid an account-sequence collision.
+
    **Approval Block** — same five checks, applied to the ~34h refine window.
 
    ```bash

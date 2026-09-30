@@ -15,7 +15,7 @@ description: "Expansion and scaling: deepen the pipeline, secure the home world,
 
 Early game was survival. Mid game is multiplication of *output*, not of planets. You have a working base — your first mine-refine cycle has completed, you have Alpha Matter, and your pipeline is flowing. Now the question is: how much can this one world (and, if you run a team, your other players) sustain? Overbuild load and you go offline. Leave ore unrefined and you feed raiders. The machines that scale wisely dominate. The ones that overextend collapse.
 
-**Timeline**: Mid game unfolds over days to weeks. Each mine-refine cycle takes ~51 hours at D=3. Use [async operations](../../awareness/async-operations.md) to keep mine and refine overlapping. Relocating to a new planet is a later, deliberate Tier-2 move after this one is empty — see [planet-depletion](../situations/planet-depletion.md).
+**Timeline**: Mid game unfolds over days to weeks. Serial mine-then-refine takes ~51 hours at D=3, but the correct overlapping pipeline produces the first Alpha in ~34 hours and is thereafter refinery-limited. Use [async operations](../../awareness/async-operations.md) to keep both clocks aging. Relocating to a new planet is a later, deliberate Tier-2 move after this one is empty — see [planet-depletion](../situations/planet-depletion.md).
 
 ---
 

@@ -42,12 +42,12 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
-2. **Watch power** — load > capacity = offline = you can't act.
+1. **Run mine + refine in parallel** — the refinery can age with 0 ore. When mining lands, all stored ore is stealable until the already-running refine completes. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
+2. **Check power before every build** — if the next build draw exceeds headroom, initiation rejects; later capacity loss can take you offline. Fresh players normally rely on guild `capacitySecondary`.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in
    `memory/jobs/`.
-5. **Always `--gas auto`; only add `-y` after approval** — see [`SAFETY.md`](SAFETY.md).
+5. **Send safely** — always `--gas auto`, put `--` before entity IDs, and submit one transaction per account at a time. Only add `-y` after approval; see [`SAFETY.md`](SAFETY.md).
 
 ## Where things live
 
@@ -390,6 +390,20 @@ Always your first action after player creation. The CLI will prompt you to confi
 structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] [name]
 ```
 
+### First state card
+
+After exploration, report a five-line card before the first build. With Desktop, use one `structs_dashboard` read. With CLI, use one player query for power/Alpha/ore, the known 500 W build draw, and the local job tracker; keep the separate fleet/CMD verification as a build precondition.
+
+```text
+Power headroom: [capacity + capacitySecondary - load - structsLoad]
+Next build draw: 500 W (Ore Extractor)
+Alpha available: [amount] ([infusion is/is not] currently an option)
+Exposed stored ore: [amount]
+Next action: build Ore Extractor, or fix power first
+```
+
+Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary`; reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
+
 ---
 
 ## Step 5: Build Mining Infrastructure
@@ -426,6 +440,8 @@ structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adj
 
 Same difficulty and timing as the Extractor.
 
+After both initiations, print the state card again. Replace “Next build draw” with the remaining build or activation load, list both build job IDs and ETAs, and name the exact next action. A pending build is visible progress; do not report it as a completed struct.
+
 **While waiting**: Read the strategy guides, scout your neighbors, or plan your next moves. Don't sit idle.
 
 ---
@@ -438,13 +454,13 @@ Once both structs are online, start the mining loop. Both compute commands are *
 structsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]
 ```
 
-When mining completes, refine immediately (ore is stealable, Alpha Matter is not):
+Start the refinery compute **alongside the mine**, even though stored ore is still zero. Ore is checked when refinement completes, not when the refinery begins aging. On similarly fresh clocks, mining lands first (~17h at D=3) and refinement lands around ~34h, cutting first Alpha from a serial ~51h to ~34h and reducing the usual exposure window to roughly the remaining ~17h.
 
 ```
 structsd tx structs struct-ore-refine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [refinery-struct-id]
 ```
 
-Mining and refining are multi-hour background operations. Launch compute, then do other things.
+Mining and refining are multi-hour background operations. Track both jobs and their expected settlement windows. When mining lands, print a warning: **all newly mined `storedOre` is raidable, with no partial-loot or refund path, until the already-running refinement lands.**
 
 ---
 
@@ -460,7 +476,7 @@ Mining and refining are multi-hour background operations. Launch compute, then d
 
 **Use `--` before entity IDs.** IDs like `1-42` look like flags to the CLI parser. Always place `--` between flags and positional arguments.
 
-**One signing key, one job at a time.** Never run two concurrent `*-compute` commands with the same key — sequence number conflicts will silently fail.
+**One signing key, one transaction submission at a time.** Background computes may overlap when their expected completion windows are well separated; the fresh mine/refine pair above normally settles ~17 hours apart. Do not overlap same-key computes likely to finish together (for example, two equally aged builds): their auto-submissions can collide on account sequence and one can fail silently. Sequence those jobs or use a signing queue.
 
 **Reconnecting to a long compute.** Mining and refining can run for 17-34 hours. If you start a new session with jobs still in flight, follow the four-state verification flow in [`awareness/async-operations`](https://structs.ai/awareness/async-operations#reconnecting-to-a-long-job) before doing anything else — a "running" PID may have died, succeeded, or silently failed.
 

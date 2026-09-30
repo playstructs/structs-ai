@@ -66,25 +66,26 @@ These are **different attribute ids on different objects**. LCD/query payloads o
 | Ore mining | 14,000 | ~17 hr |
 | Ore refining | 28,000 | ~34 hr |
 
-Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 hours at D=3. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
+Mining is roughly twice as fast as refining. **Do not add the durations by default:** a refinery may age and compute with 0 stored ore because ore is checked at completion. Starting fresh mine and refine jobs together produces the first Alpha in ~34 hours at D=3, not ~51; the serial “mine, then start refine” path takes ~51 hours and needlessly lengthens exposure. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
 
 ---
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable until a refinement completion consumes it. If refinement starts only after mining lands, that is the full **~34-hour** D=3 refine wait. If fresh mine and refine jobs start together, the refine clock has already aged for ~17 hours when mining lands, so the usual first-cycle exposure is roughly the remaining **~17 hours**. Exact exposure is `refine completion time − mine completion time`, not a fixed constant. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
 | Strategy | Trade-off |
 |----------|-----------|
-| Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
-| Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
+| Start refine only after mine, at D=3 | ~34 hr exposure; avoid this serial path |
+| Start fresh mine + refine together, at D=3 | Usually ~17 hr exposure, zero CPU wasted on hashing |
+| Use a higher refine `-D` target | Earlier completion and less exposure, but more CPU work |
 | Raise planetary shield (bunkers/OSG) while holding ore | Slows raid PoW if already vulnerable; does not vault ore or shrink loot |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |
 
-**The optimal play**: Mine and immediately start refining. Use shields and defense structs to protect during the window. The player who minimizes ore exposure time while maintaining production throughput wins the resource game.
+**The optimal play**: Keep the refinery aging in parallel with the mine; it may run with 0 ore because the ore check happens at completion. Ensure the refine completion is expected after the mine completion, then protect the remaining exposure window with Command Ship/fleet posture and defenses. The player who minimizes ore exposure time while maintaining production throughput wins the resource game.
 
 ---
 

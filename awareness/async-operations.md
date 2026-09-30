@@ -337,11 +337,11 @@ Prioritize the player with the most urgent pending action (completed PoW, expose
 
 The most important strategic tension in the PoW system:
 
-> **Ore is stealable. Refining takes ~34 hours at D=3. This creates a vulnerability window that drives all PvP conflict.**
+> **Ore is stealable. Refining takes ~34 hours at D=3, but its clock can age while stored ore is still zero. This creates a vulnerability window that drives all PvP conflict.**
 
-After mining completes, your ore sits exposed for the entire refining duration. This window is where raids happen. Defenders must balance:
+Start the refine compute alongside the mine: ore is checked at refinement completion, not at the start. With similarly fresh D=3 clocks, mining lands around 17 hours and refinement around 34 hours, so ore is normally exposed for the **remaining ~17 hours**, not a serial ~34. Exact exposure depends on the relative job ETAs. This window is where raids happen. Defenders must balance:
 
-- **Patience**: At D=3 the hash is free but exposure is ~34 hours
+- **Patience**: At D=3 the hash is free; parallel clock aging usually halves first-cycle exposure
 - **Urgency**: Higher `-D` values reduce exposure time but waste CPU on harder hashes
 - **Deception**: Use stealth, shields, and misdirection to survive the window
 

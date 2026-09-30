@@ -11,6 +11,17 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.4] - 2026-09-29
+
+Cold-start onboarding now exposes power and resource risk before failure, and uses the actual overlapping production pipeline.
+
+### Changed
+
+- **Parallel first production cycle** — [play-structs](/skills/play-structs/SKILL.html), the [early-game playbook](playbooks/phases/early-game.md), [resource mechanics](knowledge/mechanics/resources.md), and the golden [zero-to-mining transcript](examples/transcripts/01-zero-to-mining.md) launch mine and refine together. Refinement can age with zero stored ore; first Alpha is ~34h at D=3 rather than a serial ~51h, with roughly ~17h exposure on similarly fresh clocks.
+- **First-session state card** — onboarding reports power headroom, next draw, available Alpha, exposed player ore, active job ETAs, and one named next action before the first build and after initiations. Fresh guild-signup players are correctly directed to guild `capacitySecondary`, not nonexistent Alpha for infusion.
+- **Same-key concurrency wording** — the constraint is one transaction submission at a time. Computes with separated settlement windows may overlap; jobs likely to complete together must be sequenced or use a signing queue.
+- **Top-level survival rules** — [START.md](START.md) and [AGENTS.md](AGENTS.md) surface parallel refinement, pre-build power checks, and transaction flag/order rules.
+
 ## [1.30.3] - 2026-09-24
 
 Combat planner and receipt caveats from a verified raid.

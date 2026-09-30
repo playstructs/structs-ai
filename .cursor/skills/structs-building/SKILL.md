@@ -86,7 +86,7 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
 
-**Initiate early, compute later** — the age clock starts at initiation, and difficulty decays from 64 (fresh, impossible) to 1 (aged, instant). Batch-initiate, then compute in the background once it has decayed. **One compute at a time per key** (two concurrent computes on the same key collide on sequence numbers — one fails silently). Different keys run in parallel. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
+**Initiate early, compute later** — the age clock starts at initiation, and difficulty decays from 64 (fresh, impossible) to 1 (aged, instant). Batch-initiate, then compute in the background once it has decayed. **One auto-submission at a time per key**: sequence same-key build computes expected to finish together, because simultaneous completions collide on account sequence and one can fail silently. Background jobs with safely separated completion windows may overlap; different keys can always run in parallel. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 
 ## Manage existing structs
 

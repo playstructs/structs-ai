@@ -224,6 +224,21 @@ structsd query structs fleet [fleet-id]
 
 Fleet ID matches player index: player `1-18` has fleet `9-18`. Check for existing structs in the fleet.
 
+#### First-session state card
+
+Before the first build—and again after every build initiation—report the card below. With Desktop, source it from one `structs_dashboard` read. With CLI, source power/Alpha/ore from one player query, combine that with known build draw and the local job tracker, and reserve fleet/struct queries for their explicit precondition checks.
+
+```text
+Power headroom: (capacity + capacitySecondary) - (load + structsLoad)
+Next build/activation draw: [watts]
+Alpha available to infuse: [amount, or none]
+Exposed player storedOre: [amount]
+Active jobs: [id + ETA]
+Next action: [one named action]
+```
+
+The Extractor and Refinery each need 500 W; player base + Command Ship + both resource structs total about **1,075 W**. Fresh guild-signup players normally have no Alpha and depend on guild `capacitySecondary`, so do not prescribe reactor infusion unless Alpha is actually available. If the next draw does not fit, surface the shortfall before sending the build.
+
 ---
 
 ### Step 5: Build Command Ship (only if not gifted)
@@ -274,7 +289,7 @@ Type 15 = Ore Refinery; ambits: land or water. Compute same as above (`struct-bu
 
 ### Step 8: Verify
 
-Query player, planet, fleet, and structs. Confirm all online.
+Query player, planet, fleet, and structs. Confirm all online, then print the first-session state card one final time with the production step as the named next action.
 
 ---
 
@@ -299,7 +314,7 @@ Charge is a **single per-player bar**, not a per-struct value: `charge = Current
 
 **Async strategy**: Initiate all planned builds immediately — this starts the age clock. While waiting for difficulty to drop, scout the galaxy, assess neighbors, or plan guild membership. Launch compute in a background terminal and check back later. See [awareness/async-operations](https://structs.ai/awareness/async-operations).
 
-**One key, one compute at a time.** Never run two concurrent `*-compute` jobs with the same signing key. Both may reach target difficulty simultaneously and submit conflicting sequence numbers — one fails silently, leaving the struct stuck. Sequence compute jobs for the same player.
+**One key, one transaction submission at a time.** Compute processes can overlap only when their expected completion windows are safely separated. Sequence equally aged build computes: they can reach target together, submit with the same account sequence, and leave one struct stuck. A fresh mine/refine pair is different—their D=3 completion horizons are about 17 hours apart—but still record both ETAs and use a signing queue when available.
 
 ## Ambit Encoding
 

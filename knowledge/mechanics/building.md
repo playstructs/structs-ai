@@ -85,7 +85,7 @@ At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is 
 2. Do other things while age accumulates (scout, plan, build other structs)
 3. Come back and compute when difficulty has dropped to D=3
 
-**Mining and refining are multi-hour background operations.** A full mine-refine cycle takes ~51 hours at D=3. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
+**Mining and refining are multi-hour background operations.** Serial execution takes ~51 hours at D=3, but refinement may age with 0 ore; launch fresh mine and refine jobs together for first Alpha in ~34 hours and a shorter exposure window. These should always run as background processes. See [async-operations.md](../../awareness/async-operations.md) for the async pattern.
 
 **Never block on PoW.** Launch compute in a background terminal and poll for completion. An agent that waits synchronously for a 12-hour mine compute is wasting 12 hours of game time.
 

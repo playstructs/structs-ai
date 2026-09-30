@@ -40,12 +40,12 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
-2. **Watch power** — load > capacity = offline = you can't act.
+1. **Run mine + refine in parallel** — the refinery can age with 0 ore. When mining lands, all stored ore is stealable until the already-running refine completes. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
+2. **Check power before every build** — if the next build draw exceeds headroom, initiation rejects; later capacity loss can take you offline. Fresh players normally rely on guild `capacitySecondary`.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in
    `memory/jobs/`.
-5. **Always `--gas auto`; only add `-y` after approval** — see [`SAFETY.md`](SAFETY.md).
+5. **Send safely** — always `--gas auto`, put `--` before entity IDs, and submit one transaction per account at a time. Only add `-y` after approval; see [`SAFETY.md`](SAFETY.md).
 
 ## Where things live
 

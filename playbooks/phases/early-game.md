@@ -66,9 +66,9 @@ All fleet builds complete within ~1 hour. Total fleet draw: 1,230 W.
 
 ### Phase 4: Production Cycle (once infrastructure is online)
 
-7. **Mine first ore** — Once Extractor is online, initiate mining. **~17 hours to D=3**. Launch in background and do other things.
+7. **Launch mine + refine together** — Once both resource structs are online, compute both in the background. The refinery may age with 0 stored ore; its ore check happens at completion. Mining lands in **~17 hours** and refinement in **~34 hours** at D=3.
 
-8. **Refine first ore** — The moment mining completes, refine immediately. Ore is stealable. **~34 hours to D=3**. Every hour ore sits unrefined is exposure.
+8. **Protect the remaining window** — When mining completes, the ore becomes stealable while the already-running refinery has roughly **~17 hours** left on similarly fresh clocks. A serial refine started at that point would expose it for the full ~34 hours.
 
 9. **Reactor** — Safe, predictable energy. One gram of Alpha Matter yields one kilowatt. Do not gamble on generators yet. Your margin for error is zero.
 
@@ -141,14 +141,14 @@ End-to-end ramp from player creation to first combat-ready state. All times are 
 | 6 | Initiate all fleet structs (types 2-13) | 20 min - 1 hr each | 17 min (parallel) |
 | 7 | Compute Command Ship (ready ~17 min) | instant at D=3 | ~17 min |
 | 8 | Compute Extractor + Refinery (~57 min) | instant at D=3 | ~57 min |
-| 9 | Initiate first mine | ~17 hr | ~57 min |
+| 9 | Launch first mine + refine computes together | mine ~17 hr; refine ~34 hr | ~57 min |
 | 10 | Compute defense structs (PDC ~3.7 hr, Jamming ~3.7 hr) | instant at D=3 | ~4 hr |
 | 11 | Compute fleet structs (longest: Battleship ~1 hr) | instant at D=3 | ~4 hr |
-| 12 | Compute mine (ready ~17 hr from step 9) | instant at D=3 | ~17 hr |
-| 13 | Initiate refine | ~34 hr | ~17 hr |
-| 14 | Compute refine (ready ~34 hr from step 13) | instant at D=3 | ~51 hr |
+| 12 | Mine settles; stored ore becomes exposed | instant at D=3 | ~17 hr |
+| 13 | Keep the already-running refine job tracked and defend | ~17 hr remaining | ~17–34 hr |
+| 14 | Refine settles; first Alpha is secure | instant at D=3 | ~34 hr |
 
-**Key insight**: Steps 2-6 should all be initiated within minutes of each other. They age in parallel. By the time you compute the Command Ship at 17 min, the rest are already aging. The total wall time from player creation to first Alpha Matter is ~51 hours (dominated by the mine-refine cycle), but you are combat-ready with a full fleet and defenses within ~4 hours.
+**Key insight**: Steps 2-6 should all be initiated within minutes of each other. They age in parallel. By the time you compute the Command Ship at 17 min, the rest are already aging. Mine and refine also overlap, so the total wall time from player creation to first Alpha Matter is about **34 hours after the production clocks start**, not a serial ~51 hours. You are combat-ready with a full fleet and defenses within ~4 hours.
 
 ---
 

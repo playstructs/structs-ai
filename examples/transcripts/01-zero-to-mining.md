@@ -83,7 +83,7 @@ nohup structsd tx structs struct-build-compute -D 3 --from ferro --gas auto --ga
   > memory/jobs/build-5-9002.log 2>&1 & echo $! > memory/jobs/build-5-9002.pid
 ```
 
-> I'll launch the refinery build's compute after the extractor's lands (same key = one compute at a time). While the ~57-minute proof waits, I'm not idle: I scout my neighbors and skim the early-game playbook.
+> I'll launch the refinery build's compute after the extractor's lands. These same-key build jobs have the same difficulty and similar clocks, so their auto-submissions could collide; unlike the later mine/refine pair, they are not safely separated. While the ~57-minute proof waits, I'm not idle: I scout my neighbors and skim the early-game playbook.
 
 *(~1 hour later)*
 
@@ -98,11 +98,16 @@ structsd query structs struct 5-9002 -o json | jq '{status}'
 structsd query structs struct 5-9003 -o json | jq '{status}'
 ```
 
-**Agent:** Pipeline is live. Now the core production loop. Mining ~17h, refining ~34h — both background. **Refine the moment mining completes**: ore is stealable, Alpha is not.
+**Agent:** Pipeline is live. Now the core production loop. Mining ~17h, refining ~34h — both background. The refinery can age with 0 ore because ore is checked at completion, so I launch both now. On fresh clocks their auto-submissions are ~17 hours apart; they are not expected to collide on account sequence.
 
 ```bash
 nohup structsd tx structs struct-ore-mine-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 5-9002 \
   > memory/jobs/mine-5-9002.log 2>&1 & echo $! > memory/jobs/mine-5-9002.pid
+```
+
+```bash
+nohup structsd tx structs struct-ore-refine-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 5-9003 \
+  > memory/jobs/refine-5-9003.log 2>&1 & echo $! > memory/jobs/refine-5-9003.pid
 ```
 
 ```json
@@ -111,7 +116,7 @@ nohup structsd tx structs struct-ore-mine-compute -D 3 --from ferro --gas auto -
   "startedAtBlock": 1280290, "key": "ferro" }
 ```
 
-> Handoff note written. If my context resets, the next session runs `scripts/job-status.sh`, sees this job, and knows to start a refine when it lands. I stop here — pipeline established, nothing is blocked, and there's no Tier 2 action pending that needs my commander.
+> I record a matching refine job with its ETA. If my context resets, the next session runs `scripts/job-status.sh`, sees both jobs, and knows the ore becomes fully stealable when the mine lands until the already-running refine settles roughly 17 hours later. I stop here — pipeline established, nothing is blocked, and there's no Tier 2 action pending that needs my commander.
 
 ---
 

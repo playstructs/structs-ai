@@ -42,12 +42,12 @@ chain has no undo, so know the approval rules before you sign.
 
 ## The five things that keep you alive
 
-1. **Refine ore immediately** — mined ore is stealable; Alpha Matter is not. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
-2. **Watch power** — load > capacity = offline = you can't act.
+1. **Run mine + refine in parallel** — the refinery can age with 0 ore. When mining lands, all stored ore is stealable until the already-running refine completes. **Raids steal ore. That's it. Your account is never at risk from raids.** ([FAQ](play/faq.md))
+2. **Check power before every build** — if the next build draw exceeds headroom, initiation rejects; later capacity loss can take you offline. Fresh players normally rely on guild `capacitySecondary`.
 3. **Verify after acting** — a broadcast tx is not a successful one; query state to confirm.
 4. **Never block on proof-of-work** — launch compute in the background (`-D 3`), track it in
    `memory/jobs/`.
-5. **Always `--gas auto`; only add `-y` after approval** — see [`SAFETY.md`](SAFETY.md).
+5. **Send safely** — always `--gas auto`, put `--` before entity IDs, and submit one transaction per account at a time. Only add `-y` after approval; see [`SAFETY.md`](SAFETY.md).
 
 ## Where things live
 
@@ -665,6 +665,20 @@ Always your first action after player creation. The CLI will prompt you to confi
 structsd tx structs planet-explore --from my-key --gas auto --gas-adjustment 1.5 -- [player-id] [name]
 ```
 
+### First state card
+
+After exploration, report a five-line card before the first build. With Desktop, use one `structs_dashboard` read. With CLI, use one player query for power/Alpha/ore, the known 500 W build draw, and the local job tracker; keep the separate fleet/CMD verification as a build precondition.
+
+```text
+Power headroom: [capacity + capacitySecondary - load - structsLoad]
+Next build draw: 500 W (Ore Extractor)
+Alpha available: [amount] ([infusion is/is not] currently an option)
+Exposed stored ore: [amount]
+Next action: build Ore Extractor, or fix power first
+```
+
+Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary`; reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
+
 ---
 
 ## Step 5: Build Mining Infrastructure
@@ -701,6 +715,8 @@ structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adj
 
 Same difficulty and timing as the Extractor.
 
+After both initiations, print the state card again. Replace “Next build draw” with the remaining build or activation load, list both build job IDs and ETAs, and name the exact next action. A pending build is visible progress; do not report it as a completed struct.
+
 **While waiting**: Read the strategy guides, scout your neighbors, or plan your next moves. Don't sit idle.
 
 ---
@@ -713,13 +729,13 @@ Once both structs are online, start the mining loop. Both compute commands are *
 structsd tx structs struct-ore-mine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [extractor-struct-id]
 ```
 
-When mining completes, refine immediately (ore is stealable, Alpha Matter is not):
+Start the refinery compute **alongside the mine**, even though stored ore is still zero. Ore is checked when refinement completes, not when the refinery begins aging. On similarly fresh clocks, mining lands first (~17h at D=3) and refinement lands around ~34h, cutting first Alpha from a serial ~51h to ~34h and reducing the usual exposure window to roughly the remaining ~17h.
 
 ```
 structsd tx structs struct-ore-refine-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [refinery-struct-id]
 ```
 
-Mining and refining are multi-hour background operations. Launch compute, then do other things.
+Mining and refining are multi-hour background operations. Track both jobs and their expected settlement windows. When mining lands, print a warning: **all newly mined `storedOre` is raidable, with no partial-loot or refund path, until the already-running refinement lands.**
 
 ---
 
@@ -735,7 +751,7 @@ Mining and refining are multi-hour background operations. Launch compute, then d
 
 **Use `--` before entity IDs.** IDs like `1-42` look like flags to the CLI parser. Always place `--` between flags and positional arguments.
 
-**One signing key, one job at a time.** Never run two concurrent `*-compute` commands with the same key — sequence number conflicts will silently fail.
+**One signing key, one transaction submission at a time.** Background computes may overlap when their expected completion windows are well separated; the fresh mine/refine pair above normally settles ~17 hours apart. Do not overlap same-key computes likely to finish together (for example, two equally aged builds): their auto-submissions can collide on account sequence and one can fail silently. Sequence those jobs or use a signing queue.
 
 **Reconnecting to a long compute.** Mining and refining can run for 17-34 hours. If you start a new session with jobs still in flight, follow the four-state verification flow in [`awareness/async-operations`](https://structs.ai/awareness/async-operations#reconnecting-to-a-long-job) before doing anything else — a "running" PID may have died, succeeded, or silently failed.
 
@@ -885,6 +901,8 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
 
 4. **Do other work while it ages** — scout, build defense, plan. Always keep something aging (activate early, compute later). The mine clock lives on the **planet** and resets after each successful mine (any extractor), so every cycle re-enters the full ~17h decay. Cycles **never expire**: an aged clock is *cheaper* to complete, not wedged — never "reset" or "clean up" an old mine/refine. See [hashing.md — cycle lifecycle](https://structs.ai/knowledge/mechanics/hashing#minerefine-cycle-lifecycle).
 5. **Refine in parallel — don't wait for the mine.** A refinery can be activated with **0 ore**; ore mined (or received) mid-cycle counts at completion time. Activate and compute the refinery *alongside* the extractor rather than serially, and the pipeline completes faster (~34h to D=3, difficulty 28,000). Refined Alpha is secure; unrefined ore is stealable, so keep the refine cycle always running.
+
+   Same-key compute processes are safe to overlap only when their expected auto-submissions are well separated. Fresh D=3 mine/refine clocks normally settle ~17 hours apart; record both ETAs. If clocks are already aged enough that completions could land together, sequence them or use a signing queue to avoid an account-sequence collision.
 
    **Approval Block** — same five checks, applied to the ~34h refine window.
 
@@ -1179,25 +1197,26 @@ These are **different attribute ids on different objects**. LCD/query payloads o
 | Ore mining | 14,000 | ~17 hr |
 | Ore refining | 28,000 | ~34 hr |
 
-Mining is roughly twice as fast as refining. A full mine-refine cycle takes ~51 hours at D=3. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
+Mining is roughly twice as fast as refining. **Do not add the durations by default:** a refinery may age and compute with 0 stored ore because ore is checked at completion. Starting fresh mine and refine jobs together produces the first Alpha in ~34 hours at D=3, not ~51; the serial “mine, then start refine” path takes ~51 hours and needlessly lengthens exposure. These are background operations — see [async-operations.md](../../awareness/async-operations.md). Use `-D 3` for zero wasted CPU.
 
 ---
 
 ## The Ore Vulnerability Window
 
-After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable for the entire duration of the refining PoW. At D=3 (recommended), this window is **~34 hours**. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
+After mining completes, ore moves from the planet's `buriedOre` (`BuriedOreAttributeId`) to the player's `storedOre` (`StoredOreAttributeId`) — and becomes stealable by any raider. A single successful raid seizes **all** of the player's mined ore — not a percentage, everything. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. It stays stealable until a refinement completion consumes it. If refinement starts only after mining lands, that is the full **~34-hour** D=3 refine wait. If fresh mine and refine jobs start together, the refine clock has already aged for ~17 hours when mining lands, so the usual first-cycle exposure is roughly the remaining **~17 hours**. Exact exposure is `refine completion time − mine completion time`, not a fixed constant. Unmined ore on the planet is NOT at risk; only the player's mined `storedOre` can be seized.
 
 This vulnerability window is the primary driver of PvP conflict in Structs. Raiders time their attacks for when targets have unrefined ore. Defenders must manage this tension:
 
 | Strategy | Trade-off |
 |----------|-----------|
-| Refine at D=3 | ~34 hr exposure, zero CPU wasted on hashing |
-| Refine at D=8 (start sooner) | ~15 hr exposure, but burns CPU on harder hashes |
+| Start refine only after mine, at D=3 | ~34 hr exposure; avoid this serial path |
+| Start fresh mine + refine together, at D=3 | Usually ~17 hr exposure, zero CPU wasted on hashing |
+| Use a higher refine `-D` target | Earlier completion and less exposure, but more CPU work |
 | Raise planetary shield (bunkers/OSG) while holding ore | Slows raid PoW if already vulnerable; does not vault ore or shrink loot |
 | Refine during off-hours | Other players may be inactive, lower raid risk |
 | Small frequent mines | Less ore exposed per window, but more total cycles |
 
-**The optimal play**: Mine and immediately start refining. Use shields and defense structs to protect during the window. The player who minimizes ore exposure time while maintaining production throughput wins the resource game.
+**The optimal play**: Keep the refinery aging in parallel with the mine; it may run with 0 ore because the ore check happens at completion. Ensure the refine completion is expected after the mine completion, then protect the remaining exposure window with Command Ship/fleet posture and defenses. The player who minimizes ore exposure time while maintaining production throughput wins the resource game.
 
 ---
 
