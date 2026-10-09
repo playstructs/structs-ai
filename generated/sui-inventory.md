@@ -1,8 +1,8 @@
 ---
 kind: ui
 authority: source
-verified_against: structs-webapp @ 6eec7f761df1 (2026-07-21)
-verified_at: 2026-07-27
+verified_against: structs-webapp @ 08e13e293481 (2026-09-30)
+verified_at: 2026-10-01
 volatility: high
 generated_by: scripts/gen-sui-inventory.sh
 ---
@@ -13,13 +13,13 @@ generated_by: scripts/gen-sui-inventory.sh
 > design system. Do not hand-edit. Regenerate with `scripts/gen-sui-inventory.sh`;
 > diff against upstream with `scripts/check-webapp-drift.sh`.
 
-Source commit: `6eec7f761df1a314e17f3a69ed3e2f15cf674362` (2026-07-21)
+Source commit: `08e13e2934814e7ccb7f71f35f2408dad9d119c7` (2026-09-30)
 
 | Inventory | Count |
 |---|---|
 | `:root` tokens | 72 |
-| Glyph icons (icon font) | 67 |
-| Sprite icons (background art) | 29 |
+| Glyph icons (icon font) | 68 |
+| Sprite icons (background art) | 31 |
 | Component classes | 138 |
 | Modifiers | 27 |
 
@@ -104,21 +104,21 @@ Source commit: `6eec7f761df1a314e17f3a69ed3e2f15cf674362` (2026-07-21)
 
 Icon-font classes from `src/public/css/structicons.css`. These inherit `color`.
 
-`icon-add` `icon-adv-counter` `icon-alert` `icon-armour` `icon-arrow` 
-`icon-attention` `icon-ballistic-weapon` `icon-beacon` `icon-blocked` 
-`icon-caret-down` `icon-caret-left` `icon-caret-right` `icon-caret-up` 
-`icon-chevron-down` `icon-chevron-left` `icon-chevron-right` 
-`icon-chevron-up` `icon-close` `icon-cmd-post` `icon-combat-log` 
-`icon-computer` `icon-copy` `icon-counter` `icon-defend` `icon-deploy` 
-`icon-detected` `icon-dmg` `icon-edit` `icon-enemy-tile` `icon-fleet-tile` 
-`icon-guild` `icon-guild-directory` `icon-in-progress` `icon-incoming` 
-`icon-indirect` `icon-info` `icon-key` `icon-kinetic-barrier` `icon-link-out` 
-`icon-member` `icon-menu` `icon-mine` `icon-move` `icon-okay` 
-`icon-ore-ready` `icon-outgoing` `icon-phone` `icon-planet` 
-`icon-planetary-shield` `icon-raid` `icon-range` `icon-refine` 
-`icon-refresh-12` `icon-refresh-8` `icon-send-alpha` `icon-signal-jam` 
-`icon-smart-weapon` `icon-stealth` `icon-subtract` `icon-success` `icon-tip` 
-`icon-transfers` `icon-undiscovered-ore` `icon-unknown` 
+`icon-add` `icon-adv-counter` `icon-alert` `icon-armour` `icon-arrow`
+`icon-attention` `icon-ballistic-weapon` `icon-beacon` `icon-blocked`
+`icon-caret-down` `icon-caret-left` `icon-caret-right` `icon-caret-up`
+`icon-chevron-down` `icon-chevron-left` `icon-chevron-right`
+`icon-chevron-up` `icon-close` `icon-cmd-post` `icon-combat-log`
+`icon-computer` `icon-copy` `icon-counter` `icon-defend` `icon-deploy`
+`icon-detected` `icon-disabled` `icon-dmg` `icon-edit` `icon-enemy-tile`
+`icon-fleet-tile` `icon-guild` `icon-guild-directory` `icon-in-progress`
+`icon-incoming` `icon-indirect` `icon-info` `icon-key` `icon-kinetic-barrier`
+`icon-link-out` `icon-member` `icon-menu` `icon-mine` `icon-move` `icon-okay`
+`icon-ore-ready` `icon-outgoing` `icon-phone` `icon-planet`
+`icon-planetary-shield` `icon-raid` `icon-range` `icon-refine`
+`icon-refresh-12` `icon-refresh-8` `icon-send-alpha` `icon-signal-jam`
+`icon-smart-weapon` `icon-stealth` `icon-subtract` `icon-success` `icon-tip`
+`icon-transfers` `icon-undiscovered-ore` `icon-unknown`
 `icon-unknown-territory` `icon-unpowered` `icon-wreckage`
 
 Declared more than once in the stylesheet: `icon-attention`
@@ -128,16 +128,17 @@ Declared more than once in the stylesheet: `icon-attention`
 `i.sui-icon-*` rules carrying a `background-image` in `sui.css`. These are pixel
 art and do **not** inherit `color`.
 
-`air` `alpha-matter` `alpha-ore` `armour` `attacker` `counter-attack` 
-`defended` `defender-block` `defender-counter` `defending` `deflector-shield` 
-`deployed-structs` `destroyed` `electronic-warfare-system` 
-`enemy-deployed-structs` `enemy-indicator` `enemy-shield-health` `energy` 
-`inert-alpha` `land` `local` `no-power` `player-indicator` `players` 
-`shield-health` `space` `stealth-mode` `undiscovered-ore` `water`
+`air` `alpha-matter` `alpha-ore` `armour` `attacker` `counter-attack`
+`defended` `defender-block` `defender-counter` `defending` `deflector-shield`
+`deployed-structs` `destroyed` `electronic-warfare-system`
+`enemy-deployed-structs` `enemy-indicator` `enemy-shield-health` `energy`
+`energy-deactivated` `energy-insufficient` `inert-alpha` `land` `local`
+`no-power` `player-indicator` `players` `shield-health` `space`
+`stealth-mode` `undiscovered-ore` `water`
 
 ## Icon sizes
 
-`sui-icon-lg` `sui-icon-md` `sui-icon-sm` `sui-icon-xl` `sui-icon-xs` 
+`sui-icon-lg` `sui-icon-md` `sui-icon-sm` `sui-icon-xl` `sui-icon-xs`
 `sui-icon-xxl`
 
 ## Themes
@@ -146,71 +147,71 @@ art and do **not** inherit `color`.
 
 ## Modifiers
 
-`sui-mod-active` `sui-mod-active-defense` `sui-mod-active-offense` 
-`sui-mod-align-flex-end` `sui-mod-animated` `sui-mod-bottom` 
-`sui-mod-default` `sui-mod-destructive` `sui-mod-disabled` 
-`sui-mod-disabled-active` `sui-mod-filled` `sui-mod-grow` `sui-mod-header` 
-`sui-mod-inverted` `sui-mod-left` `sui-mod-minimized` `sui-mod-narrow` 
-`sui-mod-pressed` `sui-mod-primary` `sui-mod-right` `sui-mod-secondary` 
-`sui-mod-show` `sui-mod-shrink` `sui-mod-solid` `sui-mod-spacing-xl` 
+`sui-mod-active` `sui-mod-active-defense` `sui-mod-active-offense`
+`sui-mod-align-flex-end` `sui-mod-animated` `sui-mod-bottom`
+`sui-mod-default` `sui-mod-destructive` `sui-mod-disabled`
+`sui-mod-disabled-active` `sui-mod-filled` `sui-mod-grow` `sui-mod-header`
+`sui-mod-inverted` `sui-mod-left` `sui-mod-minimized` `sui-mod-narrow`
+`sui-mod-pressed` `sui-mod-primary` `sui-mod-right` `sui-mod-secondary`
+`sui-mod-show` `sui-mod-shrink` `sui-mod-solid` `sui-mod-spacing-xl`
 `sui-mod-top` `sui-mod-warning`
 
 ## Component classes
 
-`sui-action-bar-bottom-row` `sui-action-bar-btn-group` 
-`sui-action-bar-panel-switch-group` `sui-action-bar-progress-bar` 
-`sui-action-bar-progress-bar-chunk` `sui-action-bar-progress-bar-wrapper` 
-`sui-badge` `sui-battery` `sui-battery-chunk` `sui-cheatsheet` 
-`sui-cheatsheet-content` `sui-cheatsheet-contextual-message` 
-`sui-cheatsheet-cost` `sui-cheatsheet-costs` `sui-cheatsheet-description` 
-`sui-cheatsheet-property` `sui-cheatsheet-property-icon` 
-`sui-cheatsheet-property-info` `sui-cheatsheet-property-section` 
-`sui-cheatsheet-title` `sui-cheatsheet-title-text` `sui-cheatsheet-top-frame` 
-`sui-checkbox` `sui-checkbox-container` `sui-checkbox-display` 
-`sui-data-card` `sui-data-card-body` `sui-data-card-header` 
-`sui-data-card-row` `sui-dialogue-btn-chunk` `sui-dialogue-btn-chunk-col` 
-`sui-flip-horizontal` `sui-form-element-group-label` 
-`sui-form-element-label-group` `sui-hud-indicator` `sui-hud-indicator-icon` 
-`sui-icon` `sui-input-stepper` `sui-input-text` `sui-input-text-warning` 
-`sui-message-inline-alert` `sui-message-inline-alert-text` 
-`sui-message-system-alert` `sui-message-system-alert-close-container` 
-`sui-message-system-alert-icon-container` 
-`sui-message-system-alert-text-container` `sui-message-system-modal` 
-`sui-message-system-modal-cta` `sui-message-system-modal-cta-btn-wrapper` 
-`sui-message-system-modal-frame` `sui-message-system-modal-frame-left` 
-`sui-message-system-modal-frame-left-bottom` 
-`sui-message-system-modal-frame-left-middle` 
-`sui-message-system-modal-frame-left-top` 
-`sui-message-system-model-frame-center` `sui-message-system-model-overlay` 
-`sui-nav-btn` `sui-offcanvas-body` `sui-page-body-screen` 
-`sui-page-body-screen-content` `sui-page-header` `sui-page-header-resources` 
-`sui-pagination` `sui-pagination-number` `sui-pagination-numbers` `sui-panel` 
-`sui-panel-bottom-fill-background` `sui-panel-btn` `sui-panel-chunk` 
-`sui-panel-chunk-spacer-btn-a` `sui-panel-chunk-spacer-btn-b` 
-`sui-panel-chunk-spacer-indicator` `sui-panel-connector` 
-`sui-panel-edge-left` `sui-panel-edge-right` 
-`sui-panel-style-default-to-medium` `sui-panel-style-medium-to-default` 
-`sui-panel-top-fill-background` `sui-panel-wrapper-fit-content` 
-`sui-planet-card` `sui-planet-card-alert` `sui-planet-card-body` 
-`sui-planet-card-body-content` `sui-planet-card-header` 
-`sui-planet-card-header-label` `sui-planet-card-header-label-title` 
-`sui-planet-card-loading` `sui-planet-card-loading-animation` 
-`sui-planet-card-message` `sui-planet-card-status-group` 
-`sui-planet-card-status-group-col` `sui-radio` `sui-radio-container` 
-`sui-radio-display` `sui-resource` `sui-result-row` 
-`sui-result-row-left-section` `sui-result-row-player-info` 
-`sui-result-row-portrait` `sui-result-row-portrait-icon` 
-`sui-result-row-portrait-image` `sui-result-row-resources` 
-`sui-result-row-right-section` `sui-result-rows` `sui-result-table` 
-`sui-screen` `sui-screen-battery` `sui-screen-body` `sui-screen-btn` 
-`sui-screen-btn-flex-wrapper` `sui-screen-dialogue` `sui-screen-full-width` 
-`sui-screen-indicator` `sui-screen-info` `sui-screen-nav` 
-`sui-screen-nav-close` `sui-screen-nav-item` `sui-screen-nav-items` 
-`sui-screen-portrait` `sui-screen-portrait-image` `sui-screen-properties` 
-`sui-screen-shrink` `sui-status-bar` `sui-status-bar-panel` 
-`sui-text-destructive` `sui-text-disabled` `sui-text-display` 
-`sui-text-header` `sui-text-hint` `sui-text-label` `sui-text-label-block` 
-`sui-text-paragraph` `sui-text-primary` `sui-text-secondary` 
+`sui-action-bar-bottom-row` `sui-action-bar-btn-group`
+`sui-action-bar-panel-switch-group` `sui-action-bar-progress-bar`
+`sui-action-bar-progress-bar-chunk` `sui-action-bar-progress-bar-wrapper`
+`sui-badge` `sui-battery` `sui-battery-chunk` `sui-cheatsheet`
+`sui-cheatsheet-content` `sui-cheatsheet-contextual-message`
+`sui-cheatsheet-cost` `sui-cheatsheet-costs` `sui-cheatsheet-description`
+`sui-cheatsheet-property` `sui-cheatsheet-property-icon`
+`sui-cheatsheet-property-info` `sui-cheatsheet-property-section`
+`sui-cheatsheet-title` `sui-cheatsheet-title-text` `sui-cheatsheet-top-frame`
+`sui-checkbox` `sui-checkbox-container` `sui-checkbox-display`
+`sui-data-card` `sui-data-card-body` `sui-data-card-header`
+`sui-data-card-row` `sui-dialogue-btn-chunk` `sui-dialogue-btn-chunk-col`
+`sui-flip-horizontal` `sui-form-element-group-label`
+`sui-form-element-label-group` `sui-hud-indicator` `sui-hud-indicator-icon`
+`sui-icon` `sui-input-stepper` `sui-input-text` `sui-input-text-warning`
+`sui-message-inline-alert` `sui-message-inline-alert-text`
+`sui-message-system-alert` `sui-message-system-alert-close-container`
+`sui-message-system-alert-icon-container`
+`sui-message-system-alert-text-container` `sui-message-system-modal`
+`sui-message-system-modal-cta` `sui-message-system-modal-cta-btn-wrapper`
+`sui-message-system-modal-frame` `sui-message-system-modal-frame-left`
+`sui-message-system-modal-frame-left-bottom`
+`sui-message-system-modal-frame-left-middle`
+`sui-message-system-modal-frame-left-top`
+`sui-message-system-model-frame-center` `sui-message-system-model-overlay`
+`sui-nav-btn` `sui-offcanvas-body` `sui-page-body-screen`
+`sui-page-body-screen-content` `sui-page-header` `sui-page-header-resources`
+`sui-pagination` `sui-pagination-number` `sui-pagination-numbers` `sui-panel`
+`sui-panel-bottom-fill-background` `sui-panel-btn` `sui-panel-chunk`
+`sui-panel-chunk-spacer-btn-a` `sui-panel-chunk-spacer-btn-b`
+`sui-panel-chunk-spacer-indicator` `sui-panel-connector`
+`sui-panel-edge-left` `sui-panel-edge-right`
+`sui-panel-style-default-to-medium` `sui-panel-style-medium-to-default`
+`sui-panel-top-fill-background` `sui-panel-wrapper-fit-content`
+`sui-planet-card` `sui-planet-card-alert` `sui-planet-card-body`
+`sui-planet-card-body-content` `sui-planet-card-header`
+`sui-planet-card-header-label` `sui-planet-card-header-label-title`
+`sui-planet-card-loading` `sui-planet-card-loading-animation`
+`sui-planet-card-message` `sui-planet-card-status-group`
+`sui-planet-card-status-group-col` `sui-radio` `sui-radio-container`
+`sui-radio-display` `sui-resource` `sui-result-row`
+`sui-result-row-left-section` `sui-result-row-player-info`
+`sui-result-row-portrait` `sui-result-row-portrait-icon`
+`sui-result-row-portrait-image` `sui-result-row-resources`
+`sui-result-row-right-section` `sui-result-rows` `sui-result-table`
+`sui-screen` `sui-screen-battery` `sui-screen-body` `sui-screen-btn`
+`sui-screen-btn-flex-wrapper` `sui-screen-dialogue` `sui-screen-full-width`
+`sui-screen-indicator` `sui-screen-info` `sui-screen-nav`
+`sui-screen-nav-close` `sui-screen-nav-item` `sui-screen-nav-items`
+`sui-screen-portrait` `sui-screen-portrait-image` `sui-screen-properties`
+`sui-screen-shrink` `sui-status-bar` `sui-status-bar-panel`
+`sui-text-destructive` `sui-text-disabled` `sui-text-display`
+`sui-text-header` `sui-text-hint` `sui-text-label` `sui-text-label-block`
+`sui-text-paragraph` `sui-text-primary` `sui-text-secondary`
 `sui-text-ticker` `sui-text-tiny` `sui-text-warning` `sui-tooltip`
 
 ## UI scaling (main.css)
@@ -225,7 +226,7 @@ scale renders SUI at half size or less — see `develop/ui/index.md`.
 
 ## SUI JavaScript modules
 
-`SUI.js` `SUICheatsheet.js` `SUICheatsheetContentBuilder.js` 
-`SUICheatsheetRenderer.js` `SUIFeature.js` `SUIInputStepper.js` 
+`SUI.js` `SUICheatsheet.js` `SUICheatsheetContentBuilder.js`
+`SUICheatsheetRenderer.js` `SUIFeature.js` `SUIInputStepper.js`
 `SUINotImplementedError.js` `SUIOffcanvas.js` `SUITooltip.js` `SUIUtil.js`
 

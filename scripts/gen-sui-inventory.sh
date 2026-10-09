@@ -115,7 +115,9 @@ scale_rules() {
   ' "$MAIN_CSS" | sort -u
 }
 
-fmt_list() { sed 's/^/`/; s/$/`/' | paste -sd' ' - | fold -s -w 78; }
+fmt_list() {
+  sed 's/^/`/; s/$/`/' | paste -sd' ' - | fold -s -w 78 | sed 's/[[:space:]]*$//'
+}
 
 # --- render -----------------------------------------------------------------
 

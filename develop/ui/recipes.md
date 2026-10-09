@@ -221,5 +221,5 @@ solid teal, none of them are.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21). Runnable versions:
+*Verified against structs-webapp `08e13e2` (2026-09-30). Runnable versions:
 [examples/](examples/README.md).*

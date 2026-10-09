@@ -7,13 +7,15 @@ description: "Read proof-of-work records from the web application: outstanding j
 **Category**: webapp (catalog read)
 **Entity**: Work (`view.work`)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: July 17, 2026
+**Last Updated**: September 30, 2026
 
 ---
 
 ## Overview
 
-Lists outstanding proof-of-work jobs (mining, refining, building, and other PoW-anchored actions) tracked in the Guild-Stack `view.work` view. Each row anchors a job to its object, player, target, category, start block, and difficulty target so a client (or a hashing agent) can pick up and complete the work. These endpoints are read-only surfaces over the view; the work itself is completed by submitting the corresponding `*-compute` transaction to the chain.
+Lists outstanding proof-of-work jobs (`BUILD`, `MINE`, `REFINE`, `RAID`) tracked in the Guild-Stack `view.work` view. The underlying view anchors a job to its object, player, target, category, start block, difficulty target, and location. The player endpoint returns that full row; the paginated all/guild endpoints intentionally project only the six core work columns. These endpoints are read-only; the work itself is completed by submitting the corresponding `*-compute` transaction to the chain.
+
+`view.work` is the stable read surface, but it now selects from the per-block current-state table `structs.api_work`. `view.work_live` is the authoritative recomputation used for refresh/reconciliation and must not be used on request paths. Sync-state calls `structs.api_work_refresh(height, block_time)` after each block's authoritative writes; `api_refresh_state` records the last refreshed height/time. The refresh is incremental through `api_work_dirty`, falls back to a full pass above 2,000 keys, and an empty queue returns before temporary-table setup.
 
 ---
 
@@ -71,4 +73,21 @@ List all work items for a single player. Not paginated; returns the full `view.w
 
 ---
 
+## Row semantics
+
+- `object_id`: struct ID for build/mine/refine; the visiting fleet at `planet.location_list_start` for raid.
+- `target_id`: struct ID for build/mine/refine; target planet ID for raid.
+- `block_start`: struct `blockStartBuild`, planet `blockStartOreMine` / `blockStartOreRefine`, or planet `blockStartRaid`; missing attributes read as `0`.
+- `difficulty_target`: struct-type difficulty for build/mine/refine; current `planetaryShield` for raid.
+- `location_type`, `location_id`, `planet_id`: physical context. `planet_id` is populated for planet-hosted struct work and raids.
+
+Mine/refine clocks are shared planet clocks, not per-struct clocks. Destroyed structs are excluded using authoritative `struct.is_destroyed` in addition to status bits.
+
+Operators can check freshness and drift with `structs.api_refresh_state WHERE model = 'work'` and `structs.api_work_reconcile(false)`. The hourly full refresh repairs and logs `missing` / `extra` / `stale` rows in `structs.api_work_drift`; a recurring drift row indicates a missed dirty-key dependency or refresh ordering problem.
+
 Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a fixed page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.
+
+---
+
+*Verified against structs-webapp `08e13e2` (2026-09-30),
+`src/src/Manager/WorkManager.php`, and structs-pg `f66fd81` `view.work`.*

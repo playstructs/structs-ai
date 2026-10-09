@@ -4,11 +4,11 @@ description: "Authentication endpoints for the web application: how a session is
 
 # Webapp Authentication API Endpoints
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 **Category**: webapp
 **Entity**: Auth
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: January 1, 2026
+**Last Updated**: September 30, 2026
 
 ---
 
@@ -82,6 +82,15 @@ Clear the current session. Returns the standard envelope `{ "success": true, "er
 - **Authentication**: Public route (`^/api/auth/`); acts on the current session cookie if present
 
 ---
+
+## OIDC provider operations
+
+Separately from the wallet-signature endpoints above, the guild webapp can act as an OpenID Connect provider for Matrix Authentication Service. Structs-pg stores the operator-managed client registry in `structs.oidc_client` and short-lived flow state in `oidc_authorization_request`, `oidc_authorization_code`, and `oidc_access_token`. These tables store client metadata, hashes, redirect URIs, scopes, PKCE/state/nonce data, player IDs, and expiry/revocation timestamps—never wallet material.
+
+The `structs_webapp` role owns the OIDC row lifecycle. `oidc_cleaner` runs every 59 seconds; it removes expired requests/codes after a one-hour grace period and expired access tokens after one day. Client seeding and endpoint configuration are deployment concerns; they do not replace the Cosmos-signature session login documented above.
+
+*OIDC storage and cleanup verified against structs-pg `f66fd81`
+(`table-oidc-20260826-provider` and `role-structs-webapp-20260826-oidc`).*
 
 ## Related Documentation
 

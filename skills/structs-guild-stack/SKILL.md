@@ -308,6 +308,22 @@ ORDER BY height DESC
 LIMIT 5;
 ```
 
+Check the request-path projections too:
+
+```sql
+SELECT model, source_height, source_time, refreshed_at, now() - refreshed_at AS age
+FROM structs.api_refresh_state
+WHERE model IN ('inventory', 'work')
+ORDER BY model;
+
+SELECT * FROM structs.api_work_reconcile(false);
+SELECT * FROM structs.api_inventory_reconcile(false);
+```
+
+`view.work` reads `structs.api_work`; `view.work_live` is the expensive live specification and should only be used by refresh/reconciliation. Work rows include `location_type`, `location_id`, and `planet_id`; mine/refine `block_start` values come from shared planet attributes, not per-struct clocks. Sync-state must call `api_work_refresh(height, block_time)` after all authoritative writes for the block.
+
+The reconciler functions are read-only with respect to their API tables. Any returned rows are drift evidence; recurring work drift means a missed dirty-key dependency or bad refresh ordering, while inventory drift means the incremental ledger-balance path needs repair.
+
 ### Struct Health and Defense Assignments
 
 ```sql
@@ -432,11 +448,21 @@ If you spun the stack up to investigate something, tear it down when you're done
 | Query returns 0 rows but data exists | Snake_case guess at a camelCase value | Chain-derived string values are camelCase: `onStation` not `on_station`, `raidSuccessful` not `completed`, `planetaryShield`, `structsLoad` |
 | Poller misses events on some planets | `planet_activity.seq` is per-planet, not table-wide | Keep one cursor per planet, or order on `block_height` |
 | Ledger balances are too high | Historical duplicate `received`/`sent` rows shadowing `refined`/`infused` | See the ledger note in [database-schema](https://structs.ai/knowledge/infrastructure/database-schema) |
+| `view.work` is stale | `api_work_refresh()` is not running after block writes | Inspect `api_refresh_state`, then run the reconciler; do not switch request paths to `view.work_live` |
+| Player activity history is slow | Plain join defeats compressed-chunk exclusion | Page `planet_activity_player` keys first and fetch parents through `LATERAL` |
 | `structs-control` restarting | Missing `CONTROL_SOURCE` sibling checkout | Clone `structs-control` next to the stack, or leave the service stopped |
 | Container name not found | Container naming varies by installation | Run `docker compose ps` to find actual container names |
 | "role does not exist" | Wrong PG role in connection string | Use `structs_indexer` role via the GRASS container |
 | Slow PoW with guild stack | Multiple agents running concurrent PoW | CPU contention; stagger PoW operations or reduce parallelism |
 | Second sync-state instance fails | Writer lock — only one indexer allowed | Never scale `structs-sync-state` |
+
+### Operator database settings
+
+The schema configures the webapp role with a 60-second statement timeout and a 5-minute idle-in-transaction timeout. It enables database-level I/O timing, temporary-file logging, and one-second slow-statement logging. `pg_stat_statements` is available only when the image preloads it; do not assume the extension exists merely because its Sqitch change deployed.
+
+The webapp's OIDC provider state lives in `structs.oidc_client`, `oidc_authorization_request`, `oidc_authorization_code`, and `oidc_access_token`. These tables contain client/flow/token metadata, not wallet keys. Expired rows are cleaned by the `oidc_cleaner` cron job every 59 seconds.
+
+Treat structs-pg and its writers/readers as a co-versioned rollout. Migrations deliberately guard the `view.work` re-point and `planet_activity` compression cutovers; never bypass those guards. New signer v0.21 enum values must be deployed before their wrapper functions because PostgreSQL cannot add and consume an enum literal in the same transaction.
 
 ---
 

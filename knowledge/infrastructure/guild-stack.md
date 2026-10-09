@@ -148,6 +148,14 @@ structsd (CometBFT + Cosmos SDK)
 
 PG game state is empty or stale until sync-state is running and caught up. The default agent profile must include `structs-sync-state` alongside `structsd` and `structs-pg`.
 
+### API projections
+
+The request-path inventory and work models are current-state tables, not repeated aggregates of history:
+
+- `structs.api_inventory` holds address/player balances. Its reconciler compares against the ledger and writes `api_inventory_drift`.
+- `structs.api_work` holds BUILD/MINE/REFINE/RAID rows. `view.work` reads it; `view.work_live` is only the specification. Sync-state calls `api_work_refresh()` after each block's writes, while an hourly full refresh repairs and logs drift.
+- `structs.api_refresh_state` records the source height/time for each model. A fresh timestamp is the operational freshness check; a transaction broadcast or healthy container alone does not prove a projection is current.
+
 ### Derived rows and historical gaps
 
 Some `structs.planet_activity` rows have no corresponding chain event — sync-state derives them from state changes it observes. That means **a fix to the indexer changes only future rows**; already-indexed history keeps whatever shape it was written with. Three cases currently matter to anyone querying the timeline:
@@ -159,6 +167,8 @@ Some `structs.planet_activity` rows have no corresponding chain event — sync-s
 | `shield_change`, `block_raid_start` | `planet_attribute` writes for `planetaryShield` / `blockStartRaid` | Not emitted before v0.18.0 |
 
 Upstream ships one-time repair scripts under `sync-state/sql/` (`repair-raid-status-seized-ore.sql`, `repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`) that backfill or clean the affected rows. These are **operator tasks** — they write to the database and are not something an agent should run as part of gameplay. See [database-schema.md](database-schema.md) for the query-side consequences.
+
+`planet_activity_player` records player/role attribution at insert time, including per-shot attack targets. Nightly reconciliation logs missing/extra/orphan attribution, and parent activity chunks older than 30 days are compressed by planet. Player-feed queries must page side-table keys first and use a `LATERAL` parent lookup so Timescale can exclude chunks at runtime.
 
 ---
 
@@ -177,6 +187,19 @@ The `structs-grass` service bridges PostgreSQL change notifications to NATS:
 `structs-grass` declares no dependency on `structs-nats`, so starting it by name does not bring NATS up. Launch both if you want events to reach subscribers.
 
 This is the same system documented in the `structs-streaming` skill. The guild stack runs it locally rather than connecting to a remote GRASS endpoint.
+
+---
+
+## Database Operations
+
+- Webapp sessions inherit `statement_timeout = 60s` and `idle_in_transaction_session_timeout = 5min`.
+- Database defaults enable `track_io_timing`, log every temporary-file spill, and log statements over one second.
+- `pg_stat_statements` is created when it is present in `shared_preload_libraries`; compression and work-view cutover guards use observed statement/function shapes and fail closed on positive evidence of unsafe writers.
+- `track_functions = pl` and a larger PG shared-memory mount are image/deployment concerns. The SQL functions disable parallel gathers where the default 64 MB `/dev/shm` would be unsafe.
+
+The webapp also acts as an OIDC provider for Matrix authentication. Four `structs.oidc_*` tables hold client registration and short-lived authorization request/code/token state—never wallet material. The webapp owns their lifecycle; `CLEAN_OIDC()` runs every 59 seconds.
+
+Schema upgrades are ordered contracts. Deploy the structs-pg migration before enabling a sync-state writer that uses a new unique key, table, enum, or wrapper. The `view.work` cutover verifies the refresh function is live and the retired self-referential writer is gone; activity compression verifies the key-first `LATERAL` feed shape. Do not bypass those guards or cherry-pick only the consumer-side change.
 
 ---
 

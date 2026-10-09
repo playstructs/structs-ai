@@ -6,7 +6,7 @@ description: "Charting endpoints on the guild webapp: leaderboards, inventory, b
 # Webapp analytics and charting API
 
 **Category**: webapp
-**Verified against**: structs-webapp `9ac438f3` (2026-09-14)
+**Verified against**: structs-webapp `08e13e2` (2026-09-30)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
 
 These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, optional `meta.height` for the indexer tip, and (where noted) `?bucket=1h|1d` windows over the last 30 days.

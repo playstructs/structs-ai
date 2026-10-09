@@ -8,7 +8,7 @@ description: "Practices that keep a multi-page SUI console coherent as it grows:
 **Purpose**: The practices that keep a multi-page SUI console coherent as it grows, and
 the checklist to run before calling a surface done.
 
-These are judgement calls drawn from building a nine-page operations console on SUI, not
+These are judgement calls drawn from building the multi-area Team Ops console on SUI, not
 properties of the stylesheet. They are here because each one was learned by getting it
 wrong first.
 
@@ -192,5 +192,5 @@ bug.
 
 ---
 
-*Practices verified in use against structs-webapp `6eec7f7` (2026-07-21) and the Structs
+*Practices verified in use against structs-webapp `08e13e2` (2026-09-30) and the Structs
 Desktop Team Ops console.*

@@ -17,10 +17,10 @@ PostgreSQL 17 with TimescaleDB extension. Six application schemas (plus `cron` f
 
 | Schema | Purpose |
 |--------|---------|
-| `structs` | Game state (51 base tables covering all game objects) |
+| `structs` | Game state and API projections (structs-pg `f66fd81`; use the categorized inventory below rather than a brittle historical table count) |
 | `sync_state` | Chain indexer state: sync cursor, block log, raw blocks/events, handler error log |
 | `cache` | Compatibility views over `sync_state.raw_*` (read-only; not an event-sink) |
-| `view` | Computed views (`view.player`, `view.guild`, leaderboards, inventories, permission projection) |
+| `view` | 22 computed views (`view.player`, `view.guild`, leaderboards, inventories, permissions, work specification) |
 | `signer` | Transaction signing queue (TSA account/role/tx management) |
 | `sqitch` | Schema migration tracking |
 
@@ -183,7 +183,7 @@ There is **no `seized_ore` column on `structs.planet`.** Seized ore is tracked p
 | `planetaryShield` | Current planetary shield value |
 | `blockStartRaid` | Raid PoW clock |
 | `blockRaiderArrived` | Set while a visitor heads the fleet queue (raid pause) |
-| `planetBlockStartOreMine` / `planetBlockStartOreRefine` | Shared planet mine/refine PoW clocks (`id` prefix `12-` / `13-`) |
+| `blockStartOreMine` / `blockStartOreRefine` | Shared planet mine/refine PoW clocks (`id` prefix `12-` / `13-`; older docs called these `planetBlockStart*`) |
 | `oreMiningActiveQuantity` / `oreRefiningActiveQuantity` | How many extractors/refineries currently hold the planet clock (`14-` / `15-`) |
 | `defensiveCannonQuantity` | Defensive Cannons installed on the planet |
 | `lowOrbitBallisticsInterceptorNetworkQuantity` | LOBIN installations |
@@ -351,15 +351,17 @@ WHERE block_height > $LAST_HEIGHT
 ORDER BY block_height, planet_id, seq;
 ```
 
-The `detail` column for `struct_attack` carries the attacker at the top level (`attackerStructId`, `attackerPlayerId`, `attackerStructType`, `weaponSystem`, `weaponControl`, attacker health before/after) plus an `eventAttackShotDetail` array with the per-shot breakdown. **`targetStructId` exists only inside the shot entries, not at the top level** — filtering attacks on a target requires descending into the array (e.g. `detail->'eventAttackShotDetail' @> '[{"targetStructId":"5-6438"}]'`). Each shot entry carries `damage`, `damageDealt`, `evaded`/`evadedCause`, `blocked`/`blockedByStructId`, `armourPiercing`, `damageReduction`/`damageReductionCause`, `targetCountered`/`targetCounteredDamage`, `targetDestroyed`, and `evadedByPlanetaryDefenses`/`Cause`.
+The `detail` column for `struct_attack` carries the attacker at the top level (`attackerStructId`, `attackerPlayerId`, `attackerStructType`, `weaponSystem`, `weaponControl`, attacker health before/after) plus an `eventAttackShotDetail` array with the per-shot breakdown. **`targetPlayerId` and `targetStructId` exist only inside shot entries, not at the top level** — filtering attacks on a target requires descending into the array (e.g. `detail->'eventAttackShotDetail' @> '[{"targetStructId":"5-6438"}]'`). Each shot entry carries `damage`, `damageDealt`, `evaded`/`evadedCause`, `blocked`/`blockedByStructId`, `armourPiercing`, `damageReduction`/`damageReductionCause`, `targetCountered`/`targetCounteredDamage`, `targetDestroyed`, and `evadedByPlanetaryDefenses`/`Cause`.
 
 **GRASS publishing**: each `planet_activity` insert fires the `structs.PLANET_ACTIVITY_NOTIFY()` trigger, which `pg_notify('grass', …)`s the row with a `subject` of `structs.planet.{planet_id}.{player_id}` (the owning player id was appended 2026-07-07; `noPlayer` when unresolved) plus a top-level `player_id` field. Payloads over ~7995 bytes are sent as a stub — `{subject, planet_id, player_id, seq, category, time, stub:'true'}` with no `detail` — so live consumers pull the full `detail` from this table by `seq`/`planet_id`. See [structs-streaming SKILL](/skills/structs-streaming/SKILL.html).
 
 ### `planet_activity_player` (per-player attribution)
 
-Side table written at insert time. Ownership is as-of-event. Columns include `player_id`, `role` (`attacker`, `target`, `owner`, `planet_owner`, `defender`, `protected`, `fleet_owner`), plus the parent key (`time`, `planet_id`, `seq`, `block_height`, `category`). The Guild API player feed joins this back to `planet_activity` and uses `block_height` (`?since_height=`) as the cross-planet cursor — `seq` is still per-planet.
+Seven-day-chunk hypertable written by an `AFTER INSERT` trigger. Ownership is as-of-event. Columns include `player_id`, `role` (`attacker`, `target`, `owner`, `planet_owner`, `defender`, `protected`, `fleet_owner`), plus the parent key (`time`, `planet_id`, `seq`, `block_height`, `category`). Attack targets are expanded from each shot's `targetPlayerId`. The Guild API player feed pages side-table keys first and fetches parents with `LATERAL`; this permits runtime exclusion of compressed parent chunks. It uses `block_height` (`?since_height=`) as the cross-planet cursor — `seq` is still per-planet.
 
-Continuous aggregates backing the stats endpoints: `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily`. Galaxy-wide metric charts read `structs.stat_rollup` (hourly LOCF snapshots).
+`planet_activity_player_reconcile()` checks the recent window nightly. Drift is retained for 90 days in `planet_activity_player_drift`: `missing` means expected attribution is absent, `orphan` means the parent vanished, and `extra` can be normal after ownership changes because current ownership differs from ownership recorded at event time.
+
+Continuous aggregates backing the stats endpoints: `planet_activity_hourly` (materialized only; recent-window refresh every 10 minutes), `planet_activity_daily`, and `planet_activity_player_daily`. Parent `planet_activity` chunks older than 30 days are compressed by planet, ordered by descending time/seq.
 
 ---
 
@@ -500,7 +502,7 @@ Old rows are reaped by the `structs.CLEAN_DEFUSION()` cron. Read endpoints live 
 
 ## Aggregated Views
 
-The `view` schema holds 21 views. The ones worth reaching for:
+The `view` schema holds 22 views at structs-pg `f66fd81`. The ones worth reaching for:
 
 | View | Purpose |
 |------|---------|
@@ -512,11 +514,12 @@ The `view` schema holds 21 views. The ones worth reaching for:
 | `view.leaderboard_guild` / `view.leaderboard_player` | Ranked scoreboards (members, ore mined, planets completed, raids launched, raids successful) |
 | `view.leaderboard_provider` / `view.leaderboard_reactor` / `view.leaderboard_substation` | Energy-market scoreboards |
 | `view.permission_player` / `view.permission_address` | Permission bitmask projected to one boolean column per bit |
-| `view.work` | Outstanding proof-of-work windows |
+| `view.work` | Outstanding work from `structs.api_work`, including target and location fields |
+| `view.work_live` | Live BUILD/MINE/REFINE/RAID specification; refresh/reconciliation only, not request paths |
 
 Use views, not raw tables, when building leaderboard, inventory, or treasury surfaces — the views absorb the `seized_ore`, ledger, and infusion joins so the upstream surface stays stable when underlying tables change.
 
-> **Mine/refine clocks: read planet attributes, not `view.struct`.** `view.struct.block_start_ore_mine` / `block_start_ore_refine` still join **struct** attributes (`id` prefix `3-` / `4-`). The live clocks live on the **planet** (`planet_attribute` `planetBlockStartOreMine` / `planetBlockStartOreRefine`, prefixes `12-` / `13-`). Completing any extractor resets the shared planet clock. `view.planet` currently exposes `block_start_raid` but not the ore clocks — query `structs.planet_attribute` (or the planet grid) directly.
+> **Mine/refine clocks are planet-scoped.** `view.planet`, `view.struct`, `view.work_live`, and `view.work` now resolve `planet_attribute.blockStartOreMine` / `blockStartOreRefine` (ID prefixes `12-` / `13-`). Completing any extractor/refinery resets the shared planet clock; do not treat a struct as owning an independent clock.
 
 > **Guild event fields not persisted.** Chain guild events also emit `bankConvertInFee`, `bankConvertOutFee`, and `charterSolverId`. docker-structs-pg's payload decoder ignores those JSON keys; they are not columns. Read convert fees and the current charter solver from chain queries (`guild`, `guild-charter`), not from PG.
 
@@ -538,6 +541,8 @@ Use views, not raw tables, when building leaderboard, inventory, or treasury sur
 | `stat_struct_health` | Struct health over time | `time`, `object_index`, `value` — **no `object_type`** |
 | `stat_struct_status` | Struct status over time | `time`, `object_index`, `value` — **no `object_type`** |
 
+`structs.stat_rollup` stores bounded hourly totals per `(metric, object_type, bucket)`: `sum`, `population`, `samples`, and `source` (`backfill` or `snapshot`). `stat_rollup_metric` has exactly 10 mappings. Backfill reconstructs LOCF history; the :02 hourly snapshot reads current `grid` / `struct_attribute` state. Population can step at the seam for attributes whose rows disappear (notably struct health/status).
+
 > **Type-implied stat tables (silent-wrong-row trap).** Five hypertables — `stat_structs_load`, `stat_connection_capacity`, `stat_connection_count`, `stat_struct_health`, `stat_struct_status` — have **no `object_type` column** (verified in `structs-pg/deploy/table-stat.sql`). The object type is *implied by the table itself* (e.g. `stat_connection_*` and `stat_structs_load` are player/substation series; `stat_struct_*` are struct series). A generic helper that joins every stat table on `(object_type, object_index)` will silently read the wrong rows against these five — filter on `object_index` alone and rely on the table name for the type. This mirrors the note in [api/webapp/stat.md](../../api/webapp/stat.md).
 
 ### Ledger Action Types
@@ -545,6 +550,14 @@ Use views, not raw tables, when building leaderboard, inventory, or treasury sur
 `genesis`, `received`, `sent`, `migrated`, `infused`, `defusion_started`, `defusion_cancelled`, `defusion_completed`, `mined`, `refined`, `seized`, `forfeited`, `minted`, `burned`, `diversion_started`, `diversion_completed`
 
 Each row is one side of a movement: `address` is the party the row belongs to, `counterparty` is the other side, and `direction` (`credit`/`debit`) gives the sign. `amount_p` is the raw integer; `amount` is GENERATED via `unit_legacy_format(amount_p, denom)` for display. Use `amount_p` for arithmetic and for matching.
+
+Source identity is all-or-none: `chain_id`, `tx_index`, `msg_index`, `event_index`. Together with block `time`, these form the idempotency key for `ON CONFLICT DO NOTHING`; begin/end-block events use `-1` indexes. Legacy rows may have all four NULL. If one chain event produces multiple ledger legs, each leg still needs a distinct identity.
+
+### API current-state projections
+
+`structs.api_inventory` stores chain-precision address and player balances. The intended writer applies deltas only from newly inserted ledger rows, then derives player totals from address rows. `api_inventory_reconcile(false)` performs a full ledger comparison; the nightly logged run writes mismatches to `api_inventory_drift` for 90 days.
+
+`structs.api_work` has the nine `view.work` columns plus `source_height` and `updated_at`, keyed by `(category, object_id, target_id)`. Triggers enqueue affected struct/planet/player/fleet keys in `api_work_dirty`; sync-state calls `api_work_refresh()` after authoritative block writes. An empty queue takes a ~0.03 ms fast path, while an hourly full pass repairs and logs `missing` / `extra` / `stale` rows to `api_work_drift`. `api_refresh_state` is the freshness authority for both models.
 
 > **Historical duplicate rows on `refined` and `infused` (affects any balance query).** Two chain messages each produced *two* ledger rows for the same movement, because sync-state's event handler and the Cosmos bank-event handler both wrote one:
 >
@@ -589,9 +602,9 @@ The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.c
 | `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
 | `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types. |
 
-### `signer.signer_tx_type` (UGC enum values)
+### `signer.signer_tx_type`
 
-Seven enum values cover the UGC chain message types:
+Seven values cover the UGC chain message types:
 
 | Enum Value | Wraps |
 |------------|-------|
@@ -613,6 +626,12 @@ The signing layer ships 12 PL/pgSQL wrapper functions that queue UGC updates int
 There is no `MsgGuildModerate*` chain message — moderation is the same `Msg*Update*` message, gated by the actor's `PermGuildUGCUpdate` on the owner's guild. The chain emits a `ugc_moderated` event whenever the actor differs from the target object's owner.
 
 `signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll = 33554431` (bits 0..24) so newly provisioned signer addresses receive every permission, including `PermGuildUGCUpdate`, by default.
+
+Structsd v0.21 adds signer types and wrappers for guild-bank convert / token convert, bank convert in/out fees, reactor restart, and charter-based guild creation. Existing wrappers also changed: redeem requires `min_amount_alpha`; mint, confiscate/burn, and rank updates carry explicit guild arguments. Co-version the enum migration and wrapper migration; PostgreSQL cannot use a newly added enum value in the same transaction that adds it.
+
+### Display formatting
+
+`UNIT_DISPLAY_FORMAT()` at `f66fd81` uses exact numeric scaling and trims trailing zeros. High-unit thresholds are milliwatt `TW = 10^15`, ore `Tg = 10^12`, and `ualpha Tg = 10^18`. Exact zero uses the display unit (`0W`, `0g`, or the guild display token), not the base unit.
 
 ### `PLAYER_PENDING_JOIN_PROXY`
 

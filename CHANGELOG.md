@@ -11,6 +11,34 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.0] - 2026-09-30
+
+Three-repository upstream refresh, verified against structs-webapp `08e13e2`,
+structs-pg `f66fd81`, and structs-desktop `3f04437`.
+
+### Changed
+
+- **Webapp client + SUI** — bumped [`.structs-webapp-version`](.structs-webapp-version),
+  regenerated the SUI inventory (68 glyphs, 31 sprites), and reverified signing/GRASS
+  recovery, planet-scoped mine/refine clocks, map interactions, entity animation, and
+  TableReadManager-backed API behavior across [`develop/ui/`](develop/ui/) and
+  [`develop/client/`](develop/client/).
+- **Guild database read models** — documented `api_work` / `view.work_live`,
+  `api_inventory`, refresh/drift state, planet activity attribution and compression,
+  stat rollups, ledger source identity, OIDC/observability, v0.21 signer wrappers, and
+  guarded co-version deployment in the [database schema](knowledge/infrastructure/database-schema.md)
+  and [Guild Stack](knowledge/infrastructure/guild-stack.md) references. Corrected
+  `struct_attack` target ownership to per-shot `targetPlayerId`.
+- **Desktop MCP + Team Ops** — updated the 13-tool/7-prompt contract, profiles,
+  variance and replication, perception/source controls, native signing and GRASS,
+  current PoW anchor resolution and raid retuning, current combat-loop schemas, and the
+  Command/Armada/Industry/War/Explore/System interface including Terminal, Comms,
+  Infusions, and Live Raids. Safety guidance no longer relies on removed combat-loop
+  `dry_run` or `raid_hours_utc` settings.
+- **Maintenance contract** — expanded [repository precedence](develop/repos.md) and
+  [upstream review procedures](develop/maintenance.md) to cover structs-pg,
+  structs-sync-state, and Desktop runtime schemas in addition to webapp drift.
+
 ## [1.30.4] - 2026-09-29
 
 Cold-start onboarding now exposes power and resource risk before failure, and uses the actual overlapping production pipeline.

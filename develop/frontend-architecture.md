@@ -198,15 +198,17 @@ entry: {
 },
 output: { path: path.resolve(__dirname, 'public/js') },
 experiments: { topLevelAwait: true },
-resolve: { extensions: [".ts", ".tsx", ".js"] },
 module: { rules: [{ test: /\.([cm]?ts|tsx)$/, loader: "ts-loader", options: { transpileOnly: true } }] },
-plugins: [new NodePolyfillPlugin()],
+resolve: { extensions: [".ts", ".tsx", ".js"], fallback: { crypto: false } },
+plugins: [new webpack.ProvidePlugin({ Buffer: [require.resolve('buffer/'), 'Buffer'] })],
 ```
 
 Three things to note. The proof-of-work worker is a **separate entry point**, because a
 worker cannot share the main bundle. `topLevelAwait` is enabled, which the boot sequence
-relies on. And `NodePolyfillPlugin` is there for CosmJS, which expects Node globals —
-expect to need the same if you use CosmJS in a browser.
+relies on. And the Node compatibility surface is intentionally **Buffer-only**:
+CosmJS gets `Buffer` as a global, while `crypto: false` satisfies its browser-side Node
+probe without pulling `crypto-browserify` and its vulnerable `elliptic` dependency.
+Do not copy a broad Node polyfill plugin for this graph.
 
 Webpack's extension resolution is also why `SUI.js` gets away with an extensionless
 import that breaks everywhere else. See [ui/runtime.md](ui/runtime.md#loading-them).
@@ -226,11 +228,11 @@ than from local storage, and the explicit Lottie teardown. These are hard-won so
 real problems and they transfer to any stack.
 
 **Don't copy:** the plaintext mnemonic in `localStorage`, uncontrolled `GameState`
-mutation, the missing HTTP status check in the fetch wrapper, per-factory numeric
-coercion, and the absence of any UI for a failed transaction. Each of these is a known
-weakness rather than a design choice, and each is called out where it appears.
+mutation, incomplete non-auth HTTP status handling, per-factory numeric coercion, and
+the absence of any UI for a failed transaction. Each of these is a known weakness rather
+than a design choice, and each is called out where it appears.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/framework/`,
+*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/`,
 `src/js/controllers/`, `src/js/view_models/`, `src/webpack.config.js`.*

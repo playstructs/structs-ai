@@ -359,5 +359,5 @@ without inventing a new visual language.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/public/css/sui/sui.css`
+*Verified against structs-webapp `08e13e2` (2026-09-30), `src/public/css/sui/sui.css`
 and `src/js/view_models/templates/partials/Pagination.js`.*

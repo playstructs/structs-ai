@@ -72,7 +72,8 @@ The `create-player.mjs` script keeps your mnemonic local but sends to the guild'
 Agents reach the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop), and the Guild Stack compose includes an optional **transaction signing agent** (`structs-tsa`). Either can become an attack surface if exposed beyond `localhost`:
 
 - The **embedded MCP server** speaks the MCP protocol over a local port and is gated by a bearer token (connection details are in the app's Debug menu). Anyone who reaches the port *with the token* can act as your agent — keep the token secret and the port bound to `localhost`.
-- The **web board** (`/board`, enabled with `structs_board {web:"on"}`) serves the Team Ops dashboard over HTTP so a human can watch from another device. It is off by default, and turning it on is a real decision: the board is not a read-only view — it exposes **mass actions that sign transactions**. The bearer token appears in the board URL, so anyone who obtains that URL has full operator control, not just visibility. A URL shared over chat, pasted into a bug report, or left in a browser history is a key disclosure.
+- The **web board** (`/board`, enabled with `structs_board {web:"on"}`) is off by default. Its router exposes an explicit subset of Team Ops: broad reads and conversation actions plus selected game/config/finance writes that sign. It omits interactive Matrix login, native-window openers, and Matrix work commitments, but it is not read-only. The bearer token appears in the initial URL and authorizes every routed operation.
+- **Native Team Ops surfaces are compartmented.** Trusted board/Terminal windows may sign or change settings; game, Comms/chat, and raid-view windows render external content and are refused by `require_trusted`. Agent-driven `structs_board.component` directives are display/elicitation only and do not inherit native board signing authority.
 - The **signing agent** is designed to sign transactions on behalf of a configured key. If configured with a real key and exposed, anyone who can reach the port can spend on your behalf.
 
 **Mitigation**:
@@ -89,6 +90,28 @@ Running multiple players from one machine? Each agent gets its own key. Sharing 
 - **Widened blast radius** — a compromised agent compromises every player that shares the key.
 
 **Mitigation**: One key per player. Period. Naming convention `agent-${player-id}` or similar. The chain's sequence-number contention rule is also documented as rule 7 in [`AGENTS.md`](../AGENTS.md).
+
+### 7. Desktop Native Signer Custody
+
+Current Structs Desktop has an optional native signer. At game sign-in, the webview can hand the mnemonic to Rust once; Rust verifies that HD index 0 derives the signed-in device address, stores the mnemonic in the OS keychain, retains a zeroized BIP39 seed in process memory, and derives/drops individual signing keys per transaction. Native modes sign virtual players over LCD and fall back to the webview bridge until the key is loaded.
+
+This is better custody than leaving the mnemonic only in webview `localStorage`, but it invalidates the absolute claim that keys never leave the webapp. The MCP protocol still does not return the key. The trust boundary is now the Desktop process, OS account/keychain, its signed build/update path, and every trusted surface allowed to request signing.
+
+**Mitigation**:
+- Use a dedicated game mnemonic and a locked OS account/keychain.
+- Check `structs_system {command:"status"}` for native-signer source, readiness, failures, sequence resets, and webview fallbacks.
+- If native custody is outside policy, select `sign_mode:"sync"` or `"async"` and accept the webview bridge's availability trade-off.
+- Treat unexpected keychain prompts, signer address mismatch, or a rising fallback/failure count as an incident; stop loops before diagnosis.
+
+### 8. Native GRASS and Perception Poisoning
+
+Desktop's default `grass_source:"native"` connects Rust directly to the guild NATS WebSocket, while the shared perception snapshot bulk-loads from the Guild API by default (or LCD) and is patched by GRASS. Removing the webview hop improves delivery, but it does not make the source trustworthy. A malicious/compromised guild endpoint can inject frames, omit changes, or serve a poisoned snapshot; stale data can mis-rank targets and readiness.
+
+**Mitigation**:
+- Use `structs_system perception` to inspect snapshot age, GRASS deltas, and pending reads.
+- Treat `verify_source:"guild"` as a load-saving default, not chain proof. For Tier 2 actions use LCD and, where practical, a second node.
+- Monitor native GRASS health (`connected`, `authoritative`, last-message age, reconnects, slow-consumer drops). The webview tap is fallback, not independent corroboration.
+- Preserve pre-sign verification and hard safety gates; never bypass them because the snapshot appears fresh.
 
 ---
 

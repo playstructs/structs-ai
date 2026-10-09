@@ -105,11 +105,11 @@ that keeps it honest:
 - **Authority**: `structs-webapp` is canonical for the SUI design system and for client
   behaviour. `structsd` outranks it on chain rules; `structs-ui` (last commit 2024-06)
   is illustrative only. Full ordering in [`develop/repos.md`](../develop/repos.md).
-- **Pin**: [`.structs-webapp-version`](../.structs-webapp-version) = `6eec7f7` (2026-07-21).
-  Every page in `develop/ui/` and `develop/client/` carries a matching "Verified against"
-  footer.
+- **Pin**: [`.structs-webapp-version`](../.structs-webapp-version) = `08e13e2` (2026-09-30).
+  A page's "Verified against" footer records the newest revision actually reviewed for
+  that page; unaffected pages may intentionally retain an older revision.
 - **Baseline**: `generated/sui-inventory.md` is machine-extracted by
-  `scripts/gen-sui-inventory.sh` (72 tokens, 67 glyph icons, 29 sprite icons, 138
+  `scripts/gen-sui-inventory.sh` (72 tokens, 68 glyph icons, 31 sprite icons, 138
   component classes, 27 modifiers). It is both the writing source and the drift baseline
   — do not hand-edit it.
 - **Drift gate**: `scripts/check-webapp-drift.sh` diffs a fresh extract against the

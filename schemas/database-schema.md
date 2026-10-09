@@ -6,7 +6,7 @@ description: "The authoritative structural catalog of the Structs PostgreSQL dat
 
 **Category**: database
 **Source**: https://github.com/playstructs/structs-pg
-**Last Updated**: 2026-05-29
+**Last Updated**: 2026-09-30
 **Description**: Authoritative structural catalog of the Structs Guild Stack PostgreSQL schema. Mirrors [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) as deployed by Sqitch.
 
 For query patterns, grid gotchas, and agent-ready SQL examples, see [`knowledge/infrastructure/database-schema.md`](../knowledge/infrastructure/database-schema.md).
@@ -31,10 +31,10 @@ Chain events are **not** ingested by `structsd`. The `structs-sync-state` servic
 
 | Schema | Purpose |
 |--------|---------|
-| `structs` | Core game state (~50 tables) |
+| `structs` | Core game state and API projections (structs-pg `f66fd81`; see the categorized live inventory below) |
 | `sync_state` | Chain indexer state: sync cursor, block log, raw chain data, handler errors |
 | `cache` | Four **read-only compatibility views** over `sync_state.raw_*` (legacy webapp shim) |
-| `view` | Computed views — entity projections, permissions, work queue, leaderboards |
+| `view` | 22 computed views — entity projections, permissions, work queue, leaderboards |
 | `signer` | Transaction Signing Agent (TSA) queue — roles, accounts, pending txs |
 | `sqitch` | Migration tracking |
 
@@ -106,15 +106,17 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 
 | Group | Tables |
 |-------|--------|
-| **Core entities** | `player`, `planet`, `fleet`, `struct`, `struct_type`, `guild`, `guild_meta`, `reactor`, `substation`, `allocation`, `infusion`, `provider`, `agreement` |
+| **Core entities** | `player`, `planet`, `fleet`, `struct`, `struct_type`, `struct_type_meta`, `guild`, `guild_meta`, `reactor`, `substation`, `allocation`, `infusion`, `provider`, `agreement` |
 | **Attributes & grid** | `grid`, `struct_attribute`, `planet_attribute`, `struct_defender` |
 | **Permissions** | `permission`, `permission_guild_rank` |
-| **Planet activity** | `planet_activity`, `planet_activity_sequence`, `planet_activity_player`, `planet_raid` |
+| **Planet activity** | `planet_activity`, `planet_activity_sequence`, `planet_activity_player`, `planet_activity_player_drift`, `planet_raid` |
 | **Player addresses** | `player_address`, `player_address_activity`, `player_address_meta`, `player_address_pending`, `player_address_activation_code`, `player_object` |
 | **Onboarding / pending** | `player_pending`, `player_internal_pending`, `player_external_pending`, `guild_membership_application` |
 | **Integrations** | `player_discord` |
 | **Economy / ledger** | `ledger`, `defusion` |
-| **Stats (TimescaleDB)** | `stat_ore`, `stat_fuel`, `stat_capacity`, `stat_load`, `stat_structs_load`, `stat_power`, `stat_connection_count`, `stat_connection_capacity`, `stat_struct_health`, `stat_struct_status`, `stat_rollup`; caggs `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily` |
+| **API projections / drift** | `api_refresh_state`, `api_inventory`, `api_inventory_drift`, `api_work`, `api_work_dirty`, `api_work_drift`, `api_guild_bank`, five `api_leaderboard_*` tables |
+| **Stats (TimescaleDB)** | `stat_ore`, `stat_fuel`, `stat_capacity`, `stat_load`, `stat_structs_load`, `stat_power`, `stat_connection_count`, `stat_connection_capacity`, `stat_struct_health`, `stat_struct_status`, `stat_rollup`, `stat_rollup_metric`; caggs `planet_activity_hourly`, `planet_activity_daily`, `planet_activity_player_daily` |
+| **OIDC provider** | `oidc_client`, `oidc_authorization_request`, `oidc_authorization_code`, `oidc_access_token` |
 | **Config / moderation** | `setting`, `banned_word`, `address_tag`, `current_block` |
 
 **Dropped tables** (migrated 2026-05-25): `player_meta` → columns on `player`; `planet_meta` → `name` on `planet`.
@@ -161,6 +163,8 @@ UGC-related `signer_tx_type` values: `player-update-name`, `player-update-pfp`, 
 `planet_meta` was dropped; `name` lives directly on this table.
 
 There is **no `seized_ore` column on `structs.planet`** — seized ore lives on `planet_raid`. Related: `planet_attribute` (key-value, e.g. `planetaryShield`), and `planet_raid` (`planet_id`, `fleet_id`, `status`, `updated_at`, `seized_ore`). Note `planet_raid`'s primary key is `planet_id` alone, so it holds only the **latest** raid per planet, not raid history — derive history from `ledger` rows with `action = 'seized'`.
+
+Planet mine/refine work uses shared `planet_attribute` clocks: `blockStartOreMine` (ID prefix `12-`) and `blockStartOreRefine` (`13-`). `view.planet`, `view.struct`, and work projections expose these planet clocks; do not infer an independent timer from each mining/refining struct.
 
 ---
 
@@ -275,6 +279,8 @@ TimescaleDB hypertable — planet-level event log (GRASS source).
 | `detail` | jsonb | Event-specific payload |
 | `block_height` | bigint | Block height when event occurred (populated by sync-state) |
 
+`struct_attack` target ownership is per projectile: `detail.eventAttackShotDetail[].targetPlayerId`. There is no top-level `targetPlayerId`.
+
 #### Event categories (reference)
 
 | Category | Description |
@@ -325,6 +331,8 @@ TimescaleDB hypertable — planet-level event log (GRASS source).
 | `player_address` | `address` PK, `player_id`, `guild_id`, `status` | Address ↔ player mapping |
 
 Most `stat_*` hypertables use `time`, `object_type`, `object_index`, `value`, `block_height` — but several omit `object_type` (e.g. `stat_structs_load`, `stat_connection_*`, `stat_struct_*`). Check `\d` before joining.
+
+`ledger` also carries nullable all-or-none source identity columns `chain_id`, `tx_index`, `msg_index`, and `event_index`. The unique key `(time, chain_id, tx_index, msg_index, event_index)` supports idempotent indexer writes; begin/end-block events use `-1` indexes. Legacy rows may have all four NULL. Multiple ledger legs from one chain event still require distinct event identities.
 
 ---
 
@@ -383,7 +391,8 @@ Computed projections — prefer these over hand-joining raw tables where availab
 | `view.reactor` | Reactor + grid attributes |
 | `view.grid` | Expanded grid with object metadata |
 | `view.permission_player` / `view.permission_address` | Permission projections — one boolean column per permission bit (`perm_play`, `perm_admin`, …, `perm_hash_raid`) |
-| `view.work` | Active PoW tasks (`object_id`, `player_id`, `category`, `block_start`, `difficulty_target`) |
+| `view.work` | Active PoW tasks read from `structs.api_work`; includes `object_id`, `player_id`, `target_id`, category, clocks/difficulty, and location fields |
+| `view.work_live` | Live BUILD/MINE/REFINE/RAID specification used only by refresh/reconciliation |
 | `view.guild_bank` | Per-guild Central Bank position |
 | `view.leaderboard_guild` | Guild scoreboard |
 | `view.leaderboard_player` | Player scoreboard |
@@ -395,6 +404,12 @@ Project `structs.permission` joined with `permission_guild_rank`, keyed by `play
 `PermAll` = **33554431** (25 bits, 0..24 set; bit 24 = `PermGuildUGCUpdate` = 16777216).
 
 `signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll` so newly provisioned signer addresses receive every permission bit.
+
+### Work and inventory projections
+
+`structs.api_work` matches the nine public columns of `view.work` and adds `source_height` / `updated_at`; its key is `(category, object_id, target_id)`. `structs.api_work_refresh()` drains trigger-fed `api_work_dirty` after each block, and `api_work_refresh_full()` provides the hourly repair pass. `api_work_drift` records `missing`, `extra`, and `stale` comparisons against `view.work_live`.
+
+`structs.api_inventory` stores address/player balances in chain precision. Incremental writers should apply deltas returned by idempotent ledger inserts, then derive player rows from address rows. `api_inventory_reconcile()` performs the intentionally expensive full-ledger comparison and logs mismatches to `api_inventory_drift`. `api_refresh_state` records each model's source height/time.
 
 ---
 
@@ -416,6 +431,10 @@ TSA (Transaction Signing Agent) infrastructure. Services insert into `signer.tx`
 - **5 guild-moderation** — require `PermGuildUGCUpdate` (16777216) on the target owner's guild
 
 Both groups broadcast the same chain messages (`MsgPlayerUpdateName`, `MsgGuildUpdatePfp`, etc.). Guild moderation is the same update message gated by moderator permissions; the chain emits `ugc_moderated` when actor ≠ owner.
+
+### v0.21 signer additions
+
+The signer enum adds `guild-bank-convert`, `guild-bank-convert-token`, `guild-update-bank-convert-in-fee`, `guild-update-bank-convert-out-fee`, and `reactor-restart`. New wrappers also include charter-based guild creation. Existing redeem/mint/confiscate/rank wrappers changed signatures to carry minimum-output or explicit guild arguments; callers must deploy wrapper code and enum migrations together.
 
 ---
 

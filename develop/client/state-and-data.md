@@ -134,16 +134,18 @@ later `/api/*` call is authenticated by the cookie that `fetch` sends automatica
 Every response is expected in one envelope:
 
 ```json
-{ "success": true, "errors": [], "data": … }
+{ "success": true, "errors": {}, "data": … }
 ```
 
 `GuildAPIResponseFactory` throws `GuildAPIError` if any of the three keys is missing, and
 `handleResponseFailure` throws if `success` is false.
 
-> **HTTP status is never checked.** The `fetch` wrapper calls `response.json()`
-> unconditionally, so a 401 or a 500 with a non-JSON body fails as an opaque JSON parse
-> error rather than as the auth or server error it is. Check `response.ok` in your own
-> client.
+The fetch wrapper now handles `401`/`403` explicitly: it asks a wallet-backed
+reauthenticator to renew the session, collapses concurrent failures onto one login, and
+retries each request once. A second auth failure becomes `AuthenticationError`; a
+non-JSON response becomes `HttpError` with the HTTP status. Other non-2xx JSON responses
+still flow through the normal envelope check, so new clients should keep status and
+envelope handling explicit.
 
 Representative endpoints:
 
@@ -213,7 +215,15 @@ charged transaction — otherwise it would compute charge against a default of `
 conclude it had a full bar. See
 [actions-and-signing.md](actions-and-signing.md#charge-gating).
 
+The current login/fleet flow also closes several partial-state gaps: a signup interrupted
+before planet assignment requests a planet on the next login; an active raid renders a
+loading card until the enemy player and planet arrive; the Alpha Base “Depart” action is
+hidden while the Command Ship is away; and fleet-index raid listeners replace and
+self-remove instead of accumulating across renders.
+
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/models/GameState.js`,
-`src/js/api/GuildAPI.js`, `src/js/factories/`.*
+*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/models/GameState.js`,
+`src/js/api/GuildAPI.js`, `src/js/framework/JsonAjaxer.js`, `src/js/factories/`,
+`src/js/managers/AuthManager.js`, `src/js/builders/PlanetCardBuilder.js`, and
+`src/js/view_models/fleet/FleetIndexViewModel.js`.*

@@ -183,9 +183,17 @@ queue. There is **no nonce-range partitioning** — each worker picks its own ra
 and never coordinates. Progress arrives on the main thread as periodic state snapshots,
 so the UI stays responsive even with five workers saturating cores.
 
-Cancellation is explicit. Mine and refine tasks are killed automatically when GRASS
-reports the cycle cleared (`block === 0`); raid tasks are killed when the raid ends or
-the target's shields come back up.
+Cancellation is explicit. In chain 0.21, mine and refine `block_start` clocks belong
+to the **planet**, so every eligible extractor or refinery of one type shares that
+clock. GRASS supplies the planet clock; the manager fetches `view.work` to discover the
+structs it currently covers, starts/replaces only tasks whose clock changed, and stops a
+task that disappeared from work even if the shared clock remains non-zero.
+
+An incoming raid stops all local mine/refine hashing because those proofs cannot be
+redeemed while a raider is present. If the chain publishes shifted clocks before the
+client has finished processing the raid result, they are held and reconciled after the
+raid ends. A zero clock terminates that task type. Raid proof tasks are killed when the
+raid ends or the target's shields come back up.
 
 ---
 
@@ -267,7 +275,7 @@ keeps five hashing workers from competing with initial render.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/workers/TaskWorker.js`,
+*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/workers/TaskWorker.js`,
 `src/js/managers/TaskManager.js`, `src/js/models/TaskState.js`,
 `src/js/factories/TaskStateFactory.js`. Cross-checked against
 `structsd/x/structs/types/work.go`.*

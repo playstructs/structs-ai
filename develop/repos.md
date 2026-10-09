@@ -16,12 +16,18 @@ When two sources conflict — and they do — resolve in this order:
 
 1. **[structsd](https://github.com/playstructs/structsd)** for chain rules. What the
    validator accepts is not negotiable.
-2. **[structs-webapp](https://github.com/playstructs/structs-webapp)** for the design
+2. **[structs-pg](https://github.com/playstructs/structs-pg)** for PostgreSQL tables,
+   views, read models, attribution, and migration contracts.
+3. **[structs-webapp](https://github.com/playstructs/structs-webapp)** for the design
    system and client behaviour. It is what the game is actually played through.
-3. **[structs-desktop](https://github.com/playstructs/structs-desktop)** for
+4. **[structs-desktop](https://github.com/playstructs/structs-desktop)** for
    agent-facing and desktop-specific patterns.
-4. **[structs-ui](https://github.com/playstructs/structs-ui)** for illustrative markup
+5. **[structs-ui](https://github.com/playstructs/structs-ui)** for illustrative markup
    only. It is years behind.
+
+`structs-sync-state` is the ingestion authority between chain events and PostgreSQL. For
+an indexed-field dispute, use `structsd` for the event's meaning, `structs-sync-state`
+for how it is written, and `structs-pg` for the resulting schema/read contract.
 
 Everything in `develop/ui/` and `develop/client/` is written from source at a pinned
 revision, recorded in `.structs-webapp-version` and cited at the foot of each page.
@@ -82,6 +88,13 @@ want to understand where a REST field comes from.
 See [knowledge/infrastructure/database-schema.md](../knowledge/infrastructure/database-schema.md)
 and the [guild-stack skill](/skills/structs-guild-stack/SKILL.html).
 
+## structs-sync-state — chain-to-database ingestion
+
+Consumes chain events and maintains the PostgreSQL current-state/read-model tables. Read
+it with `structs-pg` when a migration requires a per-block refresher, ledger source-event
+identity, or another co-versioned writer behavior. A successful Sqitch deploy does not by
+itself prove that an older sync-state process can maintain the new model.
+
 ## structs-grass — the event fan-out
 
 NATS-based real-time event distribution. Client side:
@@ -111,6 +124,7 @@ git clone --depth 50 https://github.com/playstructs/structs-webapp.git
 git clone --depth 50 https://github.com/playstructs/structs-desktop.git
 git clone --depth 50 https://github.com/playstructs/structsd.git
 git clone --depth 50 https://github.com/playstructs/structs-pg.git
+git clone --depth 50 https://github.com/playstructs/structs-sync-state.git
 git clone --depth 50 https://github.com/playstructs/structs-ui.git
 ```
 

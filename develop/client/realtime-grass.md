@@ -64,13 +64,14 @@ Registered listeners live in a `Map` that persists across reconnects, so nothing
 re-registering. Malformed JSON is skipped; a listener that throws is caught and logged
 without killing the loop.
 
-> **Connection state never reaches the UI.** Drops are `console.warn` and nothing else.
-> A user can sit in front of a silently disconnected client watching stale numbers. If
-> you build anything operational on GRASS, surface the connection state — it is the
-> single highest-value addition to this subsystem.
+> **Connection state still never reaches the UI.** Drops and forced reconnects are
+> `console.warn` only. The transport now self-heals, but an operator still cannot tell
+> whether the displayed state is live; operational clients should expose that state.
 
-Note also that despite comments referring to them, there is no public `close()` or
-`reconnect()` on `GrassManager`. Only `init()`.
+`reconnect()` deliberately closes the current connection so the supervisor rebuilds it.
+`resumeCheck()` does so only when the shared block clock has been stale long enough, with
+a guard against duplicate focus/visibility triggers. Both GRASS managers run this check
+on tab resume, browser online/focus, and a periodic watchdog.
 
 ---
 
@@ -261,5 +262,5 @@ worst failure mode there is, because everything keeps looking fine.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/framework/GrassManager.js`,
+*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/GrassManager.js`,
 `src/js/framework/AbstractGrassListener.js`, `src/js/grass_listeners/`.*

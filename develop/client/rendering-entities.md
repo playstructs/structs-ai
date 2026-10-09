@@ -219,13 +219,21 @@ routine refresh cannot tear down a Lottie mid-play.
 and refreshes the struct after the departure animation and before the arrival one, which
 is the only way to get that ordering right.
 
+**The still after an animation comes from current struct state.** The viewer restores a
+Submersible's hidden art from `struct.isHidden()` after ordinary animations; only the
+stealth activate/deactivate animations override that value while their confirming state
+event is still in flight. Low-orbit ballistic interception also has its own evade Lottie,
+and the Cruiser primary uses the delayed-impact sequence against both land and water
+targets.
+
 Deployment animations are the exception: they autoplay when a struct first renders after
 being built, bypassing the queue entirely, because nothing else is competing at that
 moment.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21):
+*Verified against structs-webapp `08e13e2` (2026-09-30):
 `src/js/view_models/components/PfpViewerComponent.js`, `StructStillRenderer.js`,
 `MapStructViewerComponent.js`, `MapStructLottieAnimationSVG.js`,
-`src/js/data_structures/AnimationEventQueue.js`.*
+`src/js/data_structures/AnimationEventQueue.js`, and
+`src/js/factories/AnimationEventFactory.js`.*

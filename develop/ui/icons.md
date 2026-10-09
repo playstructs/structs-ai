@@ -1,6 +1,6 @@
 ---
 title: SUI icon systems and inventories
-description: "The two SUI icon systems: 67 tinting glyph icons and 29 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
+description: "The two SUI icon systems: 68 tinting glyph icons and 31 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
 ---
 
 # SUI icon systems and inventories
@@ -15,7 +15,7 @@ which one you are using determines whether the icon takes your text colour.
 
 ## Glyph icons — the icon font
 
-67 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
+68 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
 
 ```html
 <i class="sui-icon sui-icon-sm icon-refresh-8"></i>
@@ -36,8 +36,9 @@ blocked             caret-down         caret-left         caret-right
 caret-up            chevron-down       chevron-left       chevron-right
 chevron-up          close              cmd-post           combat-log
 computer            copy               counter            defend
-deploy              detected           dmg                edit
-enemy-tile          fleet-tile         guild              guild-directory
+deploy              detected           disabled           dmg
+edit                enemy-tile         fleet-tile         guild
+guild-directory
 in-progress         incoming           indirect           info
 key                 kinetic-barrier    link-out           member
 menu                mine               move               okay
@@ -51,14 +52,14 @@ unknown-territory   unpowered          wreckage
 
 Each is prefixed `icon-` in markup: `icon-planetary-shield`, `icon-send-alpha`.
 
-`icon-attention` is declared twice in the stylesheet — 68 declarations, 67 names. The
+`icon-attention` is declared twice in the stylesheet — 69 declarations, 68 names. The
 duplicate is harmless.
 
 ---
 
 ## Sprite icons — background art
 
-29 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
+31 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
 
 ```html
 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
@@ -77,8 +78,9 @@ defended                   defender-block        defender-counter
 defending                  deflector-shield      deployed-structs
 destroyed                  electronic-warfare-system
 enemy-deployed-structs     enemy-indicator       enemy-shield-health
-energy                     inert-alpha           land
-local                      no-power              player-indicator
+energy                     energy-deactivated   energy-insufficient
+inert-alpha                land                 local
+no-power                   player-indicator
 players                    shield-health         space
 stealth-mode               undiscovered-ore      water
 ```
@@ -127,5 +129,5 @@ source and is the one to trust if these ever disagree.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21),
+*Verified against structs-webapp `08e13e2` (2026-09-30),
 `src/public/css/structicons.css` and `src/public/css/sui/sui.css`.*

@@ -7,7 +7,8 @@ description: "Read the planet activity log from the web application: the event h
 **Category**: webapp (catalog read)
 **Entity**: PlanetActivity (`structs.planet_activity`)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: September 14, 2026
+**Last Updated**: September 30, 2026
+**Verified against**: structs-webapp `08e13e2` (`TableReadManager.php`)
 
 ---
 
@@ -16,6 +17,8 @@ description: "Read the planet activity log from the web application: the event h
 Per-planet activity log — raids, attacks, builds, defender changes, struct health updates, etc. Categories include `raid_status`, `block_raid_start`, `shield_change`, `struct_attack`, `struct_health`, `fleet_arrive`, `fleet_depart`, and others; see `.cursor/skills/structs-streaming/SKILL.md` for the GRASS-side category names. `block_raid_start` records the block height at which a raid began, and `shield_change` records planet shield adjustments. Use this REST surface for historical browsing; use GRASS for real-time reaction.
 
 The **per-player** routes read `structs.planet_activity_player` (attribution written at insert time, ownership as-of-event). `seq` is a per-planet counter and is **not** a cursor across planets — use `?since_height=` (`block_height > :since_height`) as the incremental high-water mark. `since_seq` is `400 since_seq_unsupported` on the player feed.
+
+Attribution is one row per parent event, player, and role. For `struct_attack`, attacker ownership comes from top-level `attackerPlayerId`, while each target comes from `eventAttackShotDetail[].targetPlayerId` (there is no top-level target-player field). Planet-level mine/refine clock events are attributed to the planet owner, and defense events attribute both the defender and protected-struct owners.
 
 ---
 
@@ -74,7 +77,7 @@ Bucketed stats for charts: [`analytics.md`](analytics.md).
 
 - **ID**: `webapp-planet-activity-by-player`
 
-Per-player feed via `structs.planet_activity_player` joined back to the parent `planet_activity` row. Dual-role rows on the same parent are collapsed with `DISTINCT ON (block_height, time, planet_id, seq)` unless `role` is set.
+Per-player feed pages keys from `structs.planet_activity_player` first, collapsing dual-role rows with `GROUP BY (block_height, time, planet_id, seq)`, then fetches each parent `planet_activity` row through a `LATERAL` lookup. This preserves one feed row per parent while allowing Timescale to exclude compressed chunks efficiently. A `role` filter is applied before grouping.
 
 | Name | Type | Required | Format | Description |
 |------|------|----------|--------|-------------|
@@ -88,7 +91,7 @@ Per-player feed via `structs.planet_activity_player` joined back to the parent `
 
 Allowlisted categories: `struct_attack`, `raid_status`, `fleet_arrive`, `fleet_depart`, `struct_status`, `struct_health`, `struct_move`, `struct_block_build_start`, `struct_block_ore_mine_start`, `struct_block_ore_refine_start`, `struct_defense_add`, `struct_defense_remove`, `shield_change`, `block_raid_start`. Anything else is `400 category_invalid`. Unknown `role` is `400 role_invalid`. `?order=` other than `asc`/`desc` is `400 order_invalid`.
 
-Rows: `time`, `seq`, `planet_id`, `block_height`, `category`, `detail` (JSON string) plus **`detail_json`** (parsed object, or `null` if `detail` is not JSON).
+Rows: `time`, `seq`, `planet_id`, `block_height`, `category`, `detail` (JSON string) plus **`detail_json`** (parsed object, or `null` if `detail` is not JSON). `?include_meta=1` adds `meta.height`; `?include_total=1` adds the distinct parent-row count.
 
 ---
 
@@ -109,5 +112,13 @@ Daily counts from `structs.planet_activity_player_daily`. Optional `category`, `
 `?bucket=1h` is `400 bucket_invalid` — this endpoint is daily only.
 
 ---
+
+## Storage and freshness
+
+`planet_activity_player` is a 7-day-chunk hypertable maintained by an `AFTER INSERT` trigger on `planet_activity`; join to the parent on `(time, planet_id, seq)`. Its nightly reconciler records `missing`, `extra`, or `orphan` rows in `planet_activity_player_drift` for 90 days. `extra` can be expected after ownership changes because the side table intentionally preserves ownership as-of-event, while reconciliation evaluates current ownership.
+
+`planet_activity` chunks older than 30 days are compressed, segmented by `planet_id` and ordered by `time DESC, seq DESC`. The player feed's key-first `LATERAL` shape is required for runtime chunk exclusion; replacing it with a plain join can decompress whole historical chunks.
+
+Global hourly stats are materialized-only and refreshed every 10 minutes over the recent window. Daily and per-player daily aggregates include current data according to their continuous-aggregate policy, so aggregate counts can lag the raw feed.
 
 Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a default page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

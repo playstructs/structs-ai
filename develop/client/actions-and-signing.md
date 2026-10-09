@@ -98,6 +98,30 @@ This differs from the CLI guidance in [AGENTS.md](../../AGENTS.md), which uses
 `--gas auto --gas-adjustment 1.5`. Both work; the webapp just picks a limit generous
 enough for every message it sends and stops thinking about it.
 
+### Desktop adds a native virtual-player signer
+
+The webapp queue above is still the primary-player action path, but current Structs
+Desktop has two additional virtual-player modes:
+
+- `sync` / `async` use the Rust ↔ webview bridge and CosmJS.
+- `native` / `native_async` sign in Rust and broadcast through LCD REST.
+
+At sign-in, `native_signer_import` can transfer the mnemonic from the webview once. Rust
+normalizes it, verifies that `m/44'/118'/0'/0/0` derives the signed-in device address,
+stores it in the OS keychain, and retains a zeroized BIP39 seed in memory. A child key at
+`m/44'/118'/0'/0/N` is derived per sign and dropped before the first await. Until import
+succeeds, native modes fall back to the webview bridge.
+
+Native signing tracks account number/sequence per address, advances on mempool acceptance,
+and resets from the chain's expected sequence on disagreement. A per-account mutex is
+shared with the JS bridge so modes cannot race one account; `tx_gate_cap` bounds
+cross-account concurrency. `native_async` returns after CheckTx acceptance and later emits
+`tx_settled`, while `native` waits for inclusion.
+
+This is a custody change, not an MCP key-export feature: tool callers still request
+signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
+inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
+
 `creator` is never stored in a queued payload — it is injected from the signing account
 at broadcast time, so a persisted queue cannot be replayed against the wrong account:
 
@@ -158,6 +182,20 @@ three mechanical guarantees:
 CosmJS fetches and increments the sequence internally. Serialising submissions is enough.
 This is the same reasoning behind the CLI rule in [AGENTS.md](../../AGENTS.md) — one
 transaction at a time per account, roughly six seconds apart.
+
+### Recovering a silently dead signing socket
+
+A WebSocket can remain `OPEN` after a suspended tab while no longer carrying traffic.
+`SigningClientManager.resumeCheck()` probes with `getHeight()` (not the memoised
+`getChainId()`), gives it five seconds, and rebuilds the client only when recent GRASS
+blocks prove the wider network is alive. Concurrent checks collapse onto one promise;
+unforced checks are throttled to five minutes. Resume triggers (`visibilitychange`,
+BFCache `pageshow`, `online`, and `focus`) force the probe, while a periodic watchdog
+uses the throttle.
+
+Broadcast itself has a separate hard deadline. This prevents a dead transport from
+leaving `inFlight` set forever and wedging both lanes; the ordinary timeout-with-tx-hash
+path still polls for inclusion before declaring failure.
 
 ### Charge gating
 
@@ -301,5 +339,9 @@ that knows its action failed and one that reports success it never achieved — 
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21): `src/js/managers/WalletManager.js`,
+*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/managers/WalletManager.js`,
 `SigningClientManager.js`, `SigningQueueManager.js`, `src/js/models/SigningTransaction.js`.*
+
+*Desktop integration verified against structs-desktop
+`3f04437d5606d6736df41301bb980893129a7912`: `mcp/native_signer.rs`,
+`vplayer_bridge.rs`, `tx_gate.rs`, `tx_retry.rs`, and `tools/system.rs`.*

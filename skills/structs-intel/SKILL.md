@@ -95,6 +95,21 @@ Keep a `memory/intel/galaxy.json` for guild/market snapshots and `memory/intel/t
 
 The CLI is enough for targeted scouting, but galaxy-wide or repeated intel is far faster against the Guild Stack's Postgres mirror — sub-second joins across all planets/structs/players. Deploy via [`structs-guild-stack`](/skills/structs-guild-stack/SKILL.html); schema and query patterns in [`knowledge/infrastructure/database-schema`](https://structs.ai/knowledge/infrastructure/database-schema). Typical wins: "all planets with ore and an offline Command Ship," "defenders by planet," "providers sorted by price." Pair with [`structs-streaming`](/skills/structs-streaming/SKILL.html) (GRASS) for live fleet/raid/attack events instead of polling.
 
+## Structs Desktop curated reads
+
+Two current `structs_intel` reads replace common hand-built queries:
+
+- `raid_readiness {player?, only_gaps?, limit?}` audits each roster player's own fleet
+  against every ambit a Command Ship can occupy and returns READY/PARTIAL/BLIND. The
+  default roster sweep is bounded to 25; pass one player for an exact audit.
+- `battle_log {planet_id?, category?, struct_id?, limit?}` pulls the full Guild API
+  planet-activity records. It defaults to `struct_attack`; pass `category:"all"` (or
+  `"*"`) for all categories. Use this after a GRASS attack stub to recover full results.
+
+`structs_system perception` reports the shared snapshot's freshness and object counts;
+`{set:{refresh:true}}` forces a refresh. The snapshot is a fast planning source, not a
+substitute for chain verification before Tier 2 actions.
+
 ## Query catalog (read-only)
 
 | Target | Command |

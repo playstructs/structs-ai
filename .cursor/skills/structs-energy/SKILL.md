@@ -16,7 +16,7 @@ redirect_from:
 
 Every online struct draws power continuously, and **load > capacity = offline = you cannot act**. Energy is therefore the substrate of everything: no power, no mining, no building, no defense. This skill is "I need power / I'm offline / how do I budget power" — raising your own capacity (infusion), distributing it (substations/allocations), and recovering from overload. *Earning* from energy (running providers, selling, the flywheel) lives in [`structs-commerce`](/skills/structs-commerce/SKILL.html).
 
-Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (power/economy reads) and `structs_action` (infuse, connect) — the `structsd` commands below are the complete fallback. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
+Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, use `structs_intel` for power/economy reads. Reactor infusion lifecycle controls are currently **Team Ops → Industry → Production Tauri/web-board handlers**, not a `structs_action` action or a new MCP tool; use the human board or the `structsd` fallback below. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
 > **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx.
 
@@ -76,6 +76,14 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
    ```
    `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same three arguments as infusion (`reactor-defuse -- [your-address] [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes during that cooldown.
 4. Verify: re-query player; capacity increased.
+
+In current Team Ops, the Infusions surface can preview and execute reactor infuse,
+defuse, migration, cancel-defusion, and restart for the primary/registered virtual
+players. It re-derives the holder signer, checks the infusion address, validator health,
+and projected power headroom before signing. Generator infusions are listed but remain
+read-only there because they are irreversible. These `mcp_infusion_*` names are internal
+Tauri/web-board commands; `tools/list` still has 13 MCP tools and no
+`structs_infusions`.
 
 ## Procedure — generator infusion (Tier 2, irreversible)
 

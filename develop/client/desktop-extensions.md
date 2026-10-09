@@ -26,9 +26,11 @@ events.rs   format.rs     hasher.rs       intel.rs      map.rs
 mass_action.rs  players.rs  policy.rs     sequence.rs   strike.rs  system.rs
 ```
 
-They surface as the `structs_*` tool family: `structs_action`, `structs_intel`,
-`structs_sequence`, `structs_dashboard`, `structs_map`, `structs_strike`,
-`structs_doctrine`, `structs_policy`, `structs_hash`, `structs_ui`, and others.
+They surface as exactly 13 advertised tools: `structs_action`, `structs_dashboard`,
+`structs_hash`, `structs_intel`, `structs_policy`, `structs_events`,
+`structs_sequence`, `structs_players`, `structs_map`, `structs_board`,
+`structs_doctrine`, `structs_strike`, and `structs_system`. Agent-driven components
+belong to `structs_board`; `structs_ui` is only a retired-call migration stub.
 
 The shape to follow is **one tool per surface with an operation parameter**, not one tool
 per operation. `structs_action` covers every game action rather than exposing forty
@@ -57,7 +59,9 @@ cadence machinery.
 ## Adding a board page
 
 The Team Ops board (`frontend/board.html` + `board.js` + `board-pages.js`) is a
-nine-page operations console built entirely on SUI. Pages self-register:
+six-area operations console built entirely on SUI: Command, Armada, Industry,
+War, Explore, and System. Terminal is a customizable card workspace and Comms is
+Matrix-backed. Pages still self-register:
 
 ```js
 Board.registerPage = function (name, def) {
@@ -88,10 +92,24 @@ like it to feel. Transactions settle per block, so `tx` polls at 2.5s. Energy al
 change when someone changes them, so 30s is generous. Every page polling at 1s is how a
 console becomes a load generator against its own backend.
 
-The existing pages are `ops`, `armada`, `energy`, `work`, `inventory`, `diagnostics`,
-`tx`, `grass`, `war`, `config` and `map` — read one near what you're building. They all
-use the shared helpers at the top of `board.js` (`esc`, `el`, `row`, card builders) which
-are the same idea as [sui-kit.js](../ui/examples/sui-kit.js).
+The routing manifest in `board.js` is authoritative; several route pages host multiple
+views. Read the nearest current section rather than copying an old page list. Shared
+helpers at the top of `board.js` (`esc`, `el`, `row`, card builders) follow the same idea
+as [sui-kit.js](../ui/examples/sui-kit.js).
+
+### Tauri commands are not MCP tools
+
+Internal `#[tauri::command]` handlers may back Team Ops without changing `tools/list`.
+Industry → Infusions is the canonical example: `mcp_infusions`,
+`mcp_infusion_preview`, `mcp_infusion_infuse`, `mcp_infusion_defuse`,
+`mcp_infusion_migrate`, `mcp_infusion_cancel_defusion`, and
+`mcp_infusion_restart` are native/web-board handlers, not a `structs_infusions`
+MCP tool. Keep that distinction explicit in UI and docs.
+
+Mutating native handlers must call `require_trusted`: windows that render external
+content (game, Comms/chat, raid viewers) cannot sign or rewrite config. Trusted Team
+Ops/Terminal surfaces can. The bearer-authenticated web board has its own explicit route
+allowlist; add a web route only after deciding whether bearer possession should grant it.
 
 Two lessons the board learned the hard way are documented in comments in `board.js` and
 generalise to any agent-facing feed:
@@ -156,17 +174,17 @@ because each page re-polls on its own cadence anyway.
 `ui_bridge.rs` lets an agent push declarative UI directives into the webview — a `notify`
 to say something, or a `prompt` to ask something and await the answer.
 
-The constraint is absolute and stated in the module header:
+The constraint applies to the **agent directive channel** and is stated in the module header:
 
 ```
 //! UI directives are display/elicitation only — they CANNOT sign. Any action the
 ```
 
-An agent can ask a human a question. It cannot use the UI channel to obtain a signature.
-Anything that signs goes through the transaction queue and through `policy.rs`, where the
-human's configured capabilities apply. Keeping display and authority on separate paths is
-what makes it safe to let a model drive the interface at all — see
-[SAFETY.md](../../SAFETY.md).
+An agent can ask a human a question. It cannot use a `structs_board.component` directive
+to obtain a signature. Do not generalize that into “the whole board is read-only”:
+trusted native Team Ops/Terminal handlers and selected bearer-authenticated web-board
+routes can sign. Keeping the directive channel separate from those authority-bearing
+paths is the relevant boundary — see [SAFETY.md](../../SAFETY.md).
 
 Three further guards worth knowing before you build on it:
 
@@ -181,5 +199,6 @@ of that: retrying is safer than tracking whether the first attempt landed.
 
 ---
 
-*Verified against structs-desktop at the pinned reference checkout:
-`src-tauri/src/mcp/`, `frontend/board.js`, `frontend/board-pages.js`.*
+*Verified against structs-desktop `3f04437d5606d6736df41301bb980893129a7912`:
+`src-tauri/src/mcp/handler.rs`, `tools/{board_pages,infusions}.rs`, `web_board.rs`,
+`ui_bridge.rs`, `frontend/board.js`, `frontend/board-pages.js`, and harness tests.*

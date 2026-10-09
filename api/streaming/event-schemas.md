@@ -156,13 +156,13 @@ The `detail` payload has the **attacker context flat at the top** and the **per-
 | recoilDamageToAttacker | boolean | Whether recoil hit the attacker |
 | planetaryDefenseCannonDamage | integer | PDC damage contribution |
 | attackerPlayerId | string | Attacking player ID |
-| targetPlayerId | string | Defending player ID |
 | eventAttackShotDetail | array | Per-projectile shot outcomes (see below) |
 
 **`eventAttackShotDetail[]` (per-projectile) fields**:
 
 | Field | Type | Description |
 |-------|------|-------------|
+| targetPlayerId | string | Player owning this shot's target |
 | targetStructId | string | Struct hit by this shot |
 | targetStructType | integer | Target struct type ID |
 | evaded | boolean | Shot evaded |
@@ -176,7 +176,7 @@ The `detail` payload has the **attacker context flat at the top** and the **per-
 | targetCountered | boolean | Target fired a counter |
 | targetCounteredDamage | integer | Counter damage dealt back |
 
-> `attackerHealthBefore`, `targetHealthBefore`, and `targetHealthAfter` are **runtime-enriched** fields present on the live activity feed (used for animation) and are not part of the canonical protobuf type; they may arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
+> `targetPlayerId` is per shot, not a top-level attack field. The database attribution function expands `eventAttackShotDetail[]` and records each distinct target as role `target`. Health fields are canonical in the v0.21 event shape (`attackerHealthBefore/After/Max` at the top level and `targetHealth*` / `blockerHealth*` per shot), though wire numerics may still arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
 
 > **Stubbing on the live stream.** The NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's full `detail` exceeds 7995 bytes (typical of multi-shot, multi-defender fights), the realtime stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. The full `eventAttackShotDetail[]` is then only available by pulling the Guild API `planet-activity` row (keyed by `seq`/`planet_id`). Detect combat from the effect events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`); use the pull for per-shot detail. Small attacks ship `detail` inline.
 

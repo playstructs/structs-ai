@@ -80,4 +80,4 @@ them.** This is the single most likely source of a subtle bug in a new client. S
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21).*
+*Verified against structs-webapp `08e13e2` (2026-09-30).*

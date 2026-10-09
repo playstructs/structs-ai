@@ -88,9 +88,9 @@ Attacker context is **flat at the top** of `detail`; the per-shot outcomes are i
   "recoilDamageToAttacker": false,
   "planetaryDefenseCannonDamage": 0,
   "attackerPlayerId": "1-11",
-  "targetPlayerId": "1-22",
   "eventAttackShotDetail": [                 // nested: one entry PER PROJECTILE
     {
+      "targetPlayerId": "1-22",
       "targetStructId": "5-3",
       "targetStructType": 3,
       "evaded": false,
@@ -109,6 +109,7 @@ Attacker context is **flat at the top** of `detail`; the per-shot outcomes are i
 ```
 
 Notes:
+- `targetPlayerId` is **per shot**, not top-level. Multi-target attacks can therefore attribute different projectiles to different players. PostgreSQL's `planet_activity_player` attribution expands the shot array for role `target`.
 - Chain `EventAttack` **does** include health on the proto: `attackerHealthBefore` / `After` / `Max` on `eventAttackDetail`, and per-shot `targetHealth*` / `blockerHealth*` on `eventAttackShotDetail`. Catalog: [chain-events.md](chain-events.md).
 - The Guild API / GRASS activity feed may still runtime-enrich the same names for animation. Health values may arrive as strings (coerce).
 - Evasion is per-target (the whole volley); hit/miss is per-projectile (per `eventAttackShotDetail` entry).
@@ -262,6 +263,16 @@ Two `struct_type` shape changes in the Guild Stack (structs-pg) that tools read:
 
 - **`generating_rate` is a formatted column.** The raw chain value now lives in **`generating_rate_p`**, and `generating_rate` is a generated column equal to `generating_rate_p * 1000` (same `_p`/formatted split as ledger/infusion precision columns — **not** `structs.grid`, which stores a single `val`). For the raw per-gram rate the gameplay docs quote (Field Generator 2, Continental Power Plant 5, World Engine 10), read `generating_rate_p`; `generating_rate` is the scaled representation. Verified in structs-pg `deploy/table-struct-type-20260602-add-generating-rate-precision.sql`.
 - **Armour-piercing is explicit booleans.** `struct_type` exposes `primary_weapon_armour_piercing` and `secondary_weapon_armour_piercing` (chain `StructType.primaryWeaponArmourPiercing` / `secondaryWeaponArmourPiercing`, structsd v0.18.0) — read these rather than inferring from the struct class. Only the Battleship sets them today. Verified in structs-pg `deploy/table-struct-type-20260612-add-armour-piercing.sql`. See [combat.md](../knowledge/mechanics/combat.md).
+
+## Guild Stack display units
+
+Use raw precision columns for arithmetic (`amount_p`, `fuel_p`, `power_p`, etc.); formatted columns and `UNIT_DISPLAY_FORMAT()` are presentation surfaces. At structs-pg `f66fd81` the display ladders are:
+
+- milliwatts: `mW`, `W` (10³), `KW` (10⁶), `MW` (10⁹), `TW` (10¹⁵);
+- ore: `g`, `Kg` (10³), `Tg` (10¹²);
+- `ualpha`: `μg`, `mg` (10³), `g` (10⁶), `Kg` (10⁹), `Tg` (10¹⁸).
+
+Scaling uses exact `numeric` powers, negative values use their absolute digit count for unit selection, and trailing zeroes are trimmed. Exact zero intentionally renders in the display unit: `0g` for `ualpha`, `0W` for milliwatts, `0g` for ore, and the guild token's display denomination. Older deployments can return wrong/NULL high-unit labels, so co-version the PG schema with readers that assert formatted output.
 
 ## Player UGC: PFP is a first-class attribute
 

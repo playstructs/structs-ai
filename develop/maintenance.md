@@ -4,9 +4,8 @@ description: The review cycle that stops the build docs drifting from the code t
 
 # Keeping the develop docs true
 
-**Purpose**: The review cycle that stops [develop/ui/](ui/index.md) and
-[develop/client/](client/index.md) from drifting away from the code they describe — and
-the prompt to run it with.
+**Purpose**: Review cycles that stop the UI/client, Guild Stack, and Desktop docs from
+drifting away from the code they describe.
 
 These pages make specific, checkable claims about a codebase that keeps moving. Any
 document like that is wrong eventually. The question is whether it is wrong *knowably*.
@@ -94,6 +93,46 @@ Paste this into an agent session with the repository open:
 
 ---
 
+## PostgreSQL and Guild Stack review
+
+Treat a `structs-pg` update as a co-versioned schema review, not a migration-name review:
+
+1. Pull `structs-pg`, then read every new `deploy/`, matching `verify/`, and handoff file.
+2. Compare `view.*` row shapes, `api_*` read models, attribution functions, signer
+   wrappers, and migration guards against
+   [database-schema.md](../knowledge/infrastructure/database-schema.md),
+   [schemas/database-schema.md](../schemas/database-schema.md), and the webapp API pages.
+3. Read the matching `structs-sync-state` and `structs-webapp` code for any guard that
+   requires a new writer/refresher or query strategy. Schema deployment order is part of
+   the contract.
+4. Run the upstream verify scripts against a compatible disposable Guild Stack when
+   available. If no database is available, state that limitation; source review is not a
+   live migration rehearsal.
+
+Pay special attention to JSON event paths, precision/display helpers, materialized read
+models, compression policies, and columns that moved between entity scopes.
+
+## Structs Desktop review
+
+The Desktop runtime contract is its current source and advertised MCP schemas:
+
+1. Pull `structs-desktop`; inspect changes under `src-tauri/src/mcp/`, `frontend/`, and
+   the webapp/compendium submodule pins.
+2. Diff `tools/list` and `prompts/list` descriptions against
+   [TOOLS.md](../TOOLS.md), [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md),
+   [SAFETY.md](../SAFETY.md), and canonical skills under `.cursor/skills/`.
+3. Reverify automation defaults and safety gates from implementation, not README prose.
+   Native signing, source-selection knobs, and trusted board routes change the custody
+   boundary even when the tool count is unchanged.
+4. Run targeted Rust/harness tests and, when a current app is available, compare the
+   live MCP schemas. Record any assets/submodules that prevented the full suite.
+
+Desktop may bundle an older `structs-ai` submodule than the workspace. Document current
+Desktop behavior from Desktop source, then regenerate this repository's mirrors/bundles;
+do not treat the bundled compendium as an independent authority.
+
+---
+
 ## When you find an upstream defect
 
 [`develop/ui/gotchas.md`](ui/gotchas.md#known-upstream-defects) carries a table of real
@@ -122,7 +161,7 @@ The standard these pages are held to, in order of what counts:
 
 1. **Read the code.** Not the comment above it, not the commit that added it.
 2. **Prefer mechanical extraction** where a script can do the reading. That is what
-   `gen-sui-inventory.sh` is for, and why counts like "67 glyph icons" are trustworthy.
+   `gen-sui-inventory.sh` is for, and why counts like "68 glyph icons" are trustworthy.
 3. **Distinguish the three kinds of claim.** A *mechanical* claim (a constant, a class
    name, a count) is verifiable from source and must be exact. A *behavioural* claim
    (the stepper only binds at init) is verifiable by reading the logic. A *judgement*

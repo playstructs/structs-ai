@@ -188,4 +188,4 @@ refresh. That is a sanctioned local addition, not a deviation — see
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/public/css/sui/sui.css`.*
+*Verified against structs-webapp `08e13e2` (2026-09-30), `src/public/css/sui/sui.css`.*

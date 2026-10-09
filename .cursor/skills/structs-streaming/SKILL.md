@@ -49,6 +49,21 @@ The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds
 
 A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja). GRASS is hosted by individual guilds and is currently HTTP only — do not rewrite to `wss://`.
 
+### Structs Desktop native source
+
+Current Desktop defaults to `grass_source:"native"`: Rust's `async-nats` client subscribes
+to `structs.>` and `consensus` and sends payloads directly into the same event buffer used
+by the webview tap. While native GRASS is connected and recently active, duplicate
+webview frames are suppressed; after outage/staleness the webview path remains fallback.
+Select `grass_source:"webview"` through `structs_system config` to disable native
+subscription, and inspect `structs_system status` for connection, authority, last-message
+age, reconnects, slow-consumer drops, and suppressed duplicates.
+
+This improves delivery but not trust. The guild NATS endpoint and every frame are
+untrusted network input. Desktop's shared perception snapshot is GRASS-patched and may
+bulk-load from Guild API or LCD; check `structs_system perception` and preserve pre-sign
+verification for consequential actions.
+
 ### Tendermint WebSocket vs GRASS
 
 These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries the indexer projection (NATS). Tendermint at `wss://public.testnet.structs.network:26657/websocket` carries the original structsd events. Catalog, typed `Event*` types, and `ugc_moderated`: [api/chain-events](https://structs.ai/api/chain-events). GRASS is not a 1:1 mirror of that log.
@@ -197,6 +212,10 @@ Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `
 ### Combat Event Payloads
 
 > **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `planet_activity` row's full payload (e.g. a `struct_attack` `detail` with its `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead. The stub keeps the routing/identity fields and drops the heavy `detail`: `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": "...", "player_id": "...", "seq": ..., "category": "struct_attack", "time": "...", "stub": "true" }` (note `stub` is the string `"true"`). So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the stub's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+
+On Desktop, `structs_intel {query:"battle_log", args:{planet_id, category:"all"}}`
+pulls all categories from the full planet-activity feed; omit `category` to default to
+`struct_attack`, or filter by `struct_id`. This is the reliable follow-up to a live stub.
 
 `struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject; the full planet payload also carries `subject` and `player_id` alongside the row fields):
 

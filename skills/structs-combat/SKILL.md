@@ -11,7 +11,7 @@ domain: combat
 
 Combat exists to move ore. **Raiding** is how you take another player's mined ore; **attacks** soften defenses and kill structs; **defense** keeps your own ore and infrastructure alive. **Raids steal ore. That's it. Your account is never at risk from raids.** The single most important fact: **raidability is a live state predicate about the defender's fleet and Command Ship — not the shield level number.** The displayed shield value (e.g. 25–125) only sets raid PoW difficulty (a timer). "Shields are up" does not mean "cannot be raided." Gate = `IsDefenderCommandStructVulnerable()` (no owner / no fleet / fleet off-station / no CMD ship / CMD destroyed / CMD offline). Keep your fleet on station with the Command Ship online and you are effectively unraidable; to raid someone, you must **catch them with the gate open — or open it** by destroying (or power-starving) their Command Ship. Vulnerability is a state you can force, not just one to wait for. (The Command Ship only defends home while the fleet is on station, so sending your fleet away to raid opens **your** gate until it returns.)
 
-Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (`scout`, `valid_targets`) and `structs_action`/`structs_strike` for engagements — `simulate` and `strike_options` are **struct-scoped** (there is no planet-raid preflight simulator). The `structsd` commands below are the complete fallback. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
+Conventions (TX_FLAGS, `--` rule, `-D 3` PoW, the per-player charge bar, one-tx-at-a-time) come from [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, prefer `structs_intel` (`scout`, `valid_targets`, `raid_readiness`, `battle_log`) and `structs_action`/`structs_strike` for engagements — `simulate` and `strike_options` are **struct-scoped** (there is no planet-raid preflight simulator). Use `raid_readiness {only_gaps:true}` before combat to find READY/PARTIAL/BLIND ambit coverage, and `battle_log {category:"all"}` when you need all planet activity rather than only `struct_attack`. The `structsd` commands below are the complete fallback.
 
 ## When to use it
 
@@ -57,6 +57,15 @@ There is no planet-raid simulator (`simulate`/`strike_options` are struct-scoped
 - **Stack shields.** Orbital Shield Generator and Ore Bunker are unlimited — build several to push raid difficulty up as a second layer behind the CMD-ship gate. Mid-raid: do **not** start a new refine (~34h); only finish one already completable — see [under-attack](https://structs.ai/playbooks/situations/under-attack).
 - **Refine fast.** Defense protects *structs*, never *ore*. The only defense for ore is turning it into Alpha Matter ([`structs-production`](/skills/structs-production/SKILL.html)).
 - **Assign defenders** across ambits to protect the Command Ship and key structs.
+
+### Desktop autonomous-combat controls
+
+Current Desktop schemas are intentionally small:
+
+- `autoresponse`: `enabled`, `autonomy`, `interval_secs`, `max_shots_per_hour`, `include_primary_shooters`, `now`. It restores/recalls the defender's fleet and fires co-located shooters; the rolling hourly ceiling is the only shot cap.
+- `autoraid`: `enabled`, `autonomy`, `posture`, `interval_secs`, `min_ore`, `min_score`, `give_up_after_mins`, `max_concurrent_raids`, `target_cooldown_mins`, `w_ore`, `w_opening`, `w_weakness`, `w_grudge`, `now`. `cautious` uses open windows only; `opportunist` and `aggressive` may siege.
+
+Legacy response modes/per-incident caps, time windows, mid-raid refining, and separate vulnerability/siege gates are not current controls. Evaluate loops with `autonomy:"advise"`; preview-only strike planning is separate. Mid-raid refine is paused by chain v0.21.0, so response hardening recalls/restores the fleet instead.
 
 Decisions live in [`playbooks/situations/under-attack`](https://structs.ai/playbooks/situations/under-attack), [`guild-war`](https://structs.ai/playbooks/situations/guild-war), and [`playbooks/meta/counter-strategies`](https://structs.ai/playbooks/meta/counter-strategies).
 
@@ -108,6 +117,8 @@ Use this when the target holds ore but is shielded (Command Ship online, fleet o
 5. **Raid compute** (same command as opportunistic step 5), then **move home and refine** the seized ore immediately.
 
 Watch for the defender rebuilding the Command Ship (an active defender will) — if it comes back online with the fleet on station before your proof lands, the clock resets and completion fails. Never let **your** raiding Command Ship die while away (`attackerDefeated`).
+
+For Desktop `structs_hash start`, RAID and BUILD require the real `block_start`; the hasher refuses to guess because a current-block anchor always produces a chain-rejected proof. MINE/REFINE may omit it: Desktop resolves the struct's planet and reads the shared planet ore clock.
 
 ## Procedure — direct attack
 

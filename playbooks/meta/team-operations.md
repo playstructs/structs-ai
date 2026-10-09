@@ -85,7 +85,7 @@ When raiding, remember the raid is per-fleet and the **`attackerDefeated`** rule
 
 ## Running a team through Structs Desktop
 
-Everything above is executable with per-account `structsd` calls and a key per account. If you are running [Structs Desktop](../../knowledge/infrastructure/structs-desktop.md), the `structs_players` MCP tool changes the setup cost enough to be worth knowing about: its **virtual players** are derived from the *same mnemonic* at different HD indices and joined to your guild with the guild fronting the join fee, so you need neither a new seed per account nor starting Alpha. Keys never leave the app.
+Everything above is executable with per-account `structsd` calls and a key per account. If you are running [Structs Desktop](../../knowledge/infrastructure/structs-desktop.md), the `structs_players` MCP tool changes the setup cost enough to be worth knowing about: its **virtual players** are derived from the *same mnemonic* at different HD indices and joined to your guild with the guild fronting the join fee, so you need neither a new seed per account nor starting Alpha. MCP responses do not expose keys, but native sign modes let Rust custody the seed via the OS keychain and derive virtual-player keys per sign.
 
 | Command | Use |
 |---------|-----|
@@ -95,19 +95,29 @@ Everything above is executable with per-account `structsd` calls and a key per a
 | `act` `{player, action, args}` | Act as one player, signed by its own key. PoW actions (`mine`/`refine`/`raid`) auto-complete |
 | `role` `{player, role}` | `bait`, `productive`, or `raider` |
 | `economy` | Planner: each productive player's next step, mine → refine → send Alpha to primary → infuse reactor |
+| `profile` | List/show/fork/edit/assign behaviour profiles: loadout + capabilities + temperament + replication weight |
+| `variance` | Configure `off` / `measured` / `human` / `wild` choice variance; hard safety gates remain deterministic |
 | `infra` | Emits an exact infuse → allocate → substation → feed-pool sequence with dilution math (advisory; you execute it) |
 | `harvest` / `autobuild` / `autodefend` / `infuse` | Native economic loops |
 | `autoresponse` / `autoraid` | Native **combat** loops — defensive counter-fire and offensive target selection |
 
 **All six loops can auto-sign once armed, but they are not the same decision.** They stay off until enabled. Enabling an **economic** loop (`harvest` / `autobuild` / `autodefend` / `infuse`) is a **Tier 1** standing grant under [SAFETY.md](../../SAFETY.md) — tell your commander it is running ([briefing.md](../../awareness/briefing.md)).
 
-**The two combat loops are Tier 2 at arming.** `autoresponse` returns fire when you are raided; `autoraid` picks targets and raids them. Arming either with `autonomy: auto` commits your commander to machine-cadence combat. They default to `autonomy: advise` even after you enable them (rank/explain, **no signing**), so the honest sequence is: enable, watch it advise for a while, populate the `ally` and `protected` vetoes, and only then discuss `auto`. Never arm either one unasked.
+**The two combat loops are Tier 2 at arming.** `autoresponse` returns fire when you are raided; `autoraid` picks targets and raids them. Arming either with `autonomy: auto` commits your commander to machine-cadence combat. They default to `autonomy: advise` even after you enable them, so the honest sequence is: enable, inspect advice and the target board, populate the `ally` and `protected` vetoes, and only then discuss `auto`. `advise` is the evaluation gate. Never arm either one unasked.
 
 The role split is a real strategic distinction, not a label. A **productive** player runs the flywheel and should be kept unraidable: shields up, ore refined promptly. A **bait** player deliberately lets ore pile up to draw raiders into your defended space. Because a raid can only ever take unrefined ore (see [defense.md](../../knowledge/mechanics/defense.md)), a bait player's maximum loss is bounded and known in advance — that is what makes the trade acceptable. The failure mode is a productive player *drifting* into accidental bait by leaving ore unrefined.
 
-A **raider** is the expendable offensive arm, and it exists because of a specific, expensive lesson in the outcome data: across 22 instrumented raids, 41% ended `attackerDefeated` versus an ecosystem baseline near 5%, and every one of those was the *primary's* Command Ship dying in the field (see [combat.md](../../knowledge/mechanics/combat.md#what-the-outcome-data-says)). `auto_raid` therefore only ever flies `raider` accounts, never the primary. Give a raider its own refinery so seized ore can be laundered into Alpha before someone raids it back. Applied by hand, the rule is simply: **never raid with the account you cannot afford to lose.**
+A **raider profile** is the expendable offensive arm. Current `auto_raid` dispatches players whose assigned profile grants the `raids` capability, never the primary; the legacy `raider` role maps to that built-in profile. Give one a refinery so seized ore can be converted before someone raids it back. Applied by hand, the rule is: **never raid with the account you cannot afford to lose.**
 
-Fleet-wide sweeps (collect all Alpha to one address, launch the whole roster, force a roster rescan) exist in the **Team Ops board** — the desktop dashboard and its opt-in web view — not on the MCP tool surface. An agent orchestrating over MCP uses the `structs_players` commands above; the board's mass actions are for a human at the dashboard. If you do use them, dry-run first, and note that Alpha sweeps skip `bait` players by default, which is usually what you want.
+### Team Ops command surfaces
+
+Team Ops is organized as **Command / Armada / Industry / War / Explore / System**. Armada holds Roster, Squads, and Profiles; Industry holds Production/Infusions, Distribution, Work, Inventory, and Transactions; War holds tuning, targets, lists, incidents, and **Live Raids**. The customizable **Terminal** composes cards from these systems. **Comms** is Matrix-backed guild communication.
+
+Fleet-wide sweeps and profile-weighted **replication** exist on the Team Ops/Tauri surface, not as new MCP tools. Replication admits births only within measured power/hash room and uses profile weights as a quota so the roster converges toward the desired mix. Autonomous rounds can deliberately birth fewer than the maximum available, while manual requests stay queued until room returns.
+
+Industry's Infusions controls are also Tauri/web-board handlers, not `structs_players` commands. They preview and gate infuse/defuse/migrate/cancel/restart actions against validator health, holder identity, and power headroom.
+
+Before relying on a team defensively, run `structs_intel {query:"raid_readiness", args:{only_gaps:true}}`. It audits every possible Command-Ship ambit per roster fleet and classifies READY/PARTIAL/BLIND. During or after combat, use `battle_log` with `category:"all"` to include the full activity set, not only `struct_attack`.
 
 ---
 

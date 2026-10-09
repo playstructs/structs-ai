@@ -168,6 +168,26 @@ The chain of custody for a live update is worth tracing once:
 GRASS → `StructListener` → `StructManager.refreshStruct()` → `RenderStructEvent` or an
 enqueued animation → the map layer.
 
+### Selection, targeting, and power state
+
+Selection is a separate transparent anchor grid above the art. Selecting a struct causes
+its HUD status context to dominate: unrelated destroyed/offline/overloaded indicators
+are hidden, while the selected struct's defender/protected relationships remain visible.
+Offline structs use the 32px `energy-deactivated` sprite; an online struct whose owner is
+overloaded uses `no-power`.
+
+Attack target validity is recomputed while choosing a target, including when stealth
+changes. Only the active map is repainted, avoiding stale invalid-selection marks on the
+other still-mounted map.
+
+### Mouse drag panning
+
+One document-level `MapPanController` pans every `.map-container` by scrolling the
+window opposite the mouse delta. It starts only after a 5px threshold, captures the
+pointer, suppresses the click that ends a pan, prevents native anchor dragging, and uses
+viewport pixels so movement stays 1:1 under the 2×/4× CSS map scale. Touch and pen retain
+native drag scrolling.
+
 ---
 
 ## Picture-in-picture
@@ -181,6 +201,10 @@ entirely off-screen — you hear about a battle you cannot see.
 animating struct whenever its real tile is fully off-screen. It slides in from whichever
 side the struct is on, tracks visibility on scroll and resize, and slides out when the
 [animation queue](rendering-entities.md#the-animation-event-queue) drains.
+
+Each PIP is scoped to its owning `mapId` and struct-layer container. Hidden maps are
+ignored, so an animation on the background map cannot open its bubble on the visible
+map.
 
 The critical detail is one flag:
 
@@ -196,6 +220,6 @@ mirror an animation, mute the copy.
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21):
+*Verified against structs-webapp `08e13e2` (2026-09-30):
 `src/js/view_models/components/map/`, `src/js/util/TileClassNameUtil.js`,
-`src/js/models/Planet.js`.*
+`src/js/models/Planet.js`, and `src/js/framework/MapPanController.js`.*

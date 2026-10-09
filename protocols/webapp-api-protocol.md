@@ -6,7 +6,8 @@ description: "The structs-webapp API: response envelope, authentication, catalog
 
 **Category**: Query
 **Status**: Stable
-**Last Updated**: September 14, 2026
+**Last Updated**: September 30, 2026
+**Verified against**: structs-webapp `08e13e2` (`TableReadManager.php` and related managers)
 
 ## Overview
 
@@ -345,7 +346,7 @@ Conventions:
 - `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
 - Catalog page size defaults to **100** (`PaginationLimits::DEFAULT`) and is **not** sent as `offset`. List reads accept optional `?limit=` clamped to **1–10000** (`PaginationLimits::MAX`). Leaderboards default to **50**. Full-page test: `data.length ===` the limit you used (100 if omitted).
 - Batch id lists are a separate cap: `/api/objects?ids=` is regex-limited to **200** comma-separated object keys (`PaginationLimits::BATCH_IDS_MAX` / `RegexPattern::IDS`). More than 200 ids is `400`. `/api/resolve` name search uses the same 200 as its SQL `LIMIT`.
-- Per-player planet-activity (`GET /api/planet-activity/player/{id}/page/{n}`) takes `?since_height=` as a `block_height` filter (not a keyset). `since_seq` is unsupported there — `seq` is per-planet. `?order=` is `asc` or `desc` only.
+- Per-player planet-activity (`GET /api/planet-activity/player/{id}/page/{n}`) takes `?since_height=` as a `block_height` filter (not a keyset). `since_seq` is unsupported there — `seq` is per-planet. `?order=` is `asc` or `desc` only. It pages grouped attribution keys before lateral parent lookup; `?include_total=1` counts distinct parent keys and `?include_meta=1` stamps `meta.height`.
 - Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
 - Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all`, `/api/permission-guild-rank/object/{object_id}/page/1`).
 - For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).

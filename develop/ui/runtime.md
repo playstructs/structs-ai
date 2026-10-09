@@ -75,6 +75,9 @@ keep the visual contract and lose nothing.
 - Optional `data-sui-mod-placement="bottom"`; the default is above.
 - Delegated on `document.body`, so dynamically added triggers work — the one behaviour
   here that does survive re-rendering.
+- Current SUI CSS suppresses iOS Safari's native callout, selection, and image-drag UI on
+  the trigger and its descendants. Without those descendant selectors, Safari consumes
+  the same long press before the SUI tooltip or cheatsheet can use it.
 
 Two things to watch:
 
@@ -149,4 +152,5 @@ chose — `#sui-offcanvas` needs it too, and the stylesheet already targets it b
 
 ---
 
-*Verified against structs-webapp `6eec7f7` (2026-07-21), `src/js/sui/`.*
+*Verified against structs-webapp `08e13e2` (2026-09-30), `src/js/sui/` and
+`src/public/css/sui/sui.css`.*
