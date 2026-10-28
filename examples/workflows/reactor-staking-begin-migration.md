@@ -1,51 +1,42 @@
 ---
-description: A worked workflow for beginning redelegation of reactor stake to a different validator.
+description: A worked workflow for migrating reactor stake between validators without unbonding — the diversity motive, the destination stake cap, and verification.
 ---
 
 # Reactor Staking - Begin Migration Workflow
 
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Category**: economic
-**Description**: Detailed workflow for beginning redelegation to a different validator
+**Description**: Redelegate Alpha from one reactor's validator to another's. The stake stays bonded the whole time, so capacity is preserved; this is the tool for spreading stake to earn the diversity bonus.
+
+Mechanics: [energy.md — diversity bonus](../../knowledge/mechanics/energy.md#the-owner-diversity-bonus), [stake cap](../../knowledge/mechanics/energy.md#the-reactor-stake-cap) · Procedure: [structs-energy skill](/skills/structs-energy/SKILL.html)
 
 ---
 
-## Workflow: Reactor Begin Migration for Redelegation
+## What happens
 
-### Step 1: Check Prerequisites
+`reactor-begin-migration` wraps Cosmos `BeginRedelegate`: `amount` moves from the source validator to the destination validator. The source infusion shrinks, a destination infusion grows (or is created), and the owner's capacity is recomputed with the new commission and diversity figures. Because the stake never unbonds, the vault is untouched and capacity does not dip — but Cosmos imposes the usual redelegation constraints (no re-redelegating the same tokens until the redelegation matures; entry limits per pair).
 
-Verify reactor delegation status before beginning migration.
+## Workflow
 
-**Player Online** -- `GET /structs/player/{playerId}`:
+### Step 1: Preflight
 
-| Field | Expected Value |
-|-------|----------------|
-| `player.online` | `true` |
+**Source stake** — `structsd query structs infusion {src-reactorId} {vault-address}` → `fuel`, or `structsd query staking delegation {vault-address} {src-validator}`.
 
-**Reactor Exists** -- `GET /structs/reactor/{reactorId}`:
+**Destination headroom** — `structsd query structs reactor-stake-share {dst-reactorId}`: migrations from bonded stake are measured against `bondedRedelegationHeadroom` (not `externalDepositHeadroom`). Zero headroom → code 1613.
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.owner` | `{playerId}` |
+**Destination health** — `structsd query structs reactor {dst-reactorId}`: `validator`, `commission`; the validator must be bonded and not jailed.
 
-**Delegation Status** -- `GET /structs/reactor/{reactorId}`:
+**Diversity payoff** — `structsd query structs owner-reactor-diversity {playerId}` before and after. Moving stake from a reactor you dominate to one you hold little of raises `usableBonus`.
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `active` |
+### Step 2: Submit
 
-> **Note**: Cannot begin migration if status is not `active`.
+```
+structsd tx structs reactor-begin-migration --from {key} --gas auto --gas-adjustment 1.5 -- {src-validator-address} {dst-validator-address} {amount}ualpha
+```
 
-**Target Validator**: Target validator must be specified (implicit in migration). Migration redelegates to validator associated with new destination.
+Same `--owner-id` / `--delegator-address` selection as infuse; the permission is `PermTokenMigrate` (64) on the funding owner.
 
-### Step 2: Submit Begin Migration Transaction
-
-Submit `MsgReactorBeginMigration` transaction to start redelegation.
-
-**Method**: `POST`
-**Endpoint**: `/cosmos/tx/v1beta1/txs`
-
-**Request Body**:
+Broadcast body:
 
 ```json
 {
@@ -54,91 +45,48 @@ Submit `MsgReactorBeginMigration` transaction to start redelegation.
       {
         "@type": "/structs.structs.MsgReactorBeginMigration",
         "creator": "structs1...",
-        "reactorId": "3-1"
+        "validator_src_address": "structsvaloper1aaa...",
+        "validator_dst_address": "structsvaloper1bbb...",
+        "amount": { "denom": "ualpha", "amount": "2500000" }
       }
     ]
   }
 }
 ```
 
-**Expected Response**:
+### Step 3: Confirm and verify
 
-```json
-{
-  "txResponse": {
-    "code": 0,
-    "txhash": "transaction_hash"
-  }
-}
-```
+Poll `GET /cosmos/tx/v1beta1/txs/{txhash}` for `code: 0`; events include two `structs.structs.EventInfusion` rows (source and destination), `EventOwnerReactorDiversity`, `EventGrid`, and the Cosmos `redelegate` event.
 
-### Step 3: Wait for Transaction Confirmation
-
-Wait for transaction to be included in a block.
-
-**Polling**:
-
-| Parameter | Value |
-|-----------|-------|
-| Endpoint | `GET /cosmos/tx/v1beta1/txs/{txhash}` |
-| Interval | 2 seconds |
-| Max Attempts | 30 |
-| Expected Status | confirmed |
-
-### Step 4: Verify Migration Status
-
-Query reactor to confirm migration is in progress.
-
-**Endpoint**: `GET /structs/reactor/{reactorId}`
-
-**Expected Fields**:
-
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `migrating` |
-| `reactor.migrationInProgress` | `true` |
-
-### Step 5: Complete Migration
-
-Migration completes automatically when joining guild or changing destination.
-
-> **Note**: Migration is typically completed as part of the guild membership join process. See [structs-guild skill](/skills/structs-guild/SKILL.html).
+| Check | Query | Expect |
+|-------|-------|--------|
+| Source reduced | `structsd query structs infusion {src-reactorId} {vault-address}` | `fuel` − `amount` |
+| Destination grew | `structsd query structs infusion {dst-reactorId} {vault-address}` | `fuel` + `amount` |
+| Capacity | `structsd query structs player {playerId}` → `gridAttributes.capacity` | Changed only by the commission difference and the diversity delta |
+| Redelegation record | `structsd query staking redelegation {vault-address} {src-validator} {dst-validator}` | Entry with `completion_time` |
+| Vault | `playerInventory.rocks` | Unchanged |
 
 ---
 
 ## Error Handling
 
-| Error | Code | Description | Recovery | Retry |
-|-------|------|-------------|----------|-------|
-| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
-| No Active Delegation | `INVALID_STATE` | Reactor has no active delegation to migrate | Check reactor delegation status | No |
-| Already Migrating | `INVALID_STATE` | Reactor is already in migrating state | Wait for current migration to complete | No |
-| Transaction Failed | `GENERAL_ERROR` | Transaction failed to broadcast or execute | Check transaction response for error details | Yes (5s delay) |
+| Error | Code / key | Cause | Recovery |
+|-------|------------|-------|----------|
+| `reactor stake cap exceeded` | 1613 | Destination lacks `bondedRedelegationHeadroom` | Choose another destination |
+| `redelegation to this validator already in progress; first redelegation to this validator must complete before next redelegation` | staking | Cosmos redelegation chaining rule | Wait for the earlier redelegation to mature |
+| `too many redelegation entries` | staking | Per-pair entry limit | Wait or consolidate |
+| destination jailed / not bonded | staking | Reactor offline | Pick a bonded reactor |
+| player offline | 1152 | Load > capacity | Shed load first |
+| permission denied | structured | Signer lacks `PermTokenMigrate` on the funding owner | Grant the bit or use the primary key |
 
 ---
 
-## Permission Checking
+## Example
 
-### Required Permissions
+10 Alpha all in reactor `3-1` (no diversity bonus). Move 5 Alpha to `3-2`:
 
-| Permission | Description | Check |
-|------------|-------------|-------|
-| Player Ownership | Player must own the reactor | `reactor.owner === playerId` |
-| Reactor Access | Player must have access to reactor | `GET /structs/permission/object/{reactorId}` |
+```
+structsd tx structs reactor-begin-migration --from ferro --gas auto --gas-adjustment 1.5 -- structsvaloper1aaa... structsvaloper1bbb... 5000000ualpha
+```
 
----
-
-## Examples
-
-### Redelegation to New Validator
-
-- **Scenario**: Redelegate to a different validator
-- **Current Validator**: `validator_address_1`
-- **Target Validator**: `validator_address_2`
-- **Expected Result**: `delegationStatus: migrating`, `migrationInProgress: true`
-
-### Guild Membership Migration
-
-- **Scenario**: Migration as part of guild membership join
-- **Note**: Migration happens automatically during guild join
-- **Workflow**: See [structs-guild skill](/skills/structs-guild/SKILL.html)
+Result: two even positions → ≈5.6% diversity bonus on the whole 10 Alpha, with no capacity dip and nothing idle in the vault. Moving on to a third, fourth and fifth reactor steps the bonus to ≈11%, ≈16.7% and ≈22%.

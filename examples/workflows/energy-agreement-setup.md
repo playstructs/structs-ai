@@ -78,7 +78,7 @@ Get detailed provider information.
 
 ### 4. Open Energy Agreement
 
-Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks.
+Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks. The full `capacity × rate × duration` is debited at open **from the consumer's vault** (optional `ownerId` names a player or guild vault the signer holds `PermTokenTransfer` on; default is the signer's own vault), in the provider's `rateDenom` — acquire that denom first. If 256 agreements already expire at the resulting end height the open is refused (`expiration_height_full`); nudge `duration` by a block.
 
 - **Method**: `POST`
 - **Endpoint**: `/cosmos/tx/v1beta1/txs`
@@ -170,7 +170,9 @@ Monitor agreement performance and energy supply.
 |-------|------|------|----------|-----------|
 | Provider not found | `PROVIDER_NOT_FOUND` | 2 | Verify provider ID, check provider list | Yes |
 | Invalid terms | `INVALID_TERMS` | 4 | Check provider requirements, adjust terms | Yes |
-| Insufficient resources | `INSUFFICIENT_RESOURCES` | 4 | Check resource balance, ensure sufficient funds | Yes |
+| Insufficient resources | `insufficient funds` naming the vault | 4 | The **vault**, not the key, pays; fund it in the provider's `rateDenom` (`player-send` to the vault address) | Yes |
+| `expiration_height_full` | structured | 4 | 256 agreements already end at that height; change `duration` by ±1 | Yes |
+| Provider detached | — | 6 | The provider's substation was deleted; billing continues until **you** `agreement-close` | — |
 
 ## Best Practices
 

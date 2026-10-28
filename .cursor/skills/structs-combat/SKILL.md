@@ -228,8 +228,12 @@ Raid flow: scout → (CMD ship down?) → fleet-move → raid-compute → fleet-
 - **"unreachable" / "out_of_range"** — your weapon can't reach that ambit; reposition the Command Ship or use a different struct.
 - **"fleet not away"** — move the fleet to the target first.
 - **"insufficient charge"** — per-player bar too low; wait (see conventions).
+- **Charge already used this block (ante 2021) / duplicate charge in tx (2020)** — attacks, moves, defense and stealth changes are charge messages: one per player per block, never two in one transaction. Space them ~6 s; parallelism comes from more players, not more messages.
 - **"queue_full"** — the destination planet already has its visiting-fleet cap (`1 + locationListExtra`, default 1). Wait for the parked fleet to leave, or pick another target.
 - **"cannot defend" / StructCannotDefend** — you tried to assign a planetary struct as a defender. Only fleet types (`canDefend: true`) work.
+- **`self_defense`** — a struct cannot be assigned to defend itself; pick another protected struct.
+- **Completed planet as `fleet-move` destination** — a mined-out planet is unreachable and unraidable. Its former owner's `storedOre` is not a target; find where they went instead.
+- **Fleet id rejected** — fleet ids are exactly `9-<decimal>`; `9-01` is not `9-1`.
 - **"under_raid"** — mine/refine is paused while a visitor heads the queue. Do not retry those computes until they leave.
 
 ## See also

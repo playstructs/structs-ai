@@ -37,6 +37,12 @@ description: The complete catalog of API error codes for agents, with response e
 | 8 | INVALID_LOCATION | error | No | Validate location | Check location format and validity |
 | 9 | INVALID_TARGET | error | No | Validate target | Check target format and validity |
 | 1900 | OBJECT_NOT_FOUND | error | No | Verify resource ID | Consensus Network returns 200 with error code, not 404. Check response.code field. |
+| 1613 | REACTOR_STAKE_CAP_EXCEEDED | error | No | Pick another reactor | `reactor stake cap exceeded` — reactor already holds ≥30% of bonded stake. Check `reactor-stake-share` headroom first |
+| 2010 | ANTE_UNREGISTERED_ADDRESS | ante | No | Create the player first | Address is not a registered player; bootstrap with `structsd tx staking delegate`, not `reactor-infuse` |
+| 2020 / 2021 | ANTE_CHARGE_DEDUP | ante | Yes (next block) | Resubmit next block | One charge-consuming message per player per tx (2020) and per block (2021) |
+| 2031 / 2033 | ANTE_PROOF_THROTTLE | ante | Yes (next block) | Resubmit next block | One proof per struct (2031) and one message per throttle key — fleet, planet explore, registration — (2033) per block |
+| 2040 | ANTE_PLAYER_MSG_CAP | ante | Yes (next block) | Spread across blocks | A player may land at most 40 messages per block across all of their addresses; recovery messages from the primary are exempt |
+| 2041 | ANTE_CHECKTX_ADDR_CAP | ante | Yes (next block) | Slow down | More than 5 free transactions from one address queued for one block in CheckTx |
 
 ### Network Errors
 
@@ -126,7 +132,7 @@ Consensus Network errors are returned with HTTP 200 but with a non-zero `code` f
 }
 ```
 
-Codes **1–9** in the table above are a simplified agent schema. Raw ABCI logs use module codespace IDs (e.g. offline **1152**, insufficient charge **1200**). There is no live `player halted` / code-6 halt path.
+Codes **1–9** in the table above are a simplified agent schema. Raw ABCI logs use module codespace IDs (e.g. offline **1152**, insufficient charge **1200**, stake cap **1613**). Codes **2000–2049** come from the `ante` codespace (`app/ante/errors.go`) and are rejected before any handler runs. There is no live `player halted` / code-6 halt path. Insufficient-funds errors on refine-funded actions (reactor-infuse, generator infuse, agreement-open, Central Bank, rank purchase) name the **vault** address, not your signing key — fund the vault, or check `playerInventory.rocks`.
 
 ---
 

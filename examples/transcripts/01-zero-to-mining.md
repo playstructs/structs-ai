@@ -76,14 +76,14 @@ structsd tx structs struct-build-initiate --from ferro --gas auto --gas-adjustme
 structsd tx structs struct-build-initiate --from ferro --gas auto --gas-adjustment 1.5 -- 1-318 15 land 1   # Ore Refinery
 ```
 
-> Extractor is `5-9002`, Refinery `5-9003`. Builds cost 8 charge each; spacing them by the proof-of-work wait keeps charge a non-issue. Launch compute as tracked background jobs (these are expeditions — they auto-submit completion, hence `-y`):
+> Extractor is `5-9002`, Refinery `5-9003`. Each initiate costs 1 charge, but the ante only accepts one charge message per player per block — hence the one-block gap. The Extractor is build difficulty 10, so its proof is ready in about a minute; the Refinery (700) is the long pole at ~57 minutes. Launch compute as tracked background jobs (these are expeditions — they auto-submit completion, hence `-y`):
 
 ```bash
 nohup structsd tx structs struct-build-compute -D 3 --from ferro --gas auto --gas-adjustment 1.5 -y -- 5-9002 \
   > memory/jobs/build-5-9002.log 2>&1 & echo $! > memory/jobs/build-5-9002.pid
 ```
 
-> I'll launch the refinery build's compute after the extractor's lands. These same-key build jobs have the same difficulty and similar clocks, so their auto-submissions could collide; unlike the later mine/refine pair, they are not safely separated. While the ~57-minute proof waits, I'm not idle: I scout my neighbors and skim the early-game playbook.
+> The extractor proof lands within a couple of minutes, so I launch the refinery compute right after it settles — no risk of two same-key auto-submissions colliding. While the ~57-minute refinery proof waits, I'm not idle: I scout my neighbors and skim the early-game playbook.
 
 *(~1 hour later)*
 
@@ -91,7 +91,7 @@ nohup structsd tx structs struct-build-compute -D 3 --from ferro --gas auto --ga
 scripts/job-status.sh
 ```
 
-> `build-5-9002` shows **finished**; the extractor auto-activated. I launch the refinery compute the same way, wait, and confirm both online:
+> Both jobs show **finished**; the structs auto-activated. I confirm both online:
 
 ```bash
 structsd query structs struct 5-9002 -o json | jq '{status}'
@@ -116,7 +116,7 @@ nohup structsd tx structs struct-ore-refine-compute -D 3 --from ferro --gas auto
   "startedAtBlock": 1280290, "key": "ferro" }
 ```
 
-> I record a matching refine job with its ETA. If my context resets, the next session runs `scripts/job-status.sh`, sees both jobs, and knows the ore becomes fully stealable when the mine lands until the already-running refine settles roughly 17 hours later. I stop here — pipeline established, nothing is blocked, and there's no Tier 2 action pending that needs my commander.
+> I record a matching refine job with its ETA. If my context resets, the next session runs `scripts/job-status.sh`, sees both jobs, and knows the ore becomes fully stealable when the mine lands until the already-running refine settles roughly 17 hours later. When the refine lands the Alpha is minted into my vault (`query structs player 1-318` → `playerInventory.rocks`), not onto the `ferro` key. I stop here — pipeline established, nothing is blocked, and there's no Tier 2 action pending that needs my commander.
 
 ---
 

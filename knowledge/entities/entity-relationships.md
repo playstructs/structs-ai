@@ -96,7 +96,19 @@ Player.capacity, Player.capacitySecondary
 Struct.passiveDraw (when online)
 ```
 
-**Allocatable capacity**: Only the player's personal `capacity` (from infusions) can be allocated out. `capacitySecondary` (substation-provided) cannot. Formula: `capacity - load`. See [power.md](../mechanics/power.md).
+**Allocatable capacity**: Only the player's personal `capacity` (from infusions) can be allocated out. `capacitySecondary` (substation-provided) cannot. Formula: `capacity - load`. A substation delivers **90%** of its incoming allocations to its connected players. See [power.md](../mechanics/power.md).
+
+## Alpha Flow (vaults)
+
+```
+Ore Refinery → refine complete → ualpha minted into Player VAULT (1-x)
+     ↓                                 ↓
+Reactor infuse (stake from vault)   Guild Central Bank (mint from Guild VAULT 0-x; redeem/convert via Player VAULT)
+     ↓                                 ↓
+Generator infuse (burn from vault)  Rank purchase: Player VAULT → Guild VAULT in uguild.<id>
+```
+
+Every player (`1-x`) and guild (`0-x`) owns exactly one deterministic **vault** account (`structsd query structs vault [owner-id]`). Refined Alpha, staking, generator fuel, agreement collateral and Central Bank operations all settle against vaults, not against the signing key's wallet. `playerInventory.rocks` **is** the vault's spendable `ualpha`. Move value out with `vault-send` or `player-send` from the vault address; the spending permission is the key's token bits (`PermTokenTransfer` etc.) on the owner. See [energy.md — Vaults](../mechanics/energy.md#vaults-where-game-alpha-lives).
 
 ---
 

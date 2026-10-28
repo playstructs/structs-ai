@@ -1,5 +1,5 @@
 # structsd command snapshot
-# source: structsd 0.21.0 --help
+# source: structsd 0.22.0 --help
 # regenerate: scripts/ci/snapshot-commands.sh
 ## tx structs
 address-register
@@ -19,20 +19,20 @@ guild-bank-convert
 guild-bank-convert-token
 guild-bank-mint
 guild-bank-redeem
-guild-charter-consent
 guild-create
-guild-create-compute
 guild-membership-invite
 guild-membership-invite-approve
 guild-membership-invite-deny
 guild-membership-invite-revoke
 guild-membership-join
+guild-membership-join-by-rank-purchase
 guild-membership-join-proxy
 guild-membership-kick
 guild-membership-request
 guild-membership-request-approve
 guild-membership-request-deny
 guild-membership-request-revoke
+guild-rank-purchase
 guild-update-bank-convert-in-fee
 guild-update-bank-convert-out-fee
 guild-update-endpoint
@@ -45,6 +45,7 @@ guild-update-name
 guild-update-owner-id
 guild-update-pfp
 guild-update-primary-reactor
+guild-update-rank-purchase
 permission-grant-on-address
 permission-grant-on-object
 permission-guild-rank-revoke
@@ -104,6 +105,7 @@ substation-player-disconnect
 substation-player-migrate
 substation-update-name
 substation-update-pfp
+vault-send
 ## query structs
 address
 address-all
@@ -133,6 +135,7 @@ guild-rank-permission-by-object-and-guild
 infusion
 infusion-all
 infusion-all-by-destination
+owner-reactor-diversity
 params
 permission
 permission-all
@@ -154,6 +157,7 @@ provider-earnings-address
 provider-earnings-address-all
 reactor
 reactor-all
+reactor-stake-share
 struct
 struct-all
 struct-attribute
@@ -163,3 +167,4 @@ struct-type-all
 substation
 substation-all
 validate-signature
+vault

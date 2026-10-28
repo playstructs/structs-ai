@@ -463,7 +463,11 @@ Transactions composed entirely of `structs` module messages (excluding `MsgUpdat
 
 **Actions Requiring Proof-of-Work**:
 - `MsgStructBuildComplete`
+- `MsgStructOreMinerComplete`
+- `MsgStructOreRefineryComplete`
 - `MsgPlanetRaidComplete`
+
+These four are the only proof-of-work messages; guild founding is a paid `MsgGuildCreate`.
 
 **Proof-of-Work Process**:
 ```json

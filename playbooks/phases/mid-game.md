@@ -64,9 +64,9 @@ The tension of mid-game: every struct you build for defense is one you don't bui
 
 The virtuous cycle on **one** planet (and across a team of players):
 
-1. **Stable mining** → ore into player inventory
-2. **Immediate refine** → Alpha Matter (deny raiders)
-3. **Alpha Matter** → capacity (reactors / generators / agreements)
+1. **Stable mining** → stored ore on the player (stealable)
+2. **Immediate refine** → Alpha Matter in your vault (deny raiders)
+3. **Alpha Matter** → capacity (reactors / generators / agreements — all paid from the vault; spread reactor stake across several reactors for the diversity bonus)
 4. **Capacity** → more structs without going offline
 5. **Structs** → stronger economy and harder target
 
@@ -89,6 +89,7 @@ Mid-game is when guilds matter.
 - You have a core of trusted players (or virtual players under Desktop)
 - You want to coordinate attacks or defense
 - Central Bank token mechanics offer strategic value
+- You can spare the founding cost: `guild-create` burns 1,000,000 ualpha and locks another 1,000,000 as collateral (the guild starts with 1,000,000 of its own token). Selling ranks for that token is a built-in way to recoup it
 
 Multi-planet *coverage* is a **guild/team** property, not a solo one-account property.
 

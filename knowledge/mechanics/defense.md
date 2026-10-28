@@ -55,7 +55,7 @@ In priority order. The first two are worth more than everything below them combi
 
 ## Defenders: block vs. counter
 
-Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, and that it is **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, that it is **built and online**, and that it is a *different* struct from the one it protects (`self_defense` is refused). Ambit does not gate assignment — it gates what the defender can do when a shot lands.
 
 | | Block | Counter-attack |
 |---|---|---|

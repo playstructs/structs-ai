@@ -93,7 +93,7 @@ The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills an
 
 - **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
 - **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
-- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, and `guild-create-compute` run for minutes to weeks and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to days and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
 
 Two named variants of `TX_FLAGS` make this explicit:
 
@@ -125,8 +125,10 @@ No escalation. Ever.
 
 Escalate if `ask_first`. Battle-order if `act_and_report` (or when over Tier 1 caps). Auto-execute + `memory/audit/` if `full` (within caps). Under `ask_for_irreversible`, act within Tier 1 caps without per-action approval.
 
-- `reactor-infuse` (matter locks in; defusion has a cooldown)
-- `agreement-open` (upfront cost; multi-block commitment)
+- `reactor-infuse` (matter leaves your vault and locks in; defusion has a cooldown; check `reactor-stake-share` headroom and spread stake for the diversity bonus)
+- `agreement-open` (upfront cost debited from the vault; multi-block commitment)
+- `guild-rank-purchase` / `guild-membership-join-by-rank-purchase` (spends guild tokens from your vault; non-refundable)
+- `vault-send` between your own player and a guild you administer
 - `allocation-create`, `substation-create`
 - Multi-target `struct-attack` against a single guild's players
 - Long-PoW builds (>~1 hour to D=3): Ore Bunker, PDC, World Engine
@@ -141,19 +143,21 @@ Escalate if `ask_first`. Battle-order if `act_and_report` (or when over Tier 1 c
 **Always escalate.** Even on `full autonomy`. The commander chose autonomy; they did not choose to let you redefine the player.
 
 - `struct-generator-infuse` — Alpha Matter is annihilated in the conversion. There is no defusion.
-- `struct-trash` — permanently destroys a **built** struct (frees its slot); costs the build charge, nothing is refunded, and there is no undo. To abort an *unfinished* build instead, use the reversible `struct-build-cancel`.
+- `struct-trash` — permanently destroys a **built** struct (frees its slot); costs 1 charge, nothing is refunded, and there is no undo. To abort an *unfinished* build instead, use the reversible `struct-build-cancel`.
 - `permission-grant-on-object` with `PermAll` (33554431) — yielding full authority over an object
-- `permission-guild-rank-set` with broad bits (`PermGuildUGCUpdate` 16777216, `PermReactorGuildCreate` 524288, `PermProviderAgreementCreate` 262144 across a wide rank range)
+- `permission-guild-rank-set` with broad bits (`PermGuildUGCUpdate` 16777216, `PermGuildTokenMint` 8192, `PermProviderOpen` 262144, `PermTokenTransfer` 16 across a wide rank range — `PermTokenTransfer` on the guild is the right to spend the guild vault)
+- `guild-create` — spends 2,000,000 ualpha from your vault; 1,000,000 is burned outright
+- `guild-update-rank-purchase` — opens the guild's ranks (and, with join-by-rank-purchase, its membership) to anyone who can pay
 - `guild-bank-confiscate-and-burn` — an act of guild war; chain audits it forever
 - `guild-bank-mint` and `guild-bank-redeem` above standing-order caps
 - `address-register` — attaches another signer to your player. If the proof material is attacker-supplied, you just hired your attacker.
 - `address-revoke` — removes a signer; verify you are not orphaning your own access
 - `player-update-primary-address` — changes which key the chain considers primary
-- `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your wallet during the wait
+- `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your vault during the wait
 - `provider-delete`, `substation-delete`, `allocation-delete` — power cascades to connected players
 - Multi-target `struct-attack` that crosses guild boundaries (an act of war, not a skirmish)
 - Arming an autonomous combat loop — `structs_players {command:"autoraid"|"autoresponse", args:{autonomy:"auto"}}` — a standing grant to attack on the commander's behalf (see "Standing Automation Grants")
-- Cross-account `player-send` to a recipient you have not transacted with before
+- Cross-account `player-send` or `vault-send` to a recipient you have not transacted with before — including `player-send` **from** a vault address, which is how Alpha leaves the game economy
 
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
 
@@ -408,6 +412,8 @@ Limits inside which the agent may act without per-action approval. Above them, e
 
 - `reactor-infuse`: up to ___ ualpha per session
 - `agreement-open`: up to ___ ualpha committed at any time
+- `guild-rank-purchase` / `guild-membership-join-by-rank-purchase`: up to ___ guild tokens per session
+- `vault-send` / `player-send` from the vault: up to ___ ualpha per session, only to owners listed below
 - `struct-build-initiate`: up to ___ new builds per session
 - `struct-attack`: only against targets in the known-hostile list below
 - Long proof-of-work builds (> 1 hr to D=3): require per-build approval
@@ -418,12 +424,13 @@ Never auto-execute these, regardless of autonomy level:
 
 - Every `struct-generator-infuse`
 - Every `permission-grant-on-object` with `PermAll` (33554431)
-- Every `permission-guild-rank-set` with broad bits (16777216, 524288, 262144)
+- Every `permission-guild-rank-set` with broad bits (16777216, 8192, 262144, 16 — `PermTokenTransfer` on the guild spends the guild vault)
+- Every `guild-create` (2,000,000 ualpha from the vault, half burned) and `guild-update-rank-purchase`
 - Every `address-register`, `address-revoke`, `player-update-primary-address`
 - Every `guild-bank-confiscate-and-burn`
 - Every `reactor-defuse` and `reactor-begin-migration`
 - Every `provider-delete`, `substation-delete`, `allocation-delete`
-- Cross-account `player-send` to a recipient with no prior history
+- Cross-account `player-send` or `vault-send` to a recipient with no prior history
 - Multi-target `struct-attack` that crosses guild boundaries
 - Arming Desktop `autoresponse` / `autoraid` with `autonomy: auto` (see SAFETY.md Standing Automation Grants)
 - `struct-trash`; guild bank mint/redeem above caps you set below
@@ -469,7 +476,7 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ### The `-y` rule
 
-`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`): they run for hours to weeks and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
+`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`): they run for minutes to days and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
 
 ---
 
@@ -525,7 +532,26 @@ charge = CurrentBlockHeight - player.lastActionBlock
 
 Every charge-consuming action by **any** of your structs (build, activate, attack, move, defense change, stealth) draws from and resets this one bar. It regenerates at 1 per block (~6 sec/block) whenever you are idle. To know whether an action can fire, query the **player**, not the struct.
 
-Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost.
+Action costs: activate 2, build-initiate 1, trash 1, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost. The ante additionally refuses a second charge-consuming message from the same player in one block, and two charge messages in one transaction, so even 1-charge actions (build-initiate, trash) go one per block.
+
+---
+
+## Your Alpha lives in your vault
+
+Every player (`1-N`) and guild (`0-N`) has a **vault**: a protocol-controlled bank account derived from the owner ID (`structsd query structs vault [owner-id]` → `address`; balances via `structsd query bank balances [address]`). It is not a keyring key and is never a signing address. The rule of thumb: **game income lands in the vault, game spends are paid from the vault, and your signing key pays only native fees.**
+
+- Refined Alpha is deposited in the vault; `playerInventory.rocks` on the player query is the vault's spendable ualpha.
+- `reactor-infuse` / `reactor-defuse` / `reactor-cancel-defusion` / `reactor-begin-migration` act on the vault unless `--delegator-address` names a registered key (or `--owner-id` names a guild vault you control).
+- `struct-generator-infuse`, `guild-create` (2,000,000 ualpha) and guild rank purchases spend from the vault with no fallback to the key.
+- Move funds with `vault-send [owner-id] [recipient-owner-id] [amount]` (vault→vault), `player-send -- [vault-address] [your-address] [amount]` (vault→key), or a plain `bank send` to the vault address (key→vault).
+
+Canonical explainer: [knowledge/mechanics/energy#vaults](https://structs.ai/knowledge/mechanics/energy). Skills say "from the vault" and assume this section.
+
+---
+
+## Query pagination
+
+Every paginated `structsd query structs` endpoint defaults to 100 rows and silently clamps `--limit` to 1000; `--count-total` is silently forced off, so `pagination.total` is always `0`; an `--offset` above 1000 is refused (`pagination offset exceeds maximum; use pagination key`). Walk large collections with `--page-key` from the previous response's `next_key`; do not size loops from `total`.
 
 ---
 
@@ -604,7 +630,7 @@ At least one playbook link and one awareness link.
 title: "Play Structs: zero to Alpha Matter"
 meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
-description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
+description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~2 hours (the Ore Refinery's build clock is the long pole; the Extractor lands in about a minute).
 ---
 
 # Play Structs: zero to Alpha Matter
@@ -676,12 +702,12 @@ After exploration, report a five-line card before the first build. With Desktop,
 ```text
 Power headroom: [capacity + capacitySecondary - load - structsLoad]
 Next build draw: 500 W (Ore Extractor)
-Alpha available: [amount] ([infusion is/is not] currently an option)
+Alpha available: [vault spendable ualpha = playerInventory.rocks] ([infusion is/is not] currently an option)
 Exposed stored ore: [amount]
 Next action: build Ore Extractor, or fix power first
 ```
 
-Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary`; reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
+"Alpha available" means Alpha in your **player vault** — the protocol account the chain derives from your player ID, where refined Alpha is deposited and from which `reactor-infuse` and generator fuel are paid by default (`structsd query structs vault [player-id]`, then `structsd query bank balances [vault-address]`). Alpha on your signing key does not count unless you move it there or pass `--delegator-address`. See [structs-onboarding — Step 2b](/skills/structs-onboarding/SKILL.html). Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary` (a substation passes on 90% of what it receives); reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
 
 ---
 
@@ -705,7 +731,7 @@ Then compute in background — `struct-build-compute` is an **expedition** that 
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes instantly. The struct auto-activates.
+Build difficulty 10. The proof reaches its minimum ten blocks (~1 minute) after initiation and completes instantly. The struct auto-activates. Do not wait for it before initiating the Refinery — build-initiate costs 1 charge, so the next initiation is allowed one block later.
 
 ### Ore Refinery (type 15)
 
@@ -717,7 +743,7 @@ structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustm
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Same difficulty and timing as the Extractor.
+Build difficulty 700. Difficulty reaches 1 once the build is 700 blocks (~70 minutes) old, so at `-D 1` expect completion about an hour and ten minutes after initiation (~57 minutes at `-D 3`). This is the long pole of onboarding; everything else fits inside it.
 
 After both initiations, print the state card again. Replace “Next build draw” with the remaining build or activation load, list both build job IDs and ETAs, and name the exact next action. A pending build is visible progress; do not report it as a completed struct.
 
@@ -749,7 +775,7 @@ Mining and refining are multi-hour background operations. Track both jobs and th
 
 **Gameplay transactions are free.** Every pure Structs gameplay message runs on a dedicated free-gas meter — no `ualpha` fee is charged (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
 
-**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen.
+**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen. Refined Alpha is deposited in your **vault**, not on your signing key — read it with `structsd query bank balances [vault-address]` or as `playerInventory.rocks` on the player query.
 
 **Power keeps you alive.** If your load exceeds capacity, you go offline and can't act. Monitor with `structsd query structs player [id]`.
 
@@ -916,7 +942,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
    ```
 
 6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](/skills/structs-combat/SKILL.html).
-7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](/skills/structs-energy/SKILL.html)), stake/sell ([`structs-commerce`](/skills/structs-commerce/SKILL.html)), or hold reserve.
+7. **Put the Alpha to work** — refined Alpha is deposited in your **player vault** (`structsd query structs vault [player-id]` → address; `playerInventory.rocks` on the player query is the spendable amount), which is exactly where reactor and generator infusions draw from — so infusing for power ([`structs-energy`](/skills/structs-energy/SKILL.html)) or staking/selling ([`structs-commerce`](/skills/structs-commerce/SKILL.html)) needs no transfer step. To pay native fees from it, move some to your key: `player-send TX_FLAGS -- [vault-address] [your-address] [amount]ualpha`. Or hold reserve.
 
 ### Charge-bar scheduling
 
@@ -924,7 +950,7 @@ Activating the extractor/refinery costs 2 charge each from your **shared per-pla
 
 ## Depletion → explore handoff
 
-When `currentOre` hits 0 the planet becomes `complete`: all its structs are destroyed and fleets are sent away. Before the last ore is mined, decide:
+When `currentOre` hits 0 the planet becomes `complete`: all its structs are destroyed, fleets are sent away, and the planet becomes **unreachable** — no fleet can move to it and it cannot be raided, so any `storedOre` you still hold is safe from theft but you also cannot operate there. Before the last ore is mined, decide:
 
 - **Squeeze** the last ore if you can refine it before depletion forces you off, **or**
 - **Move first** — relocate critical structs / evacuate, then explore.
@@ -940,7 +966,8 @@ Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.h
 | Mine/refine complete (manual, rare) | `structsd tx structs struct-ore-mine-complete TX_FLAGS -- [id] [proof] [nonce]` / `...refine-complete TX_FLAGS -- [id] [proof] [nonce]` |
 | Query planet ore | `structsd query structs planet [planet-id]` |
 | Query struct | `structsd query structs struct [id]` |
-| Query player (Alpha + storedOre) | `structsd query structs player [player-id]` |
+| Query player (vault Alpha as `playerInventory.rocks` + storedOre) | `structsd query structs player [player-id]` |
+| Query vault balance | `structsd query structs vault [player-id]` then `structsd query bank balances [vault-address]` |
 
 `TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](/skills/conventions.html). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
 
@@ -950,7 +977,7 @@ Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.h
 
 - Planet `currentOre` decreases after a mine lands.
 - Player `storedOre` rises after mine, returns to 0 after refine.
-- Player Alpha Matter (`ualpha`, 1g = 1,000,000) rises after refine.
+- Vault Alpha Matter (`ualpha`, 1g = 1,000,000; `playerInventory.rocks`) rises after refine — your signing key's balance does **not** change; `EventAlphaRefine` carries the `vaultAddress` credited.
 - Broadcast ≠ success: query state to confirm before assuming a stage finished.
 
 ## Errors
@@ -994,7 +1021,9 @@ Every online struct draws power continuously, and **load > capacity = offline = 
 
 Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, use `structs_intel` for power/economy reads. Reactor infusion lifecycle controls are currently **Team Ops → Industry → Production Tauri/web-board handlers**, not a `structs_action` action or a new MCP tool; use the human board or the `structsd` fallback below. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
-> **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx.
+> **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx. Generator infusions accept exactly **one** coin; a comma-separated list is rejected.
+
+> **Spend-source footgun**: reactor and generator infusions are paid from your **player vault** by default, not from your signing key. Alpha on the key does not count unless you pass `--delegator-address [your-address]` (reactors only). See [conventions — vault](/skills/conventions.html#your-alpha-lives-in-your-vault).
 
 ## When to use it
 
@@ -1017,6 +1046,26 @@ Have Alpha Matter?
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
 > **Infusing a reactor powers *you*, not the guild substation.** Infusion adds ~96% (at 4% commission) to **your own** `capacity` and the commission to the reactor — it does **not** raise any substation's capacity or other members' `capacitySecondary`. To feed the shared guild pool, someone must route capacity in with an **allocation** (below). See [energy.md — infusion](https://structs.ai/knowledge/mechanics/energy#creating-capacity-infusion-splits-964).
+
+### Spreading stake pays: the diversity bonus
+
+Base reactor power is a flat **1:1** on fuel before commission. On top of that the chain pays an **owner diversity bonus** on your post-commission reactor power, based on how evenly your stake is spread across *eligible* (bonded, unjailed) reactors. Effective reactor count is `(Σ power)² / Σ power²`; the bonus is `50% × min(1, (effective − 1) / 9)`:
+
+| Eligible reactors, equal split | Bonus |
+|---|---|
+| 1 | 0% |
+| 2 | ≈ 5.56% |
+| 3 | ≈ 11.11% |
+| 5 | ≈ 22.22% |
+| 10+ | 50% |
+
+Unequal holdings earn less; dust spread across reactors earns almost nothing. Generators and received allocations do not count, and a guild's portfolio is separate from its members'. Read yours with `structsd query structs owner-reactor-diversity [owner-id]` — use the returned `usableBonus`/`storedCapacity`, not your own arithmetic, because the chain floors once in integer math.
+
+> **Adding stake to a reactor you already dominate can *lower* your total power**, because it shrinks the effective count faster than the new base power grows. Preview the portfolio before signing a large infusion into your biggest reactor. A capacity drop triggers the ordinary brownout cascade. "Infuse more into the same reactor" is not always the fix for low power.
+
+### Stake cap: a reactor can refuse you
+
+Once ten validators are bonded the **reactor stake cap** activates (and stays active): any inflow — `reactor-infuse`, `staking delegate`, migration in, cancelling a defusion — that would leave the validator above **30%** of bonded stake is rejected with `reactor stake cap exceeded` (code 1613). Check before you send: `structsd query structs reactor-stake-share [reactor-id]` returns `capActive`, `capBps`, `externalDepositHeadroom` (room for new Alpha) and `bondedRedelegationHeadroom` (room for a migration from another bonded reactor). Empty headroom strings mean the cap is inactive, not that the reactor is full. Existing above-cap positions are not evicted; they just cannot grow.
 
 **Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
@@ -1044,14 +1093,14 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 
 ## Procedure — raise your own capacity (reactor infusion)
 
-1. Check capacity: `structsd query structs player [id]`.
-2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). A jailed validator produces **zero** energy from infusions until it is unjailed; `reactor-restart` resyncs after that.
-3. Infuse (CLI prompts — review validator, commission, amount):
+1. Check capacity and vault Alpha: `structsd query structs player [id]` (`playerInventory.rocks` is the vault's spendable ualpha). If the Alpha is on your signing key instead, either move it (`structsd tx bank send [key] [vault-address] [amount]ualpha`) or plan to pass `--delegator-address`.
+2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). Then `structsd query structs reactor-stake-share [id]` for cap headroom. A jailed or unbonded validator produces **zero** usable energy from infusions until it is bonded again; `reactor-restart` queues the resync afterwards.
+3. Infuse (CLI prompts — review validator, commission, amount, and spend source):
    ```
-   structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
+   structsd tx structs reactor-infuse TX_FLAGS -- [validator-address] [amount]ualpha
    ```
-   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same three arguments as infusion (`reactor-defuse -- [your-address] [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes during that cooldown.
-4. Verify: re-query player; capacity increased.
+   With no flags this stakes **from your player vault**. `--delegator-address [registered-address]` stakes from that signing key instead; `--owner-id [guild-id]` stakes from a guild vault you have `PermTokenInfuse` authority over. `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same arguments and selectors (`reactor-defuse -- [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns to the same account it came from; `reactor-cancel-defusion -- [validator-address] [amount]ualpha [creation-height]` re-stakes during that cooldown (and counts as an inflow against the cap).
+4. Verify: re-query player; capacity increased. For a large position also check `owner-reactor-diversity` — the applied bonus may have moved.
 
 In current Team Ops, the Infusions surface can preview and execute reactor infuse,
 defuse, migration, cancel-defusion, and restart for the primary/registered virtual
@@ -1063,20 +1112,20 @@ Tauri/web-board commands; `tools/list` still has 13 MCP tools and no
 
 ## Procedure — generator infusion (Tier 2, irreversible)
 
-Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
+Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); the **vault** holds the amount (generator fuel is burned from the player vault, never from the signing key); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
 
 ```
 structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha
 ```
 
-Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g.
+Exactly one coin, `ualpha` only. Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g. Generator fuel survives the generator going offline (`generatorDisabled: true` on its infusion: fuel and ratio stay, power reads 0) and is credited again when it is reactivated; destruction never refunds it. Generator funding works even while you are browned out — it is one of the few actions that does — which makes it a recovery lever if you accept the irreversibility.
 
 ## Procedure — distribute power (substations & allocations)
 
 For pooling power across structs/players (e.g. a guild powering members). Cascading deletes can knock players offline mid-operation — these are Tier 2.
 
-1. Create an allocation from your source: `structsd tx structs allocation-create --allocation-type static|dynamic|automated TX_FLAGS -- [source-id] [power]` (`--controller [player-id]` optional). Automated allocations auto-grow with capacity — **one per source**.
-2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
+1. Create an allocation from your source: `structsd tx structs allocation-create --allocation-type static|dynamic|automated TX_FLAGS -- [source-id] [power]` (`--controller [owner-id]` optional; a player `1-N` or guild `0-N`). Automated allocations auto-grow with capacity — **one per source**. An allocation sourced from a guild or a guild-owned substation is guild-controlled by default; naming another controller needs admin authority on the source.
+2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`. The allocation must not already feed a substation — disconnect it first (`substation-allocation-disconnect`) or use a fresh one.
 3. Connect/disconnect sources: `substation-allocation-connect|disconnect -- [substation-id] [allocation-id]`.
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
 5. Migrate players: `substation-player-migrate -- [substation-id] [player-id,player-id2,...]` (destination substation + player CSV; there is **no** source-substation argument).
@@ -1085,9 +1134,10 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 **Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
 
-- **A substation dilutes evenly.** Each connected player gets `connectionCapacity = (capacity − load) / connectionCount`, recomputed on every connect/disconnect. Every new player connection shrinks everyone's share — plan the pool against `connectionCount`, not a fixed per-member figure.
-- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `1/connectionCount`, so it's community behavior, not self-growth.
-- **Over-committing triggers a brownout.** If an object's `load` exceeds its `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. Leave headroom.
+- **A substation loses 10% and dilutes the rest evenly.** Only `floor(capacity × 9/10)` of a substation's incoming power is usable; each connected player gets `connectionCapacity = (usable − load) / connectionCount`, recomputed on every connect/disconnect and on every outgoing allocation change. Every new player connection shrinks everyone's share — plan the pool against `connectionCount` and the 90%, not the raw feed.
+- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `0.9/connectionCount`, so it's community behavior, not self-growth. A substation that is being deleted (`deletion_pending: true`) refuses new connections of any kind.
+- **Over-committing triggers a brownout.** If an object's `load` exceeds its usable `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. The cascade is bounded to 256 allocation teardowns per block and queues the remainder (FIFO), so a large collapse plays out over several blocks rather than one. Leave headroom.
+- **Stored headroom is not admission.** A new allocation, a dynamic increase, or an agreement is validated against the *complete* incoming supply chain (reactor → allocations → substations → you) under a 2,048-object limit. A cycle, an overloaded ancestor, a jailed reactor at the root, or a chain too deep to prove returns `unsupported_supply` even when `capacity − load` reads positive. Simplify the topology; waiting for the cascade does not clear a complexity refusal.
 
 ## Offline recovery (emergency)
 
@@ -1100,12 +1150,15 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor infuse (from vault; `--delegator-address [addr]` for a registered key, `--owner-id [guild-id]` for a guild vault) | `structsd tx structs reactor-infuse TX_FLAGS -- [validator-addr] [amount]ualpha` |
 | Reactor restart | `structsd tx structs reactor-restart TX_FLAGS -- [reactor-address]` |
-| Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
-| Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |
-| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
+| Reactor defuse (same selectors) | `structsd tx structs reactor-defuse TX_FLAGS -- [validator-addr] [amount]ualpha` |
+| Reactor cancel defusion (same selectors) | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [validator-addr] [amount]ualpha [creation-height]` |
+| Reactor migrate (same selectors) | `structsd tx structs reactor-begin-migration TX_FLAGS -- [src-val] [dest-val] [amount]ualpha` |
+| Reactor cap headroom | `structsd query structs reactor-stake-share [reactor-id]` |
+| Diversity bonus | `structsd query structs owner-reactor-diversity [owner-id]` |
+| Vault address | `structsd query structs vault [owner-id]` |
+| Generator infuse (Tier 2, from vault, one coin) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
 | Allocation create / update / delete | `structsd tx structs allocation-create --allocation-type [t] TX_FLAGS -- [source-id] [power]` (and `allocation-update`/`allocation-delete -- [allocation-id] ...`) |
 | Substation create / delete | `structsd tx structs substation-create \| substation-delete TX_FLAGS -- ...` |
 | Substation allocation connect/disconnect | `structsd tx structs substation-allocation-connect \| disconnect TX_FLAGS -- [sub-id] [alloc-id]` |
@@ -1124,10 +1177,16 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 ## Errors
 
 - **Going offline** — load > capacity; deactivate structs, then infuse/buy capacity.
-- **"insufficient balance"** — not enough ualpha; refine ore first or buy via agreement.
-- **"generator infuse failed"** — struct isn't a generator (20/21/22) or is offline.
+- **"insufficient balance" / affordability on infuse** — the **vault** lacks ualpha (the key's balance is irrelevant). Fund the vault, pass `--delegator-address` (reactors only), refine ore, or buy via agreement.
+- **`reactor stake cap exceeded` (1613)** — validator at/over 30% of bonded stake with the cap active; pick another reactor (`reactor-stake-share`).
+- **`vault_owner_mismatch`** — an explicit `--delegator-address` does not match the vault selected by `--owner-id`; drop one of the two.
+- **Capacity fell after infusing** — diversity bonus shrank because the position concentrated; check `owner-reactor-diversity` and spread across reactors.
+- **"generator infuse failed" / invalid amount** — struct isn't a generator (20/21/22), is destroyed, or the amount names more than one coin.
+- **`unsupported_supply`** — the allocation's supply chain cannot be proven (cycle, overloaded or jailed ancestor, >2,048 objects). Not a headroom problem; simplify the graph.
 - **Allocation exceeds source** — source capacity too small; allocate less or add capacity.
 - **Automated allocation limit** — one automated per source; use static/dynamic for more.
+- **`substation-create` rejects the allocation** — it already feeds a substation; disconnect it first.
+- **`deletion_pending`** — the destination substation is closing; connect elsewhere.
 
 ## See also
 
@@ -1157,7 +1216,7 @@ description: "Ore, Alpha Matter, and energy: resource types, how they flow, conv
 |----------|------|-----------|------------|----------|
 | Alpha Ore (unmined) | grams | No | Required | Planet — `buriedOre` (`BuriedOreAttributeId`); extracted by Ore Extractor |
 | Alpha Ore (mined) | grams | **Yes** | Required | Player — `storedOre` (`StoredOreAttributeId`); stolen in raids |
-| Alpha Matter | grams | No | Output | Player inventory (on-chain) |
+| Alpha Matter | grams | No | Output | The owner's **vault** (`ualpha`; read as `playerInventory.rocks` or `bank balances [vault-address]`) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
 
 These are **different attribute ids on different objects**. LCD/query payloads often expose both as `gridAttributes.ore`. The planet's `ore` and the player's `ore` are not the same field even though they share a display name. A raider checking loot must read the **player** field (`storedOre` / `StoredOreAttributeId`).
@@ -1195,7 +1254,7 @@ These are **different attribute ids on different objects**. LCD/query payloads o
 
 | Facility | Rate | Risk |
 |----------|------|------|
-| Reactor | 1g = 1 kW | Low |
+| Reactor | 1g = 1 kW before commission (~96% to you) plus a diversity bonus of up to +50% when stake is spread across 10+ reactors | Low |
 | Field Generator | 1g = 2 kW | High |
 | Continental Power Plant | 1g = 5 kW | High |
 | World Engine | 1g = 10 kW | High |
@@ -1238,7 +1297,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 |-------|----------|-----------|--------|
 | Unmined ore (`buriedOre` / `BuriedOreAttributeId`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
 | Mined ore (`storedOre` / `StoredOreAttributeId`) | Player | **Yes** | Refine immediately — this is what raiders steal |
-| Alpha Matter | Player | No | Secure — cryptographically bound to owner |
+| Alpha Matter | Owner's vault | No | Secure — refined Alpha is deposited in the player vault, which raids cannot touch; spend it from there (infusions, agreements, guild founding) or `player-send` it to a key |
 
 **Strategy**: Refine ore as soon as mined to minimize raid exposure. Maintain a 20-30% Alpha Matter reserve for emergencies.
 
@@ -1296,7 +1355,7 @@ allocatable    = capacity - load
 | Term | Meaning |
 |------|---------|
 | `capacity` | Your own generation (infusions). The only capacity you can allocate **out**. |
-| `capacitySecondary` | Received from a substation you're connected to (its `connectionCapacity`). Not re-allocatable. |
+| `capacitySecondary` | Received from a substation you're connected to (its `connectionCapacity`, computed from 90% of the substation's incoming power). Not re-allocatable. |
 | `load` | Power you've allocated out. |
 | `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
 
@@ -1349,7 +1408,7 @@ Worst-case load during onboarding is ~1,075 W (all three structs online plus a b
 
 ## Increasing capacity
 
-Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/gram but irreversible and raidable), or buying via an agreement. Rates, the 96/4 split, and substation distribution are in [energy.md](energy.md#increasing-your-own-capacity).
+Reactor infusion (safe, reversible, you keep ~96% plus a diversity bonus of up to 50% for stake spread across 10+ reactors; paid from your vault), generator infusion (more kW/gram but irreversible and raidable), or buying via an agreement. A substation passes on only 90% of what it receives. Rates, the 96/4 split, the stake cap, and substation distribution are in [energy.md](energy.md#increasing-your-own-capacity).
 
 ---
 
@@ -1367,12 +1426,12 @@ Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/
 <source>knowledge/mechanics/energy.md</source>
 ---
 title: "Energy mechanics: infusion and brownout"
-description: "The canonical energy system: units, the online equation, the 96/4 infusion split, substation dilution, allocations, and GridCascade brownout."
+description: "The canonical energy system: units, the online equation, vaults, the 96/4 infusion split and diversity bonus, the reactor stake cap, substation 90% passthrough and dilution, allocations, and the bounded GridCascade brownout."
 ---
 
 # Energy mechanics: infusion and brownout
 
-**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, how capacity is created (infusion) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](/skills/structs-energy/SKILL.html) is the action playbook.
+**Purpose**: Canonical reference for the Structs energy/power system — units, the online equation, where the Alpha that fuels it lives (vaults), how capacity is created (infusion, with the diversity bonus and the stake cap) and shared (substations, allocations), and the brownout cascade. This is the deep reference; [power.md](power.md) is a quick formula card and the [structs-energy skill](/skills/structs-energy/SKILL.html) is the action playbook.
 
 ---
 
@@ -1419,9 +1478,27 @@ Available power is `(capacity + capacitySecondary) − (load + structsLoad)`; al
 
 ---
 
+## Vaults: where game Alpha lives
+
+Every asset owner — each player (`1-N`) and each guild (`0-N`) — has a **vault**: a protocol-controlled bank account whose address is derived deterministically from the owner id. It is not a keyring key and can never sign. The rule: **game income lands in the vault, game spends are paid from the vault, and your signing key pays only native fees.**
+
+| Flow | Account |
+|------|---------|
+| Refined Alpha (`struct-ore-refine-complete`) | deposited to the **player vault**; `EventAlphaRefine` carries `vaultAddress` |
+| `playerInventory.rocks` on `query structs player` | the vault's **spendable** ualpha |
+| `reactor-infuse` / `-defuse` / `-cancel-defusion` / `-begin-migration` | act on the **player vault** unless `--delegator-address` names one of your registered keys, or `--owner-id` names a guild vault you hold `PermTokenInfuse` on |
+| `struct-generator-infuse` | burned from the **player vault**; no fallback to the key |
+| `agreement-open` collateral, `guild-bank-redeem`/`-convert`, rank purchases | **player vault** (or the guild vault with `--owner-id` where supported) |
+| `guild-create` (2,000,000 ualpha), `guild-bank-mint` collateral | **founder's / guild's vault** |
+| Mint output, founding tokens, rank-sale revenue | **guild vault** |
+
+Look it up with `structsd query structs vault [owner-id]` (returns `address`), then `structsd query bank balances [address]`. Move funds with `vault-send -- [owner-id] [recipient-owner-id] [amount]` (vault→vault), `player-send -- [vault-address] [to-address] [amount]` (vault→key; the sender must hold `PermTokenTransfer`), or a plain `bank send` into the vault address (key→vault). Vault spends ride on the **signing key's** token bits (`PermTokenTransfer`/`PermTokenInfuse`/…), so a delegate scoped without them cannot drain it. A `vault_owner_mismatch` error means `--delegator-address` and `--owner-id` disagreed about whose funds to use. (Verified: `x/structs/keeper/vault_context.go`, `msg_server_struct_ore_refinery_complete.go`, `msg_server_reactor_infuse.go`, `msg_server_struct_generator_infuse.go`, `msg_server_player_send.go`.)
+
+---
+
 ## Creating capacity: infusion splits 96/4
 
-Infusing Alpha into a reactor converts fuel to capacity at ratio 1, then splits it by the reactor's **commission** (default **4%**):
+Infusing Alpha into a reactor converts fuel to capacity **1:1** (one ualpha of stake is one mW of power before commission), then splits it by the reactor's **commission** (default **4%**):
 
 ```
 infusionPower    = ratio(1) × fuel          # fuel = the ualpha you stake
@@ -1429,7 +1506,30 @@ commissionPower  = commission × infusionPower   → the REACTOR's capacity
 playerPower       = infusionPower − commissionPower  → YOUR personal capacity
 ```
 
-So at the default 4% commission, **you keep 96%** of what you infuse (added directly to your own `capacity`), and the reactor keeps 4%. Example: infuse 3,000,000 ualpha at 4% → 3,000,000 mW (3 kW) total; the reactor gains 120,000 mW (0.12 kW), you gain **2,880,000 mW (2.88 kW)**. Your capacity rises automatically — no substation or allocation setup needed for your own use, which makes reactor infusion the simplest path to more power. (Reversible: `reactor-defuse` returns the Alpha after a cooldown.)
+So at the default 4% commission, **you keep 96%** of what you infuse (added directly to your own `capacity`), and the reactor keeps 4%. Example: infuse 3,000,000 ualpha at 4% → 3,000,000 mW (3 kW) total; the reactor gains 120,000 mW (0.12 kW), you gain **2,880,000 mW (2.88 kW)** plus any diversity bonus (below). Your capacity rises automatically — no substation or allocation setup needed for your own use, which makes reactor infusion the simplest path to more power. The stake comes from your **vault** by default (see above). (Reversible: `reactor-defuse` returns the Alpha to the same account after a cooldown.) A native `structsd tx staking delegate` from a registered key produces the same infusion — and from a *fresh, funded, unregistered* key it is what creates a player in the first place, since `reactor-infuse` itself is rejected before registration.
+
+### The owner diversity bonus
+
+On top of the post-commission power, the chain pays an **owner diversity bonus** that rewards spreading stake across *eligible* (bonded, unjailed) reactors. With `p_i` your post-commission power in reactor `i`:
+
+```
+effective = (Σ p_i)² / Σ p_i²                   # 1 for one reactor, N for N equal reactors
+bonus     = (Σ p_i) × 50% × min(1, (effective − 1) / 9)
+```
+
+| Equal split across | Bonus |
+|---|---|
+| 1 reactor | 0% |
+| 2 | ≈ 5.56% |
+| 3 | ≈ 11.11% |
+| 5 | ≈ 22.22% |
+| 10 or more | 50% (cap) |
+
+Unequal holdings earn less than the table; dust spread across many reactors earns almost nothing. Generator power and received allocations are excluded; a guild's portfolio is separate from its members'. The bonus is recomputed whenever a reactor position changes and the delta is applied to your `capacity`, so **adding stake to a reactor you already dominate can lower your total power** — the effective count shrinks faster than base power grows — and a capacity drop triggers the ordinary brownout cascade. Read your portfolio with `structsd query structs owner-reactor-diversity [owner-id]` (`usableBonus`, `storedCapacity`, `liveBonus`) rather than computing it yourself; the chain floors once in integer arithmetic. Params: `diversityMaxBonusBps` 5000, `diversityTargetExtraReactors` 9. (Verified: `x/structs/types/reactor_diversity.go`, `keeper/reactor_diversity_*.go`.)
+
+### The reactor stake cap
+
+Once **10 validators are bonded** the stake cap activates and stays active (`reactorStakeCapMinValidators`, sticky). Any inflow that would leave a validator above **30%** (`reactorStakeCapBps` 3000) of bonded stake — `reactor-infuse`, native `staking delegate`, a migration in, cancelling a defusion — is rejected with `reactor stake cap exceeded` (code 1613). Existing positions above the cap are not evicted; they simply cannot grow. `structsd query structs reactor-stake-share [reactor-id]` reports `capActive`, `capBps`, `externalDepositHeadroom` (room for new Alpha) and `bondedRedelegationHeadroom` (room for a migration from another bonded validator); empty headroom strings mean the cap is inactive or unlimited, not that the reactor is full. Pick a reactor with headroom *before* refining for a big infusion.
 
 > **Infusing a reactor does NOT power a substation.** Infusion changes only the **reactor** (commission) and the **infuser** (the 96%). It does **not** raise any substation's capacity, and therefore does **not** raise `connectionCapacity` for other connected players. "Everyone infuse the guild reactor to power the guild" is **false** on its own — someone must also route capacity into the guild substation via an **allocation** (below).
 
@@ -1444,11 +1544,12 @@ So at the default 4% commission, **you keep 96%** of what you infuse (added dire
 A substation is a shared pool. The capacity each connected player receives is the pool divided **evenly** across all connections:
 
 ```
-connectionCapacity = (substation.capacity − substation.load) / connectionCount
-                     (connectionCount defaults to 1; result is 0 if capacity ≤ load)
+usable             = floor(substation.capacity × 9 / 10)      # a substation passes on 90% of what it receives
+connectionCapacity = (usable − substation.load) / connectionCount
+                     (connectionCount defaults to 1; result is 0 if usable ≤ load)
 ```
 
-It is **recomputed on every connect, disconnect, and any capacity/load change**, so **each new connection dilutes everyone's share**. Example: a substation with `1,512,960,000` capacity (chain) and `220` connections gives each connected player `6,877,090` (≈ 6,877 W) of `capacitySecondary`. (Verified: `UpdateSubstationConnectionCapacity` in `x/structs/keeper/grid_context.go`.)
+The 10% loss is applied **once to the aggregate** incoming power, so splitting a feed across several allocations does not change it. It is **recomputed on every connect, disconnect, and any capacity/load change**, so **each new connection dilutes everyone's share**. Example: a substation receiving `1,512,960,000` mW (chain) has `1,361,664,000` usable; with `220` connections each connected player gets `6,189,381` (≈ 6,189 W) of `capacitySecondary`. Chaining substations compounds the loss (81% after two hops). (Verified: `SubstationUsableCapacity` in `x/structs/types/substation_capacity.go`, `UpdateSubstationConnectionCapacity` in `x/structs/keeper/grid_context.go`.)
 
 > **The stored `connectionCapacity` is already the per-player share — do not divide by `connectionCount` again.** The division above happens *inside* the chain when the value is written; what you read back (LCD `gridAttributes.connectionCapacity`, or the `connectionCapacity` grid row / `stat_connection_capacity`) is the amount a single connected player receives. Dividing it by `connectionCount` a second time double-dilutes and badly understates a player's real capacity.
 
@@ -1479,7 +1580,9 @@ An **allocation** moves capacity from a source to a destination.
 Two consequences:
 
 1. **Anyone can contribute capacity to any substation** — an open shared pool by design.
-2. **Contributions are diluted by `1/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
+2. **Contributions are diluted by `0.9/connectionCount`.** Donating X to a 220-connection substation raises *your own* connection by only `0.9X/220`. Feeding a busy guild substation is community behavior, not self-growth — for personal capacity, **infuse** (96% to you, undiluted).
+3. **A substation that is being deleted refuses connections.** `substation-delete` does bounded work: the substation is flagged `deletionPending` (with `deletionMigrationSubstationId` if players are being moved) and the grid unwinds it over following blocks. Until it is gone, player and allocation connects and guild joins routed to it are rejected (`deletion_pending`). Agreements that fed it are **detached, not closed** — the consumer keeps paying until they `agreement-close`.
+4. **An allocation must prove its supply.** Creating an allocation, raising a dynamic one, or opening an agreement validates the *complete* incoming chain (reactor → allocations → substations → source) under a 2,048-object allowance. A cycle, an overloaded ancestor, a jailed reactor at the root, or a chain too deep to prove is refused with `unsupported_supply` even when the source's `capacity − load` reads positive. Simplify the topology; the cascade will not clear it. `substation-create` likewise rejects an allocation that already feeds a substation.
 
 ### Connecting/migrating a PLAYER needs permission on BOTH the substation and the player
 
@@ -1500,7 +1603,9 @@ The catch: **a player object is owned by itself** (`GetOwnerId()` returns the pl
 
 ## Brownout: `GridCascade` destroys allocations
 
-When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it **destroys that object's outgoing allocations in creation order** until `load ≤ capacity`. Because destroying an allocation removes capacity from its destination, the effect **cascades downstream** — a substation that loses a feed can knock its own outgoing allocations (and the players behind them) offline. Over-committing capacity is therefore a real, anticipatable hazard. (Verified: `GridCascade` in `x/structs/keeper/grid_context.go`.)
+When an object's `load` exceeds its (usable) `capacity`, the keeper runs a brownout: it **destroys that object's outgoing allocations in creation order** until `load ≤ capacity`. Because destroying an allocation removes capacity from its destination, the effect **cascades downstream** — a substation that loses a feed can knock its own outgoing allocations (and the players behind them) offline. Over-committing capacity is therefore a real, anticipatable hazard.
+
+The cascade is **bounded**: at most `GridCascadeBlockBudget` (256) allocation teardowns run per block, and whatever remains is queued FIFO and continues in the next blocks. A large collapse therefore plays out over several blocks rather than one; an object can sit with `load > capacity` for a short while before its allocations are gone. Slash reconciliation (128 reactors/block) and permission cleanup (256/block) are bounded the same way. (Verified: `GridCascade` in `x/structs/keeper/grid_context.go`; budgets in `x/structs/types/keys.go` — `GridCascadeBlockBudget`, `ReactorSlashReconcileBudget`, `PermissionCleanupBudget`; `OwnerSupplyReadBudget` in `keeper/player_primary_supply.go`.)
 
 ---
 
@@ -1508,8 +1613,8 @@ When an object's `load` exceeds its `capacity`, the keeper runs a brownout: it *
 
 | Method | How | Rate | Reversible | Risk |
 |--------|-----|------|------------|------|
-| Reactor infusion | `reactor-infuse [your-addr] [validator-addr] [amount]ualpha` | 1 gram ≈ 1 kW minus commission (you keep ~96%) | Yes — `reactor-defuse` (cooldown) | Low — jailed validator zeros the ratio until unjail / `reactor-restart` |
-| Generator infusion | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable) |
+| Reactor infusion (from vault) | `reactor-infuse [validator-addr] [amount]ualpha` (`--delegator-address` / `--owner-id` to pick another funding account) | 1 gram ≈ 1 kW minus commission (you keep ~96%) + diversity bonus up to 50% | Yes — `reactor-defuse` (cooldown) | Low — jailed validator zeros the ratio until unjail / `reactor-restart`; a capped reactor refuses new stake |
+| Generator infusion (from vault, one coin) | `struct-generator-infuse [struct-id] [amount]ualpha` | Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g | **No** (Alpha annihilated) | High (raidable; fuel stays with an offline generator — `generatorDisabled` — and is credited again on reactivation, but destruction never refunds it) |
 | Buy via agreement | `agreement-open [provider-id] [duration] [capacity]` | Varies by provider | Yes (close agreement) | Medium (ongoing cost) |
 
 Reactor infusion is the safe default. Generators give far more kW per gram but the Alpha is permanent and a raided generator takes the infused matter with it — only infuse generators you can defend. See the [structs-energy skill](/skills/structs-energy/SKILL.html) for the full workflows and offline-recovery procedure.
@@ -1588,7 +1693,7 @@ In priority order. The first two are worth more than everything below them combi
 
 ## Defenders: block vs. counter
 
-Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, and that it is **built and online**. Ambit does not gate assignment — it gates what the defender can do when a shot lands.
+Assigning a defender (`struct-defense-set`) requires that the struct's type has **`canDefend: true`** (fleet types only; planetary types including Ore Bunker cannot defend), that it is **co-located** with the protected struct, that it is **built and online**, and that it is a *different* struct from the one it protects (`self_defense` is refused). Ambit does not gate assignment — it gates what the defender can do when a shot lands.
 
 | | Block | Counter-attack |
 |---|---|---|
@@ -1680,7 +1785,7 @@ description: Every buildable struct with stats, costs, power requirements, and s
 
 > **Source-of-truth for the numbers:** the raw stat table is generated from the pinned chain
 > source into [`generated/struct-types.md`](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) (provenance:
-> `structsd v0.21.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
+> `structsd v0.22.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
 > strategic context; if the two ever disagree, the generated catalog wins. CLI command names
 > are catalogued separately in [`generated/commands.md`](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) (these
 > are CLI names, distinct from proto message names).
@@ -1706,7 +1811,7 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 | 11 | Cruiser | Cruiser | fleet | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
 | 12 | Destroyer | Destroyer | fleet | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
 | 13 | Submersible | Submersible | fleet | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
-| 14 | Ore Extractor | Extractor | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 14 | Ore Extractor | Extractor | planet | 10 | 500 W | 500 W | 1 | 6 | 6 | land, water |
 | 15 | Ore Refinery | Refinery | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
 | 16 | Orbital Shield Generator | Orb. Shield | planet | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
 | 17 | Jamming Satellite | Jamming Sat. | planet | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
@@ -1890,7 +1995,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-compute` handles hash + submit |
 
-`activateCharge` = 2, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types (charge is a per-player bar). Most planet structs and the Command Ship are limited to 1 per player; Orbital Shield Generator and Ore Bunker (shield-only) and fleet combat structs (IDs 2-13) have no build limit.
+`activateCharge` = 2, `buildCharge` = 1, `defendChangeCharge` = 1 for all struct types (charge is a per-player bar, and the ante accepts one charge-consuming message per player per block). Build difficulty ranges from **10** (Ore Extractor — about a minute, so the first miner is effectively instant) through 200 (Command Ship) and 700 (Refinery and most planet structs) to 5,000 (World Engine). A struct completes at **full `maxHealth`**. Most planet structs and the Command Ship are limited to 1 per player; Orbital Shield Generator and Ore Bunker (shield-only) and fleet combat structs (IDs 2-13) have no build limit.
 
 ---
 

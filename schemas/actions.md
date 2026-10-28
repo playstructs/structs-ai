@@ -18,10 +18,10 @@ This page is **field notes for a subset** of messages. There is no `MsgStructBui
 | construction | MsgStructBuildInitiate, MsgStructBuildComplete |
 | combat | MsgStructAttack, MsgPlanetRaidComplete |
 | resource | MsgReactorInfuse, MsgReactorDefuse, MsgReactorBeginMigration, MsgReactorCancelDefusion, MsgReactorRestart, MsgAllocationCreate, MsgAllocationUpdate, MsgAllocationDelete, MsgAllocationTransfer, MsgSubstationAllocationConnect, MsgSubstationCreate, MsgSubstationPlayerConnect, MsgStructOreMinerComplete, MsgStructOreRefineryComplete |
-| economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse |
+| economic | MsgProviderCreate, MsgAgreementOpen, MsgStructGeneratorInfuse, MsgPlayerSend, MsgVaultSend |
 | exploration | MsgPlanetExplore |
 | fleet | MsgFleetMove |
-| guild | MsgGuildCreate, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem, MsgGuildBankConvert, MsgGuildBankConvertToken |
+| guild | MsgGuildCreate, MsgGuildUpdateRankPurchase, MsgGuildRankPurchase, MsgGuildMembershipJoinByRankPurchase, MsgGuildMembershipJoin, MsgGuildMembershipKick, MsgGuildMembershipJoinProxy, MsgGuildBankMint, MsgGuildBankRedeem, MsgGuildBankConvert, MsgGuildBankConvertToken |
 | ugc | MsgPlayerUpdateName, MsgPlayerUpdatePfp, MsgPlayerUpdatePfpClientRenderAttributes, MsgGuildUpdateName, MsgGuildUpdatePfp, MsgPlanetUpdateName, MsgSubstationUpdateName, MsgSubstationUpdatePfp |
 | struct-management | MsgStructActivate, MsgStructDeactivate, MsgStructDeactivateBatch, MsgStructTrash, MsgStructStealthActivate, MsgStructStealthDeactivate, MsgStructDefenseSet, MsgStructDefenseClear, MsgStructMove |
 
@@ -212,22 +212,24 @@ See `patterns/validation-patterns.md` for detailed validation patterns.
 - **Name**: Infuse Reactor
 - **Message Type**: `/structs.structs.MsgReactorInfuse`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Add Alpha Matter to reactor for energy production. Also handles validation delegation. Reactor staking is managed at player level, and validation delegation is abstracted via this action.
+- **Description**: Stake Alpha from a vault into a reactor's validator. The stake produces capacity for the funding owner (flat 1:1, minus the reactor's 4% commission, plus the owner diversity bonus). Also handles validation delegation.
 - **Verified**: true
 - **Code Reference**: `x/structs/keeper/msg_server_reactor_infuse.go`
-- **Proto Reference**: `proto/structs/structs/tx.proto:95`
+- **Proto Reference**: `proto/structs/structs/tx.proto` (`MsgReactorInfuse`)
 
-This action abstracts validation delegation. When used for staking, it delegates validation stake to a validator. Reactor staking is managed at the player level, not reactor level.
+**Required Fields**: `creator`, `validator_address`, `amount` (Coin, `ualpha`)
 
-**Required Fields**: `creator`, `reactorId`, `amount`
+**Optional Fields**: `ownerId` (player `1-N` or guild `0-N` whose **vault** funds the stake; empty = the signing player's vault), `delegator_address` (alone: a registered player address or vault to stake **from its own balance**, needing `PermTokenInfuse` on its owner; together with `ownerId`: must equal that owner's vault, else `vault_owner_mismatch`)
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| reactorExists | true |
-| sufficientAlphaMatter | true |
+| registered address | Signer must already be a player (ante `2010` otherwise — a fresh key bootstraps with `structsd tx staking delegate`, not this message) |
+| permission | `PermTokenInfuse` (32) on the funding owner; a guild vault additionally needs the signer to hold it on the guild |
+| sufficient vault balance | `amount` is debited from the owner's vault, not from `creator`'s key |
+| stake cap | Refused (`1613`) when the reactor already holds ≥ `reactorStakeCapBps` of bonded stake and ≥ `reactorStakeCapMinValidators` are bonded. Check `reactor-stake-share` headroom first |
 
-**Conversion Rate**: 1 gram Alpha Matter (1,000,000 micrograms) = 1,000 watts energy (1,000,000 milliwatts). Code reference: `x/structs/types/keys.go (ReactorFuelToEnergyConversion = 1)`.
+**Conversion Rate**: 1 µAlpha staked → 1 unit of power before commission (`ReactorFuelToEnergyConversion = 1`). See [energy.md](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964).
 
 ```json
 {
@@ -236,8 +238,9 @@ This action abstracts validation delegation. When used for staking, it delegates
       {
         "@type": "/structs.structs.MsgReactorInfuse",
         "creator": "structs1...",
-        "reactorId": "1-1",
-        "amount": "1000000"
+        "validator_address": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "1000000" },
+        "ownerId": ""
       }
     ]
   }
@@ -250,20 +253,19 @@ This action abstracts validation delegation. When used for staking, it delegates
 - **Name**: Defuse Reactor
 - **Message Type**: `/structs.structs.MsgReactorDefuse`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Remove Alpha Matter from reactor. Also handles validation undelegation.
+- **Description**: Begin unbonding stake from a reactor's validator back to the funding vault. Capacity drops immediately; the Alpha returns to the vault after the unbonding period.
 - **Verified**: true
 - **Code Reference**: `x/structs/keeper/msg_server_reactor_defuse.go`
-- **Proto Reference**: `proto/structs/structs/tx.proto:96`
 
-This action abstracts validation undelegation. Reactor staking is managed at the player level, not reactor level.
+**Required Fields**: `creator`, `validator_address`, `amount` (Coin)
 
-**Required Fields**: `creator`, `reactorId`, `amount`
+**Optional Fields**: `ownerId`, `delegator_address` (same semantics as `MsgReactorInfuse`)
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| reactorExists | true |
-| sufficientFuel | true |
+| permission | `PermTokenDefuse` (128) on the funding owner |
+| sufficient stake | `amount` ≤ the owner's delegation to that validator |
 
 ```json
 {
@@ -272,8 +274,8 @@ This action abstracts validation undelegation. Reactor staking is managed at the
       {
         "@type": "/structs.structs.MsgReactorDefuse",
         "creator": "structs1...",
-        "reactorId": "1-1",
-        "amount": "1000000"
+        "validator_address": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "1000000" }
       }
     ]
   }
@@ -286,14 +288,16 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 - **Name**: Begin Reactor Migration
 - **Message Type**: `/structs.structs.MsgReactorBeginMigration`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Begin redelegation process for reactor validation stake.
+- **Description**: Redelegate stake from one reactor's validator to another without unbonding. Subject to the destination's stake cap (`bondedRedelegationHeadroom`).
 
-**Required Fields**: `creator`, `reactorId`
+**Required Fields**: `creator`, `validator_src_address`, `validator_dst_address`, `amount` (Coin)
+
+**Optional Fields**: `ownerId`, `delegator_address`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| reactorExists | true |
+| permission | `PermTokenMigrate` (64) on the funding owner |
 | hasActiveDelegation | true |
 
 ```json
@@ -303,7 +307,9 @@ This action abstracts validation undelegation. Reactor staking is managed at the
       {
         "@type": "/structs.structs.MsgReactorBeginMigration",
         "creator": "structs1...",
-        "reactorId": "3-1"
+        "validator_src_address": "structsvaloper1aaa...",
+        "validator_dst_address": "structsvaloper1bbb...",
+        "amount": { "denom": "ualpha", "amount": "1000000" }
       }
     ]
   }
@@ -316,15 +322,17 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 - **Name**: Cancel Reactor Defusion
 - **Message Type**: `/structs.structs.MsgReactorCancelDefusion`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Cancel undelegation process for reactor validation stake.
+- **Description**: Cancel an in-progress unbonding entry and re-bond the stake.
 
-**Required Fields**: `creator`, `reactorId`
+**Required Fields**: `creator`, `validator_address`, `amount` (Coin), `creation_height` (the height the unbonding began)
+
+**Optional Fields**: `ownerId`, `delegator_address`
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| reactorExists | true |
 | inUndelegationPeriod | true |
+| amount | ≤ the unbonding entry balance |
 
 ```json
 {
@@ -333,7 +341,9 @@ This action abstracts validation undelegation. Reactor staking is managed at the
       {
         "@type": "/structs.structs.MsgReactorCancelDefusion",
         "creator": "structs1...",
-        "reactorId": "3-1"
+        "validator_address": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "1000000" },
+        "creation_height": "123456"
       }
     ]
   }
@@ -533,6 +543,7 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 - **Message Type**: `/structs.structs.MsgProviderCreate`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
 - **Description**: Create an energy provider
+- **Optional**: `ownerId` — a guild (`0-N`) that will own the provider; the signer then needs `PermSourceAllocation` on that guild. Empty = the signing player
 
 **Required Fields**: `creator`, `rate`, `policy`
 
@@ -563,7 +574,8 @@ This action abstracts validation undelegation. Reactor staking is managed at the
 - **Name**: Open Energy Agreement
 - **Message Type**: `/structs.structs.MsgAgreementOpen`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks
+- **Description**: Open an energy agreement against a provider, renting `capacity` Watts for `duration` blocks. The full `capacity × rate × duration` collateral is debited **from the consumer's vault** at open. Refused with `expiration_height_full` if 256 agreements already expire at the resulting end height
+- **Optional**: `ownerId` — the player or guild consumer whose vault pays (`PermTokenTransfer` on that owner); empty = the signing player
 
 **Required Fields**: `creator`, `providerId`, `duration`, `capacity`
 
@@ -743,17 +755,19 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 - **Name**: Create Guild
 - **Message Type**: `/structs.structs.MsgGuildCreate`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Found a guild by spending a reactor's one-time entitlement, or by submitting a solved charter proof (`guild-create-compute` fills proof/nonce). The signer is the solver; `founderPlayerId` names the owner when they differ.
+- **Description**: Found a guild by paying **2,000,000 ualpha** from the signing player's vault: 1,000,000 is burned and 1,000,000 becomes the guild's opening Central Bank collateral, minting 1,000,000 `uguild.<id>` into the new guild vault. The signer becomes the owner.
 
 **Required Fields**: `creator`, `reactorId`, `endpoint`, `entrySubstationId`
 
-**Optional Fields**: `proof`, `nonce` (charter path), `founderPlayerId`, `address`, `proofPubKey`, `proofSignature` (third-party founder consent)
+**Deprecated Fields** (decodable, must be empty): `proof`, `nonce`, `founderPlayerId`, `address`, `proofPubKey`, `proofSignature` — any nonempty value is rejected with `legacy_charter_fields_not_supported`. Third-party founding is not supported.
 
 | Requirement | Details |
 |-------------|---------|
 | playerOnline | true |
-| entitlement or proof | Entitlement path: bonded reactor past `GuildCharterReactorAge`, `PermReactorGuildCreate` (524288) on the reactor. Proof path: valid charter nonce against the current global anchor |
-| permSubstationConnection | `PermSubstationConnection` (1024) on the entry substation |
+| permission | `PermPlay` and `PermTokenTransfer` on the founder |
+| funds | ≥ 2,000,000 ualpha spendable in the founder's vault |
+| reactor | Exists and its validator is bonded and **not jailed** |
+| entry substation | Signer may manage connections on it (`CanManageConnectionsBy`) |
 | not owner | Founder who already owns a guild must transfer it first (`is_owner`) |
 
 ```json
@@ -771,6 +785,41 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
   }
 }
 ```
+
+### MsgGuildUpdateRankPurchase
+
+- **ID**: `guild-update-rank-purchase`
+- **Message Type**: `/structs.structs.MsgGuildUpdateRankPurchase`
+- **Description**: Configure rank sales. Prices are in the guild's own token (`uguild.<id>`): the n-th rank step above the entry rank costs `basePrice + (n−1) × stepIncrease`, and a buyer pays the cumulative difference between their current and target rank. `minimumRank = 0` disables sales.
+
+**Required Fields**: `creator`, `guildId`, `basePrice`, `stepIncrease`, `minimumRank`, `joinByRankPurchaseEnabled`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermAdmin` on the guild |
+
+### MsgGuildRankPurchase
+
+- **ID**: `guild-rank-purchase`
+- **Message Type**: `/structs.structs.MsgGuildRankPurchase`
+- **Description**: A member buys a higher rank. Payment moves from the buyer's vault to the guild vault in `uguild.<id>`. `maxPrice` and `expectedRank` are slippage guards (`quoted_price_exceeded`, `rank_changed`). Emits `EventGuildRankPurchase`.
+
+**Required Fields**: `creator`, `guildId`, `targetRank`, `maxPrice`, `expectedRank`
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermGuildMembership` and `PermTokenTransfer` on the buyer |
+| range | Lower number = better rank. `minimumRank ≤ targetRank ≤ entryRank` else `outside_purchase_range`, and `targetRank` must be strictly better (lower) than the buyer's current rank (`must_improve_rank_within_entry_range`); `rank_purchase_disabled` when `minimumRank` is 0 |
+
+### MsgGuildMembershipJoinByRankPurchase
+
+- **ID**: `guild-membership-join-by-rank-purchase`
+- **Message Type**: `/structs.structs.MsgGuildMembershipJoinByRankPurchase`
+- **Description**: Join a guild and buy a rank in one message. Requires `joinByRankPurchaseEnabled` (`rank_purchase_admission_disabled` otherwise); migrates the player to the guild's entry substation; refused while that substation is `deletion_pending`. Emits `EventGuildRankPurchase` with `joined: true`.
+
+**Required Fields**: `creator`, `guildId`, `targetRank`, `maxPrice`
+
+**Optional Fields**: `expectedGuildId` (the guild you expect to currently be in; empty = guildless) — `membership_changed` if it does not match
 
 ### MsgGuildMembershipJoin
 
@@ -879,9 +928,11 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 - **Name**: Mint Guild Tokens
 - **Message Type**: `/structs.structs.MsgGuildBankMint`
 - **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
-- **Description**: Mint guild tokens (trust-based system)
+- **Description**: Mint guild tokens. `amountAlpha` is moved from the **guild vault** into the collateral pool and `amountToken` is minted into the guild vault; the signer's own funds are never used
 
-**Required Fields**: `creator`, `guildId`, `amount`
+**Required Fields**: `creator`, `amountAlpha`, `amountToken`
+
+**Optional Fields**: `guildId` (defaults to the signer's guild; an owner who is not a member names it explicitly)
 
 | Requirement | Details |
 |-------------|---------|
@@ -1018,16 +1069,29 @@ Transaction may broadcast but planet ownership unchanged if requirements are not
 
 | Requirement | Details |
 |-------------|---------|
-| permAdmin | Requires `PermAdmin` (2) on the guild; falls back to rank-based authority (actor rank must be strictly better than target's current rank) |
+| permAdmin | Requires `PermAdmin` (2) on the guild — ownership or a direct grant; a rank register never qualifies |
 
 ### MsgPlayerSend
 
 - **ID**: `player-send`
 - **Name**: Player Send Tokens
 - **Message Type**: `/structs.structs.MsgPlayerSend`
-- **Description**: Send tokens via the structs module (separate from bank-module send)
+- **Description**: Send tokens via the structs module (separate from bank-module send). `from_address` may be a **vault** address — the signer then needs `PermTokenTransfer` on the vault's owner — which is how Alpha leaves a vault to an arbitrary address
 
-**Required Fields**: `creator`, `fromAddress`, `toAddress`, `amount`
+**Required Fields**: `creator`, `from_address`, `to_address`, `amount` (Coins)
+
+### MsgVaultSend
+
+- **ID**: `vault-send`
+- **Message Type**: `/structs.structs.MsgVaultSend`
+- **Description**: Move coins from one owner's vault to another owner's vault (player `1-N` or guild `0-N`). Recipient vault is provisioned on demand.
+
+**Required Fields**: `creator`, `ownerId`, `recipientOwnerId`, `amount` (Coins)
+
+| Requirement | Details |
+|-------------|---------|
+| permission | `PermTokenTransfer` on `ownerId` |
+| recipient | Must be an existing player or guild |
 
 | Requirement | Details |
 |-------------|---------|

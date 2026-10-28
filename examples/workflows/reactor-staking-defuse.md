@@ -1,66 +1,40 @@
 ---
-description: A worked workflow for defusing a reactor to undelegate validation stake, with error and permission handling.
+description: A worked workflow for defusing a reactor — unbonding stake back to the funding vault, what happens to capacity immediately, and how to verify the unbonding entry.
 ---
 
 # Reactor Staking - Defuse Workflow
 
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Category**: economic
-**Description**: Detailed workflow for defusing reactor to undelegate validation stake
+**Description**: Begin unbonding Alpha from a reactor's validator back to the vault that funded it. Capacity drops now; the Alpha arrives after the unbonding period.
+
+Mechanics: [energy.md](../../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) · Procedure: [structs-energy skill](/skills/structs-energy/SKILL.html) · Safety tier: **Tier 2** in [SAFETY.md](../../SAFETY.md) — the matter is neither in the reactor nor in your vault during the wait.
 
 ---
 
-## Workflow: Reactor Defuse for Validation Undelegation
+## What happens
 
-### Step 1: Check Prerequisites
+`reactor-defuse` undelegates `amount` from the reactor's validator. The infusion's `fuel` and the owner's `capacity` fall **immediately**; the owner's diversity bonus is recomputed. The `ualpha` sits in a Cosmos unbonding entry until the chain's unbonding period elapses, then lands in the vault. The entry can be reversed with [`reactor-cancel-defusion`](reactor-staking-cancel-defusion.md) while it is pending.
 
-Verify reactor delegation status before defusing.
+## Workflow
 
-**Player Online** -- `GET /structs/player/{playerId}`:
+### Step 1: Preflight
 
-| Field | Expected Value |
-|-------|----------------|
-| `player.online` | `true` |
+**Load headroom** — `structsd query structs player {playerId}`: after the defuse, `capacity` falls by roughly `amount × (1 − commission)` plus any lost diversity bonus. If `(load + structsLoad)` would then exceed `(capacity + capacitySecondary)` you go **offline** and cannot act. Deactivate structs first, or defuse less.
 
-**Reactor Exists** -- `GET /structs/reactor/{reactorId}`:
+**Current stake** — `structsd query structs infusion {reactorId} {vault-address}` → `fuel`; or `structsd query staking delegation {vault-address} {validator-address}` → `balance.amount`. You cannot defuse more than this.
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.owner` | `{playerId}` |
+**Validator address** — `structsd query structs reactor {reactorId}` → `validator`.
 
-**Delegation Status** -- `GET /structs/reactor/{reactorId}`:
+### Step 2: Submit
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `active` |
+```
+structsd tx structs reactor-defuse --from {key} --gas auto --gas-adjustment 1.5 -- {validator-address} {amount}ualpha
+```
 
-> **Note**: Cannot defuse if status is `migrating` or `none`.
+Same `--owner-id` / `--delegator-address` selection as infuse; the permission is `PermTokenDefuse` (128) on the funding owner.
 
-**Delegation Amount** -- `GET /structs/reactor/{reactorId}`:
-
-| Field | Minimum Value |
-|-------|---------------|
-| `reactor.delegationAmount` | `{defuseAmount}` |
-
-### Step 2: Calculate Defuse Amount
-
-Determine amount to defuse (can be partial or full).
-
-| Type | Value | Description |
-|------|-------|-------------|
-| Full Defuse | `reactor.delegationAmount` | Undelegate all staked amount |
-| Partial Defuse | custom amount | Undelegate partial amount (must be <= delegationAmount), minimum `1000000000` |
-
-> **Note**: Partial defuse is allowed.
-
-### Step 3: Submit Defuse Transaction
-
-Submit `MsgReactorDefuse` transaction for validation undelegation.
-
-**Method**: `POST`
-**Endpoint**: `/cosmos/tx/v1beta1/txs`
-
-**Request Body**:
+Broadcast body:
 
 ```json
 {
@@ -69,125 +43,48 @@ Submit `MsgReactorDefuse` transaction for validation undelegation.
       {
         "@type": "/structs.structs.MsgReactorDefuse",
         "creator": "structs1...",
-        "reactorId": "3-1",
-        "destinationType": 1,
-        "destinationId": "1-11",
-        "alphaMatterAmount": "10000000000"
+        "validator_address": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "5000000" }
       }
     ]
   }
 }
 ```
 
-**Expected Response**:
+### Step 3: Confirm inclusion
 
-```json
-{
-  "txResponse": {
-    "code": 0,
-    "txhash": "transaction_hash"
-  }
-}
-```
+Poll `GET /cosmos/tx/v1beta1/txs/{txhash}`. On `code: 0` the events include `structs.structs.EventInfusion` (reduced fuel, pending unbonding amount), `structs.structs.EventOwnerReactorDiversity`, `structs.structs.EventGrid` (capacity) and the Cosmos `unbond` event, whose `completion_time` tells you when the Alpha returns.
 
-### Step 4: Wait for Transaction Confirmation
+### Step 4: Verify
 
-Wait for transaction to be included in a block.
+| Check | Query | Expect |
+|-------|-------|--------|
+| Capacity fell | `structsd query structs player {playerId}` → `gridAttributes.capacity` | Reduced; confirm still ≥ load |
+| Still online | same record | `(load + structsLoad) ≤ (capacity + capacitySecondary)` |
+| Unbonding entry | `structsd query staking unbonding-delegation {vault-address} {validator-address}` | `entries[].balance` = `amount`, `creation_height`, `completion_time` |
+| Vault unchanged (yet) | `playerInventory.rocks` | Same as before — the Alpha is in flight |
 
-**Polling**:
+Record `creation_height` in `memory/` — you need it to cancel.
 
-| Parameter | Value |
-|-----------|-------|
-| Endpoint | `GET /cosmos/tx/v1beta1/txs/{txhash}` |
-| Interval | 2 seconds |
-| Max Attempts | 30 |
-| Expected Status | confirmed |
+### Step 5: After the unbonding period
 
-### Step 5: Verify Undelegation Status
-
-Query reactor to confirm undelegation is in progress.
-
-**Endpoint**: `GET /structs/reactor/{reactorId}`
-
-**Expected Fields**:
-
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `undelegating` |
-| `reactor.undelegationPeriod` | blocks remaining |
-
-> **Note**: Undelegation period must pass before Alpha Matter is returned.
-
-### Step 6: Monitor Undelegation Period
-
-Wait for undelegation period to complete.
-
-**Monitoring**:
-
-| Parameter | Value |
-|-----------|-------|
-| Query | `GET /structs/reactor/{reactorId}` |
-| Interval | check every block |
-| Transition From | `undelegating` |
-| Transition To | `none` |
-| Condition | `undelegationPeriod === 0` |
-
-### Step 7: Verify Alpha Matter Returned
-
-Confirm Alpha Matter was returned to player after undelegation period.
-
-**Endpoint**: `GET /structs/player/{playerId}`
-
-**Expected Fields**:
-
-| Field | Expected Value |
-|-------|----------------|
-| `player.alphaMatter` | increased by defuse amount |
-| `reactor.delegationStatus` | `none` |
+`playerInventory.rocks` rises by `amount`. Nothing to submit; the SDK matures the entry.
 
 ---
 
 ## Error Handling
 
-| Error | Code | Description | Recovery | Retry |
-|-------|------|-------------|----------|-------|
-| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
-| No Active Delegation | `INVALID_STATE` | Reactor has no active delegation to undelegate | Check reactor delegation status | No |
-| Insufficient Delegation Amount | `INSUFFICIENT_FUNDS` | Requested defuse amount exceeds delegation amount | Reduce defuse amount to match delegation amount | Yes |
-| Migrating State | `INVALID_STATE` | Reactor is in migrating state, cannot defuse | Wait for migration to complete | Yes (check migration status) |
-| Transaction Failed | `GENERAL_ERROR` | Transaction failed to broadcast or execute | Check transaction response for error details | Yes (5s delay) |
-
----
-
-## Permission Checking
-
-### Required Permissions
-
-| Permission | Description | Check |
-|------------|-------------|-------|
-| Player Ownership | Player must own the reactor | `reactor.owner === playerId` |
-| Reactor Access | Player must have access to reactor | `GET /structs/permission/object/{reactorId}` |
+| Error | Cause | Recovery |
+|-------|-------|----------|
+| `insufficient delegation` / amount too large | `amount` exceeds the delegation | Re-read the delegation balance |
+| `too many unbonding delegation entries` | Cosmos per-pair entry limit reached | Wait for an entry to mature or cancel one |
+| player offline | Load > capacity | Shed load; defuse does **not** bypass the online check |
+| permission denied | Signer lacks `PermTokenDefuse` on the funding owner | Grant the bit or use the primary key |
+| `vault_owner_mismatch` | `--owner-id` and `--delegator-address` disagree | Drop one flag |
 
 ---
 
 ## Examples
 
-### Full Defuse
-
-- **Scenario**: Fully undelegate all staked amount
-- **Delegation Amount**: `10000000000`
-- **Defuse Amount**: `10000000000`
-- **Expected Result**: `delegationStatus: undelegating`, `remainingDelegation: 0`
-
-### Partial Defuse
-
-- **Scenario**: Partially undelegate staked amount
-- **Delegation Amount**: `10000000000`
-- **Defuse Amount**: `5000000000`
-- **Expected Result**: `delegationStatus: active`, `remainingDelegation: 5000000000`
-
-### Cancel Defusion
-
-- **Scenario**: Cancel undelegation before period completes
-- **Note**: Use `MsgReactorCancelDefusion` to cancel undelegation
-- **Workflow**: See [reactor-staking-cancel-defusion.md](reactor-staking-cancel-defusion.md)
+- **Partial exit** — 10 Alpha staked, defuse 4,000,000ualpha: capacity −3,840,000 immediately; 4 Alpha back in the vault after the unbonding period.
+- **Rebalancing for diversity** — rather than defuse-and-reinfuse (which idles the Alpha for the whole unbonding period), use [`reactor-begin-migration`](reactor-staking-begin-migration.md): the stake moves without unbonding.

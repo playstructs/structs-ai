@@ -46,7 +46,7 @@ Permissions are bitwise flags stored as `uint64` values. There are 25 individual
 | 16 | 65536 | `PermGuildSubstationUpdate` | Update guild entry substation |
 | 17 | 131072 | `PermProviderWithdraw` | Withdraw provider balance |
 | 18 | 262144 | `PermProviderOpen` | Manage agreement restrictions |
-| 19 | 524288 | `PermReactorGuildCreate` | Create a guild from a reactor |
+| 19 | 524288 | `PermReactorGuildCreate` | Reserved reactor bit (part of `PermReactorAll`); `guild-create` no longer checks it — founding is a paid transaction |
 | 20 | 1048576 | `PermHashBuild` | Submit struct build proof-of-work |
 | 21 | 2097152 | `PermHashMine` | Submit ore mining proof-of-work |
 | 22 | 4194304 | `PermHashRefine` | Submit ore refinery proof-of-work |
@@ -64,7 +64,7 @@ Multiple flags can be combined with bitwise OR. The system defines several usefu
 | `PermHashAll` | 15728640 | HashBuild, HashMine, HashRefine, HashRaid |
 | `PermAgreementAll` | 14 | Admin, Update, Delete |
 | `PermProviderAll` | 393230 | Admin, Update, Delete, ProviderWithdraw, ProviderOpen |
-| `PermGuildAll` | 17166862 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen, GuildUGCUpdate |
+| `PermGuildAll` | 17169406 | Admin, Update, Delete, GuildMembership, GuildEndpointUpdate, GuildJoinConstraintsUpdate, GuildSubstationUpdate, GuildTokenBurn, GuildTokenMint, ProviderOpen, GuildUGCUpdate, **PermAssetsAll** (TokenTransfer/Infuse/Migrate/Defuse), **SourceAllocation**, **AllocationConnection** — a guild-admin grant therefore also conveys spending the guild vault and allocation control |
 | `PermSubstationAll` | 1294 | Admin, Update, Delete, SubstationConnection, SourceAllocation |
 | `PermReactorAll` | 524558 | Admin, Update, Delete, SourceAllocation, ReactorGuildCreate |
 | `PermAllocationAll` | 2062 | Admin, Update, Delete, AllocationConnection |
@@ -117,6 +117,10 @@ The stored value is a single `uint64` representing the bitwise OR of all granted
 7. **Guild rank permissions** -- If the player belongs to a guild, check the guild rank register for the `(objectId, guildId)` pair. All requested permission bits must have a rank record, and the player's guild rank must be numerically <= the most restrictive (lowest) rank across those bits.
 
 If none of the above grant access, the request is denied with a permission error.
+
+**Administration is the exception to step 7.** `PermissionAdministrationCheck` — used by rank assignment, entry-rank changes, permission grants/sets/revokes and ownership transfer — accepts ownership or a **direct** `PermAdmin` grant, but a `PermAdmin` bit held only through a rank register confers nothing. Stored rank entries containing bit 2 may remain but are inert; owners grant direct `PermAdmin` to officers who should administer. Operational rank bits (membership, endpoint, mint, …) remain effective, subject to the signing key's own ceiling at step 4.
+
+**Vaults inherit the key's token bits.** Spending an owner's vault (`vault-send`, `player-send` from a vault address, `reactor-infuse`, `struct-generator-infuse`, `agreement-open`, rank purchase, `guild-bank-*`) runs `PermissionCheck` on the vault owner for the relevant `PermToken*` bit, so a secondary address scoped without `PermTokenTransfer` cannot drain it. See [energy.md — vaults](energy.md#vaults-where-game-alpha-lives).
 
 ### UGC Permission Check (`UGCPermissionCheck`)
 
@@ -252,7 +256,7 @@ structsd tx structs permission-set-on-object {objectId} {playerId} {permissions}
 
 ### Address Permission Transactions
 
-These manage what permissions an address is allowed to exercise. A player may have multiple addresses; each can be independently restricted.
+These manage what permissions an address is allowed to exercise. A player may have multiple addresses; each can be independently restricted — **except the primary**: any set or revoke that would leave the player's primary address below `PermAll` is rejected with `primary_full_access_required`. The primary is the full-authority recovery key; scope delegates on secondary addresses.
 
 #### `permission-grant-on-address`
 
@@ -303,7 +307,7 @@ structsd tx structs permission-guild-rank-revoke {objectId} {guildId} {permissio
 
 #### `player-update-guild-rank`
 
-Sets a player's guild rank. The caller must have `PermAdmin` (2) on the guild, or have rank-based authority (actor rank must be strictly better than target's current rank).
+Sets a player's guild rank. Authorized by `PermissionAdministrationCheck` on the guild: the caller's **signing address** must carry `PermAdmin` (2), and the calling player must be the guild owner or hold a **direct** `PermAdmin` grant on the guild. A rank register never qualifies — holding a good rank (bought or assigned) confers configured access, not the authority to hand out free ranks. The target must already be a member of the named guild (`not_member` otherwise); `--guild-id` may be omitted by a member caller, and is required for an owner who is not a member.
 
 ```
 structsd tx structs player-update-guild-rank --from {signer} --gas auto -y -- {playerId} {guildRank}
@@ -335,7 +339,7 @@ The `value` field is the `uint64` bitmask. Decompose with bitwise AND (e.g., `va
 
 ### `permission-by-object`
 
-Returns all permission records for a given object. Supports pagination.
+Returns all permission records for a given object. Paginated over a scoped index: default 100 rows, `--limit` clamped to 1000, `pagination.total` always `0` — walk `next_key`.
 
 ```
 structsd query structs permission-by-object {objectId}
@@ -343,7 +347,7 @@ structsd query structs permission-by-object {objectId}
 
 ### `permission-by-player`
 
-Returns all permission records for a given player. Supports pagination.
+Returns all permission records for a given player. Paginated over a scoped index (same limits as above).
 
 ```
 structsd query structs permission-by-player {playerId}
@@ -351,7 +355,7 @@ structsd query structs permission-by-player {playerId}
 
 ### `permission-all`
 
-Returns all permission records. Supports pagination.
+Returns all permission records. Paginated (default 100, max 1000, `total` always `0`).
 
 ```
 structsd query structs permission-all
@@ -359,7 +363,7 @@ structsd query structs permission-all
 
 ### `guild-rank-permission-by-object`
 
-Returns all guild rank permission records for a given object across all guilds. Supports pagination.
+Returns all guild rank permission records for a given object across all guilds. Paginated over a scoped index (default 100, max 1000, `total` always `0`).
 
 ```
 structsd query structs guild-rank-permission-by-object {objectId}
@@ -439,7 +443,7 @@ Emitted for each guild rank permission bit that changes:
 
 ### Player Creation
 
-When a player is created (via reactor infusion or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record. The primary address can exercise any permission the player holds. Rotating primary (`player-update-primary-address`) also requires `PermAll` on the **signing** address — a limited delegate cannot point the purse at a new key.
+When a player is created (via a native `staking delegate` from a fresh funded key, or guild join-proxy), their primary address is automatically granted `PermPlayerAll` (all 25 bits, value `33554431`) on the address permission record, and that address can never be set below `PermAll` afterwards (`primary_full_access_required`). The primary address can exercise any permission the player holds. Rotating primary (`player-update-primary-address`) also requires `PermAll` on the **signing** address — a limited delegate cannot point the purse at a new key.
 
 ### Object Creation
 
@@ -475,7 +479,7 @@ That limited key cannot call `player-update-primary-address`. Infusion `playerId
 
 ### Object Deletion Cleanup
 
-When an object is deleted, all permission records for that object (both direct `{objectId}@{playerId}` records and guild rank registers) are cleared. Revocation events are emitted for each cleared entry.
+When an object is deleted, all permission records for that object (both direct `{objectId}@{playerId}` records and guild rank registers) are cleared, as **bounded work**: at most `PermissionCleanupBudget` (256) records per block, with the remainder queued (`permissionCleanupQueue` in genesis) and finished in following blocks. Revocation events are emitted for each cleared entry. A permission record that drops to zero is removed rather than stored as zero bytes, and grants/sets/revokes on objects reject a target player that does not exist.
 
 ---
 
@@ -557,7 +561,7 @@ For all permission transactions, the caller must already possess the permission 
 |---------|---------------|-------------------|
 | `PlayerUpdatePrimaryAddress` | Target player | `PermAll` (33554431) | `CanUpdatePrimaryAddressBy` — limited delegates cannot rotate primary |
 | `PlayerSend` | Target player | `PermTokenTransfer` (16) |
-| `PlayerUpdateGuildRank` | Guild | `PermAdmin` (2); falls back to rank-based authority |
+| `PlayerUpdateGuildRank` | Guild | `PermAdmin` (2) — ownership or direct grant only; no rank fallback |
 | `PlayerUpdateName` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
 | `PlayerUpdatePfp` | Target player (UGC) | `PermUpdate` (4) on player **OR** `PermGuildUGCUpdate` (16777216) on the player's guild |
 
@@ -582,24 +586,28 @@ For all permission transactions, the caller must already possess the permission 
 
 | Message | Object Checked | Permission Flag(s) |
 |---------|---------------|-------------------|
-| `ReactorInfuse` | Target player | `PermTokenInfuse` (32) |
-| `ReactorDefuse` | Target player | `PermTokenDefuse` (128) |
-| `ReactorBeginMigration` | Target player | `PermTokenMigrate` (64) |
-| `ReactorCancelDefusion` | Target player | `PermTokenInfuse` (32) |
+| `ReactorInfuse` | Funding owner (signing player's vault by default; the registered key named by `--delegator-address`; or the guild named by `--owner-id`) | `PermTokenInfuse` (32) |
+| `ReactorDefuse` | Same funding owner | `PermTokenDefuse` (128) |
+| `ReactorBeginMigration` | Same funding owner | `PermTokenMigrate` (64) |
+| `ReactorCancelDefusion` | Same funding owner | `PermTokenInfuse` (32) |
+| `VaultSend` | Sending owner (player or guild vault) | `PermTokenTransfer` (16) |
 
 ### Guild Transactions
 
 | Message | Object Checked | Permission Flag(s) | Notes |
 |---------|---------------|-------------------|-------|
-| `GuildCreate` | Reactor | `PermReactorGuildCreate` (524288) | Also checks `PermSubstationConnection` (1024) if substation specified |
+| `GuildCreate` | Founder (self) | `PermPlay` (1) + `PermTokenTransfer` (16) | Pays 2,000,000 ualpha from the founder's vault; reactor's validator must exist and not be jailed; `PermSubstationConnection` (1024) on the entry substation if specified; legacy proof fields rejected |
+| `GuildUpdateRankPurchase` | Guild | `PermAdmin` (2) | Direct grant or ownership; configures rank sales |
+| `GuildRankPurchase` | Calling player | `PermGuildMembership` (512) + `PermTokenTransfer` (16) | Pays guild token from player vault to guild vault |
+| `GuildMembershipJoinByRankPurchase` | Calling player | `PermGuildMembership` (512) + `PermTokenTransfer` (16) | Paid admission; migrates to entry substation |
 | `GuildUpdateEndpoint` | Guild | `PermGuildEndpointUpdate` (16384) | |
 | `GuildUpdateEntrySubstationId` | Guild | `PermGuildSubstationUpdate` (65536) | Also checks `PermSubstationConnection` (1024) on target substation |
 | `GuildUpdateEntryRank` | Guild | `PermUpdate` (4) | New entry rank must be >= caller's own rank |
 | `GuildUpdateJoinInfusionMinimum` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | |
 | `GuildUpdateJoinInfusionMinimumBypassByRequest` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | Unknown enum values denied |
 | `GuildUpdateJoinInfusionMinimumBypassByInvite` | Guild | `PermGuildJoinConstraintsUpdate` (32768) | Unknown enum values denied |
-| `GuildUpdateOwnerId` | Guild | `PermAdmin` (2) | |
-| `GuildBankMint` | Guild | `PermGuildTokenMint` (8192) | |
+| `GuildUpdateOwnerId` | Guild | `PermAdmin` (2) | Clears the outgoing owner's entire direct permission row on the guild |
+| `GuildBankMint` | Guild | `PermGuildTokenMint` (8192) | Plus `PermTokenTransfer` on the guild vault (collateral leaves the guild vault; tokens arrive there) |
 | `GuildBankConfiscateAndBurn` | Guild | `PermGuildTokenBurn` (4096) | |
 | `GuildBankRedeem` | Calling player | `PermTokenTransfer` (16) | Self-check |
 | `GuildBankConvert` | Calling player | `PermTokenTransfer` (16) | Open-market ualpha → token |
@@ -619,9 +627,9 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `GuildMembershipRequestApprove` | Guild | `PermGuildMembership` (512) | Conditional on bypass level; requires a pending application |
 | `GuildMembershipRequestDeny` | Guild | `PermGuildMembership` (512) | Same conditions as approve |
 | `GuildMembershipRequestRevoke` | Target player | `PermGuildMembership` (512) | Caller must be the requesting player |
-| `GuildMembershipJoin` | Target player | `PermGuildMembership` (512) | Direct join (pre-approved) |
-| `GuildMembershipJoinProxy` | Guild | `PermGuildMembership` (512) | Also checks `PermSubstationConnection` (1024) if substation override |
-| `GuildMembershipKick` | Guild | `PermGuildMembership` (512) | Cannot kick the guild owner |
+| `GuildMembershipJoin` | Target player | `PermGuildMembership` (512) | Direct join (pre-approved). Additionally `PermTokenMigrate` (64) when an infusion's reactor lies outside the destination guild and its stake must be redelegated |
+| `GuildMembershipJoinProxy` | Guild | `PermGuildMembership` (512) | Also checks `PermSubstationConnection` (1024) if substation override. If the joined address is **already registered** to a player, that address must itself hold `PermGuildMembership`; onboarding a brand-new address stays permissionless |
+| `GuildMembershipKick` | Guild | `PermGuildMembership` (512) | Cannot kick the guild owner. Removes rank authority but **preserves the player's direct grants** (including on the guild itself) — revoke them explicitly |
 
 ### Struct Transactions
 
@@ -633,7 +641,7 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 | `StructActivate` | Owner (player) | `PermPlay` (1) | |
 | `StructDeactivate` | Owner (player) | `PermPlay` (1) | No player-online requirement; costs no charge |
 | `StructDeactivateBatch` | Owner (player) | `PermPlay` (1) | Checked per struct; up to 65 per tx |
-| `StructTrash` | Owner (player) | `PermPlay` (1) | Costs `buildCharge`; destroys a built struct |
+| `StructTrash` | Owner (player) | `PermPlay` (1) | Costs `buildCharge` (1); a registered charge message; destroys a built struct |
 | `StructStealthActivate` | Owner (player) | `PermPlay` (1) | |
 | `StructStealthDeactivate` | Owner (player) | `PermPlay` (1) | |
 | `StructMove` | Owner (player) | `PermPlay` (1) | |
@@ -692,7 +700,7 @@ Permission checks are conditional based on guild join settings (`GuildJoinBypass
 
 | Message | Object Checked | Permission Flag(s) | Notes |
 |---------|---------------|-------------------|-------|
-| `AgreementOpen` | Provider | `PermProviderOpen` (262144) | Only for `guildMarket` policy. `openMarket` requires valid player only. `closedMarket` always denied. |
+| `AgreementOpen` | Provider | `PermProviderOpen` (262144) | Only for `guildMarket` policy. `openMarket` requires valid player only. `closedMarket` always denied. Also `PermTokenTransfer` (16) on the paying owner (self, or the guild named by `--owner-id`) — collateral leaves that owner's vault |
 | `AgreementClose` | Agreement | `PermUpdate` (4) | |
 | `AgreementCapacityIncrease` | Agreement | `PermUpdate` (4) | |
 | `AgreementDurationIncrease` | Agreement | `PermUpdate` (4) | |
@@ -703,7 +711,8 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 
 | Message | Check 1 | Check 2 | Relationship |
 |---------|---------|---------|-------------|
-| `GuildCreate` | `PermReactorGuildCreate` on reactor | `PermSubstationConnection` on substation | Both required |
+| `GuildCreate` | `PermPlay` + `PermTokenTransfer` on founder | `PermSubstationConnection` on entry substation | Both required (substation only if specified) |
+| `ProviderCreate` | `PermSourceAllocation` on substation | `PermSourceAllocation` on the guild named by `--owner-id` | Both required (guild only if specified) |
 | `GuildUpdateEntrySubstationId` | `PermGuildSubstationUpdate` on guild | `PermSubstationConnection` on target substation | Both required |
 | `SubstationPlayerConnect` | `PermSubstationConnection` on substation | `PermSubstationConnection` on player | Both required |
 | `SubstationPlayerDisconnect` | `PermSubstationConnection` on player | `PermSubstationConnection` on substation | Either sufficient |
@@ -718,16 +727,16 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | Permission | Value | Used By |
 |------------|-------|---------|
 | `PermPlay` | 1 | StructBuildInitiate, StructBuildCancel, StructActivate, StructDeactivate, StructDeactivateBatch, StructTrash, StructStealthActivate, StructStealthDeactivate, StructMove, StructAttack, StructDefenseSet, StructDefenseClear, FleetMove, PlanetExplore |
-| `PermAdmin` | 2 | GuildUpdateOwnerId, PlayerUpdateGuildRank, AllocationTransfer, Permission transactions (when caller-specified) |
+| `PermAdmin` | 2 | GuildUpdateOwnerId, PlayerUpdateGuildRank (on the signing address), GuildUpdateRankPurchase, AllocationTransfer, Permission transactions — always a direct grant or ownership, never via rank register |
 | `PermUpdate` | 4 | GuildUpdateEntryRank, ProviderUpdate*, AgreementClose, AgreementCapacity/Duration*, GuildUpdateName, GuildUpdatePfp; self-service path of PlayerUpdateName/Pfp, PlanetUpdateName, SubstationUpdateName/Pfp |
 | `PermDelete` | 8 | AddressRevoke, ProviderDelete, SubstationDelete, AllocationDelete (fallback) |
-| `PermTokenTransfer` | 16 | PlayerSend, GuildBankRedeem |
+| `PermTokenTransfer` | 16 | PlayerSend, VaultSend, GuildCreate, AgreementOpen (payer), GuildBankRedeem/Convert/ConvertToken, GuildBankMint (guild vault), GuildRankPurchase, GuildMembershipJoinByRankPurchase |
 | `PermTokenInfuse` | 32 | ReactorInfuse, ReactorCancelDefusion, StructGeneratorInfuse |
-| `PermTokenMigrate` | 64 | ReactorBeginMigration |
+| `PermTokenMigrate` | 64 | ReactorBeginMigration, GuildMembershipJoin (when stake must migrate) |
 | `PermTokenDefuse` | 128 | ReactorDefuse |
 | `PermSourceAllocation` | 256 | AllocationCreate, AllocationUpdate, AllocationDelete (primary), ProviderCreate |
 | `PermGuildMembership` | 512 | All GuildMembership* transactions, GuildMembershipKick |
-| `PermSubstationConnection` | 1024 | SubstationPlayerConnect/Disconnect/Migrate, GuildCreate, GuildUpdateEntrySubstationId, GuildMembershipJoinProxy, SubstationDelete (migration) |
+| `PermSubstationConnection` | 1024 | SubstationPlayerConnect/Disconnect/Migrate, GuildCreate (entry substation), GuildUpdateEntrySubstationId, GuildMembershipJoinProxy, SubstationDelete (migration) |
 | `PermAllocationConnection` | 2048 | SubstationCreate, SubstationAllocationConnect/Disconnect |
 | `PermGuildTokenBurn` | 4096 | GuildBankConfiscateAndBurn |
 | `PermGuildTokenMint` | 8192 | GuildBankMint |
@@ -736,7 +745,7 @@ Some handlers check permissions on multiple objects. All checks must pass unless
 | `PermGuildSubstationUpdate` | 65536 | GuildUpdateEntrySubstationId |
 | `PermProviderWithdraw` | 131072 | ProviderWithdrawBalance |
 | `PermProviderOpen` | 262144 | AgreementOpen (guildMarket only) |
-| `PermReactorGuildCreate` | 524288 | GuildCreate |
+| `PermReactorGuildCreate` | 524288 | No handler; reserved (part of `PermReactorAll`) |
 | `PermHashBuild` | 1048576 | StructBuildComplete; part of PermHashAll |
 | `PermHashMine` | 2097152 | StructOreMinerComplete; part of PermHashAll |
 | `PermHashRefine` | 4194304 | StructOreRefineryComplete; part of PermHashAll |

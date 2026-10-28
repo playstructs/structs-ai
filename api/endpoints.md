@@ -29,6 +29,8 @@ For the full per-entity catalog read surface (paginated lists for every entity, 
 
 All query endpoints use the Consensus Network REST API (`http://localhost:1317` locally or `https://public.testnet.structs.network` on the public testnet).
 
+Paginated lists: `pagination.limit` defaults to 100 and is clamped to 1000; `pagination.count_total` is ignored (`total` is `0`); `pagination.offset` above 1000 is refused — walk with `pagination.key` / `next_key`.
+
 ### Player Queries
 
 | Method | Path | Description | Pagination |
@@ -155,6 +157,8 @@ Response schema: [Guild](../schemas/entities/guild.md)
 |--------|------|-------------|------------|
 | GET | `/structs/reactor/{id}` | Get reactor by ID | No |
 | GET | `/structs/reactor` | List all reactors | Yes |
+| GET | `/structs/reactor/{reactorId}/stake-share` | Stake cap headroom, slash revisions ([detail](queries/reactor.md#reactor-stake-share)) | No |
+| GET | `/structs/owner/{ownerId}/reactor-diversity` | Owner diversity bonus accounting ([detail](queries/reactor.md#owner-reactor-diversity)) | No |
 
 **`GET /structs/reactor/{id}`** (`reactor-by-id`)
 
@@ -352,7 +356,11 @@ Response schema: block height (`height`)
 
 Response schema: module [params](../knowledge/mechanics/transactions.md)
 
-Per-entity query files also cover LCD families not expanded above: [grid](queries/grid.md), [infusion](queries/infusion.md), [struct-type](queries/struct-type.md), [struct-attribute](queries/struct-attribute.md), [planet-attribute](queries/planet-attribute.md), [guild-membership-application](queries/guild-membership-application.md), plus collateral/charter/validate on [guild](queries/guild.md), [provider](queries/provider.md), and [system](queries/system.md). The webapp catalog is [webapp/](webapp/), not the short list later on this page.
+**`GET /structs/vault/{ownerId}`** (`vault`)
+
+Response: `ownerId`, `address`, `provisioned` — the deterministic vault account of a player (`1-N`) or guild (`0-N`). Balances are read from `/cosmos/bank/v1beta1/balances/{address}`. See [queries/system.md](queries/system.md#vault).
+
+Per-entity query files also cover LCD families not expanded above: [grid](queries/grid.md), [infusion](queries/infusion.md), [struct-type](queries/struct-type.md), [struct-attribute](queries/struct-attribute.md), [planet-attribute](queries/planet-attribute.md), [guild-membership-application](queries/guild-membership-application.md), plus collateral/validate on [guild](queries/guild.md), [provider](queries/provider.md), and [system](queries/system.md). The webapp catalog is [webapp/](webapp/), not the short list later on this page.
 
 ---
 

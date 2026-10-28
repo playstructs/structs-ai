@@ -1,11 +1,11 @@
 ---
-title: "Hashing: proofs, planet clocks, guild charter"
-description: "Four struct-bound proofs plus the chain-global guild charter: input format, planet ore clocks, raid pause, and difficulty decay."
+title: "Hashing: proofs, planet clocks, raid pause"
+description: "The four struct-bound proofs: input format, integer difficulty decay, planet ore clocks, raid pause, and the permission bits that gate completion."
 ---
 
 # Hashing (Proof-of-Work)
 
-**Purpose**: The single canonical reference for the Structs proof-of-work hashing mechanism. Covers the four struct-bound hash types, the chain-global guild charter puzzle, the universal input format, the algorithm, age-based difficulty, planet ore clocks, raid pause, the permission model, and the CLI/client surfaces. If you only read one PoW doc, read this one. Build-specific framing lives in [building.md](building.md); guild founding lives in the [structs-guild skill](/skills/structs-guild/SKILL.html); strategy and job-tracking live in [async-operations.md](../../awareness/async-operations.md).
+**Purpose**: The single canonical reference for the Structs proof-of-work hashing mechanism. Covers the four struct-bound hash types, the universal input format, the algorithm, age-based difficulty, planet ore clocks, raid pause, the permission model, and the CLI/client surfaces. If you only read one PoW doc, read this one. Build-specific framing lives in [building.md](building.md); guild founding is a paid transaction with no proof-of-work (see the [structs-guild skill](/skills/structs-guild/SKILL.html)); strategy and job-tracking live in [async-operations.md](../../awareness/async-operations.md).
 
 ---
 
@@ -20,7 +20,7 @@ Four struct-bound game actions are not finalized by a simple transaction — the
 
 Each of these is a two-step action: an `initiate` (or equivalent state change) that starts a clock, followed by a `complete` message that carries a `proof` and a `nonce`. The chain re-derives the hash from on-chain state plus your nonce, checks it equals your proof, and checks it clears the current difficulty. Only then does the action finalize.
 
-A fifth puzzle, the **guild charter**, uses the same SHA-256 validator and the same decay formula, but it is **chain-global** (one race for the whole galaxy) and is **not** a `PermHash*` bit. See [Guild Charter](#guild-charter) below.
+These four are the only proof-of-work puzzles in the game. Founding a guild is a paid transaction (`guild-create`, 2,000,000 ualpha from the founder's vault), not a hash race; the `guild-charter` query and the `guildCharter*` params still exist in state but nothing consumes them.
 
 Hashing exists to make these high-value actions **cost real work or real time**, and to make that cost **decay with age**. A freshly initiated operation is effectively impossible to complete; an aged one is trivial. This is the engine behind the core tempo rule: **initiate early, compute later.** It is also what creates the ore-theft vulnerability window — refined Alpha is safe, but ore sits stealable for the entire ~34h refine clock. See [resources.md](resources.md) and [async-operations.md](../../awareness/async-operations.md).
 
@@ -32,7 +32,7 @@ All four share one algorithm and one validator. They differ only in the hash-inp
 
 | Type | Complete message | Keyed on | Clock lives on | Difficulty range source | Typical range |
 |------|------------------|----------|----------------|-------------------------|---------------|
-| Build | `MsgStructBuildComplete` | `structId` | the struct (`blockStartBuild`) | `StructType.BuildDifficulty` | 200–5,000 (per struct type) |
+| Build | `MsgStructBuildComplete` | `structId` | the struct (`blockStartBuild`) | `StructType.BuildDifficulty` | 10–5,000 (per struct type) |
 | Mine | `MsgStructOreMinerComplete` | `structId` | the **planet** (`planetBlockStartOreMine`) | `StructType.OreMiningDifficulty` | 14,000 (Ore Extractor) |
 | Refine | `MsgStructOreRefineryComplete` | `structId` | the **planet** (`planetBlockStartOreRefine`) | `StructType.OreRefiningDifficulty` | 28,000 (Ore Refinery) |
 | Raid | `MsgPlanetRaidComplete` | `fleetId` (+ target `planetId`) | the planet (`blockStartRaid`) | planet `PlanetaryShield` | 25 base + defense contributions |
@@ -68,12 +68,6 @@ where `{KEYWORD}` is one of `"BUILD"`, `"MINE"`, `"REFINE"`.
 hashInput = {fleetId} + "@" + {planetId} + "RAID" + {blockStart} + "NONCE" + {nonce}
 ```
 
-**Guild charter (chain id, two player ids, global anchor):**
-
-```
-hashInput = "CHAIN" + {chainId} + "|" + {solverPlayerId} + "@" + {founderPlayerId} + "GUILDCHARTER" + {anchor} + "NONCE" + {nonce}
-```
-
 Mine and refine still key the input on **`structId`**, but `{blockStart}` is the **planet** clock, not a per-struct attribute. Completing any extractor on a planet resets that shared mine clock for every extractor on the planet.
 
 ### Worked examples
@@ -83,17 +77,15 @@ Mine and refine still key the input on **`structId`**, but `{blockStart}` is the
 | Build | struct `5-1`, blockStart `1`, nonce `42` | `5-1BUILD1NONCE42` |
 | Mine | struct `14-5`, planet clock `1283900`, nonce `7` | `14-5MINE1283900NONCE7` |
 | Refine | struct `15-5`, planet clock `1290000`, nonce `7` | `15-5REFINE1290000NONCE7` |
-| Raid | fleet `4-5`, planet `6-10`, blockStart `1300000`, nonce `7` | `4-5@6-10RAID1300000NONCE7` |
-| Charter | chain `structstestnet-111`, solver `1-4`, founder `1-4`, anchor `1000`, nonce `7` | `CHAINstructstestnet-111\|1-4@1-4GUILDCHARTER1000NONCE7` |
+| Raid | fleet `9-5`, planet `2-10`, blockStart `1300000`, nonce `7` | `9-5@2-10RAID1300000NONCE7` |
 
 ### Universal format rules
 
 | Aspect | Convention |
 |--------|------------|
-| Separators | Literal keywords `BUILD` / `MINE` / `REFINE` / `RAID` / `GUILDCHARTER` and `NONCE`, concatenated with no extra delimiter |
-| Raid | `@` between `fleetId` and `planetId` |
-| Charter | `CHAIN{chainId}\|` prefix, then `{solver}@{founder}`, then `GUILDCHARTER{anchor}` |
-| Block height / anchor | Decimal string (Go `strconv.FormatUint(..., 10)`) — no zero-padding |
+| Separators | Literal keywords `BUILD` / `MINE` / `REFINE` / `RAID` and `NONCE`, concatenated with no extra delimiter |
+| Raid | `@` between `fleetId` and `planetId`; the fleet id is the canonical `9-<decimal>` with no zero-padding |
+| Block height | Decimal string (Go `strconv.FormatUint(..., 10)`) — no zero-padding |
 | Nonce | A **string** on the wire. The CLI/clients brute-force decimal integers (`"1"`, `"2"`, …) |
 | Proof | **Lowercase hex** SHA-256 digest, 64 chars, must equal the recomputed hash exactly (case-sensitive) |
 | Encoding | No base64, no raw bytes — `proof` and `nonce` are plain protobuf `string` fields |
@@ -129,17 +121,18 @@ Difficulty is **age-based** and drops logarithmically as the operation's clock a
 ```
 age = currentBlockHeight - blockStart
 
-if age <= 1:
+if age <= 1 or range <= 1:
     difficulty = 64                                  # effectively impossible
 else:
-    difficulty = 64 - floor( log10(age) / log10(range) * 63 )
-    difficulty = max(difficulty, 1)                  # never below 1
+    e          = max { k in 0..63 : range^k <= age^63 }   # exact integer arithmetic
+    difficulty = 64 - e                              # never below 1
 ```
 
 - `age` is in blocks (~6 sec/block).
-- `range` is the per-type difficulty source from the table above (`BuildDifficulty`, `OreMiningDifficulty`, `OreRefiningDifficulty`, the planet's `PlanetaryShield`, or params `guildCharterDifficultyRange` default **2,500,000**).
+- `range` is the per-type difficulty source from the table above (`BuildDifficulty`, `OreMiningDifficulty`, `OreRefiningDifficulty`, or the planet's `PlanetaryShield`).
 - At `age <= 1` the difficulty is pinned to 64, so you cannot complete on the same block you initiated.
 - A larger `range` makes the curve fall more slowly — bigger operations stay hard longer.
+- The integer form is mathematically `64 − floor(63·log(age)/log(range))`, evaluated with big-integer powers rather than floating-point logarithms so every node computes the same answer. A client that uses `log10` will agree except at the exact boundary blocks, where floating-point rounding can be off by one — always re-check difficulty against the chain before submitting, or hash one block later than the boundary.
 
 ### The difficulty cliff
 
@@ -157,17 +150,19 @@ The jump between **D=8 and D=9** is the single most important tactical fact in P
 |-------|---------|-----|-----|-------------------|
 | 200 | Command Ship build | ~11 min | ~14 min | ~17 min |
 | 250 | Starfighter build | ~12 min | ~17 min | ~20 min |
-| 700 | Ore Ext/Ref build | ~34 min | ~46 min | ~57 min |
+| 10 | Ore Extractor build | ~1 min | ~1 min | ~1 min |
+| 700 | Ore Refinery build | ~34 min | ~46 min | ~57 min |
 | 2,880 | PDC build | ~2.0 hr | ~2.9 hr | ~3.7 hr |
 | 5,000 | World Engine build | ~3.2 hr | ~4.9 hr | ~6.4 hr |
 | 14,000 | Mine | ~8.1 hr | ~12.7 hr | ~17.2 hr |
 | 28,000 | Refine | ~15.0 hr | ~24.4 hr | ~33.7 hr |
-| 2,500,000 | Guild charter (solo) | ~days | ~weeks | ~three weeks |
+
+At `range = 10` the curve is so short that difficulty is already **1** once the Extractor is 10 blocks old; `-D` is irrelevant for it.
 
 To compute for any range and target D:
 
 ```
-age_blocks   = 10 ^ ( (64 - D) * log10(range) / 63 )
+age_blocks   = ceil( range ^ ((64 - D) / 63) )      # smallest age with range^(64-D) <= age^63
 time_seconds = age_blocks * 6
 ```
 
@@ -176,7 +171,7 @@ time_seconds = age_blocks * 6
 The same operation is impossible or instant depending only on how old its clock is. This is why timing dominates PoW.
 
 - **Fresh anchor (`age <= 1`)**: difficulty is pinned to **64**. The proof is rejected — you cannot complete on or near the block you initiated. A brand-new build sits here.
-- **Aged anchor**: difficulty falls to **1** once the clock reaches `range` blocks old, and stays there. For a Command Ship build (`range = 200`), `age = 200` blocks (~20 min) gives `difficulty = 64 - floor(log10(200)/log10(200)*63) = 64 - 63 = 1`. For a mine (`range = 14,000`), difficulty hits 1 at `age = 14,000` blocks (~23 hr). A struct you initiated and left untouched for tens of thousands of blocks is at difficulty 1 — the nonce is found in a handful of attempts (milliseconds).
+- **Aged anchor**: difficulty falls to **1** once the clock reaches `range` blocks old, and stays there. For a Command Ship build (`range = 200`), `age = 200` blocks (~20 min) gives `200^63 <= 200^63`, so `e = 63` and `difficulty = 1`. For a mine (`range = 14,000`), difficulty hits 1 at `age = 14,000` blocks (~23 hr). A struct you initiated and left untouched for tens of thousands of blocks is at difficulty 1 — the nonce is found in a handful of attempts (milliseconds).
 
 So an old, abandoned anchor is a *cheaper* proof than a fresh one: initiate the moment you can, then come back later when the difficulty has decayed. A raid keyed to the target planet's `blockStartRaid` works the same way — the longer that planet has been raid-vulnerable, the cheaper the raid proof.
 
@@ -193,8 +188,7 @@ The age that drives difficulty is measured from a clock specific to each operati
 | Build | `blockStartBuild` | struct | Set when the struct is created (build initiated). One-shot per struct. **The hash input uses `blockStartBuild`, NOT the current block height** — anchoring on the current block produces an invalid proof. |
 | Mine | `planetBlockStartOreMine` | **planet** | Set when the **first** extractor on that planet goes online (`oreMiningActiveQuantity` 0→1). Additional extractors increment the quantity and leave the accrued age alone. **Reset after each successful mine** (any extractor) so every extractor on the planet re-enters the full decay. Deactivate decrements quantity; the clock is left in place. |
 | Refine | `planetBlockStartOreRefine` | **planet** | Same pattern as mining, with `oreRefiningActiveQuantity`. |
-| Raid | `blockStartRaid` | planet | Set when the defending Command Ship becomes raid-vulnerable. **`0` means the planet is not raidable** — a raid proof is rejected outright until the clock is armed (this prevents a trivial difficulty collapse). |
-| Charter | `Guild/charterAnchor/` | chain | Height of the last **proof-founded** guild. Query `guild-charter`. Every winning proof **moves the anchor**, so every nonce mined against the old value dies at once. |
+| Raid | `blockStartRaid` | planet | Set when the defending Command Ship becomes raid-vulnerable. **`0` means the planet is not raidable** — a raid proof is rejected outright until the clock is armed (this prevents a trivial difficulty collapse). A **completed** (mined-out) planet is never raidable and cannot be reached by `fleet-move`. |
 
 Because mining and refining clocks reset every cycle, a long-running extractor/refinery re-ages from scratch after each completion — you re-wait the full decay each time. Because those clocks are **shared per planet**, completing on extractor A resets extractor B's remaining wait too.
 
@@ -222,39 +216,9 @@ Do not launch or retry `struct-ore-mine-compute` / `struct-ore-refine-compute` w
 
 ---
 
-## Guild Charter
-
-Founding a guild by proof is a **chain-global race**, not a per-player job.
-
-Query state:
-
-```bash
-structsd query structs guild-charter
-```
-
-That returns the current **anchor** (height of the last proof-founded guild) and the live **difficulty range** (param `guildCharterDifficultyRange`, default **2,500,000** — roughly three weeks for a lone miner, shorter for a pool). Age is `currentHeight - anchor`.
-
-Mine and broadcast:
-
-```bash
-structsd tx structs guild-create-compute -D 3 --from [key] --gas auto --gas-adjustment 1.5 -y -- [reactor-id]
-```
-
-Flags: `--endpoint`, `--entry-substation-id`, `--consent-file` (JSON from `guild-charter-consent` to found for another player). The signer is the **solver**; `founderPlayerId` is who owns the guild (the signer, unless consent names someone else).
-
-The proof binds `chainId`, solver, founder, and anchor so a stolen mempool nonce cannot be redirected and cannot cross chains. When anyone wins, the anchor moves to the current height and **every other nonce dies**. That is the race working as intended — restart from the new `guild-charter` query.
-
-The charter is **not** gated by `PermHash*`. The entitlement path (`guild-create` without proof) is a different message: a one-time reactor right after the validator has been bonded for `guildCharterReactorAge` (default 432,000 blocks, ~30 days). Third-party consent is accepted **only** on the proof path, because only that path moves the anchor and makes the signature single-use.
-
-A founder who **owns** a guild must transfer it before founding another (`is_owner`). Founding leaves the founder's current guild if they are only a member.
-
-See the [structs-guild skill](/skills/structs-guild/SKILL.html) for the full founding procedure.
-
----
-
 ## Permissions Relating to Hashing
 
-**Hashing is *not* permissionless.** Completing a struct-bound proof is gated at two independent layers, and each of the four types requires its **own** matching permission bit (not all four). The guild charter uses `MsgGuildCreate` instead of a `PermHash*` bit.
+**Hashing is *not* permissionless.** Completing a struct-bound proof is gated at two independent layers, and each of the four types requires its **own** matching permission bit (not all four).
 
 ### Layer 1 — Address permission (ante handler)
 
@@ -318,18 +282,16 @@ The ante also throttles proofs to **one attempt per object per block** (keyed by
 | `struct-ore-mine-compute [struct id]` | Same, for mining | same |
 | `struct-ore-refine-compute [struct id]` | Same, for refining | same |
 | `planet-raid-compute [fleet id]` | Same, for raids | same |
-| `guild-create-compute [reactor id]` | Mines the global charter puzzle and broadcasts `MsgGuildCreate` | `-D` plus `--endpoint`, `--entry-substation-id`, `--consent-file` |
-| `guild-charter-consent [reactor id]` | Offline founder consent JSON for a third-party solver | `--endpoint`, `--entry-substation-id` |
 | `struct-build-complete [struct id] [proof] [nonce]` | Submits a proof you computed externally | standard tx flags (no `-D`) |
 | `struct-ore-mine-complete [struct id] [proof] [nonce]` | Manual mine completion | same |
 | `struct-ore-refine-complete [struct id] [proof] [nonce]` | Manual refine completion | same |
 | `planet-raid-complete [fleet id] [proof] [nonce]` | Manual raid completion | same |
 
-The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dropped to that level. The CLI polls block height and sleeps until the target is reached. **Use `-D 3`** for instant, zero-waste hashing on struct-bound jobs. Charter at range 2,500,000 stays hard for weeks; `-D 3` still means "wait for cheap," not "fast." The `*-compute` commands auto-submit hours (or weeks) later, so they always run in the auto-approved form — see [conventions](/skills/conventions.html) and [SAFETY.md](../../SAFETY.md).
+The **`-D` flag** tells `*-compute` not to start hashing until difficulty has dropped to that level. The CLI polls block height and sleeps until the target is reached. **Use `-D 3`** for instant, zero-waste hashing. The `*-compute` commands auto-submit minutes to days later, so they always run in the auto-approved form — see [conventions](/skills/conventions.html) and [SAFETY.md](../../SAFETY.md).
 
 ### Client — the webapp TaskManager
 
-The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the same `64 - floor(log10(age)/log10(range)*63)` difficulty formula, and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
+The web client implements the **identical** scheme: a `TaskManager` spawns a Web Worker per task that loops `sha256(prefix + nonce)` until the leading-hex-zero check passes, then submits the matching `Msg*Complete` (proof = the hex digest, nonce = decimal string). It builds the same input strings (`{id}{KEYWORD}{blockStart}NONCE{nonce}`, raid uses `@`), uses the floating-point form of the same difficulty formula (`64 - floor(log10(age)/log10(range)*63)`), and re-checks difficulty before submitting so a stale proof restarts rather than failing on-chain. Any conformant client — CLI, webapp, or your own bot — interoperates because the input format and algorithm are fixed.
 
 Its wait policy is its own choice, not part of the protocol: the worker sleeps in 10-second polls until difficulty reaches **10 or below**, rather than the `-D 3` this guide recommends for the CLI. Both are conformant — a client may start hashing at any difficulty it likes. See [develop/client/work-and-pow.md](../../develop/client/work-and-pow.md) for the full client-side implementation.
 
@@ -341,13 +303,13 @@ Several other game flows use the words "proof" or "hash" but are **not** this SH
 
 | Flow | Mechanism | Notes |
 |------|-----------|-------|
-| Address registration | **secp256k1 signature** over `PLAYER{playerId}ADDRESS{address}` | A signature proof of key ownership, not a difficulty hash |
-| Guild-join proxy / signup | **secp256k1 signature** (`proofPubKey` + `proofSignature`) | Authorization, not PoW |
-| Guild charter **consent** | **secp256k1 signature** over `GuildCharterConsentInput` | Lets a solver found for you; the founding itself is still the charter PoW |
+| Address registration | **secp256k1 signature** over `CHAIN{chainId}|REGISTERADDRESSPLAYER{playerId}ADDRESS{address}NONCE{n}` | A signature proof of key ownership with a per-address nonce (`proofNonce` on `query structs address`), not a difficulty hash |
+| Guild-join proxy / signup | **secp256k1 signature** over `GUILD{guildId}ADDRESS{address}NONCE{n}` (`proofPubKey` + `proofSignature`) | Authorization, not PoW |
+| Guild founding | **payment** — 2,000,000 ualpha from the founder's vault | No proof field is accepted; legacy charter fields are rejected |
 | Combat randomness (`IsSuccessful`) | `hash(blockHash, playerNonce) % denominator` | Uses hashing for RNG, but is not a submitted proof |
-| Planet explore / allocation / player create (`ReactorInfuse`) | No proof at all | Single-step transactions |
+| Planet explore / allocation / player create (a native `staking delegate` from a fresh funded key) | No proof at all | Single-step transactions |
 
-The submitted-SHA-256-proof mechanism described in this doc is **build, mine, refine, raid, and guild charter**. Charter consent, address registration, and proxy join are signatures, not difficulty hashes.
+The submitted-SHA-256-proof mechanism described in this doc is **build, mine, refine, and raid**. Address registration and proxy join are signatures, not difficulty hashes.
 
 ---
 
@@ -364,15 +326,13 @@ For verification against the chain and client implementations.
 | Mine handler | `x/structs/keeper/msg_server_struct_ore_miner_complete.go` |
 | Refine handler | `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` |
 | Raid handler | `x/structs/keeper/msg_server_planet_raid_complete.go` |
-| Guild charter work/consent preimages | `x/structs/types/guild_charter.go` |
-| Guild create (proof + entitlement) | `x/structs/keeper/msg_server_guild_create.go` |
+| Guild create (paid, no proof) | `x/structs/keeper/msg_server_guild_create.go`, `guild_creation_payment.go` |
 | Planet ore clocks + raid pause | `x/structs/keeper/planet_cache.go` (`OreMiningActivate`, `PauseOreClocksForRaid`) |
-| Charter query | `x/structs/keeper/query_guild_charter.go` |
 | Object permission checks | `x/structs/keeper/player_cache.go` — `CanBuildHashedBy` / `CanMineHashedBy` / `CanRefineHashedBy` / `CanRaidHashedBy` |
 | Address permission map (ante) | `app/ante/maps.go` (PoW message → `PermHash*`) |
 | Proof throttle | `app/ante/throttle.go` (`ProofMessages`) |
 | Permission bit constants | `x/structs/types/permissions.go` (`PermHashBuild/Mine/Refine/Raid/All`) |
-| Compute CLI | `x/structs/client/cli/tx_struct_build_compute.go` (and mine/refine/raid/guild-create-compute equivalents) |
+| Compute CLI | `x/structs/client/cli/tx_struct_build_compute.go` (and `tx_struct_mine_compute.go`, `tx_struct_refine_compute.go`, `tx_planet_raid_compute.go`) |
 | Complete CLI (autocli) | `x/structs/module/autocli.go` |
 | Message protos | `proto/structs/structs/tx.proto` (`MsgStructBuildComplete`, etc.) |
 
@@ -396,7 +356,7 @@ For verification against the chain and client implementations.
 - [fleet.md](fleet.md) — Visiting-fleet queue that arms `under_raid`
 - [resources.md](resources.md) — Ore vulnerability window driven by the refine clock
 - [permissions.md](permissions.md) — Full 25-bit permission model and handler reference
-- [structs-guild skill](/skills/structs-guild/SKILL.html) — Charter vs entitlement founding
+- [structs-guild skill](/skills/structs-guild/SKILL.html) — Paid guild founding (no proof-of-work)
 - [schemas/formulas.md](../../schemas/formulas.md) — Difficulty formulas alongside other game math
 - [api/integration-notes.md](../../api/integration-notes.md) — Live data-shape gotchas for integrators (endpoints, event detail, field-name traps)
 - [conventions](/skills/conventions.html) — Proof-of-work policy and the `-D 3` default

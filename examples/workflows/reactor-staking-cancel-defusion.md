@@ -1,55 +1,40 @@
 ---
-description: A worked workflow for cancelling an in-progress undelegation and restoring the original delegation.
+description: A worked workflow for cancelling an in-flight reactor defusion — finding the unbonding entry's creation height, re-bonding the stake, and verifying capacity returns.
 ---
 
 # Reactor Staking - Cancel Defusion Workflow
 
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Category**: economic
-**Description**: Detailed workflow for canceling an ongoing undelegation process
+**Description**: Reverse a pending `reactor-defuse` by re-bonding some or all of an unbonding entry before it matures.
+
+Mechanics: [energy.md](../../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) · Procedure: [structs-energy skill](/skills/structs-energy/SKILL.html) · Field notes: [schemas/actions.md](../../schemas/actions.md#msgreactorcanceldefusion)
 
 ---
 
-## Workflow: Reactor Cancel Defusion to Restore Delegation
+## What happens
 
-### Step 1: Check Prerequisites
+`reactor-cancel-defusion` wraps Cosmos `CancelUnbondingDelegation`: it takes `amount` out of the unbonding entry created at `creation height` and re-delegates it to the same validator. Capacity returns immediately. It only works while the entry is still pending — once matured, the Alpha is simply in your vault and you would `reactor-infuse` again instead.
 
-Verify reactor is in undelegating state.
+## Workflow
 
-**Player Online** -- `GET /structs/player/{playerId}`:
+### Step 1: Find the entry
 
-| Field | Expected Value |
-|-------|----------------|
-| `player.online` | `true` |
+```
+structsd query staking unbonding-delegation {vault-address} {validator-address}
+```
 
-**Reactor Exists** -- `GET /structs/reactor/{reactorId}`:
+Read `entries[]`: each has `creation_height`, `completion_time`, and `balance`. Pick the entry to reverse; `amount` must be ≤ its `balance`. (`vault-address` is `structsd query structs vault {ownerId}` → `address`; the validator is `structsd query structs reactor {reactorId}` → `validator`.)
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.owner` | `{playerId}` |
+### Step 2: Submit
 
-**Delegation Status** -- `GET /structs/reactor/{reactorId}`:
+```
+structsd tx structs reactor-cancel-defusion --from {key} --gas auto --gas-adjustment 1.5 -- {validator-address} {amount}ualpha {creation-height}
+```
 
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `undelegating` |
+Same `--owner-id` / `--delegator-address` selection as infuse; the permission is `PermTokenInfuse` on the funding owner (you are re-bonding).
 
-> **Note**: Can only cancel if status is `undelegating`.
-
-**Undelegation Period** -- `GET /structs/reactor/{reactorId}`:
-
-| Field | Note |
-|-------|------|
-| `reactor.undelegationPeriod` | Can cancel at any point during undelegation period |
-
-### Step 2: Submit Cancel Defusion Transaction
-
-Submit `MsgReactorCancelDefusion` transaction to cancel undelegation.
-
-**Method**: `POST`
-**Endpoint**: `/cosmos/tx/v1beta1/txs`
-
-**Request Body**:
+Broadcast body:
 
 ```json
 {
@@ -58,107 +43,46 @@ Submit `MsgReactorCancelDefusion` transaction to cancel undelegation.
       {
         "@type": "/structs.structs.MsgReactorCancelDefusion",
         "creator": "structs1...",
-        "reactorId": "3-1"
+        "validator_address": "structsvaloper1...",
+        "amount": { "denom": "ualpha", "amount": "4000000" },
+        "creation_height": "1284410"
       }
     ]
   }
 }
 ```
 
-**Expected Response**:
+### Step 3: Confirm and verify
 
-```json
-{
-  "txResponse": {
-    "code": 0,
-    "txhash": "transaction_hash"
-  }
-}
-```
+Poll `GET /cosmos/tx/v1beta1/txs/{txhash}` for `code: 0`; the Cosmos `cancel_unbonding_delegation` event rides along with `structs.structs.EventInfusion` and `EventGrid`.
 
-### Step 3: Wait for Transaction Confirmation
-
-Wait for transaction to be included in a block.
-
-**Polling**:
-
-| Parameter | Value |
-|-----------|-------|
-| Endpoint | `GET /cosmos/tx/v1beta1/txs/{txhash}` |
-| Interval | 2 seconds |
-| Max Attempts | 30 |
-| Expected Status | confirmed |
-
-### Step 4: Verify Delegation Restored
-
-Query reactor to confirm delegation is active again.
-
-**Endpoint**: `GET /structs/reactor/{reactorId}`
-
-**Expected Fields**:
-
-| Field | Expected Value |
-|-------|----------------|
-| `reactor.delegationStatus` | `active` |
-| `reactor.delegationAmount` | original amount (pre-undelegation value) |
-| `reactor.undelegationCancelled` | `true` |
-
-> **Note**: Delegation amount should be restored to pre-undelegation value.
-
-### Step 5: Verify No Alpha Matter Returned
-
-Confirm Alpha Matter was not returned (undelegation cancelled).
-
-**Endpoint**: `GET /structs/player/{playerId}`
-
-**Expected Fields**:
-
-| Field | Expected Value |
-|-------|----------------|
-| `player.alphaMatter` | unchanged |
-
-> **Note**: Alpha Matter remains staked since undelegation was cancelled.
+| Check | Query | Expect |
+|-------|-------|--------|
+| Capacity restored | `structsd query structs player {playerId}` → `gridAttributes.capacity` | Back up by `amount × (1 − commission)` (+ bonus delta) |
+| Entry shrunk or gone | `structsd query staking unbonding-delegation …` | `balance` reduced by `amount`, or entry removed |
+| Delegation restored | `structsd query staking delegation {vault-address} {validator-address}` | `balance.amount` up by `amount` |
+| Vault unchanged | `playerInventory.rocks` | Unchanged — the Alpha never left bonded state |
 
 ---
 
 ## Error Handling
 
-| Error | Code | Description | Recovery | Retry |
-|-------|------|-------------|----------|-------|
-| Player Offline | (reject / offline) | Player offline: load exceeds capacity | Shed load or add capacity | Yes (after power fix) |
-| Not Undelegating | `INVALID_STATE` | Reactor is not in undelegating state | Check reactor delegation status -- must be `undelegating` | No |
-| Already Active | `INVALID_STATE` | Reactor already has active delegation | No action needed -- delegation is already active | No |
-| Transaction Failed | `GENERAL_ERROR` | Transaction failed to broadcast or execute | Check transaction response for error details | Yes (5s delay) |
+| Error | Cause | Recovery |
+|-------|-------|----------|
+| `unbonding delegation entry is not found at block height` | Wrong `creation-height` | Re-read `entries[].creation_height` |
+| `amount is greater than the unbonding delegation entry balance` | `amount` > entry balance | Lower the amount |
+| entry already matured | Completion time passed | Nothing to cancel; `reactor-infuse` from the vault instead |
+| player offline | Load > capacity | Shed load first |
+| `vault_owner_mismatch` | `--owner-id` and `--delegator-address` disagree | Drop one flag |
 
 ---
 
-## Permission Checking
+## Example
 
-### Required Permissions
+Defused 4,000,000ualpha at height 1284410 by mistake; cancel the full entry:
 
-| Permission | Description | Check |
-|------------|-------------|-------|
-| Player Ownership | Player must own the reactor | `reactor.owner === playerId` |
-| Reactor Access | Player must have access to reactor | `GET /structs/permission/object/{reactorId}` |
+```
+structsd tx structs reactor-cancel-defusion --from ferro --gas auto --gas-adjustment 1.5 -- structsvaloper1abc... 4000000ualpha 1284410
+```
 
----
-
-## Examples
-
-### Cancel Early Undelegation
-
-- **Scenario**: Cancel undelegation shortly after starting
-- **Undelegation Period**: 100 blocks remaining
-- **Expected Result**: `delegationStatus: active`, `undelegationCancelled: true`
-
-### Cancel Late Undelegation
-
-- **Scenario**: Cancel undelegation near end of period
-- **Undelegation Period**: 1 block remaining
-- **Expected Result**: `delegationStatus: active`, `undelegationCancelled: true`
-
-### Change of Mind
-
-- **Scenario**: Player changes mind about undelegating
-- **Description**: Cancel undelegation to restore active delegation
-- **Expected Result**: `delegationStatus: active`, `delegationAmount: restored_to_original`
+Capacity is back the same block; `unbonding-delegation` shows no entries.

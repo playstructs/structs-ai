@@ -14,7 +14,7 @@ description: "Ore, Alpha Matter, and energy: resource types, how they flow, conv
 |----------|------|-----------|------------|----------|
 | Alpha Ore (unmined) | grams | No | Required | Planet — `buriedOre` (`BuriedOreAttributeId`); extracted by Ore Extractor |
 | Alpha Ore (mined) | grams | **Yes** | Required | Player — `storedOre` (`StoredOreAttributeId`); stolen in raids |
-| Alpha Matter | grams | No | Output | Player inventory (on-chain) |
+| Alpha Matter | grams | No | Output | The owner's **vault** (`ualpha`; read as `playerInventory.rocks` or `bank balances [vault-address]`) |
 | Energy | Watts | N/A | N/A | Ephemeral, shared across structs |
 
 These are **different attribute ids on different objects**. LCD/query payloads often expose both as `gridAttributes.ore`. The planet's `ore` and the player's `ore` are not the same field even though they share a display name. A raider checking loot must read the **player** field (`storedOre` / `StoredOreAttributeId`).
@@ -52,7 +52,7 @@ These are **different attribute ids on different objects**. LCD/query payloads o
 
 | Facility | Rate | Risk |
 |----------|------|------|
-| Reactor | 1g = 1 kW | Low |
+| Reactor | 1g = 1 kW before commission (~96% to you) plus a diversity bonus of up to +50% when stake is spread across 10+ reactors | Low |
 | Field Generator | 1g = 2 kW | High |
 | Continental Power Plant | 1g = 5 kW | High |
 | World Engine | 1g = 10 kW | High |
@@ -95,7 +95,7 @@ This vulnerability window is the primary driver of PvP conflict in Structs. Raid
 |-------|----------|-----------|--------|
 | Unmined ore (`buriedOre` / `BuriedOreAttributeId`) | Planet | No | Mine with Ore Extractor → moves to player `storedOre` |
 | Mined ore (`storedOre` / `StoredOreAttributeId`) | Player | **Yes** | Refine immediately — this is what raiders steal |
-| Alpha Matter | Player | No | Secure — cryptographically bound to owner |
+| Alpha Matter | Owner's vault | No | Secure — refined Alpha is deposited in the player vault, which raids cannot touch; spend it from there (infusions, agreements, guild founding) or `player-send` it to a key |
 
 **Strategy**: Refine ore as soon as mined to minimize raid exposure. Maintain a 20-30% Alpha Matter reserve for emergencies.
 

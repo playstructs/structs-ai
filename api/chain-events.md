@@ -7,7 +7,7 @@ permalink: /api/chain-events
 # Chain events (Cosmos / Tendermint)
 
 **Category**: api
-**Verified against**: structsd `48686a9` (v0.21.0, 2026-08-19)
+**Verified against**: structsd `96cea3a` (v0.22.0)
 **Source**: `proto/structs/structs/events.proto` and keeper `EmitTypedEvent` sites
 
 These are the events **structsd** writes onto the Tendermint ABCI log. They are not GRASS NATS messages and they are not Guild API `planet-activity` rows. Sync-state reads this log and *then* writes PostgreSQL; GRASS and the REST activity feed are that projection, not the original events.
@@ -125,6 +125,17 @@ On block height 1 the keeper also **replays genesis** (`EventAllGenesis`) as the
 | `EventPermission` | `structs.structs.EventPermission` | [`permissionRecord`](../knowledge/mechanics/permissions.md) |
 | `EventGuildRankPermission` | `structs.structs.EventGuildRankPermission` | [`guildRankPermissionRecord`](../knowledge/mechanics/permissions.md#guild-rank-permission-system) |
 
+### Vaults, reactors, staking
+
+| Proto | `type` | When | Payload |
+|-------|--------|------|---------|
+| `EventVaultAddress` | `structs.structs.EventVaultAddress` | A player or guild vault is first resolved (player creation, guild creation, genesis replay) | `eventVaultAddressDetail`: `ownerId`, [`vaultAddress`](../knowledge/mechanics/energy.md#vaults-where-game-alpha-lives), `accountNumber`, `accountCreated` |
+| `EventOwnerReactorDiversity` | `structs.structs.EventOwnerReactorDiversity` | An owner's reactor portfolio changes (infuse, defuse, migration, slash) | `diversity`: `ownerId`, `power`, `squaredPower` (strings), `appliedBonus` — the live [diversity bonus](../knowledge/mechanics/energy.md#the-owner-diversity-bonus) accounting; a zero row clears it |
+| `EventOwnerReactorDiversityReset` | `structs.structs.EventOwnerReactorDiversityReset` | Genesis replay | Empty; the derived projection is being fully replaced |
+| `EventReactorCommissionRevision` | `structs.structs.EventReactorCommissionRevision` | A reactor is slashed or its slash is reconciled | `reactorId`, `slashRevision`, `reconciledSlashRevision` — unequal revisions gate commission admission; manual `reactor-restart` never advances `slashRevision` |
+| `EventReactorCommissionRevisionReset` | `structs.structs.EventReactorCommissionRevisionReset` | Genesis replay | Empty; consume with the following revision rows atomically |
+| `EventReactorStakeCap` | `structs.structs.EventReactorStakeCap` | [Stake cap](../knowledge/mechanics/energy.md#the-reactor-stake-cap) activates or is reconfigured; genesis replay | `active`, `capBps`, `minValidators` |
+
 ### Combat and raids
 
 | Proto | `type` | When | Payload |
@@ -139,17 +150,18 @@ GRASS `struct_attack` can be a **stub** (~8 KB NATS cap). The chain `EventAttack
 | Proto | `type` | When | Payload |
 |-------|--------|------|---------|
 | `EventOreMine` | `structs.structs.EventOreMine` | Ore miner complete | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/resources.md) |
-| `EventAlphaRefine` | `structs.structs.EventAlphaRefine` | Refinery complete | same shape ([`amount`](../knowledge/mechanics/resources.md#alpha-matter) is Alpha) |
-| `EventAlphaInfuse` | `structs.structs.EventAlphaInfuse` | Generator or reactor infuse | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964) |
+| `EventAlphaRefine` | `structs.structs.EventAlphaRefine` | Refinery complete | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/resources.md#alpha-matter) (Alpha), [`vaultAddress`](../knowledge/mechanics/energy.md#vaults-where-game-alpha-lives) — the account the Alpha was minted into |
+| `EventAlphaInfuse` | `structs.structs.EventAlphaInfuse` | Generator or reactor infuse | [`playerId`](../schemas/entities/player.md), [`primaryAddress`](queries/address.md), [`amount`](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964), `vaultAddress` — the vault the stake or fuel was taken from |
 | `EventOreTheft` | `structs.structs.EventOreTheft` | Raid complete steals ore | victim / thief [`playerId`](../schemas/entities/player.md) and addresses, [`amount`](../knowledge/mechanics/resources.md#the-ore-vulnerability-window) |
 | `EventOreMigrate` | `structs.structs.EventOreMigrate` | Primary address change | [`playerId`](../schemas/entities/player.md), new/old primary, [`amount`](../knowledge/mechanics/resources.md) |
-| `EventHashSuccess` | `structs.structs.EventHashSuccess` | PoW complete | `callerAddress`, [`category`](../knowledge/mechanics/hashing.md) (`mine`, `refine`, `build`, `raid`, `guild_charter`), `difficulty`, [`objectId`](../knowledge/entities/entity-relationships.md#id-format); [`planetId`](../schemas/entities/planet.md) is set on raid completes |
+| `EventHashSuccess` | `structs.structs.EventHashSuccess` | PoW complete | `callerAddress`, [`category`](../knowledge/mechanics/hashing.md) (`mine`, `refine`, `build`, `raid`), `difficulty`, [`objectId`](../knowledge/entities/entity-relationships.md#id-format); [`planetId`](../schemas/entities/planet.md) is set on raid completes |
 
 ### Guild bank
 
 | Proto | `type` | Notes |
 |-------|--------|--------|
-| `EventGuildBankMint` | `structs.structs.EventGuildBankMint` | [`guildId`](../schemas/entities/guild.md), [`amountAlpha`](../knowledge/economy/guild-banking.md), `amountToken`, [`playerId`](../schemas/entities/player.md) |
+| `EventGuildBankMint` | `structs.structs.EventGuildBankMint` | [`guildId`](../schemas/entities/guild.md), [`amountAlpha`](../knowledge/economy/guild-banking.md), `amountToken`, [`playerId`](../schemas/entities/player.md). **Not** emitted by `guild-create`: the founding 1,000,000-collateral / 1,000,000-token issuance is settled by direct bank transfers, so the first mint event a new guild emits is its first explicit `guild-bank-mint` |
+| `EventGuildRankPurchase` | `structs.structs.EventGuildRankPurchase` | `guildId`, `playerId`, `previousRank`, `rank`, `price`, `denom` (`uguild.<id>`), `joined` (`true` on `guild-membership-join-by-rank-purchase`). See [rank sales](/skills/structs-guild/SKILL.html) |
 | `EventGuildBankRedeem` | `structs.structs.EventGuildBankRedeem` | [`amountAlpha`](../knowledge/economy/guild-banking.md) is **net** after `fee` |
 | `EventGuildBankConvert` | `structs.structs.EventGuildBankConvert` | [`amountAlpha`](../knowledge/economy/guild-banking.md) is **gross** ualpha into collateral; `fee` is the convert-in cut |
 | `EventGuildBankConvertToken` | `structs.structs.EventGuildBankConvertToken` | Cross-guild: also emits Redeem + Convert legs |
@@ -198,6 +210,7 @@ These messages exist in `events.proto` and are **not** currently passed to `Emit
 | `EventPlayerResumed` | Same |
 | `EventProviderRevokeGuild` | No emit site; grant/revoke keeper methods were removed |
 | `EventAlphaDefuse` | Defusion still happens; this event is unused |
+| `EventVaultDelegationMigration`, `EventVaultUnbondingMigration`, `EventVaultRedelegationMigration`, `EventVaultVestingMigration` | Defined for the one-time stake/vesting relocation into vaults at the v0.22.0 upgrade height. No message handler emits them; indexers only ever see them in that upgrade block, if at all |
 
 Do not subscribe to these as a live signal.
 

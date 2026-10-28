@@ -19,7 +19,7 @@ CLI, GRASS streaming, Guild Stack). Read this to understand what each tool does.
 
 ## Prerequisites
 
-The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](/skills/structsd-install/SKILL.html)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.23+).
+The `structsd` binary must be installed before you can play. If `structsd version` fails, use the **[`structsd-install`](/skills/structsd-install/SKILL.html)** skill to either download a prebuilt release binary or build from source via the Makefile (Go 1.27.3+).
 
 ---
 
@@ -179,7 +179,7 @@ The bearer token is generated on first launch and stored with the app's config. 
 |------|---------|
 | `structs_dashboard` | Full player overview: power, charge (with per-action readiness), resources, structs + HP, hash tasks, recent events. `player_id` defaults to the logged-in player |
 | `structs_hash` | Proof-of-work tasks — `list` / `start` (`task_type` `MINE`, `REFINE`, `BUILD`, `RAID`) / `progress` / `stop` / `config`. Omitted MINE/REFINE `block_start` resolves from the planet ore clock; BUILD/RAID require the real anchor |
-| `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Guild charter, bank convert, and `reactor-restart` are CLI-only |
+| `structs_action` | Execute one game action with preflight checks: `explore`, `build`, `mine`, `refine`, `attack`, `defend`, `activate`, `deactivate`, `move_fleet`, `transfer`, `deploy`, `raid`, `update_primary_reactor`, `resync`. Guild founding, rank sales, bank convert, vault transfers, and `reactor-restart` are CLI-only |
 | `structs_intel` | Strategic intelligence + perception. Queries include `raid_readiness` (per-player/per-ambit fleet coverage) and `battle_log` (`category:"all"` supported), plus `whoami`, `intents`, `ruleset`, `simulate`, `strike_options`, planning/economy/trend/scout and raw entity reads |
 | `structs_policy` | Standing orders — `list` / `set` / `remove` / `log` over `auto_refine`, `power_alert`, `combat_alert`, `agent_ui`, `auto_counterattack`, `auto_retreat_if_cmd_below`, `auto_rebuild_losses`, `rules_of_engagement`, `primary_home_guard`, `board_auto_open`, `watchdog_remediate` |
 | `structs_events` | Long-poll event feed (`wait_secs`) with `mine_only`, `team` (whole roster), `threats_only` (server-side threat classifier — a ready-made under-attack detector), `category`, `since`/`next_cursor`. `tx_settled` is an MCP action-bridge receipt, not guaranteed for PoW auto-completions |
@@ -239,6 +239,7 @@ Common pitfalls when using `structsd` directly:
 |--------|---------|-----|
 | **`--` separator** | Entity IDs like `3-1` or `4-5` are parsed as flags by the Cobra CLI parser | Place `--` after all flags and before positional args: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10` |
 | **reactor-infuse address** | Takes the **validator address** (`structsvaloper1...`), not the reactor ID (`3-1`) | Look up the reactor's `validator` field first: `structsd query structs reactor [id]` |
+| **Where the Alpha comes from** | Infusion, generator fuel, agreements, Central Bank and rank purchases pay from your **vault**, not the signing key's balance | Fund the vault (`player-send` to `structsd query structs vault [player-id]`); `playerInventory.rocks` is the spendable balance |
 | **Amount denomination** | Amounts must include the denomination suffix | Use `60000000ualpha` not `60000000`. Same for guild tokens: `100uguild.0-1` |
 | **provider-withdraw-balance** | Takes two positional args: provider ID (contains a dash) and the destination address for the earnings | Use: `structsd tx structs provider-withdraw-balance --from key --gas auto -y -- [provider-id] [destination-address]` |
 | **substation-create** | Takes two positional args: owner player ID and allocation ID | Use: `structsd tx structs substation-create --from key --gas auto -y -- [owner-id] [allocation-id]` |

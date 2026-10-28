@@ -11,6 +11,106 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2026-10-26
+
+structsd **v0.22.0** (`96cea3a`) refresh. This is the chain release that moves game Alpha
+into vaults, replaces the guild charter with paid founding, and reprices building. Every
+page now describes v0.22.0 as the current state; this entry is the only place the
+before/after is narrated. `structs-pg`, `structs-desktop` and `structs-webapp` pins are
+unchanged and will be refreshed in a later release once those systems ship their v0.22.0
+support.
+
+### Changed
+
+- **Vaults replace key balances.** Refined Alpha is minted into a deterministic per-owner
+  vault (`1-N` player, `0-N` guild; `structsd query structs vault [owner-id]`), and
+  `playerInventory.rocks` is now that vault's spendable `ualpha`. Reactor stake, generator
+  fuel, agreement collateral, Central Bank mint/redeem/convert and rank purchases all pay
+  from a vault, with the spending right being the signing key's token bits on the owner.
+  New `vault-send`; `player-send` may spend from a vault address; vaults are eligible
+  `uguild.*` recipients. Previously all of these debited the signing address directly. Documented in
+  [energy.md — Vaults](knowledge/mechanics/energy.md#vaults-where-game-alpha-lives),
+  [conventions](.cursor/skills/conventions.md), the commerce/energy/guild/permissions
+  skills, [integration-notes](api/integration-notes.md), and a new AGENTS.md critical rule.
+- **Guild founding is a payment, not a puzzle.** `guild-create [reactor id] [endpoint]
+  [substation id]` costs 2,000,000 ualpha from the founder's vault — 1,000,000 burned,
+  1,000,000 locked as Central Bank collateral minting 1,000,000 `uguild.<id>` to the
+  guild vault. The chain-global charter proof-of-work (`guild-create-compute`,
+  `guild-charter-consent`) and the reactor-entitlement path are gone; legacy proof fields
+  on `MsgGuildCreate` are rejected (`legacy_charter_fields_not_supported`). The
+  `guild-charter` query and `guildCharter*` params still exist but nothing consumes them.
+  Both removed verbs are now in `scripts/ci/deprecated-tokens.txt`.
+- **Rank sales.** `guild-update-rank-purchase`, `guild-rank-purchase` and
+  `guild-membership-join-by-rank-purchase` let a guild price ranks in its own token
+  (`basePrice + (n−1)×stepIncrease` per step, paid vault → guild vault). New
+  `EventGuildRankPurchase`. Covered in the guild skill, guild-banking, messages, schemas
+  and the glossary.
+- **Reactor staking.** Power is flat 1:1 before the 4% commission (≈96% to the infuser,
+  with no per-reactor efficiency curve); an **owner diversity bonus** of up to 50% — computed
+  on post-commission power — rewards spreading stake across ten or more reactors, and a
+  sticky **stake cap** (30% of bonded stake once ten validators are bonded, error 1613)
+  refuses inflows to dominant reactors. New queries
+  `reactor-stake-share` and `owner-reactor-diversity`; `reactor-infuse/-defuse` are now
+  `[reactor address] [amount]` with `--owner-id` / `--delegator-address` selecting the
+  funding vault (previously the CLI took `[your-address] [reactor-address] [amount]`).
+  Fresh keys bootstrap with `structsd tx staking delegate`; `reactor-infuse` from an
+  unregistered address is rejected by the ante (2010).
+- **Building.** `buildCharge` dropped from 8 to 1 for every struct type, `struct-trash`
+  costs 1, and the ante allows one charge-consuming message per player per block
+  (2020/2021). Ore Extractor build difficulty is 10 (~1 minute) instead of 700 — the
+  Refinery (700, ~57 min) is now the opening's long pole. Build completion sets full
+  `maxHealth`. Proof-of-work difficulty is the integer formula
+  `e = max{k : range^k ≤ age^63}`, `difficulty = 64 − e`. Every build-order table,
+  transcript and playbook was retimed.
+- **Substations and supply.** Usable capacity is a flat 90% of incoming
+  (`incoming/10*9 + incoming%10*9/10`); allocations may be guild-controlled
+  (`--controller`, `allocation-transfer`); admission validates the upstream chain
+  (`unsupported_supply`, 2,048-object read budget); substation deletion is bounded
+  (`deletion_pending`) and detaches inbound agreements; the brownout cascade is budgeted
+  at 256 objects per block. Agreement expirations are bucketed at 256 per height
+  (`expiration_height_full`); `agreement-open` and `provider-create` take `--owner-id`.
+- **Permissions.** Corrected the 25-bit table (bit 8 is `PermSourceAllocation`;
+  `PermReactorGuildCreate` is reserved and checked by nothing); `PermGuildAll` is
+  17169406; the primary address cannot be narrowed below `PermAll`
+  (`primary_full_access_required`); rank-register `PermAdmin` confers nothing, so
+  `player-update-guild-rank` and `guild-update-entry-rank` need ownership or a direct
+  `PermAdmin` grant (the "rank-based authority" fallback is gone; only kick remains
+  rank-relative); kick preserves direct grants; owner transfer clears the outgoing owner's row; object grants
+  reject nonexistent target players; cleanup on delete is budgeted at 256 per block. The
+  `address-register` proof is `CHAIN<chain-id>|REGISTERADDRESSPLAYER<id>ADDRESS<addr>NONCE<n>`
+  with a per-address `proofNonce` served by `query structs address`.
+- **Queries.** Pagination limit defaults to 100 and clamps at 1000, `count_total` is
+  forced off, offsets above 1000 are refused. New `vault`, `reactor-stake-share`,
+  `owner-reactor-diversity` endpoints documented in `api/queries/`, `api/endpoints*.md`
+  and the reference indexes.
+- **Events.** Catalogued `EventVaultAddress`, `EventOwnerReactorDiversity(+Reset)`,
+  `EventReactorCommissionRevision(+Reset)`, `EventReactorStakeCap`,
+  `EventGuildRankPurchase`; `vaultAddress` on `EventAlphaRefine`/`EventAlphaInfuse`;
+  `EventHashSuccess.category` no longer includes `guild_charter`. The four
+  `EventVault*Migration` messages are listed as in-proto-not-emitted.
+- **Errors.** [play/errors.md](play/errors.md) and [api/error-codes.md](api/error-codes.md)
+  gained the ante codespace (2010, 2020/2021, 2031/2033, 2040, 2041), 1613,
+  `vault_owner_mismatch`, `unsupported_supply`, `deletion_pending`,
+  `expiration_height_full`, `primary_full_access_required`, `self_defense`,
+  `legacy_charter_fields_not_supported` and the rank-purchase guard strings.
+- **Combat and fleet.** A struct cannot defend itself (`self_defense`); a completed planet
+  is unraidable and not a `fleet-move` destination; fleet ids are canonical `9-<decimal>`.
+- **Toolchain.** `structsd-install` now requires Go 1.27.3+ (`REQUIRE_GO_VERSION`),
+  pins `VERSION=v0.22.0`, and explains the `HEAD-<sha>` version string.
+- **Safety.** [SAFETY.md](SAFETY.md) and `config/operator.example.md` add `guild-create`,
+  `guild-update-rank-purchase`, vault spends and `PermTokenTransfer`-on-guild to the tier
+  lists, and drop the removed compute verb from the auto-submit exception.
+- **Maintenance.** [develop/maintenance.md](develop/maintenance.md) gains a "structsd
+  release review" procedure; `.structsd-version`, `generated/*`, `scripts/BASELINE.md`
+  and `scripts/check-drift.sh` are re-pinned to v0.22.0.
+
+### Removed
+
+- All guild-charter material: the puzzle input format and worked example in
+  [hashing.md](knowledge/mechanics/hashing.md), the charter rows in the hashing/building
+  tables, the `guild-create-compute` / `guild-charter-consent` entries in every command
+  list, and the glossary's "Guild charter" and old "work-failure" definitions.
+
 ## [1.31.0] - 2026-09-30
 
 Three-repository upstream refresh, verified against structs-webapp `08e13e2`,

@@ -73,7 +73,7 @@ Both stages are **expeditions**: the compute helper hashes for hours then auto-s
    ```
 
 6. **Protect the window** — Command Ship online (unraidable), Ore Bunker(s) up, defenders assigned. See [`structs-combat`](/skills/structs-combat/SKILL.html).
-7. **Put the Alpha to work** — once refined (secure), infuse for power ([`structs-energy`](/skills/structs-energy/SKILL.html)), stake/sell ([`structs-commerce`](/skills/structs-commerce/SKILL.html)), or hold reserve.
+7. **Put the Alpha to work** — refined Alpha is deposited in your **player vault** (`structsd query structs vault [player-id]` → address; `playerInventory.rocks` on the player query is the spendable amount), which is exactly where reactor and generator infusions draw from — so infusing for power ([`structs-energy`](/skills/structs-energy/SKILL.html)) or staking/selling ([`structs-commerce`](/skills/structs-commerce/SKILL.html)) needs no transfer step. To pay native fees from it, move some to your key: `player-send TX_FLAGS -- [vault-address] [your-address] [amount]ualpha`. Or hold reserve.
 
 ### Charge-bar scheduling
 
@@ -81,7 +81,7 @@ Activating the extractor/refinery costs 2 charge each from your **shared per-pla
 
 ## Depletion → explore handoff
 
-When `currentOre` hits 0 the planet becomes `complete`: all its structs are destroyed and fleets are sent away. Before the last ore is mined, decide:
+When `currentOre` hits 0 the planet becomes `complete`: all its structs are destroyed, fleets are sent away, and the planet becomes **unreachable** — no fleet can move to it and it cannot be raided, so any `storedOre` you still hold is safe from theft but you also cannot operate there. Before the last ore is mined, decide:
 
 - **Squeeze** the last ore if you can refine it before depletion forces you off, **or**
 - **Move first** — relocate critical structs / evacuate, then explore.
@@ -97,7 +97,8 @@ Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.h
 | Mine/refine complete (manual, rare) | `structsd tx structs struct-ore-mine-complete TX_FLAGS -- [id] [proof] [nonce]` / `...refine-complete TX_FLAGS -- [id] [proof] [nonce]` |
 | Query planet ore | `structsd query structs planet [planet-id]` |
 | Query struct | `structsd query structs struct [id]` |
-| Query player (Alpha + storedOre) | `structsd query structs player [player-id]` |
+| Query player (vault Alpha as `playerInventory.rocks` + storedOre) | `structsd query structs player [player-id]` |
+| Query vault balance | `structsd query structs vault [player-id]` then `structsd query bank balances [vault-address]` |
 
 `TX_FLAGS` / `TX_FLAGS_APPROVED` and the `-D` policy are defined in [`conventions.md`](/skills/conventions.html). Mine/refine compute are the documented `-y` exception (they auto-submit) — your Approval Block is the gate.
 
@@ -107,7 +108,7 @@ Then hand off to [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.h
 
 - Planet `currentOre` decreases after a mine lands.
 - Player `storedOre` rises after mine, returns to 0 after refine.
-- Player Alpha Matter (`ualpha`, 1g = 1,000,000) rises after refine.
+- Vault Alpha Matter (`ualpha`, 1g = 1,000,000; `playerInventory.rocks`) rises after refine — your signing key's balance does **not** change; `EventAlphaRefine` carries the `vaultAddress` credited.
 - Broadcast ≠ success: query state to confirm before assuming a stage finished.
 
 ## Errors

@@ -57,7 +57,7 @@ Actionable procedures. Each skill is a self-contained SKILL.md with YAML frontma
 |-------|------|---------|
 | **play-structs** | [SKILL.md](/skills/play-structs/SKILL.html) | **Start here.** Zero to mining Alpha Matter in one skill |
 | conventions | [conventions.md](/skills/conventions.html) | Shared boilerplate: transaction flags, `--` ID rule, per-player charge, PoW policy |
-| structsd-install | [SKILL.md](/skills/structsd-install/SKILL.html) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+) |
+| structsd-install | [SKILL.md](/skills/structsd-install/SKILL.html) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.27.3+) |
 | structs-onboarding | [SKILL.md](/skills/structs-onboarding/SKILL.html) | Address creation, player registration, planet exploration, first builds |
 | structs-production | [SKILL.md](/skills/structs-production/SKILL.html) | Mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | structs-building | [SKILL.md](/skills/structs-building/SKILL.html) | Construction, activation, movement, defense positioning |

@@ -18,7 +18,9 @@ Every online struct draws power continuously, and **load > capacity = offline = 
 
 Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) are in [`conventions.md`](/skills/conventions.html). **Interface:** if Structs Desktop MCP is connected, use `structs_intel` for power/economy reads. Reactor infusion lifecycle controls are currently **Team Ops → Industry → Production Tauri/web-board handlers**, not a `structs_action` action or a new MCP tool; use the human board or the `structsd` fallback below. See [interface routing](/skills/conventions.html#choosing-your-interface-capability-aware).
 
-> **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx.
+> **Denomination footgun**: infusion amounts must carry the `ualpha` suffix — `60000000ualpha`, not `60000000`. Missing denom = failed tx. Generator infusions accept exactly **one** coin; a comma-separated list is rejected.
+
+> **Spend-source footgun**: reactor and generator infusions are paid from your **player vault** by default, not from your signing key. Alpha on the key does not count unless you pass `--delegator-address [your-address]` (reactors only). See [conventions — vault](/skills/conventions.html#your-alpha-lives-in-your-vault).
 
 ## When to use it
 
@@ -41,6 +43,26 @@ Have Alpha Matter?
 **Beginner default**: infuse your **guild's reactor**. Capacity rises automatically — no substation wiring needed for your own use. Pick the lowest commission you can.
 
 > **Infusing a reactor powers *you*, not the guild substation.** Infusion adds ~96% (at 4% commission) to **your own** `capacity` and the commission to the reactor — it does **not** raise any substation's capacity or other members' `capacitySecondary`. To feed the shared guild pool, someone must route capacity in with an **allocation** (below). See [energy.md — infusion](https://structs.ai/knowledge/mechanics/energy#creating-capacity-infusion-splits-964).
+
+### Spreading stake pays: the diversity bonus
+
+Base reactor power is a flat **1:1** on fuel before commission. On top of that the chain pays an **owner diversity bonus** on your post-commission reactor power, based on how evenly your stake is spread across *eligible* (bonded, unjailed) reactors. Effective reactor count is `(Σ power)² / Σ power²`; the bonus is `50% × min(1, (effective − 1) / 9)`:
+
+| Eligible reactors, equal split | Bonus |
+|---|---|
+| 1 | 0% |
+| 2 | ≈ 5.56% |
+| 3 | ≈ 11.11% |
+| 5 | ≈ 22.22% |
+| 10+ | 50% |
+
+Unequal holdings earn less; dust spread across reactors earns almost nothing. Generators and received allocations do not count, and a guild's portfolio is separate from its members'. Read yours with `structsd query structs owner-reactor-diversity [owner-id]` — use the returned `usableBonus`/`storedCapacity`, not your own arithmetic, because the chain floors once in integer math.
+
+> **Adding stake to a reactor you already dominate can *lower* your total power**, because it shrinks the effective count faster than the new base power grows. Preview the portfolio before signing a large infusion into your biggest reactor. A capacity drop triggers the ordinary brownout cascade. "Infuse more into the same reactor" is not always the fix for low power.
+
+### Stake cap: a reactor can refuse you
+
+Once ten validators are bonded the **reactor stake cap** activates (and stays active): any inflow — `reactor-infuse`, `staking delegate`, migration in, cancelling a defusion — that would leave the validator above **30%** of bonded stake is rejected with `reactor stake cap exceeded` (code 1613). Check before you send: `structsd query structs reactor-stake-share [reactor-id]` returns `capActive`, `capBps`, `externalDepositHeadroom` (room for new Alpha) and `bondedRedelegationHeadroom` (room for a migration from another bonded reactor). Empty headroom strings mean the cap is inactive, not that the reactor is full. Existing above-cap positions are not evicted; they just cannot grow.
 
 **Reactor vs generator**: reactor is the safe default (reversible via a defusion cooldown, not raidable). Generators give far more kW per gram but the Alpha is **annihilated** (no defusion) and a raided generator takes the infused matter with it — only infuse generators you can defend (they're armoured with higher HP, but still a target). Decisions live in [`playbooks/situations/resource-rich`](https://structs.ai/playbooks/situations/resource-rich).
 
@@ -68,14 +90,14 @@ Command Ship (50,000 mW) + Ore Extractor (500,000) + Ore Refinery (500,000) + pl
 
 ## Procedure — raise your own capacity (reactor infusion)
 
-1. Check capacity: `structsd query structs player [id]`.
-2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). A jailed validator produces **zero** energy from infusions until it is unjailed; `reactor-restart` resyncs after that.
-3. Infuse (CLI prompts — review validator, commission, amount):
+1. Check capacity and vault Alpha: `structsd query structs player [id]` (`playerInventory.rocks` is the vault's spendable ualpha). If the Alpha is on your signing key instead, either move it (`structsd tx bank send [key] [vault-address] [amount]ualpha`) or plan to pass `--delegator-address`.
+2. Pick a reactor and read its commission and **validator address**: `structsd query structs reactor [id]` (the `validator` field, `structsvaloper1...` — the command takes the validator address, not the reactor ID). Then `structsd query structs reactor-stake-share [id]` for cap headroom. A jailed or unbonded validator produces **zero** usable energy from infusions until it is bonded again; `reactor-restart` queues the resync afterwards.
+3. Infuse (CLI prompts — review validator, commission, amount, and spend source):
    ```
-   structsd tx structs reactor-infuse TX_FLAGS -- [your-address] [validator-address] [amount]ualpha
+   structsd tx structs reactor-infuse TX_FLAGS -- [validator-address] [amount]ualpha
    ```
-   `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same three arguments as infusion (`reactor-defuse -- [your-address] [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns; `reactor-cancel-defusion` re-stakes during that cooldown.
-4. Verify: re-query player; capacity increased.
+   With no flags this stakes **from your player vault**. `--delegator-address [registered-address]` stakes from that signing key instead; `--owner-id [guild-id]` stakes from a guild vault you have `PermTokenInfuse` authority over. `reactor-infuse` is Tier 1 — commission is locked permanently for that infusion. Defusion takes the same arguments and selectors (`reactor-defuse -- [validator-address] [amount]ualpha`) and starts a cooldown before Alpha returns to the same account it came from; `reactor-cancel-defusion -- [validator-address] [amount]ualpha [creation-height]` re-stakes during that cooldown (and counts as an inflow against the cap).
+4. Verify: re-query player; capacity increased. For a large position also check `owner-reactor-diversity` — the applied bonus may have moved.
 
 In current Team Ops, the Infusions surface can preview and execute reactor infuse,
 defuse, migration, cancel-defusion, and restart for the primary/registered virtual
@@ -87,20 +109,20 @@ Tauri/web-board commands; `tools/list` still has 13 MCP tools and no
 
 ## Procedure — generator infusion (Tier 2, irreversible)
 
-Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
+Only with defense in place. **Approval Block**: struct id is your generator (type 20/21/22, online); amount is annihilated on success (no defusion); the **vault** holds the amount (generator fuel is burned from the player vault, never from the signing key); generator's defense posture is sound (shield up, defenders/PDC, no inbound fleet); `--from` owns it.
 
 ```
 structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha
 ```
 
-Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g.
+Exactly one coin, `ualpha` only. Rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g. Generator fuel survives the generator going offline (`generatorDisabled: true` on its infusion: fuel and ratio stay, power reads 0) and is credited again when it is reactivated; destruction never refunds it. Generator funding works even while you are browned out — it is one of the few actions that does — which makes it a recovery lever if you accept the irreversibility.
 
 ## Procedure — distribute power (substations & allocations)
 
 For pooling power across structs/players (e.g. a guild powering members). Cascading deletes can knock players offline mid-operation — these are Tier 2.
 
-1. Create an allocation from your source: `structsd tx structs allocation-create --allocation-type static|dynamic|automated TX_FLAGS -- [source-id] [power]` (`--controller [player-id]` optional). Automated allocations auto-grow with capacity — **one per source**.
-2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`.
+1. Create an allocation from your source: `structsd tx structs allocation-create --allocation-type static|dynamic|automated TX_FLAGS -- [source-id] [power]` (`--controller [owner-id]` optional; a player `1-N` or guild `0-N`). Automated allocations auto-grow with capacity — **one per source**. An allocation sourced from a guild or a guild-owned substation is guild-controlled by default; naming another controller needs admin authority on the source.
+2. Create a substation: `structsd tx structs substation-create TX_FLAGS -- [owner-id] [allocation-id]`. The allocation must not already feed a substation — disconnect it first (`substation-allocation-disconnect`) or use a fresh one.
 3. Connect/disconnect sources: `substation-allocation-connect|disconnect -- [substation-id] [allocation-id]`.
 4. Connect/disconnect players: `substation-player-connect|disconnect -- [substation-id] [player-id]`.
 5. Migrate players: `substation-player-migrate -- [substation-id] [player-id,player-id2,...]` (destination substation + player CSV; there is **no** source-substation argument).
@@ -109,9 +131,10 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 **Three things that bite when pooling** (full detail in [energy.md](https://structs.ai/knowledge/mechanics/energy)):
 
-- **A substation dilutes evenly.** Each connected player gets `connectionCapacity = (capacity − load) / connectionCount`, recomputed on every connect/disconnect. Every new player connection shrinks everyone's share — plan the pool against `connectionCount`, not a fixed per-member figure.
-- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `1/connectionCount`, so it's community behavior, not self-growth.
-- **Over-committing triggers a brownout.** If an object's `load` exceeds its `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. Leave headroom.
+- **A substation loses 10% and dilutes the rest evenly.** Only `floor(capacity × 9/10)` of a substation's incoming power is usable; each connected player gets `connectionCapacity = (usable − load) / connectionCount`, recomputed on every connect/disconnect and on every outgoing allocation change. Every new player connection shrinks everyone's share — plan the pool against `connectionCount` and the 90%, not the raw feed.
+- **Anyone can contribute to any substation.** `substation-allocation-connect` checks permission only on **your own allocation**, not the destination substation's owner — no guild-owner veto, no membership needed. Contributing is open, but a contributed allocation raises *your own* connection by only `0.9/connectionCount`, so it's community behavior, not self-growth. A substation that is being deleted (`deletion_pending: true`) refuses new connections of any kind.
+- **Over-committing triggers a brownout.** If an object's `load` exceeds its usable `capacity` (e.g. a substation loses a feed), the grid **destroys that object's outgoing allocations in creation order** until load fits — cascading downstream and knocking dependents offline. The cascade is bounded to 256 allocation teardowns per block and queues the remainder (FIFO), so a large collapse plays out over several blocks rather than one. Leave headroom.
+- **Stored headroom is not admission.** A new allocation, a dynamic increase, or an agreement is validated against the *complete* incoming supply chain (reactor → allocations → substations → you) under a 2,048-object limit. A cycle, an overloaded ancestor, a jailed reactor at the root, or a chain too deep to prove returns `unsupported_supply` even when `capacity − load` reads positive. Simplify the topology; waiting for the cascade does not clear a complexity refusal.
 
 ## Offline recovery (emergency)
 
@@ -124,12 +147,15 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 
 | Action | Command |
 |--------|---------|
-| Reactor infuse | `structsd tx structs reactor-infuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
+| Reactor infuse (from vault; `--delegator-address [addr]` for a registered key, `--owner-id [guild-id]` for a guild vault) | `structsd tx structs reactor-infuse TX_FLAGS -- [validator-addr] [amount]ualpha` |
 | Reactor restart | `structsd tx structs reactor-restart TX_FLAGS -- [reactor-address]` |
-| Reactor defuse | `structsd tx structs reactor-defuse TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha` |
-| Reactor cancel defusion | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [your-addr] [validator-addr] [amount]ualpha [creation-height]` |
-| Reactor migrate | `structsd tx structs reactor-begin-migration TX_FLAGS -- [player-addr] [src-val] [dest-val] [amount]ualpha` |
-| Generator infuse (Tier 2) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
+| Reactor defuse (same selectors) | `structsd tx structs reactor-defuse TX_FLAGS -- [validator-addr] [amount]ualpha` |
+| Reactor cancel defusion (same selectors) | `structsd tx structs reactor-cancel-defusion TX_FLAGS -- [validator-addr] [amount]ualpha [creation-height]` |
+| Reactor migrate (same selectors) | `structsd tx structs reactor-begin-migration TX_FLAGS -- [src-val] [dest-val] [amount]ualpha` |
+| Reactor cap headroom | `structsd query structs reactor-stake-share [reactor-id]` |
+| Diversity bonus | `structsd query structs owner-reactor-diversity [owner-id]` |
+| Vault address | `structsd query structs vault [owner-id]` |
+| Generator infuse (Tier 2, from vault, one coin) | `structsd tx structs struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` |
 | Allocation create / update / delete | `structsd tx structs allocation-create --allocation-type [t] TX_FLAGS -- [source-id] [power]` (and `allocation-update`/`allocation-delete -- [allocation-id] ...`) |
 | Substation create / delete | `structsd tx structs substation-create \| substation-delete TX_FLAGS -- ...` |
 | Substation allocation connect/disconnect | `structsd tx structs substation-allocation-connect \| disconnect TX_FLAGS -- [sub-id] [alloc-id]` |
@@ -148,10 +174,16 @@ For pooling power across structs/players (e.g. a guild powering members). Cascad
 ## Errors
 
 - **Going offline** — load > capacity; deactivate structs, then infuse/buy capacity.
-- **"insufficient balance"** — not enough ualpha; refine ore first or buy via agreement.
-- **"generator infuse failed"** — struct isn't a generator (20/21/22) or is offline.
+- **"insufficient balance" / affordability on infuse** — the **vault** lacks ualpha (the key's balance is irrelevant). Fund the vault, pass `--delegator-address` (reactors only), refine ore, or buy via agreement.
+- **`reactor stake cap exceeded` (1613)** — validator at/over 30% of bonded stake with the cap active; pick another reactor (`reactor-stake-share`).
+- **`vault_owner_mismatch`** — an explicit `--delegator-address` does not match the vault selected by `--owner-id`; drop one of the two.
+- **Capacity fell after infusing** — diversity bonus shrank because the position concentrated; check `owner-reactor-diversity` and spread across reactors.
+- **"generator infuse failed" / invalid amount** — struct isn't a generator (20/21/22), is destroyed, or the amount names more than one coin.
+- **`unsupported_supply`** — the allocation's supply chain cannot be proven (cycle, overloaded or jailed ancestor, >2,048 objects). Not a headroom problem; simplify the graph.
 - **Allocation exceeds source** — source capacity too small; allocate less or add capacity.
 - **Automated allocation limit** — one automated per source; use static/dynamic for more.
+- **`substation-create` rejects the allocation** — it already feeds a substation; disconnect it first.
+- **`deletion_pending`** — the destination substation is closing; connect elsewhere.
 
 ## See also
 

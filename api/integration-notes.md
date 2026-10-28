@@ -142,10 +142,20 @@ See [api/webapp/struct.md](webapp/struct.md) for full response shapes.
 The chain LCD address query returns a flat object with **`playerId` top-level (camelCase)** — not nested under an `Address` wrapper:
 
 ```json
-{ "address": "structs1...", "playerId": "1-11", "permissions": "1" }
+{ "address": "structs1...", "playerId": "1-11", "permissions": "1", "proofNonce": "0" }
 ```
 
-Verified in `proto/structs/structs/query.proto` (`QueryAddressResponse { string address; string playerId; uint64 permissions; }`, route `/structs/address/{address}`). `permissions` is a `uint64` → serialized as a string. A common polling bug is looking for the player id under a nested key; it is top-level.
+Verified in `proto/structs/structs/query.proto` (`QueryAddressResponse { string address; string playerId; uint64 permissions; uint64 proofNonce; }`, route `/structs/address/{address}`). `permissions` and `proofNonce` are `uint64` → serialized as strings. A common polling bug is looking for the player id under a nested key; it is top-level. `proofNonce` is the **next** nonce the chain expects in an `address-register` proof for that address; it is burned on each successful registration and survives revoke, so never hard-code `0`.
+
+## `address-register` proof string is chain-bound
+
+The message a new key signs for `address-register` is:
+
+```
+CHAIN<chain-id>|REGISTERADDRESSPLAYER<player-id>ADDRESS<address>NONCE<proofNonce>
+```
+
+literally, with no separators other than the `|` after the chain id (for example `CHAINstructs-testnet-1|REGISTERADDRESSPLAYER1-11ADDRESSstructs1abc…NONCE0`). Read `<proofNonce>` from `/structs/address/{addr}` immediately before signing. A proof built for another chain id, another player, or a stale nonce fails with an invalid-proof error, and the ante rejects a second registration attempt for the same address in the same block (`2033`). The guild **proxy-join** proof is a different string (`GUILD{id}ADDRESS{addr}NONCE0`) and is unchanged — see the next section.
 
 ---
 
@@ -195,9 +205,22 @@ When you build or move, pass the **enum** (the CLI accepts the lowercase name `s
 
 ---
 
+## Alpha balances live in vaults, not on the signing key
+
+`playerInventory.rocks` on `/structs/player/{id}` is the spendable `ualpha` in the player's **vault** — a deterministic protocol account resolved by `GET /structs/vault/{ownerId}` (`ownerId`, `address`, `provisioned`). Refined Alpha is minted there (`EventAlphaRefine.vaultAddress`), and reactor infusion, generator fuel, agreement collateral, Central Bank mint/redeem/convert and rank purchases all debit a vault. Consequences for integrators:
+
+- A **bank balance on the player's key can be zero while the player is rich**. Read `/cosmos/bank/v1beta1/balances/{vaultAddress}`, not the key's balance, for "how much Alpha does this player have".
+- Insufficient-funds errors name the vault address. Fund the vault (`player-send` to it) or move Alpha out (`vault-send`, `player-send` from the vault address) with a key that holds `PermTokenTransfer` on the owner.
+- Guild vaults (`0-N`) hold the guild's founding tokens, mint output and rank-sale revenue; `guild-bank-mint` never touches the signer's own funds.
+- `playerInventory` has exactly one key (`rocks`). Stored ore is the grid attribute `ore`, which `omitempty` drops when zero.
+
+See [energy.md — Vaults](../knowledge/mechanics/energy.md#vaults-where-game-alpha-lives).
+
+---
+
 ## Charge is not a pool
 
-`charge = currentBlock - lastActionBlock`, per-player, and **any** charge-consuming action resets it to **0**. The per-action "cost" is a *minimum threshold*, not a balance you draw down or bank. You cannot stockpile charge to burst several expensive actions; idling past your next action's cost gains nothing. Plan combat as single actions spaced ~1 block per charge apart. A dashboard "Charge: N" is the current `currentBlock - lastActionBlock`, not a wallet. See [building.md](../knowledge/mechanics/building.md#charge-accumulation).
+`charge = currentBlock - lastActionBlock`, per-player, and **any** charge-consuming action resets it to **0**. The ante also refuses a second charge-consuming message from the same player in one transaction (`2020`) or one block (`2021`), so a batch of build-initiates must be spread across blocks even though each costs only 1. The per-action "cost" is a *minimum threshold*, not a balance you draw down or bank. You cannot stockpile charge to burst several expensive actions; idling past your next action's cost gains nothing. Plan combat as single actions spaced ~1 block per charge apart. A dashboard "Charge: N" is the current `currentBlock - lastActionBlock`, not a wallet. See [building.md](../knowledge/mechanics/building.md#charge-accumulation).
 
 ---
 
@@ -216,7 +239,7 @@ Do not assume the error is always about power — a `1/1` is the build-count lim
 
 ## Proxy signup is idempotent
 
-The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` → `POST /api/auth/signup` → guild fronts `MsgGuildMembershipJoinProxy` → poll `/structs/address/{addr}` for the player id) is safe to re-run. Re-running for an address that already joined returns `{resource_already_exists}`. **Treat this as success** (adopt the existing player) rather than a hard failure. See [structs-onboarding](/skills/structs-onboarding/SKILL.html).
+The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` — the proxy proof has no chain-id prefix and its nonce is not the address-register `proofNonce` → `POST /api/auth/signup` → guild fronts `MsgGuildMembershipJoinProxy` → poll `/structs/address/{addr}` for the player id) is safe to re-run. Re-running for an address that already joined returns `{resource_already_exists}`. **Treat this as success** (adopt the existing player) rather than a hard failure. See [structs-onboarding](/skills/structs-onboarding/SKILL.html).
 
 ---
 

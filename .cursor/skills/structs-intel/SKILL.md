@@ -57,6 +57,8 @@ Determine: Command Ship online? fleet on-station? **player** `storedOre` (not pl
 ```bash
 structsd query structs guild [guild-id]
 structsd query structs reactor [reactor-id]               # commission, total infusion = strength
+structsd query structs reactor-stake-share [reactor-id]   # at the 30% cap? (new stake into it will be refused)
+structsd query structs vault [guild-id]                   # treasury address → `structsd query bank balances`
 structsd query structs guild-membership-application-all   # pending applications only, all guilds
 # The member roster is NOT a structsd query — membership lives on the player record:
 #   Guild Stack: select id, guild_rank, ore from player where guild_id='[guild-id]';
@@ -114,7 +116,10 @@ substitute for chain verification before Tier 2 actions.
 
 | Target | Command |
 |--------|---------|
-| Player | `structsd query structs player [id]` — returns `gridAttributes` (capacity, load, structsLoad, `lastAction`) and `playerInventory` |
+| Player | `structsd query structs player [id]` — returns `gridAttributes` (capacity, load, structsLoad, `lastAction`) and `playerInventory` (`rocks` = spendable ualpha in the player's **vault**, i.e. their refined, unraidable Alpha). Stealable `storedOre` is a grid attribute on the player, not an inventory field |
+| Vault (player `1-N` or guild `0-N`) | `structsd query structs vault [owner-id]` → `address`; then `structsd query bank balances [address]` for every denom the owner holds (Alpha, guild tokens) |
+| Reactor cap headroom | `structsd query structs reactor-stake-share [reactor-id]` — `capActive`, `capBps`, `externalDepositHeadroom`, `bondedRedelegationHeadroom` |
+| Owner reactor portfolio | `structsd query structs owner-reactor-diversity [owner-id]` — how spread an owner's stake is and the diversity bonus they earn; a 1-reactor profile means a single jailing zeroes their power |
 | Player charge | Derived, not queried: `charge = latest_block_height − gridAttributes.lastAction`. Get the height from `structsd status`. `lastAction` is omitted from JSON when `0` — treat missing as `0` (full charge) |
 | Planet | `structsd query structs planet [id]` / `planet-all` |
 | Structs on a planet | Guild Stack: `select id,type,operating_ambit from struct where location_id='[planet-id]'` (no `structsd` CLI equivalent) |
@@ -125,9 +130,10 @@ substitute for chain verification before Tier 2 actions.
 | Reactor | `structsd query structs reactor [id]` / `reactor-all` |
 | Provider / market | `structsd query structs provider [id]` / `provider-all` |
 | Fleet | `structsd query structs fleet [id]` |
-| Substation / power | `structsd query structs substation [id]` |
+| Substation / power | `structsd query structs substation [id]` — usable capacity is `floor(capacity × 9/10)`; `deletionPending` marks one that is closing |
+| Address (incl. `proofNonce`) | `structsd query structs address [address]` |
 
-**Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH (no key needed for queries).
+**Requires** [`structsd`](/skills/structsd-install/SKILL.html) on PATH (no key needed for queries). Collection queries default to 100 rows, clamp `--limit` to 1000, and always report `pagination.total: 0` — page with `next_key`, and never conclude "that's everyone" from a single page of `planet-all`/`reactor-all`/`provider-all`.
 
 ## Verification
 

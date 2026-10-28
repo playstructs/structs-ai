@@ -92,16 +92,18 @@ check_glossary_links
 
 preflight
 
-# Expected values for the current documented release (structsd v0.21.0).
+# Expected values for the current documented release (structsd v0.22.0).
 # Format: "<struct-type-id>|<jq-field-alternation>|<expected>|<label>"
 # The jq alternation tolerates snake_case vs camelCase field naming.
 CHECKS=(
   "1|.buildDifficulty,.build_difficulty|200|Command Ship build difficulty"
-  "14|.buildDifficulty,.build_difficulty|700|Ore Extractor build difficulty"
+  "14|.buildDifficulty,.build_difficulty|10|Ore Extractor build difficulty (v0.22.0: 700 -> 10)"
   "15|.buildDifficulty,.build_difficulty|700|Ore Refinery build difficulty"
   "18|.buildDifficulty,.build_difficulty|3600|Ore Bunker build difficulty"
   "1|.activateCharge,.activate_charge|2|Command Ship activateCharge"
   "14|.activateCharge,.activate_charge|2|Ore Extractor activateCharge"
+  "1|.buildCharge,.build_charge|1|Command Ship buildCharge (v0.22.0: 8 -> 1 for every type)"
+  "14|.buildCharge,.build_charge|1|Ore Extractor buildCharge"
   "18|.buildLimit,.build_limit|0|Ore Bunker build limit (0 = unlimited)"
   "17|.buildLimit,.build_limit|1|Jamming Satellite build limit (1 per player)"
   "1|.canDefend,.can_defend|true|Command Ship canDefend"
@@ -121,7 +123,7 @@ extract() {
 }
 
 pass=0; drift=0; skip=0
-echo "${C_CYN}== Doc drift check (expected = structsd v0.21.0 docs) ==${C_RST}"
+echo "${C_CYN}== Doc drift check (expected = structsd v0.22.0 docs) ==${C_RST}"
 
 declare -A CACHE
 for row in "${CHECKS[@]}"; do

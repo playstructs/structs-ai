@@ -72,7 +72,7 @@ Reactors charge a **commission** on infusions. When a player infuses ualpha into
 - **Player receives**: `power * (1 - commission)` — added directly to the player's capacity (no manual allocation needed)
 - **Reactor receives**: `power * commission` — increases the reactor's capacity
 
-This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission rate before infusing: `structsd query structs reactor [id]`.
+On top of the post-commission share, an **owner diversity bonus** of up to **50%** rewards spreading stake evenly across ten or more bonded reactors (≈5.6% at two, ≈11% at three, ≈22% at five); concentrating everything in one reactor earns none, and piling more onto a reactor you already dominate can *lower* your total. Once ten validators are bonded a **stake cap** also applies: a reactor at 30% of bonded stake refuses further inflows (`reactor stake cap exceeded`). The stake itself is paid from the infuser's **vault**. This automatic capacity increase makes reactor infusion the fastest and simplest way for a player to gain capacity. Check a reactor's commission and headroom before infusing: `structsd query structs reactor [id]` and `reactor-stake-share [id]`; check your own spread with `owner-reactor-diversity [owner-id]`. Full mechanics: [energy.md](../mechanics/energy.md#creating-capacity-infusion-splits-964).
 
 > **Staking pays capacity, not a yield.** The return on infusing a reactor is the **energy capacity** credited above — there is no delegator reward stream, APR, or passive token income. Income is realized only *indirectly*, by selling that capacity as energy through a provider.
 
@@ -110,7 +110,9 @@ Providers define (per database schema):
 | Concept | Purpose |
 |---------|---------|
 | **Infusion** | Record of energy production -- who put Alpha Matter into which conversion struct |
-| **Allocation** | Routing of energy capacity from source to Substations |
+| **Allocation** | Routing of energy capacity from source to Substations. A substation passes on only **90%** of what it receives, so price the loss into chained routes |
+
+An allocation's controller may be a player or a **guild** (`--controller`, `allocation-transfer -- [allocation-id] [new-controller-owner-id]`); allocations sourced from a guild or a guild-owned substation are guild-controlled by default. Admission validates the whole upstream supply chain (`unsupported_supply` on cycles, overloaded or jailed ancestors, or more than 2,048 objects).
 
 **Allocation types**:
 
@@ -127,10 +129,10 @@ For energy commerce, use `automated` -- it scales with your capacity as you infu
 
 ## Agreement Payment Flow
 
-When a buyer opens an agreement (`agreement-open [provider-id] [capacity] [duration]`):
+When a buyer opens an agreement (`agreement-open [provider-id] [duration] [capacity]`):
 
-1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1) — the **entire** amount is debited in full at open, not metered per block
-2. Payment goes to the provider's **collateral address** (on-chain escrow)
+1. Buyer pays `capacity * rate * duration` upfront in the rate denomination (e.g., uguild.0-1) — the **entire** amount is debited **from the buyer's vault** (or from a guild vault with `--owner-id`) in full at open, not metered per block
+2. Payment goes to the provider's **collateral address** (on-chain escrow). At most **256** agreements may expire at any one height; if the chosen duration lands on a full bucket the open is refused (`expiration_height_full`) — shift the duration by a block. A duration that would overflow the end height is likewise refused
 
 > **`rate_denom` trap:** the debit is in the *provider's* denom, not alpha. If the provider prices in a guild token, a buyer holding only `ualpha` is **rejected at broadcast** (insufficient-funds error keyed `agreement_open`). Check the provider's `rateDenom` and acquire that denom before opening.
 3. System auto-creates a `provider-agreement` allocation -- energy flows to the buyer immediately
@@ -146,7 +148,7 @@ OPEN -> ACTIVE (blocks pass, revenue accrues) -> EXPIRED (capacity released)
 ```
 
 - `agreement-open` -- buyer initiates
-- `agreement-close` -- either party can close early (cancellation penalties may apply)
+- `agreement-close` -- either party can close early (cancellation penalties may apply). This is also the **consumer's** job after the provider's substation is deleted: deletion **detaches** inbound agreements instead of ending them, so billing continues until the consumer closes
 - `agreement-capacity-increase/decrease` -- modify mid-agreement
 - `agreement-duration-increase` -- extend the agreement
 

@@ -46,7 +46,7 @@ isValid = HashBuildAndCheckDifficulty(hashInput, proof, age, BuildDifficulty)
 
 Difficulty is age-based: older builds require less work.
 
-**Permission-gated hashing**: Completing a struct-bound proof is *not* permissionless. Each of build, mine, refine, and raid requires its matching `hash_*` permission bit, checked both at the ante layer (on the signing address) and at the handler layer (on the object's owner). Owners always qualify because their primary address holds `PermAll`; a delegate must be granted the relevant `hash_*` bit to submit proofs on your behalf. The guild charter uses the same SHA-256 validator but is **not** a `PermHash*` bit. For the full mechanism — input format, planet ore clocks, raid pause, charter, algorithm, difficulty decay — see [hashing.md](hashing.md).
+**Permission-gated hashing**: Completing a struct-bound proof is *not* permissionless. Each of build, mine, refine, and raid requires its matching `hash_*` permission bit, checked both at the ante layer (on the signing address) and at the handler layer (on the object's owner). Owners always qualify because their primary address holds `PermAll`; a delegate must be granted the relevant `hash_*` bit to submit proofs on your behalf. For the full mechanism — input format, planet ore clocks, raid pause, algorithm, difficulty decay — see [hashing.md](hashing.md).
 
 ### The -D Flag
 
@@ -66,16 +66,17 @@ Time from initiation until difficulty drops to target level (assuming 6 sec/bloc
 
 | Base Difficulty | D=8 | D=5 | D=3 |
 |----------------|------|------|------|
+| 10 (Ore Extractor) | ~1 min | ~1 min | ~1 min |
 | 200 (Command Ship) | ~11 min | ~14 min | ~17 min |
 | 250 (Starfighter) | ~12 min | ~17 min | ~20 min |
-| 700 (Ore Ext/Ref) | ~34 min | ~46 min | ~57 min |
+| 700 (Ore Refinery) | ~34 min | ~46 min | ~57 min |
 | 2,880 (PDC) | ~2.0 hr | ~2.9 hr | ~3.7 hr |
 | 3,600 (Ore Bunker) | ~2.4 hr | ~3.6 hr | ~4.6 hr |
 | 5,000 (World Engine) | ~3.2 hr | ~4.9 hr | ~6.4 hr |
 | 14,000 (Mine) | ~8.1 hr | ~12.7 hr | ~17.2 hr |
 | 28,000 (Refine) | ~15.0 hr | ~24.4 hr | ~33.7 hr |
 
-At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is wasted. Higher `-D` values trade shorter wait for exponentially more compute burned on hard hashes.
+At D=3, the hash is trivially instant. The wait IS the time — and zero CPU is wasted. Higher `-D` values trade shorter wait for exponentially more compute burned on hard hashes. The Ore Extractor (`BuildDifficulty` 10) is the deliberate exception: its difficulty is 1 once it is ten blocks old, so a new player is mining within minutes and the Refinery (700) is the first real wait. A completed build is set to its type's full `maxHealth`.
 
 ### Strategic Implications
 
@@ -107,8 +108,8 @@ Action costs (the charge the player's bar must hold to act):
 
 | Action | Charge Cost | Notes |
 |--------|------------|-------|
-| Build (initiate) | 8 | Same for all struct types |
-| Trash (destroy a built struct) | 8 | Equal to the type's `buildCharge`; irreversible |
+| Build (initiate) | 1 | `buildCharge` is 1 for every struct type |
+| Trash (destroy a built struct) | 1 | Equal to the type's `buildCharge`; irreversible; a registered charge message like any other |
 | Activate | 2 | Same for all struct types |
 | Deactivate | 0 | No charge; also works while the player is offline (a recovery action) |
 | Defend change | 1 | Set or clear defense assignment |
@@ -119,7 +120,7 @@ Action costs (the charge the player's bar must hold to act):
 
 At ~6 sec/block, a 5-charge action needs ~30 seconds of accumulation since the player's last action. Because the bar is shared, rapid sequences (activating several structs, or repeated attacks) are gated by it — space the actions out, or they fail with `"required charge X but player had Y"`.
 
-**Build cadence**: a build costs **8** charge and, like every action, resets the bar to 0. With the bar refilling at ~1/block, you can initiate **at most one build roughly every 8 blocks (~48 s)**. A second build attempted too soon fails with `required charge 8, only had 6` (or similar). This single fact governs how fast a base or fleet can be built out — batch-initiate paced ~48 s apart, then compute the proofs later.
+**Build cadence**: a build costs **1** charge and, like every action, resets the bar to 0. The binding limit is therefore not the bar but the ante: a player may submit **one charge-consuming message per block** (`ErrChargeAlreadyUsedThisBlock`, code 2021) and never two in one transaction (`ErrDuplicateChargeInTx`, 2020). So you can initiate **at most one build per block (~6 s)** — batch-initiate one per block, then compute the proofs later. Power headroom and open slots, not charge, are what actually cap how fast a base is built out.
 
 **Charge cannot be banked or burst.** Because `charge = CurrentBlockHeight - LastActionBlock`, every charge-consuming action resets the bar to **0** — you do not draw a cost off a running balance, the whole bar zeroes and refills linearly from there. There is no way to stockpile charge for an "alpha strike" of several expensive attacks in one block; idling longer than your next action's cost gains you nothing extra. Plan combat as a sequence of single actions spaced ~1 block/charge apart, not a saved-up burst.
 
@@ -288,7 +289,7 @@ See [struct-types.md](../entities/struct-types.md) for the full table with `poss
 
 ## See Also
 
-- [hashing.md](hashing.md) — Canonical proof-of-work reference: struct-bound types, planet ore clocks, raid pause, guild charter
+- [hashing.md](hashing.md) — Canonical proof-of-work reference: struct-bound types, planet ore clocks, raid pause
 - [power.md](power.md) — Power capacity for building
 - [fleet.md](fleet.md) — Fleet status, Command Ship rules
 - [combat.md](combat.md) — Planetary Defense Cannon

@@ -47,7 +47,7 @@ Conventions (TX_FLAGS, `--` rule, charge bar, one-tx-at-a-time) come from [`conv
 | Explore (existing player) | ✓ | ✗ |
 | Raid another planet | ✗ | ✓ |
 
-Fleet movement is **instant** (one transaction, no transit time). Fleets stay `away` until you explicitly move them home, the Command Ship is destroyed (auto-return), or the target planet completes. Fleet ID = `9-N` for player `1-N`.
+Fleet movement is **instant** (one transaction, no transit time). Fleets stay `away` until you explicitly move them home, the Command Ship is destroyed (auto-return), or the target planet completes. Fleet ID = `9-N` for player `1-N`, written exactly as the chain emits it — `9-7`, never `9-07` or `9-007` (padded fleet ids are rejected).
 
 ## Procedure
 
@@ -77,7 +77,7 @@ Optional `[name]` sets the planet's display name at creation (validated like `Ms
 
 ### Move the fleet (reposition / recall / stage a raid)
 
-Verify the destination first — moving to unscouted or hostile space can strand you. A foreign planet holds at most **one visiting fleet** by default (`1 + locationListExtra`, extra starts at 0). A move onto a full queue is rejected (`queue_full`). The owner's home fleet does not consume a slot.
+Verify the destination first — moving to unscouted or hostile space can strand you. A foreign planet holds at most **one visiting fleet** by default (`1 + locationListExtra`, extra starts at 0). A move onto a full queue is rejected (`queue_full`). The owner's home fleet does not consume a slot. A **completed** (mined-out) planet is not a destination: `fleet-move` refuses it, and it cannot be raided — check `status` before staging on a planet you scouted earlier.
 
 ```
 structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]
@@ -98,7 +98,7 @@ structsd query structs planet-attribute [planet-id] [attribute-type]
 | Explore planet | `structsd tx structs planet-explore TX_FLAGS -- [player-id] [name]` |
 | Move fleet | `structsd tx structs fleet-move TX_FLAGS -- [fleet-id] [destination-location-id]` |
 | Query planet | `structsd query structs planet [id]` |
-| List player planets | `structsd query structs planet-all-by-player [player-id]` |
+| List player planets (paginated by `next_key`) | `structsd query structs planet-all-by-player [player-id]` |
 | Query fleet | `structsd query structs fleet [id]` |
 | Query grid | `structsd query structs grid [id]` |
 | Planet attribute | `structsd query structs planet-attribute [planet-id] [attribute-type]` |
@@ -119,6 +119,8 @@ structsd query structs planet-attribute [planet-id] [attribute-type]
 - **"fleet must be onStation to explore"** — recall the fleet home first; the chain blocks explore until it has actually returned (new players don't hit this).
 - **"fleet away"** — wait for return or move it explicitly.
 - **"invalid destination"** — use a valid location ID; query grid for options.
+- **Planet complete as destination** — the target is mined out and unreachable; pick a live planet.
+- **Fleet id rejected** — you padded it (`9-01`); use the canonical `9-1`.
 
 ## See also
 

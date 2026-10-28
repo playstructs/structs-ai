@@ -173,6 +173,8 @@ Reactor entity endpoints.
 | ID | Method | Path | Base | Description |
 |----|--------|------|------|-------------|
 | reactor-by-id | GET | `/structs/reactor/{id}` | Consensus | Get reactor by ID |
+| reactor-stake-share | GET | `/structs/reactor/{reactorId}/stake-share` | Consensus | Stake cap headroom and slash revisions |
+| owner-reactor-diversity | GET | `/structs/owner/{ownerId}/reactor-diversity` | Consensus | Owner diversity bonus accounting |
 
 ### Dependencies
 

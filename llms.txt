@@ -19,7 +19,7 @@
 ## Bootstrap (Do This First)
 
 - **Clone the repo** (recommended): `git clone https://github.com/playstructs/structs-ai` — gives you skills, scripts, full structure
-- **Or fetch from structs.ai**: Use the URLs below. Without the repo, the guild signup script is unavailable — use reactor-infuse if you have $alpha.
+- **Or fetch from structs.ai**: Use the URLs below. Without the repo, the guild signup script is unavailable — use `structsd tx staking delegate` if you have $alpha.
 - **OpenClaw/NanoClaw/PicoClaw**: See [OPENCLAW.md](https://structs.ai/OPENCLAW) for workspace setup
 
 ## Getting Started
@@ -41,8 +41,8 @@
 
 - [Play Structs](https://structs.ai/skills/play-structs/SKILL.html): **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills.
 - [Conventions](https://structs.ai/skills/conventions.html): Shared boilerplate every skill assumes: transaction flags, the -- ID rule, the per-player charge bar, proof-of-work policy
-- [Install structsd](https://structs.ai/skills/structsd-install/SKILL.html): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds)
-- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL.html): Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds
+- [Install structsd](https://structs.ai/skills/structsd-install/SKILL.html): Install structsd from prebuilt release binaries or build from source via the Makefile (Go 1.27.3+; no Ignite dependency for builds)
+- [Onboarding](https://structs.ai/skills/structs-onboarding/SKILL.html): Key setup, player creation (staking delegate or guild signup), planet exploration, first builds
 - [Production](https://structs.ai/skills/structs-production/SKILL.html): The mine then refine then stake pipeline; ore vulnerability, depletion handoff
 - [Building](https://structs.ai/skills/structs-building/SKILL.html): Construction, activation, movement, defense positioning, stealth, generator infusion
 - [Planets & Fleet](https://structs.ai/skills/structs-planets-fleet/SKILL.html): Planet evaluation, exploration, fleet movement, evacuation

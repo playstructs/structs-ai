@@ -34,7 +34,7 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
-| Alpha Matter | `structs_intel` | `alphaMatter` or equivalent balance |
+| Alpha Matter | `structs_intel` / player `playerInventory.rocks` | Spendable `ualpha` in your **vault** (`query structs vault [id]` → bank balance). The signing key's own balance is not your game Alpha |
 | Ore (unrefined) | `structs_dashboard` / player `gridAttributes.ore` | Stealable `storedOre` on the **player**, not in the Ore Bunker (bunker only adds planetary shield) |
 | Charge | `structs_dashboard` / player | `charge = blockHeight − lastAction`; a **missing** `lastAction` means 0 → full charge |
 

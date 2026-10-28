@@ -18,7 +18,8 @@ Real timescales (at ~6 sec/block, waiting for D=3):
 | Operation | Base Difficulty | Time to D=3 |
 |-----------|----------------|-------------|
 | Build (Command Ship) | 200 | ~17 min |
-| Build (Ore Extractor) | 700 | ~57 min |
+| Build (Ore Extractor) | 10 | ~1 min |
+| Build (Ore Refinery) | 700 | ~57 min |
 | Build (PDC) | 2,880 | ~3.7 hr |
 | Build (World Engine) | 5,000 | ~6.4 hr |
 | Mine | 14,000 | ~17 hr |
@@ -96,7 +97,8 @@ Pre-calculated time from initiation to target difficulty (6 sec/block):
 | 200 | Command Ship | 11 min | 14 min | 17 min |
 | 250 | Starfighter | 12 min | 17 min | 20 min |
 | 450 | Frigate | 22 min | 30 min | 37 min |
-| 700 | Ore Extractor | 34 min | 46 min | 57 min |
+| 10 | Ore Extractor | <1 min | ~1 min | ~1 min |
+| 700 | Ore Refinery | 34 min | 46 min | 57 min |
 | 2,880 | PDC | 2.0 hr | 2.9 hr | 3.7 hr |
 | 3,600 | Ore Bunker | 2.4 hr | 3.6 hr | 4.6 hr |
 | 5,000 | World Engine | 3.2 hr | 4.9 hr | 6.4 hr |
@@ -237,7 +239,7 @@ Last action block: 23000   (charge = currentBlock - 23000, regenerates 1/block; 
 | Battleship primary  | 5             | 23005 |
 ```
 
-At ~6 sec/block, most charge costs are trivial (8 blocks = ~48 seconds). The constraint appears when you chain many actions in quick succession (activating several structs, or repeated attacks): each action resets the shared bar, so space them out by the next action's cost.
+At ~6 sec/block, most charge costs are trivial (build-initiate and trash cost 1, activate 2). The real constraint is the ante: **one charge-consuming message per player per block** (`2021`), so a batch of initiates lands one per block — about 6 seconds apart — however much charge you hold. Each action also resets the shared bar, so space activates by their cost.
 
 ---
 

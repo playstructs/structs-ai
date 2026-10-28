@@ -93,6 +93,49 @@ Paste this into an agent session with the repository open:
 
 ---
 
+## structsd release review
+
+A chain release moves more than the UI ever does: CLI verbs appear and disappear, catalog
+numbers change, and whole mechanics (how Alpha is held, how guilds are founded) can be
+replaced. The drift script catches the first kind; only reading the release catches the rest.
+
+```bash
+# 1. Pin the new tag and refresh the generated truth.
+git -C .references/structsd fetch --tags && git -C .references/structsd checkout vX.Y.Z
+echo vX.Y.Z > .structsd-version
+scripts/ci/snapshot-commands.sh      # generated/structsd-commands.txt, structsd-signatures.txt
+python3 scripts/gen-catalogs.py      # generated/commands.md, struct-types.md
+scripts/check-drift.sh
+
+# 2. Read the release, not the diff summary.
+#    docs/upgrades/vX.Y.Z*.md, proto/structs/structs/{tx,query,events}.proto,
+#    x/structs/types/{keys,errors,errors_structured,permission}.go, app/ante/errors.go,
+#    and every keeper handler the upgrade notes name.
+
+# 3. Removed verbs go into scripts/ci/deprecated-tokens.txt so the lint fails on them.
+bash scripts/ci/lint-commands.sh
+python3 scripts/ci/check-invocations.py
+```
+
+Then work outward from the skills: `.cursor/skills/*` first (they are what agents execute),
+then `knowledge/`, then `api/`, `schemas/`, `reference/`, `play/errors.md`, and last the
+top-level pages, `SAFETY.md` tiers and the playbooks. For each page, write the new release
+as **the current state** — no "previously", no "as of vX.Y.Z" banners. The only page that
+narrates before and after is `CHANGELOG.md`.
+
+Things that have moved in past releases and are worth checking by name every time: the
+charge costs in `struct-types`, build difficulties, the proof-of-work input strings and
+the integer difficulty formula, which messages the ante treats as charge/proof/recovery,
+the permission bit table and the composite masks, the `address-register` proof string,
+where refined Alpha lands, what `guild-create` costs and checks, the substation capacity
+formula, the pagination limits, and the event catalog (`events.proto` vs the emit sites —
+an event that exists in proto but is never emitted belongs in the "not emitted" table).
+
+Finish with `scripts/gen-skills-mirror.sh`, `scripts/generate-llms-full.sh`, the three lint
+scripts, and `bash scripts/ci/check-links.sh`.
+
+---
+
 ## PostgreSQL and Guild Stack review
 
 Treat a `structs-pg` update as a co-versioned schema review, not a migration-name review:

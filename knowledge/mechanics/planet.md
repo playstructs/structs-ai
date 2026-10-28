@@ -22,7 +22,7 @@ description: "The planet lifecycle: exploration, charting, starting properties, 
 
 When planet ore reaches 0:
 
-- Planet status becomes `complete`
+- Planet status becomes `complete`; the planet keeps its `owner` stamp and stays in the store, but it is **unreachable**: `fleet-move` refuses it as a destination and no raid can target it
 - All structs on the planet are destroyed
 - All fleets are automatically sent away (peace deal)
 - Player must explore a new planet to continue

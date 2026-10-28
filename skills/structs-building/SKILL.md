@@ -2,7 +2,7 @@
 title: "Building structs: construct and position"
 meta_description: "Turn power headroom and charge into capability: extractors, refineries, generators, and combat structs. Includes the full struct catalog."
 name: structs-building
-description: Builds and manages structs in Structs — construction, the build-order decision, activation/deactivation, movement, defense assignment, stealth, and generator infusion. Use when building a struct, deciding what to build next, activating/deactivating, moving the Command Ship, setting defenders, enabling stealth, or infusing a generator. Build times range ~17 min (Command Ship) to ~6.4 hr (World Engine) at D=3.
+description: Builds and manages structs in Structs — construction, the build-order decision, activation/deactivation, movement, defense assignment, stealth, and generator infusion. Use when building a struct, deciding what to build next, activating/deactivating, moving the Command Ship, setting defenders, enabling stealth, or infusing a generator. Build times range ~1 min (Ore Extractor) to ~6.4 hr (World Engine) at D=3.
 level: core
 domain: building
 ---
@@ -73,29 +73,32 @@ Full table: [knowledge/entities/struct-types](https://structs.ai/knowledge/entit
 | Continental Power Plant | 10 | 1 | `armour` (DR 1); 5 kW/g |
 | World Engine | 10 | 1 | `armour` (DR 1); 10 kW/g |
 
-Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate 2, defense-change 1, Command Ship move 3, stealth activate 2. Deactivate (single or batch) is free and works even while offline. Full charge table and PoW decay times: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building).
+Charge costs (from your **per-player** bar): build-initiate 1, trash 1, activate 2, defense-change 1, Command Ship move 3, stealth activate 2. Deactivate (single or batch) is free and works even while offline. Charge is the cheap part of building; the ante still allows only one charge-consuming message per player per block, so a batch of initiations goes one per block (~6 s apart). Power headroom and slots are the real constraints. Full charge table and PoW decay times: [knowledge/mechanics/building](https://structs.ai/knowledge/mechanics/building).
 
 ### Build times (initiation → D=3 complete, ~6 s/block)
 
 | Struct | Type ID | Build Diff | Wait to D=3 |
 |--------|---------|-----------|-------------|
+| Ore Extractor | 14 | 10 | ~1 min |
 | Command Ship | 1 | 200 | ~17 min |
 | Starfighter | 3 | 250 | ~20 min |
-| Ore Extractor / Refinery | 14 / 15 | 700 | ~57 min |
+| Ore Refinery | 15 | 700 | ~57 min |
 | PDC | 19 | 2,880 | ~3.7 hr |
 | Ore Bunker | 18 | 3,600 | ~4.6 hr |
 | World Engine | 22 | 5,000 | ~6.4 hr |
+
+The Extractor's near-instant build is deliberate: a new player can be mining within minutes, while the Refinery remains the first real wait — so initiate the Refinery the block after the Extractor, not after the Extractor lands. A completed build is set to its type's **full health** at completion.
 
 **Initiate early, compute later** — the age clock starts at initiation, and difficulty decays from 64 (fresh, impossible) to 1 (aged, instant). Batch-initiate, then compute in the background once it has decayed. **One auto-submission at a time per key**: sequence same-key build computes expected to finish together, because simultaneous completions collide on account sequence and one can fail silently. Background jobs with safely separated completion windows may overlap; different keys can always run in parallel. See [hashing.md — fresh vs aged anchor](https://structs.ai/knowledge/mechanics/hashing#worked-example-fresh-vs-aged-anchor).
 
 ## Manage existing structs
 
 - **Move (Command Ship only — it's the one movable struct):** `struct-move TX_FLAGS -- [cmd-ship-id] [new-ambit] [new-slot] [new-location]`. The chain rejects `struct-move` on any other struct.
-- **Defense assignment:** `struct-defense-set TX_FLAGS -- [defender-id] [protected-id]` / `struct-defense-clear TX_FLAGS -- [defender-id]` (1 charge). Only fleet types (`canDefend: true`) can be assigned.
+- **Defense assignment:** `struct-defense-set TX_FLAGS -- [defender-id] [protected-id]` / `struct-defense-clear TX_FLAGS -- [defender-id]` (1 charge). Only fleet types (`canDefend: true`) can be assigned, and a struct cannot be assigned to defend itself (`self_defense`).
 - **Stealth (Stealth Bomber, Submersible):** `struct-stealth-activate` / `struct-stealth-deactivate` (2 charge to activate).
 - **Deactivate / re-activate:** `struct-deactivate` frees its power (free, and works even while you're offline — a recovery lever); `struct-activate` brings it back (2 charge, requires you online). Deactivate many at once with `struct-deactivate-batch -- [id1,id2,...]` (up to 65). Taking an Extractor/Refinery offline halts your pipeline (Tier 1).
-- **Trash (Tier 2, IRREVERSIBLE):** `struct-trash TX_FLAGS -- [struct-id]` permanently destroys a **built** struct you own to free its slot (costs 8 charge, same as building it). There is no undo and nothing is refunded. To abort an **unfinished** build instead, use `struct-build-cancel`.
-- **Generator infuse (Tier 2, IRREVERSIBLE):** `struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha`. Alpha Matter is annihilated into energy — no defusion, and a raided generator takes the infused matter with it. Always escalate; confirm the generator's defense posture first. See [`structs-energy`](/skills/structs-energy/SKILL.html).
+- **Trash (Tier 2, IRREVERSIBLE):** `struct-trash TX_FLAGS -- [struct-id]` permanently destroys a **built** struct you own to free its slot (costs 1 charge, same as building it, and counts as the block's one charge message). There is no undo and nothing is refunded — including any generator fuel. To abort an **unfinished** build instead, use `struct-build-cancel`.
+- **Generator infuse (Tier 2, IRREVERSIBLE):** `struct-generator-infuse TX_FLAGS -- [struct-id] [amount]ualpha` (one coin; paid from your **player vault**, never your key). Alpha Matter is annihilated into energy — no defusion, and a raided generator takes the infused matter with it. Always escalate; confirm the generator's defense posture first. See [`structs-energy`](/skills/structs-energy/SKILL.html).
 
 ## Commands reference
 
@@ -126,6 +129,8 @@ Charge costs (from your **per-player** bar): build-initiate 8, trash 8, activate
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "required charge X but player had Y" | Per-player charge bar too low | Wait; space actions by their cost (see conventions) |
+| charge message already submitted this block | Two charge-consuming actions from one player in one block (or one tx) | One per block; wait ~6 s |
+| `self_defense` | Defender and protected struct are the same | Pick a different protected struct |
 | "capacity_exceeded" / power errors | BuildDraw or PassiveDraw won't fit | Infuse / deactivate / wait ([structs-energy](/skills/structs-energy/SKILL.html)) |
 | "power overload" / won't go online | Capacity < load + draw | Raise capacity or deactivate something ([structs-energy](/skills/structs-energy/SKILL.html)) |
 | "fleet not on station" | Fleet away | Recall via `fleet-move` |

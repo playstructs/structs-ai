@@ -17,7 +17,7 @@ The action and entity indexes are for “what is the name of this thing.” Loca
 
 ## Source-derived catalogs (provenance-stamped)
 
-- [Struct type catalog](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) — build cost, draw, HP, weapons, `canDefend` (generated from `structsd v0.21.0`)
+- [Struct type catalog](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) — build cost, draw, HP, weapons, `canDefend` (generated from `structsd v0.22.0`)
 - [CLI command catalog](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) — every `structsd tx/query structs` command
 - [Command snapshot](https://github.com/playstructs/structs-ai/blob/main/generated/structsd-commands.txt) — flat list used by the command lint
 

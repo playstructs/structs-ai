@@ -2,7 +2,7 @@
 title: "Play Structs: zero to Alpha Matter"
 meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
-description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
+description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~2 hours (the Ore Refinery's build clock is the long pole; the Extractor lands in about a minute).
 ---
 
 # Play Structs: zero to Alpha Matter
@@ -74,12 +74,12 @@ After exploration, report a five-line card before the first build. With Desktop,
 ```text
 Power headroom: [capacity + capacitySecondary - load - structsLoad]
 Next build draw: 500 W (Ore Extractor)
-Alpha available: [amount] ([infusion is/is not] currently an option)
+Alpha available: [vault spendable ualpha = playerInventory.rocks] ([infusion is/is not] currently an option)
 Exposed stored ore: [amount]
 Next action: build Ore Extractor, or fix power first
 ```
 
-Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary`; reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
+"Alpha available" means Alpha in your **player vault** — the protocol account the chain derives from your player ID, where refined Alpha is deposited and from which `reactor-infuse` and generator fuel are paid by default (`structsd query structs vault [player-id]`, then `structsd query bank balances [vault-address]`). Alpha on your signing key does not count unless you move it there or pass `--delegator-address`. See [structs-onboarding — Step 2b](/skills/structs-onboarding/SKILL.html). Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary` (a substation passes on 90% of what it receives); reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
 
 ---
 
@@ -103,7 +103,7 @@ Then compute in background — `struct-build-compute` is an **expedition** that 
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes instantly. The struct auto-activates.
+Build difficulty 10. The proof reaches its minimum ten blocks (~1 minute) after initiation and completes instantly. The struct auto-activates. Do not wait for it before initiating the Refinery — build-initiate costs 1 charge, so the next initiation is allowed one block later.
 
 ### Ore Refinery (type 15)
 
@@ -115,7 +115,7 @@ structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustm
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Same difficulty and timing as the Extractor.
+Build difficulty 700. Difficulty reaches 1 once the build is 700 blocks (~70 minutes) old, so at `-D 1` expect completion about an hour and ten minutes after initiation (~57 minutes at `-D 3`). This is the long pole of onboarding; everything else fits inside it.
 
 After both initiations, print the state card again. Replace “Next build draw” with the remaining build or activation load, list both build job IDs and ETAs, and name the exact next action. A pending build is visible progress; do not report it as a completed struct.
 
@@ -147,7 +147,7 @@ Mining and refining are multi-hour background operations. Track both jobs and th
 
 **Gameplay transactions are free.** Every pure Structs gameplay message runs on a dedicated free-gas meter — no `ualpha` fee is charged (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
 
-**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen.
+**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen. Refined Alpha is deposited in your **vault**, not on your signing key — read it with `structsd query bank balances [vault-address]` or as `playerInventory.rocks` on the player query.
 
 **Power keeps you alive.** If your load exceeds capacity, you go offline and can't act. Monitor with `structsd query structs player [id]`.
 

@@ -14,7 +14,7 @@ description: A worked economic workflow covering mint, convert, redeem, and the 
 
 - Player online, with a signing key that holds `PermTokenTransfer`
 - Mint/confiscate need guild bank privileges (`PermGuildTokenMint` / `PermGuildTokenBurn`)
-- Alpha Matter on the signing address for mint or convert-in
+- Alpha in the right **vault**: the guild vault for mint (`structsd query structs vault [guild-id]`), your player vault for convert-in and redeem (`playerInventory.rocks`). The signing key's own balance is not used
 - Target guild already exists (convert cannot create a denom)
 
 ## Security Warning
@@ -41,11 +41,11 @@ structsd query bank denom-owners uguild.[guild-id]
 structsd tx structs guild-bank-mint TX_FLAGS -- [alpha-amount] [token-amount]
 ```
 
-Ratio is captured at action time. Signer's guild is implicit.
+Ratio is captured at action time. Alpha leaves the **guild vault** and the minted tokens land in the guild vault; the signer's funds are untouched. The signer's guild is implicit — a guild owner who is not a member passes `--guild-id`. The guild starts life with 1,000,000 ualpha of collateral and 1,000,000 tokens from founding.
 
 ### 3. Convert ualpha → token (open path)
 
-Anyone with `PermTokenTransfer` can buy an existing guild token at the live collateral ratio. Convert-in fee stays in that guild's collateral. `min-amount-token` is the required slippage floor:
+Anyone with `PermTokenTransfer` can buy an existing guild token at the live collateral ratio; the ualpha is debited from the buyer's **player vault** and the tokens are credited there. Convert-in fee stays in that guild's collateral. `min-amount-token` is the required slippage floor:
 
 ```
 structsd tx structs guild-bank-convert TX_FLAGS -- [guild-id] [alpha-amount] [min-amount-token]
@@ -61,7 +61,7 @@ structsd tx structs guild-bank-convert-token TX_FLAGS -- [amount]uguild.[source-
 
 ### 5. Redeem for Alpha
 
-Payout is `floor(amount * collateral / supply)` and must clear `min-amount-alpha`:
+Tokens are burned from your player vault and the Alpha is paid into it. Payout is `floor(amount * collateral / supply)` and must clear `min-amount-alpha`:
 
 ```
 structsd tx structs guild-bank-redeem TX_FLAGS -- [amount]uguild.[guild-id] [min-amount-alpha]
@@ -69,7 +69,7 @@ structsd tx structs guild-bank-redeem TX_FLAGS -- [amount]uguild.[guild-id] [min
 
 ### 6. Send restriction
 
-`uguild.*` may only go to a registered player, the structs module account, or an indexed provider pool. IBC and unregistered addresses reject with `recipient_not_eligible`. Prefer `player-send` between registered players.
+`uguild.*` may only go to a registered player, a player or guild **vault**, the structs module account, or an indexed provider pool. IBC and unregistered addresses reject with `recipient_not_eligible`. Prefer `player-send` between registered players.
 
 ### 7. Confiscate and burn (Tier 2)
 
@@ -85,7 +85,7 @@ Audited forever. Damages reputation.
 |------|--------|------------|
 | Over-minting | Thin collateral, convert/redeem slip | Watch collateral vs supply before mint |
 | Slippage miss | Convert rejected | Set `min-amount-token` from the live ratio |
-| Send to IBC / raw address | `recipient_not_eligible` | Send only to registered players or provider pools |
+| Send to IBC / raw address | `recipient_not_eligible` | Send only to registered players, vaults, or provider pools |
 | Confiscate-and-burn | Holder balance gone, reputation hit | Rank revocation is usually enough |
 
 `TX_FLAGS` per [`conventions.md`](/skills/conventions.html). Canonical economics: [`knowledge/economy/guild-banking.md`](../../knowledge/economy/guild-banking.md).

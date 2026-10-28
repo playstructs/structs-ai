@@ -129,6 +129,8 @@ Limits inside which the agent may act without per-action approval. Above them, e
 
 - `reactor-infuse`: up to ___ ualpha per session
 - `agreement-open`: up to ___ ualpha committed at any time
+- `guild-rank-purchase` / `guild-membership-join-by-rank-purchase`: up to ___ guild tokens per session
+- `vault-send` / `player-send` from the vault: up to ___ ualpha per session, only to owners listed below
 - `struct-build-initiate`: up to ___ new builds per session
 - `struct-attack`: only against targets in the known-hostile list below
 - Long proof-of-work builds (> 1 hr to D=3): require per-build approval
@@ -139,12 +141,13 @@ Never auto-execute these, regardless of autonomy level:
 
 - Every `struct-generator-infuse`
 - Every `permission-grant-on-object` with `PermAll` (33554431)
-- Every `permission-guild-rank-set` with broad bits (16777216, 524288, 262144)
+- Every `permission-guild-rank-set` with broad bits (16777216, 8192, 262144, 16 — `PermTokenTransfer` on the guild spends the guild vault)
+- Every `guild-create` (2,000,000 ualpha from the vault, half burned) and `guild-update-rank-purchase`
 - Every `address-register`, `address-revoke`, `player-update-primary-address`
 - Every `guild-bank-confiscate-and-burn`
 - Every `reactor-defuse` and `reactor-begin-migration`
 - Every `provider-delete`, `substation-delete`, `allocation-delete`
-- Cross-account `player-send` to a recipient with no prior history
+- Cross-account `player-send` or `vault-send` to a recipient with no prior history
 - Multi-target `struct-attack` that crosses guild boundaries
 - Arming Desktop `autoresponse` / `autoraid` with `autonomy: auto` (see SAFETY.md Standing Automation Grants)
 - `struct-trash`; guild bank mint/redeem above caps you set below
@@ -190,7 +193,7 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ### The `-y` rule
 
-`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`): they run for hours to weeks and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
+`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`): they run for minutes to days and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
 
 ---
 
@@ -246,7 +249,26 @@ charge = CurrentBlockHeight - player.lastActionBlock
 
 Every charge-consuming action by **any** of your structs (build, activate, attack, move, defense change, stealth) draws from and resets this one bar. It regenerates at 1 per block (~6 sec/block) whenever you are idle. To know whether an action can fire, query the **player**, not the struct.
 
-Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost.
+Action costs: activate 2, build-initiate 1, trash 1, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost. The ante additionally refuses a second charge-consuming message from the same player in one block, and two charge messages in one transaction, so even 1-charge actions (build-initiate, trash) go one per block.
+
+---
+
+## Your Alpha lives in your vault
+
+Every player (`1-N`) and guild (`0-N`) has a **vault**: a protocol-controlled bank account derived from the owner ID (`structsd query structs vault [owner-id]` → `address`; balances via `structsd query bank balances [address]`). It is not a keyring key and is never a signing address. The rule of thumb: **game income lands in the vault, game spends are paid from the vault, and your signing key pays only native fees.**
+
+- Refined Alpha is deposited in the vault; `playerInventory.rocks` on the player query is the vault's spendable ualpha.
+- `reactor-infuse` / `reactor-defuse` / `reactor-cancel-defusion` / `reactor-begin-migration` act on the vault unless `--delegator-address` names a registered key (or `--owner-id` names a guild vault you control).
+- `struct-generator-infuse`, `guild-create` (2,000,000 ualpha) and guild rank purchases spend from the vault with no fallback to the key.
+- Move funds with `vault-send [owner-id] [recipient-owner-id] [amount]` (vault→vault), `player-send -- [vault-address] [your-address] [amount]` (vault→key), or a plain `bank send` to the vault address (key→vault).
+
+Canonical explainer: [knowledge/mechanics/energy#vaults](https://structs.ai/knowledge/mechanics/energy). Skills say "from the vault" and assume this section.
+
+---
+
+## Query pagination
+
+Every paginated `structsd query structs` endpoint defaults to 100 rows and silently clamps `--limit` to 1000; `--count-total` is silently forced off, so `pagination.total` is always `0`; an `--offset` above 1000 is refused (`pagination offset exceeds maximum; use pagination key`). Walk large collections with `--page-key` from the previous response's `next_key`; do not size loops from `total`.
 
 ---
 
@@ -325,7 +347,7 @@ At least one playbook link and one awareness link.
 title: "Play Structs: zero to Alpha Matter"
 meta_description: "Start here. The simple path from zero to mining Alpha Matter: install structsd, choose a guild, create an account, explore, and build."
 name: play-structs
-description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~3-4 hours.
+description: The starting skill for AI agents playing Structs. Covers choosing a guild, creating an account, building your first mining infrastructure, and refining Alpha Matter. Use this skill first — it links to everything else. Gentle on CPU (-D 1). Expected total time from zero to mining ~2 hours (the Ore Refinery's build clock is the long pole; the Extractor lands in about a minute).
 ---
 
 # Play Structs: zero to Alpha Matter
@@ -397,12 +419,12 @@ After exploration, report a five-line card before the first build. With Desktop,
 ```text
 Power headroom: [capacity + capacitySecondary - load - structsLoad]
 Next build draw: 500 W (Ore Extractor)
-Alpha available: [amount] ([infusion is/is not] currently an option)
+Alpha available: [vault spendable ualpha = playerInventory.rocks] ([infusion is/is not] currently an option)
 Exposed stored ore: [amount]
 Next action: build Ore Extractor, or fix power first
 ```
 
-Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary`; reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
+"Alpha available" means Alpha in your **player vault** — the protocol account the chain derives from your player ID, where refined Alpha is deposited and from which `reactor-infuse` and generator fuel are paid by default (`structsd query structs vault [player-id]`, then `structsd query bank balances [vault-address]`). Alpha on your signing key does not count unless you move it there or pass `--delegator-address`. See [structs-onboarding — Step 2b](/skills/structs-onboarding/SKILL.html). Fresh guild-signup players normally have no Alpha and rely on the guild substation's `capacitySecondary` (a substation passes on 90% of what it receives); reactor infusion is not their default first fix. The player + online Command Ship + Extractor need about **575 W**. Extractor + Refinery need about **1,075 W**. If headroom is insufficient, do not discover this by failing the build: choose a better-powered guild/substation, obtain an agreement, or deactivate nonessential load. Infuse only when the player actually has Alpha.
 
 ---
 
@@ -426,7 +448,7 @@ Then compute in background — `struct-build-compute` is an **expedition** that 
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Build difficulty 700. At `-D 1`, the hash waits ~95 minutes then completes instantly. The struct auto-activates.
+Build difficulty 10. The proof reaches its minimum ten blocks (~1 minute) after initiation and completes instantly. The struct auto-activates. Do not wait for it before initiating the Refinery — build-initiate costs 1 charge, so the next initiation is allowed one block later.
 
 ### Ore Refinery (type 15)
 
@@ -438,7 +460,7 @@ structsd tx structs struct-build-initiate --from my-key --gas auto --gas-adjustm
 structsd tx structs struct-build-compute -D 1 --from my-key --gas auto --gas-adjustment 1.5 -y -- [struct-id]
 ```
 
-Same difficulty and timing as the Extractor.
+Build difficulty 700. Difficulty reaches 1 once the build is 700 blocks (~70 minutes) old, so at `-D 1` expect completion about an hour and ten minutes after initiation (~57 minutes at `-D 3`). This is the long pole of onboarding; everything else fits inside it.
 
 After both initiations, print the state card again. Replace “Next build draw” with the remaining build or activation load, list both build job IDs and ETAs, and name the exact next action. A pending build is visible progress; do not report it as a completed struct.
 
@@ -470,7 +492,7 @@ Mining and refining are multi-hour background operations. Track both jobs and th
 
 **Gameplay transactions are free.** Every pure Structs gameplay message runs on a dedicated free-gas meter — no `ualpha` fee is charged (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
 
-**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen.
+**Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen. Refined Alpha is deposited in your **vault**, not on your signing key — read it with `structsd query bank balances [vault-address]` or as `playerInventory.rocks` on the player query.
 
 **Power keeps you alive.** If your load exceeds capacity, you go offline and can't act. Monitor with `structsd query structs player [id]`.
 

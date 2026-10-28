@@ -1,8 +1,8 @@
 ---
 title: Install structsd from release or source
-meta_description: Install structsd from a prebuilt release binary or build from source with the Makefile. Go 1.23+, no Ignite dependency for builds.
+meta_description: Install structsd from a prebuilt release binary or build from source with the Makefile. Go 1.27.3+, no Ignite dependency for builds.
 name: structsd-install
-description: Installs the structsd binary. Covers downloading prebuilt release binaries (recommended) and building from source via the Makefile (Go 1.23+). Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
+description: Installs the structsd binary. Covers downloading prebuilt release binaries (recommended) and building from source via the Makefile (Go 1.27.3+). Use when structsd is not found, when setting up a new machine, or when the agent needs to install or update the Structs chain binary.
 level: entry
 domain: infra
 ---
@@ -25,8 +25,8 @@ After either path, `structsd` will be available on your PATH and `structsd versi
 The chain ships signed binaries via GoReleaser on every tag. Pick the asset for your OS/arch from the latest release at <https://github.com/playstructs/structsd/releases>.
 
 ```bash
-# Pick one (replace VERSION with e.g. v0.19.1):
-VERSION=v0.19.1
+# Pick one (replace VERSION with the current release, e.g. v0.22.0):
+VERSION=v0.22.0
 
 # Linux amd64
 curl -L -o structsd.tar.gz \
@@ -55,14 +55,14 @@ If asset names differ on the release page (GoReleaser layouts evolve), copy the 
 
 Use this when you need a branch that has not been tagged yet, or when you are developing the chain locally.
 
-### 1. Install Go (1.23+)
+### 1. Install Go (1.27.3+)
 
-The Makefile enforces `REQUIRE_GO_VERSION = 1.23`. Newer minor versions (1.24, 1.25) are also fine.
+The Makefile enforces `REQUIRE_GO_VERSION = 1.27.3` (matching `go 1.27.3` in `go.mod`). Newer 1.x releases are fine. (The name/pfp character set is fixed by checked-in Unicode 15.0.0 tables, not by your toolchain, so the Go version you build with never changes which names the chain accepts.)
 
 #### Linux (amd64)
 
 ```bash
-GO_VER=1.23.6
+GO_VER=1.27.3
 wget https://go.dev/dl/go${GO_VER}.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go${GO_VER}.linux-amd64.tar.gz
@@ -74,7 +74,7 @@ If an older Go was installed via apt, remove it first: `sudo apt remove -y golan
 #### macOS (Apple Silicon)
 
 ```bash
-GO_VER=1.23.6
+GO_VER=1.27.3
 curl -OL https://go.dev/dl/go${GO_VER}.darwin-arm64.tar.gz
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go${GO_VER}.darwin-arm64.tar.gz
@@ -84,14 +84,14 @@ rm go${GO_VER}.darwin-arm64.tar.gz
 #### macOS (Intel)
 
 ```bash
-GO_VER=1.23.6
+GO_VER=1.27.3
 curl -OL https://go.dev/dl/go${GO_VER}.darwin-amd64.tar.gz
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go${GO_VER}.darwin-amd64.tar.gz
 rm go${GO_VER}.darwin-amd64.tar.gz
 ```
 
-Alternatively on macOS: `brew install go@1.23` (or any newer 1.x).
+Alternatively on macOS: `brew install go` (Homebrew's current `go` formula is ≥ 1.27).
 
 #### Configure PATH
 
@@ -109,7 +109,7 @@ Reload: `source ~/.profile` (or `source ~/.zshrc`).
 go version
 ```
 
-Expected: `go version go1.23.x linux/amd64` (or `darwin/arm64`, etc.). The Makefile will refuse to build with anything older than 1.23.
+Expected: `go version go1.27.x linux/amd64` (or `darwin/arm64`, etc.). The Makefile will refuse to build with anything older than 1.27.3.
 
 ### 2. Clone and Build
 
@@ -141,8 +141,8 @@ structsd version
 ```bash
 cd structsd
 git fetch --tags
-git checkout v0.19.1   # or `git pull origin main` for tip-of-tree
-make install
+git checkout v0.22.0   # or `git pull origin main` for tip-of-tree
+make install VERSION=0.22.0   # pass VERSION when the checkout is a lightweight tag so `structsd version` reports it
 ```
 
 `make install` is idempotent -- it overwrites the previous binary at `~/go/bin/structsd`.
@@ -188,7 +188,8 @@ If any command fails, revisit the corresponding step above.
 
 - **`structsd: command not found`** — Ensure `~/go/bin` (Path B) or `/usr/local/bin` (Path A) is on your PATH. Run `command -v structsd` to confirm.
 - **`go: command not found`** — Ensure `/usr/local/go/bin` is on your PATH. Reload your shell profile.
-- **`ERROR: Go version 1.23+ is required`** from `make install` — Your Go is too old. Re-install per step 1 above; the Makefile's `check_version` target enforces this hard.
+- **`ERROR: Go version 1.27.3+ is required`** from `make install` — Your Go is too old. Re-install per step 1 above; the Makefile's `check_version` target enforces this hard.
+- **`structsd version` prints `HEAD-<sha>`** — the checkout is a lightweight tag that `git describe --exact-match` does not resolve; rebuild with `make install VERSION=0.22.0`.
 - **Build fails on `go mod tidy`** — Network access is required for the first build. Retry once you have connectivity, or set `GOPROXY=direct` if you are behind a restrictive proxy.
 - **Permission denied on `/usr/local`** — Use `sudo` for the tar extraction or for `install -m 0755`. On shared systems, ask your administrator. Path B does not require root because it installs to `~/go/bin`.
 - **`gcc not installed for ledger support`** — Either install `gcc` (`sudo apt install build-essential` / `xcode-select --install`) or build with `LEDGER_ENABLED=false make install`.

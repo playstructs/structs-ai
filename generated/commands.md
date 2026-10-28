@@ -1,8 +1,8 @@
 ---
 kind: mechanics
 authority: source
-verified_against: structsd 0.21.0
-verified_at: 2026-08-24
+verified_against: structsd 0.22.0
+verified_at: 2026-10-26
 volatility: medium
 generated_by: scripts/gen-catalogs.py
 ---
@@ -21,31 +21,31 @@ generated_by: scripts/gen-catalogs.py
 | `agreement-capacity-increase` | Increase the Capacity of an established Agreement |
 | `agreement-close` | Close an Agreement with an Energy Provider |
 | `agreement-duration-increase` | Increase the Duration of an established Agreement |
-| `agreement-open` | Open an Agreement with an Energy Provider |
+| `agreement-open` | Open a player- or guild-owned Agreement (optional --owner-id) |
 | `allocation-create` | Create an Allocation of energy from a power source |
 | `allocation-delete` | Delete a dynamic Allocation |
-| `allocation-transfer` | Transfer an Allocation to a different account |
+| `allocation-transfer` | Transfer Allocation control to a player or guild |
 | `allocation-update` | Update a dynamic Allocation |
 | `fleet-move` | Move a fleet from one planet to another |
 | `guild-bank-confiscate-and-burn` | Confiscate a Guild Token from an address and burn it (--guild-id to name a guild you own but are not in) |
 | `guild-bank-convert` | Convert Alpha into a Guild Token at the current collateral ratio (required slippage guard) |
 | `guild-bank-convert-token` | Convert one Guild Token into another via Alpha in a single transaction (required slippage guard) |
-| `guild-bank-mint` | Mint new Alpha-backed token for a guild (--guild-id to name a guild you own but are not in) |
+| `guild-bank-mint` | Mint guild tokens into its vault using treasury Alpha as collateral (--guild-id selects the guild) |
 | `guild-bank-redeem` | Redeem a Guild Token for the underlying Alpha asset (required slippage guard) |
-| `guild-charter-consent` | Sign consent for another player to found your guild |
-| `guild-create` | Found a guild on a reactor's charter entitlement |
-| `guild-create-compute` | Do the work to found a Guild |
+| `guild-create` | Found a guild for two Alpha from your player vault |
 | `guild-membership-invite` | Invite a player to a guild |
 | `guild-membership-invite-approve` | Accept an invitation to a guild |
 | `guild-membership-invite-deny` | Deny an invitation to a guild |
 | `guild-membership-invite-revoke` | Cancel an invite to a player |
 | `guild-membership-join` | Join a guild with enough infusions to meet minimum requirements |
+| `guild-membership-join-by-rank-purchase` | Join by purchase when enabled; set --expected-guild-id when leaving another guild |
 | `guild-membership-join-proxy` | Add an account a guild and connect them with some power |
 | `guild-membership-kick` | Kick a player from a guild |
 | `guild-membership-request` | Request entry to a guild |
 | `guild-membership-request-approve` | Accept a request from a player to join the guild |
 | `guild-membership-request-deny` | Deny a request to join a guild |
 | `guild-membership-request-revoke` | Destroy an application to join a guild |
+| `guild-rank-purchase` | Purchase a better rank using your player vault's guild tokens (amounts in base units) |
 | `guild-update-bank-convert-in-fee` | Update the guild bank convert-in fee (0.0 inclusive, 1.0 exclusive) |
 | `guild-update-bank-convert-out-fee` | Update the guild bank convert-out fee (0.0 inclusive, 1.0 exclusive) |
 | `guild-update-endpoint` | Update the endpoint Guild setting |
@@ -57,6 +57,7 @@ generated_by: scripts/gen-catalogs.py
 | `guild-update-owner-id` | Update the owner of the Guild |
 | `guild-update-pfp` | Update the profile picture of a guild |
 | `guild-update-primary-reactor` | Reassign the guild's primary reactor (recovery for retired/jailed validators) |
+| `guild-update-rank-purchase` | Configure guild rank sales; minimum rank zero disables sales, prices use base token units |
 | `permission-grant-on-address` | Grant a set of permissions to an address |
 | `permission-grant-on-object` | Grant a set of permissions on an object to a player |
 | `permission-guild-rank-revoke` | Revoke guild rank permission on an object |
@@ -69,25 +70,25 @@ generated_by: scripts/gen-catalogs.py
 | `planet-raid-complete` | Complete a Planet Raid |
 | `planet-raid-compute` | Do the work to raid a planet |
 | `planet-update-name` | Update the cosmetic name of a planet |
-| `player-send` | Send tokens from any player-owned address |
+| `player-send` | Send tokens from a registered address or authorized player/guild vault, including funding a signing key for fees |
 | `player-update-guild-rank` | Update the guild rank of a player in your guild (--guild-id to name a guild you own but are not in) |
 | `player-update-name` | Update the cosmetic name of a player |
 | `player-update-pfp` | Update the profile picture of a player |
 | `player-update-pfp-cr-attributes` | Update the client render attributes for a player's local profile picture |
 | `player-update-primary-address` | Update the primary address for a player |
-| `provider-create` | Create a new Energy Provider offering |
+| `provider-create` | Create a player- or guild-owned Energy Provider offering (optional --owner-id) |
 | `provider-delete` | Delete an Energy Provider and Cancel all Agreements |
 | `provider-update-access-policy` | Update the Access Policy of a Provider |
 | `provider-update-capacity-maximum` | Update the Maximum Capacity of a Provider |
 | `provider-update-capacity-minimum` | Update the Minimum Capacity of a Provider |
 | `provider-update-duration-maximum` | Update the Maximum Duration of a Provider |
 | `provider-update-duration-minimum` | Update the Minimum Duration of a Provider |
-| `provider-withdraw-balance` | Withdraw the pending earnings from a Provider |
+| `provider-withdraw-balance` | Withdraw provider earnings to its owner vault or an explicit recipient |
 | `reactor-begin-migration` | Migrate Alpha from one Reactor to another |
 | `reactor-cancel-defusion` | Place cooling Alpha back into the Reactor to resume generating energy |
 | `reactor-defuse` | Defuse Alpha from a Reactor, returning it to the player after a cooldown |
-| `reactor-infuse` | Infuse Alpha from a player address into a reactor |
-| `reactor-restart` | Resync a Reactor's energy output with its validator, restoring it after an unjail |
+| `reactor-infuse` | Infuse Alpha from a vault or registered address into a reactor |
+| `reactor-restart` | Queue a Reactor's energy resync with live validator state |
 | `struct-activate` | Bring a Struct online |
 | `struct-attack` | Attack a Struct with a Struct |
 | `struct-build-cancel` | Cancel an unfinished Struct |
@@ -109,13 +110,14 @@ generated_by: scripts/gen-catalogs.py
 | `struct-trash` | Destroy (trash) a Struct, consuming the build charge |
 | `substation-allocation-connect` | Connect an Allocation to a Substation |
 | `substation-allocation-disconnect` | Disconnect an Allocation from a Substation |
-| `substation-create` | Create a new Substation with an initial allocation |
+| `substation-create` | Create a player- or guild-owned Substation with an initial allocation |
 | `substation-delete` | Delete a Substation |
 | `substation-player-connect` | Connect a Player to a Substation |
 | `substation-player-disconnect` | Disconnect a Player from a Substation |
 | `substation-player-migrate` | Migrate a list of Players to another Substation |
 | `substation-update-name` | Update the cosmetic name of a substation |
 | `substation-update-pfp` | Update the profile picture of a substation |
+| `vault-send` | Transfer coins between player or guild vaults |
 
 ## `structsd query structs`
 
@@ -148,6 +150,7 @@ generated_by: scripts/gen-catalogs.py
 | `infusion` | Show the details of a specific Infusion |
 | `infusion-all` | Returns all Infusions |
 | `infusion-all-by-destination` | Returns all Infusions to a specific destination |
+| `owner-reactor-diversity` | Show stored diversity, current live bonus and usable owner capacity |
 | `params` | Shows the parameters of the module |
 | `permission` | Show the details of a specific Permission |
 | `permission-all` | Returns all Permissions |
@@ -169,6 +172,7 @@ generated_by: scripts/gen-catalogs.py
 | `provider-earnings-address-all` | Show all Provider Earnings Addresses |
 | `reactor` | Show the details of a specific Reactor |
 | `reactor-all` | Returns all Reactors |
+| `reactor-stake-share` | Show validator stake share, cap headroom by funding source, and commission repair state |
 | `struct` | Show the details of a specific Struct |
 | `struct-all` | Returns all Structs |
 | `struct-attribute` | Show the details of a specific Struct Attribute |
@@ -178,4 +182,5 @@ generated_by: scripts/gen-catalogs.py
 | `substation` | Show the details of a specific Substation |
 | `substation-all` | Returns all Substations |
 | `validate-signature` | Execute the ValidateSignature RPC method |
+| `vault` | Show a player or guild vault address; query balances through the bank module |
 

@@ -26,7 +26,7 @@ allocatable    = capacity - load
 | Term | Meaning |
 |------|---------|
 | `capacity` | Your own generation (infusions). The only capacity you can allocate **out**. |
-| `capacitySecondary` | Received from a substation you're connected to (its `connectionCapacity`). Not re-allocatable. |
+| `capacitySecondary` | Received from a substation you're connected to (its `connectionCapacity`, computed from 90% of the substation's incoming power). Not re-allocatable. |
 | `load` | Power you've allocated out. |
 | `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
 
@@ -79,7 +79,7 @@ Worst-case load during onboarding is ~1,075 W (all three structs online plus a b
 
 ## Increasing capacity
 
-Reactor infusion (safe, reversible, you keep ~96%), generator infusion (more kW/gram but irreversible and raidable), or buying via an agreement. Rates, the 96/4 split, and substation distribution are in [energy.md](energy.md#increasing-your-own-capacity).
+Reactor infusion (safe, reversible, you keep ~96% plus a diversity bonus of up to 50% for stake spread across 10+ reactors; paid from your vault), generator infusion (more kW/gram but irreversible and raidable), or buying via an agreement. A substation passes on only 90% of what it receives. Rates, the 96/4 split, the stake cap, and substation distribution are in [energy.md](energy.md#increasing-your-own-capacity).
 
 ---
 

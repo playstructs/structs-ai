@@ -54,9 +54,13 @@ Queries are reads. They do not spend charge the way transactions do, but they st
 - **[planet-attribute.md](planet-attribute.md)** - Per-planet clocks, shields, slots
 - **[guild-membership-application.md](guild-membership-application.md)** - Invite/request rows
 
+### Pagination
+
+Every list endpoint uses Cosmos key pagination: `pagination.limit` defaults to **100** and is silently clamped to **1000**; `pagination.count_total` is silently forced off (`total` is always `0`); `pagination.offset` above 1000 is refused (`pagination offset exceeds maximum; use pagination key`). Walk with `next_key`. See [patterns/pagination.md](../../patterns/pagination.md).
+
 ### System Queries
 
-- **[system.md](system.md)** - Block height, params, guild charter, validate-signature
+- **[system.md](system.md)** - Block height, params, vault address lookup, validate-signature
 
 ### Other Queries
 

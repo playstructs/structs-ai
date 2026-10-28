@@ -90,7 +90,7 @@ Always have something aging. If nothing is initiated and aging right now, you ar
 Your opening build order sets early tempo (times at recommended **D=3**; softer `-D 8` is faster but hungrier on CPU):
 
 - **Command Ship first** — mobility, exploration, raiding option (~17 min at D=3)
-- **Ore Extractor + Refinery together** — batch-initiate both, they age in parallel (~57 min each at D=3)
+- **Ore Extractor + Refinery together** — initiate both a block apart; the Extractor proof lands in ~1 min, the Refinery (~57 min at D=3) is the long pole
 - **Reactor during mine wait** — mine takes ~17 hours at D=3; build reactor while waiting
 
 Each choice trades tempo for security, or security for tempo. The [Early Game](../phases/early-game.md) playbook favors security. Adjust if you're an Entrepreneur or Killer and willing to gamble.

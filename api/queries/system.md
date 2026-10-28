@@ -1,5 +1,5 @@
 ---
-description: "Query system-level state on the consensus network: chain parameters, guild charter puzzle, and signature validation."
+description: "Query system-level state on the consensus network: chain parameters, vault addresses, and signature validation."
 ---
 
 # System Query Endpoints
@@ -18,7 +18,8 @@ description: "Query system-level state on the consensus network: chain parameter
 |--------|------|-------------|------|-----------|
 | GET | `/blockheight` | Get current block height | No | No |
 | GET | `/structs/structs/params` | Get module parameters | No | No |
-| GET | `/structs/structs/guild_charter` | Guild charter puzzle | No | No |
+| GET | `/structs/vault/{ownerId}` | Vault address for a player or guild | No | No |
+| GET | `/structs/structs/guild_charter` | Legacy; nothing consumes it | No | No |
 | GET | `/structs/validate_signature/{address}/{proofPubKey}/{proofSignature}/{message}` | Validate a signature | No | No |
 
 ---
@@ -54,7 +55,7 @@ Returns the current block height of the blockchain.
 
 `GET /structs/structs/params`
 
-Returns the current module parameters for the Structs module.
+Returns the current module parameters for the Structs module. Staking-related params worth reading before you infuse: `diversityMaxBonusBps` (5000), `diversityTargetExtraReactors` (9), `reactorStakeCapBps` (3000), `reactorStakeCapMinValidators` (10). The `guildCharterDifficultyRange` / `guildCharterReactorAge` params still exist but are consumed by nothing.
 
 #### Response
 
@@ -63,11 +64,17 @@ Returns the current module parameters for the Structs module.
 
 ---
 
-### Guild Charter
+### Vault
+
+`GET /structs/vault/{ownerId}`
+
+Resolves the deterministic vault account for a player (`1-N`) or guild (`0-N`). **CLI**: `structsd query structs vault [owner-id]`. Response: `ownerId`, `address` (bech32), `provisioned` (whether the account exists on chain yet — it is created lazily on the first write). Refined Alpha, stake and Central Bank balances live at this address; read them with the standard `bank` module (`/cosmos/bank/v1beta1/balances/{address}`). See [energy.md — Vaults](../../knowledge/mechanics/energy.md#vaults-where-game-alpha-lives).
+
+### Guild Charter (legacy)
 
 `GET /structs/structs/guild_charter`
 
-Global charter puzzle: current **anchor** and difficulty. **CLI**: `guild-charter`. See [hashing.md — Guild Charter](../../knowledge/mechanics/hashing.md#guild-charter).
+Still served (**CLI**: `guild-charter`) but no handler reads it: guild founding is a paid `guild-create`, not a proof-of-work. Do not build on this endpoint.
 
 ### Validate Signature
 

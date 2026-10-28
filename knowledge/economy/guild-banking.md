@@ -19,13 +19,16 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 | Concept | Description |
 |---------|-------------|
-| **Collateral** | Alpha Matter held in the guild bank module account; backs token value |
+| **Founding issuance** | `guild-create` costs 2,000,000 ualpha from the founder's **vault**: 1,000,000 is burned and 1,000,000 becomes the new guild's opening collateral, minting **1,000,000 base units of `uguild.<id>`** into the **guild vault**. Every guild token therefore starts life 1:1 backed |
+| **Guild vault** | The guild's own protocol account (`structsd query structs vault [guild-id]`). Holds the founding tokens, mint output, rank-sale revenue and any Alpha the guild earns. Spent with `vault-send`/`player-send` (`PermTokenTransfer` on the guild) |
+| **Collateral** | Alpha Matter held in the guild bank collateral pool; backs token value |
 | **Collateral ratio** | Live `collateral / supply`. Convert and redeem both read this ratio at action time |
-| **Minting** | Guild-privileged: deposits Alpha and issues tokens at a chosen amount (`guild-bank-mint`) |
-| **Convert** | Open path: anyone with `PermTokenTransfer` can turn `ualpha` into an existing `uguild.{id}` at the live ratio (`guild-bank-convert`). Convert-in fee stays in that guild's collateral. `minAmountToken` is the required slippage floor |
+| **Minting** | Guild-privileged (`PermGuildTokenMint`): moves Alpha **from the guild vault** into collateral and issues tokens at a chosen amount **into the guild vault** (`guild-bank-mint`). The signer's own funds are never used |
+| **Convert** | Open path: anyone with `PermTokenTransfer` can turn `ualpha` **from their player vault** into an existing `uguild.{id}` at the live ratio (`guild-bank-convert`), credited back to the same vault. Convert-in fee stays in that guild's collateral. `minAmountToken` is the required slippage floor |
 | **Convert-token** | Atomic token→alpha→other token (`guild-bank-convert-token`). Source guild keeps convert-out fee; target guild keeps convert-in fee |
-| **Redemption** | Payout is `floor(amount * collateral / supply)` (`guild-bank-redeem`); CLI requires `min-amount-alpha` |
-| **Send restriction** | `uguild.*` may only go to a registered player, the structs module account, or an indexed provider pool — **not IBC**, not an unregistered address (`recipient_not_eligible`) |
+| **Redemption** | Tokens are burned from the redeemer's player vault and Alpha is paid into it; payout is `floor(amount * collateral / supply)` (`guild-bank-redeem`); CLI requires `min-amount-alpha` |
+| **Rank sales** | A guild may price ranks in its own token (`guild-update-rank-purchase`); buyers pay from their vault into the guild vault (`guild-rank-purchase`, `guild-membership-join-by-rank-purchase`). This is the token's first built-in sink and a steady demand source |
+| **Send restriction** | `uguild.*` may only go to a registered player, a player or guild vault, the structs module account, or an indexed provider pool — **not IBC**, not an unregistered address (`recipient_not_eligible`) |
 
 ---
 
@@ -33,9 +36,10 @@ Guilds operate **Central Banks** that mint tokens backed by Alpha Matter collate
 
 | Phase | Action | Notes |
 |-------|--------|-------|
-| **Minting** | Guild deposits Alpha; mints tokens | Privileged; ratio captured at action time |
+| **Founding** | 1,000,000 ualpha collateral → 1,000,000 `uguild.<id>` in the guild vault | Automatic on `guild-create`; another 1,000,000 ualpha is burned |
+| **Minting** | Guild vault deposits Alpha; tokens land in the guild vault | Privileged; ratio captured at action time |
 | **Convert in** | Holder spends `ualpha` for tokens at the live ratio | Open market path; fee stays in collateral |
-| **Circulation** | Tokens used for payments, agreements, internal trade | Trust in guild still determines acceptance |
+| **Circulation** | Tokens used for payments, agreements, rank purchases, internal trade | Trust in guild still determines acceptance; `vault-send` is the native rail |
 | **Convert across** | `guild-bank-convert-token` redeems source then mints target | Both guilds keep their fees |
 | **Redemption** | Token holders redeem for Alpha | `floor` against current collateral and supply; CLI requires `min-amount-alpha` slippage |
 

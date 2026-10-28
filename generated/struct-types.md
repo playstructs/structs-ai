@@ -1,8 +1,8 @@
 ---
 kind: mechanics
 authority: source
-verified_against: structsd v0.21.0
-verified_at: 2026-08-24
+verified_against: structsd v0.22.0
+verified_at: 2026-10-26
 volatility: medium
 generated_by: scripts/gen-catalogs.py
 source: x/structs/types/genesis_struct_type.go
@@ -10,7 +10,7 @@ source: x/structs/types/genesis_struct_type.go
 
 # Struct type catalog
 
-> Generated from the pinned chain source (`v0.21.0`). Draw values are energy units; ambit is a bitmask. Do not hand-edit — run `scripts/gen-catalogs.py`.
+> Generated from the pinned chain source (`v0.22.0`). Draw values are energy units; ambit is a bitmask. Do not hand-edit — run `scripts/gen-catalogs.py`.
 
 | ID | Type | Category | Can defend | Build limit | Build diff | Build draw | Passive draw | Max HP | Movable | Primary dmg (charge) |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -27,7 +27,7 @@ source: x/structs/types/genesis_struct_type.go
 | 11 | Cruiser | fleet | true | 0 | 515 | 110000 | 110000 | 3 | false | 2 (5) |
 | 12 | Destroyer | fleet | true | 0 | 600 | 100000 | 100000 | 3 | false | 2 (5) |
 | 13 | Submersible | fleet | true | 0 | 455 | 125000 | 125000 | 3 | false | 2 (5) |
-| 14 | Ore Extractor | planet | false | 1 | 700 | 500000 | 500000 | 6 | false | 0 (0) |
+| 14 | Ore Extractor | planet | false | 1 | 10 | 500000 | 500000 | 6 | false | 0 (0) |
 | 15 | Ore Refinery | planet | false | 1 | 700 | 500000 | 500000 | 6 | false | 0 (0) |
 | 16 | Orbital Shield Generator | planet | false | 0 | 720 | 200000 | 200000 | 6 | false | 0 (0) |
 | 17 | Jamming Satellite | planet | false | 1 | 2880 | 600000 | 600000 | 6 | false | 0 (0) |

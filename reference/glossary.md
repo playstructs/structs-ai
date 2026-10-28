@@ -44,7 +44,7 @@ A routing of power capacity from a source (player, reactor, struct, or substatio
 *(Codex term)* The Codex's lore name for using the Command Ship's Alpha Drive to redeploy between battlegrounds — i.e. moving the only movable struct across ambits (`struct-move`). → [combat.md — Command Ship Ambit Mobility](../knowledge/mechanics/combat.md#command-ship-ambit-mobility)
 
 ### Alpha Matter
-The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore; used for builds, infusion, staking, and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
+The refined, secure resource. Cannot be stolen by a raid (unlike ore). Produced by refining ore into the owner's **vault**; used for infusion, staking, agreements, guild founding and guild tokens. The human Codex calls raw, stealable ore "Alpha Ore." → [resources.md](../knowledge/mechanics/resources.md)
 
 ### Alpha Ore
 *(Codex term)* The human Codex's name for raw, unrefined, **stealable** ore — our [Ore](#ore-storedore--planet-ore) (player `storedOre` / `StoredOreAttributeId`; unmined ore is the planet's `buriedOre` / `BuriedOreAttributeId`). Refine it to secure it as Alpha Matter. → [resources.md](../knowledge/mechanics/resources.md)
@@ -132,7 +132,7 @@ The structured error key behind `cannot handle new load requirements (required: 
 An ABCI event structsd emits onto Tendermint `tx.events` / `block_events` (`structs.structs.EventAttack`, `ugc_moderated`, …). Not a GRASS NATS message. → [chain-events.md](../api/chain-events.md)
 
 ### Charge
-A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach; acting resets the bar to 0. You cannot bank or burst charge. Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
+A **per-player** resource = `currentBlock − lastActionBlock`. Each action's "cost" is a **minimum threshold** the bar must reach (build-initiate 1, trash 1, defense change 1, activate 2); acting resets the bar to 0. You cannot bank or burst charge, and the ante accepts one charge-consuming message per player per block (`2021`). Refills ~1/block. → [building.md — Charge Accumulation](../knowledge/mechanics/building.md#charge-accumulation)
 
 ### classAbbreviation
 The chain's short label for a struct type (`CMD Ship`, `PDC`, `Orb. Shield`, …). The webapp and Desktop board render these, so use them when naming a struct to a human. Distinct from `class`, which is identical to the type name for every current type. → [struct-types.md](../knowledge/entities/struct-types.md)
@@ -151,6 +151,9 @@ The per-connection share a substation gives each connected player (its `capacity
 
 ### Counter-attack
 Return damage from a defender or the target, fired at most once per `struct-attack` invocation. Requires the counter-attacker's weapon to reach the **attacker's** ambit (ambit-independent of what it defends). Defenders take no counter damage. → [combat.md — Counter-Attack](../knowledge/mechanics/combat.md#counter-attack)
+
+### Diversity bonus
+Extra reactor capacity for spreading stake across many reactors: `Σp × 50% × min(1, (Σp²/Σp_i² − 1)/9)` — none for one reactor, ≈5.6% at two evenly funded, 50% at ten or more. Recomputed on every infuse/defuse/migration; read it with `owner-reactor-diversity`. → [energy.md — The owner diversity bonus](../knowledge/mechanics/energy.md#the-owner-diversity-bonus)
 
 ## D
 
@@ -190,8 +193,11 @@ A category present in the enum but **not emitted** by the current indexer; fleet
 ### Generators (Field / Continental Power Plant / World Engine)
 Planet power structs (types 20/21/22). Hardened HP and carry `armour` (damage reduction 1). They raise capacity, not neighbours' HP. → [struct-types.md](../knowledge/entities/struct-types.md)
 
-### Guild charter
-Chain-global proof-of-work that founds a guild (`guild-create-compute`). Preimage `CHAIN{chainId}|{solver}@{founder}GUILDCHARTER{anchor}NONCE{nonce}`. Not a `PermHash*` bit. Query `guild-charter` for the live anchor; solving moves it and kills other in-flight nonces. The other founding path is a one-time reactor entitlement (`guild-create`). → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [structs-guild](/skills/structs-guild/SKILL.html)
+### Guild founding
+`guild-create [reactor id] [endpoint] [substation id]` — a paid transaction, not a puzzle: 2,000,000 ualpha leaves the founder's vault, 1,000,000 is burned and 1,000,000 becomes Central Bank collateral minting 1,000,000 `uguild.<id>` into the guild vault. The reactor's validator must be bonded and not jailed. Legacy `proof`/`nonce` fields are rejected. → [structs-guild](/skills/structs-guild/SKILL.html), [guild-banking.md](../knowledge/economy/guild-banking.md)
+
+### Guild vault
+The guild's own protocol account (`0-N` owner). Holds founding tokens, mint output and rank-sale revenue; spent with `vault-send` by a key holding `PermTokenTransfer` on the guild. → [Vault](#vault)
 
 ### GRASS
 Game Real-time Application Streaming Service — real-time game events over NATS WebSocket, hosted per guild. Indexer projection of chain events, not a 1:1 mirror. → [structs-streaming SKILL](/skills/structs-streaming/SKILL.html), [chain-events.md](../api/chain-events.md)
@@ -211,7 +217,7 @@ A weapon's control type. Guided weapons are evaded by Signal Jamming (66%); ungu
 ## H
 
 ### Hash types
-Four struct-bound proof-of-work operations (build, mine, refine, raid) plus the chain-global guild charter puzzle. Charter is not a `PermHash*` bit. → [hashing.md](../knowledge/mechanics/hashing.md)
+Four struct-bound proof-of-work operations (build, mine, refine, raid), each gated by its own `PermHash*` bit. Guild founding is a payment, not a hash. → [hashing.md](../knowledge/mechanics/hashing.md)
 
 ### HP (Health)
 A struct's hit points; reaches 0 → destroyed, no regeneration. Lives in `struct_attribute`, not the base struct row. → [combat.md — Health Points](../knowledge/mechanics/combat.md#health-points), [integration-notes.md](../api/integration-notes.md#where-struct-hp-and-status-live)
@@ -287,6 +293,9 @@ Planet struct (type 16). It does **not** vault or hide ore. Planetary types have
 
 ## P
 
+### Pagination (chain)
+List queries take `pagination.limit` (default 100, silently clamped to 1000) and `pagination.key`. `count_total` is forced off (`total` is 0) and an `offset` above 1000 is refused. Walk with `next_key`. → [api/queries/README.md](../api/queries/README.md#pagination)
+
 ### PassiveDraw
 See [BuildDraw / PassiveDraw](#builddraw--passivedraw).
 
@@ -308,6 +317,9 @@ Planet struct (type 19, 1 per player) that auto-fires at any attacker of planeta
 ### Planetary shield
 A planet's raid-difficulty value = base 25 + online defense-struct contributions. Higher shield = harder raid PoW (a **timer**). It is **not** the raidability gate — that is fleet/CMD state (`IsDefenderCommandStructVulnerable()`). Only matters while the planet is raidable. → [struct-types.md — Planetary Shield Contributions](../knowledge/entities/struct-types.md#planetary-shield-contributions)
 
+### proofNonce
+Per-address counter served by `query structs address`; the next nonce an `address-register` proof must carry (`CHAIN<chain-id>|REGISTERADDRESSPLAYER<id>ADDRESS<addr>NONCE<n>`). Burned on success, survives revoke. → [structs-permissions](/skills/structs-permissions/SKILL.html), [integration-notes.md](../api/integration-notes.md#address-register-proof-string-is-chain-bound)
+
 ### Proof-of-work (PoW)
 The SHA-256 puzzle that finalizes build/mine/refine/raid. Difficulty decays with age. → [hashing.md](../knowledge/mechanics/hashing.md)
 
@@ -324,6 +336,9 @@ Visiting-fleet slot full (`1 + locationListExtra`, default one visitor). Wait fo
 
 ## R
 
+### Rank purchase
+Guild-configured sale of ranks for the guild's own token (`guild-update-rank-purchase`): step *n* above the entry rank costs `basePrice + (n−1)×stepIncrease`, paid from the buyer's vault into the guild vault (`guild-rank-purchase`, `guild-membership-join-by-rank-purchase`). `minimumRank = 0` disables. → [structs-guild](/skills/structs-guild/SKILL.html)
+
 ### Raid
 `planet-raid-complete` — a proof-of-work assault that seizes **all** of a vulnerable defender's `storedOre`. Does not destroy the player or their structs. → [combat.md — What a raid does](../knowledge/mechanics/combat.md#what-a-raid-does)
 
@@ -331,13 +346,19 @@ Visiting-fleet slot full (`1 + locationListExtra`, default one visitor). Wait fo
 The `RaidStatus_*` lifecycle: `initiated` → `shieldsVulnerable` → (`raidSuccessful` | `attackerRetreated` | `attackerDefeated` | `ongoing` | `demilitarized`). → [combat.md — Raid statuses](../knowledge/mechanics/combat.md#raid-statuses)
 
 ### Reactor
-A chain energy source — Alpha staked into a validator. Infusing it grants the infuser ~96% of the power as personal `capacity` and keeps the commission (default 4%) as the reactor's. Reversible via `reactor-defuse` (cooldown). → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
+A chain energy source — Alpha staked into a validator from the infuser's vault. Infusing it grants the funding owner the power minus the commission (default 4%), plus any diversity bonus; the commission is the reactor's. Reversible via `reactor-defuse` (cooldown).
+
+### Reactor stake cap
+Once `reactorStakeCapMinValidators` (10) validators are bonded, a reactor at ≥ `reactorStakeCapBps` (3000 = 30%) of bonded stake refuses further `reactor-infuse` / inbound migration (`reactor stake cap exceeded`, 1613). Sticky once active. Headroom: `reactor-stake-share`. → [energy.md — The reactor stake cap](../knowledge/mechanics/energy.md#the-reactor-stake-cap)
+
+### rocks
+`playerInventory.rocks` — the spendable `ualpha` in the player's vault, and the only key `playerInventory` has. Stored ore is the grid attribute `ore`. → [Vault](#vault) → [energy.md — Infusion](../knowledge/mechanics/energy.md#creating-capacity-infusion-splits-964)
 
 ### Recoil damage
 Self-damage the attacker takes after firing, applied only if it survives the whole sequence (including counters). → [combat.md — Recoil Damage](../knowledge/mechanics/combat.md#recoil-damage)
 
 ### recipient_not_eligible
-`uguild.*` send rejected: destination is IBC, escrow, or an unregistered address. Send only to a registered player, the structs module, or a provider pool. → [guild-banking.md](../knowledge/economy/guild-banking.md), [play/errors.md](../play/errors.md)
+`uguild.*` send rejected: destination is IBC, escrow, or an unregistered address. Send only to a registered player, a player/guild vault, the structs module, or a provider pool. → [guild-banking.md](../knowledge/economy/guild-banking.md), [play/errors.md](../play/errors.md)
 
 ## S
 
@@ -405,13 +426,19 @@ Mine/refine compute and complete reject while a visitor heads the planet's fleet
 ### Unguided
 See [Guided / Unguided](#guided--unguided).
 
+### Vault
+The deterministic protocol account every player (`1-N`) and guild (`0-N`) owns; `structsd query structs vault [owner-id]`. Refined Alpha is minted into it; reactor stake, generator fuel, agreement collateral, Central Bank operations and rank purchases are all debited from it. Spending rights are the key's token bits (`PermTokenTransfer`, `PermTokenInfuse`, …) on the owner. Move value with `vault-send` or `player-send` from the vault address. → [energy.md — Vaults](../knowledge/mechanics/energy.md#vaults-where-game-alpha-lives)
+
+### vault_owner_mismatch
+Both `--owner-id` and `--delegator-address` were given and the address is not that owner's vault. Drop one of the two flags; `--delegator-address` alone stakes from a registered key's own balance. → [structs-energy](/skills/structs-energy/SKILL.html)
+
 ## W
 
 ### warfighter
 A `structs_doctrine` preset that bundles max defense with both autonomous combat loops armed but advising (`autonomy: advise`). Explicit fields override the preset. → [structs-desktop.md](../knowledge/infrastructure/structs-desktop.md), [SAFETY.md](../SAFETY.md)
 
 ### work-failure
-Guild charter compute died because the global charter **anchor moved** (someone else founded) or entitlement checks failed. Re-query `guild-charter` and restart against the new anchor. → [hashing.md — Guild Charter](../knowledge/mechanics/hashing.md#guild-charter), [play/errors.md](../play/errors.md)
+A `*-compute` job's hash was rejected at submit: the object's age clock moved (planet raid pause, struct rebuilt) or another completion landed first. Check the object state and relaunch compute. → [failed-compute.md](../playbooks/situations/failed-compute.md), [play/errors.md](../play/errors.md)
 
 ---
 

@@ -9,7 +9,7 @@ description: Every buildable struct with stats, costs, power requirements, and s
 
 > **Source-of-truth for the numbers:** the raw stat table is generated from the pinned chain
 > source into [`generated/struct-types.md`](https://github.com/playstructs/structs-ai/blob/main/generated/struct-types.md) (provenance:
-> `structsd v0.21.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
+> `structsd v0.22.0`, regenerate with `scripts/gen-catalogs.py`). The prose below adds
 > strategic context; if the two ever disagree, the generated catalog wins. CLI command names
 > are catalogued separately in [`generated/commands.md`](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md) (these
 > are CLI names, distinct from proto message names).
@@ -35,7 +35,7 @@ All 22 struct types, verified from chain genesis. Power draws are in **watts** (
 | 11 | Cruiser | Cruiser | fleet | 515 | 110 W | 110 W | unlimited | 3 | 2 | water |
 | 12 | Destroyer | Destroyer | fleet | 600 | 100 W | 100 W | unlimited | 3 | 2 | water |
 | 13 | Submersible | Submersible | fleet | 455 | 125 W | 125 W | unlimited | 3 | 2 | water |
-| 14 | Ore Extractor | Extractor | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
+| 14 | Ore Extractor | Extractor | planet | 10 | 500 W | 500 W | 1 | 6 | 6 | land, water |
 | 15 | Ore Refinery | Refinery | planet | 700 | 500 W | 500 W | 1 | 6 | 6 | land, water |
 | 16 | Orbital Shield Generator | Orb. Shield | planet | 720 | 200 W | 200 W | unlimited | 6 | 16 | space |
 | 17 | Jamming Satellite | Jamming Sat. | planet | 2,880 | 600 W | 600 W | 1 | 6 | 16 | space |
@@ -219,7 +219,7 @@ Planet structs are infrastructure built on a claimed planet. Require fleet on st
 | Command Ship online | For planet building |
 | Proof-of-work | `struct-build-compute` handles hash + submit |
 
-`activateCharge` = 2, `buildCharge` = 8, `defendChangeCharge` = 1 for all struct types (charge is a per-player bar). Most planet structs and the Command Ship are limited to 1 per player; Orbital Shield Generator and Ore Bunker (shield-only) and fleet combat structs (IDs 2-13) have no build limit.
+`activateCharge` = 2, `buildCharge` = 1, `defendChangeCharge` = 1 for all struct types (charge is a per-player bar, and the ante accepts one charge-consuming message per player per block). Build difficulty ranges from **10** (Ore Extractor — about a minute, so the first miner is effectively instant) through 200 (Command Ship) and 700 (Refinery and most planet structs) to 5,000 (World Engine). A struct completes at **full `maxHealth`**. Most planet structs and the Command Ship are limited to 1 per player; Orbital Shield Generator and Ore Bunker (shield-only) and fleet combat structs (IDs 2-13) have no build limit.
 
 ---
 

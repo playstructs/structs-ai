@@ -25,8 +25,9 @@ structsd query structs player [player-id]      # compare load vs capacity, onlin
 1. **Shed load fast (free, works offline):** deactivate non-essential structs —
    `struct-deactivate` / `struct-deactivate-batch` cost 0 charge and work while offline.
    Priority to keep: defense and your Command Ship.
-2. **Recover capacity:** if a reactor/agreement dropped, restore it. If you have Alpha,
-   infuse for more capacity (see [energy skill](/skills/structs-energy/SKILL.html)).
+2. **Recover capacity:** if a reactor/agreement dropped, restore it. If you have Alpha in your vault,
+   infuse for more capacity (see [energy skill](/skills/structs-energy/SKILL.html)); a generator
+   can also be refuelled while you are offline, since the check is the generator's own power, not yours.
 3. **Re-balance:** bring structs back online one at a time, checking headroom after each.
 4. **Verify:** re-query the player; confirm `online` and load < capacity.
 

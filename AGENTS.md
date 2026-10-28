@@ -63,8 +63,8 @@ Actionable procedures in `.cursor/skills/`. Each skill references canonical `str
 |-------|---------|
 | [`play-structs`](/skills/play-structs/SKILL.html) | **Start here.** Simple path from zero to mining Alpha Matter. Links to all other skills. |
 | [`conventions`](/skills/conventions.html) | Shared boilerplate every skill assumes: transaction flags, the `--` ID rule, the per-player charge bar, proof-of-work policy |
-| [`structsd-install`](/skills/structsd-install/SKILL.html) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.23+; no Ignite dependency for builds) |
-| [`structs-onboarding`](/skills/structs-onboarding/SKILL.html) | Key setup, player creation (reactor-infuse or guild signup), planet exploration, first builds |
+| [`structsd-install`](/skills/structsd-install/SKILL.html) | Install `structsd` from prebuilt release binaries or build from source via the Makefile (Go 1.27.3+; no Ignite dependency for builds) |
+| [`structs-onboarding`](/skills/structs-onboarding/SKILL.html) | Key setup, player creation (staking delegate or guild signup), planet exploration, first builds |
 | [`structs-production`](/skills/structs-production/SKILL.html) | The mine → refine → stake pipeline; ore vulnerability, depletion handoff |
 | [`structs-building`](/skills/structs-building/SKILL.html) | Construction, activation, movement, defense positioning, stealth, generator infusion |
 | [`structs-planets-fleet`](/skills/structs-planets-fleet/SKILL.html) | Planet evaluation, exploration, fleet movement, evacuation |
@@ -147,7 +147,7 @@ Reference material in `knowledge/`.
 - [`energy`](knowledge/mechanics/energy.md) -- Canonical energy system: units, infusion split, substation dilution, allocations, brownout
 - [`power`](knowledge/mechanics/power.md) -- Capacity, load, online status (quick card)
 - [`building`](knowledge/mechanics/building.md) -- Construction and proof-of-work
-- [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work: four struct-bound types, planet ore clocks, raid pause, guild charter
+- [`hashing`](knowledge/mechanics/hashing.md) -- Proof-of-work: four struct-bound types, planet ore clocks, raid pause
 - [`fleet`](knowledge/mechanics/fleet.md) -- Ships and movement
 - [`planet`](knowledge/mechanics/planet.md) -- Exploration and depletion
 
@@ -210,6 +210,8 @@ These will save your game:
 7. **One transaction at a time per account.** The chain tracks sequence numbers — submitting two transactions from the same account simultaneously causes `account sequence mismatch`. Wait ~6 seconds between transactions. Different accounts can transact in parallel.
 8. **Use `--` before entity IDs.** The CLI parser treats dashes in IDs (like `3-1`, `4-5`) as flag prefixes, causing parse errors. Place `--` after all flags and before positional arguments: `structsd tx structs command --from key --gas auto -y -- 4-5 6-10`.
 9. **Read [`SAFETY.md`](SAFETY.md) before signing transactions or launching background expeditions.** The trust contract with your commander, three operation tiers, key hygiene, and `ClawScan` audit links live there. The chain has no undo.
+10. **Your Alpha lives in your vault, not on your key.** Refined Alpha is minted into your player's vault (`structsd query structs vault [player-id]`; `playerInventory.rocks` is the spendable balance). Reactor stake, generator fuel, agreements, Central Bank actions and rank purchases all pay from the vault. A key with plenty of `ualpha` and an empty vault still gets `insufficient funds`. See [`knowledge/mechanics/energy.md`](knowledge/mechanics/energy.md#vaults-where-game-alpha-lives).
+11. **One charge action per block.** Build-initiate and trash cost 1 charge, but the ante accepts only one charge-consuming message per player per block (`2021`). Batch initiates one block (~6 s) apart.
 
 ---
 

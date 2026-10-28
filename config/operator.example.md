@@ -60,6 +60,8 @@ Limits inside which the agent may act without per-action approval. Above them, e
 
 - `reactor-infuse`: up to ___ ualpha per session
 - `agreement-open`: up to ___ ualpha committed at any time
+- `guild-rank-purchase` / `guild-membership-join-by-rank-purchase`: up to ___ guild tokens per session
+- `vault-send` / `player-send` from the vault: up to ___ ualpha per session, only to owners listed below
 - `struct-build-initiate`: up to ___ new builds per session
 - `struct-attack`: only against targets in the known-hostile list below
 - Long proof-of-work builds (> 1 hr to D=3): require per-build approval
@@ -70,12 +72,13 @@ Never auto-execute these, regardless of autonomy level:
 
 - Every `struct-generator-infuse`
 - Every `permission-grant-on-object` with `PermAll` (33554431)
-- Every `permission-guild-rank-set` with broad bits (16777216, 524288, 262144)
+- Every `permission-guild-rank-set` with broad bits (16777216, 8192, 262144, 16 — `PermTokenTransfer` on the guild spends the guild vault)
+- Every `guild-create` (2,000,000 ualpha from the vault, half burned) and `guild-update-rank-purchase`
 - Every `address-register`, `address-revoke`, `player-update-primary-address`
 - Every `guild-bank-confiscate-and-burn`
 - Every `reactor-defuse` and `reactor-begin-migration`
 - Every `provider-delete`, `substation-delete`, `allocation-delete`
-- Cross-account `player-send` to a recipient with no prior history
+- Cross-account `player-send` or `vault-send` to a recipient with no prior history
 - Multi-target `struct-attack` that crosses guild boundaries
 - Arming Desktop `autoresponse` / `autoraid` with `autonomy: auto` (see SAFETY.md Standing Automation Grants)
 - `struct-trash`; guild bank mint/redeem above caps you set below

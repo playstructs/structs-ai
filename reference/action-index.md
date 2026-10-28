@@ -78,9 +78,9 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 | struct-ore-mine-complete | Complete Ore Mining | `/structs.structs.MsgStructOreMinerComplete` | Yes | Complete ore mining operation (requires proof-of-work) |
 | struct-ore-refine-complete | Complete Ore Refining | `/structs.structs.MsgStructOreRefineryComplete` | Yes | Complete ore refining operation (requires proof-of-work) |
 | struct-generator-infuse | Infuse Generator with Alpha Matter | `/structs.structs.MsgStructGeneratorInfuse` | Yes | Infuse a generator struct with Alpha Matter to produce energy |
-| reactor-infuse | Infuse Reactor | `/structs.structs.MsgReactorInfuse` | Yes | Add Alpha Matter to reactor for energy production |
+| reactor-infuse | Infuse Reactor | `/structs.structs.MsgReactorInfuse` | Yes | Stake Alpha from a vault into a reactor; produces capacity for the funding owner |
 | reactor-restart | Restart Reactor | `/structs.structs.MsgReactorRestart` | Yes | Resync energy output from the validator after unjail |
-| reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Remove Alpha Matter from reactor |
+| reactor-defuse | Defuse Reactor | `/structs.structs.MsgReactorDefuse` | Yes | Unbond stake back to the funding vault |
 | reactor-begin-migration | Begin Reactor Migration | `/structs.structs.MsgReactorBeginMigration` | No | Begin redelegation process for reactor validation stake |
 | reactor-cancel-defusion | Cancel Reactor Defusion | `/structs.structs.MsgReactorCancelDefusion` | No | Cancel undelegation process for reactor validation stake |
 | substation-create | Create Substation | `/structs.structs.MsgSubstationCreate` | Yes | Create a new substation for power distribution |
@@ -92,8 +92,8 @@ All combat actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 - **struct-ore-mine-complete**: Code: `x/structs/keeper/msg_server_struct_ore_miner_complete.go` | Proto: `proto/structs/structs/tx.proto:763-770` | Requires proof-of-work (difficulty: 14000), requires charge
 - **struct-ore-refine-complete**: Code: `x/structs/keeper/msg_server_struct_ore_refinery_complete.go` | Proto: `proto/structs/structs/tx.proto:777-784` | Requires proof-of-work (difficulty: 28000), requires charge
 - **struct-generator-infuse**: Code: `x/structs/keeper/msg_server_struct_generator_infuse.go` | Proto: `proto/structs/structs/tx.proto:120` | Generator rates: Field Generator 2 kW/g, Continental Power Plant 5 kW/g, World Engine 10 kW/g
-- **reactor-infuse**: Code: `x/structs/keeper/msg_server_reactor_infuse.go` | Proto: `proto/structs/structs/tx.proto:95` | Abstracts validation delegation; reactor staking managed at player level
-- **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `proto/structs/structs/tx.proto:96` | Abstracts validation undelegation; reactor staking managed at player level
+- **reactor-infuse**: Code: `x/structs/keeper/msg_server_reactor_infuse.go` | Proto: `MsgReactorInfuse` (`validator_address`, `amount`, optional `ownerId`/`delegator_address`) | `PermTokenInfuse` on the funding owner; refused by the stake cap (1613)
+- **reactor-defuse**: Code: `x/structs/keeper/msg_server_reactor_defuse.go` | Proto: `MsgReactorDefuse` | `PermTokenDefuse` on the funding owner
 - **reactor-begin-migration**: Begins redelegation process for validation stake; reactor staking managed at player level
 - **reactor-cancel-defusion**: Cancels ongoing undelegation process; reactor staking managed at player level
 - **substation-create**: Code: `x/structs/keeper/msg_server_substation_create.go` | Proto: `proto/structs/structs/tx.proto:131`
@@ -109,7 +109,7 @@ All resource actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 | ID | Name | Message Type | Verified | Description |
 |----|------|-------------|----------|-------------|
 | provider-create | Create Energy Provider | `/structs.structs.MsgProviderCreate` | Yes | Create an energy provider |
-| agreement-open | Open Energy Agreement | `/structs.structs.MsgAgreementOpen` | Yes | Open an energy agreement with a provider |
+| agreement-open | Open Energy Agreement | `/structs.structs.MsgAgreementOpen` | Yes | Open an energy agreement with a provider; collateral from the consumer's vault (optional `ownerId`) |
 | allocation-create | Create Allocation | `/structs.structs.MsgAllocationCreate` | Yes | Route power from a source object (player/reactor/struct/substation) |
 | allocation-update | Update Allocation | `/structs.structs.MsgAllocationUpdate` | Yes | Change a dynamic allocation's power |
 | allocation-delete | Delete Allocation | `/structs.structs.MsgAllocationDelete` | Yes | Remove an allocation (destination capacity cascades) |
@@ -160,8 +160,11 @@ Endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 | ID | Name | Message Type | Verified | Description |
 |----|------|-------------|----------|-------------|
-| guild-create | Create Guild | `/structs.structs.MsgGuildCreate` | Yes | Found via charter proof or reactor entitlement |
-| guild-create-compute | Guild Charter Compute | `/structs.structs.MsgGuildCreate` | Yes | Background PoW that submits guild-create with proof |
+| guild-create | Create Guild | `/structs.structs.MsgGuildCreate` | Yes | Paid founding: 2,000,000 ualpha from the founder's vault |
+| guild-update-rank-purchase | Configure Rank Sales | `/structs.structs.MsgGuildUpdateRankPurchase` | Yes | Price ranks in `uguild.<id>`; `PermAdmin` |
+| guild-rank-purchase | Purchase Rank | `/structs.structs.MsgGuildRankPurchase` | Yes | Member buys a higher rank from their vault |
+| guild-membership-join-by-rank-purchase | Join by Rank Purchase | `/structs.structs.MsgGuildMembershipJoinByRankPurchase` | Yes | Join and buy a rank in one message |
+| vault-send | Vault Send | `/structs.structs.MsgVaultSend` | Yes | Move coins between owner vaults |
 | guild-membership-join | Join Guild | `/structs.structs.MsgGuildMembershipJoin` | Yes | Join an existing guild |
 | guild-membership-kick | Kick Guild Member | `/structs.structs.MsgGuildMembershipKick` | Yes | Remove a member from a guild |
 | guild-bank-mint | Mint Guild Tokens | `/structs.structs.MsgGuildBankMint` | Yes | Mint guild tokens (privileged) |
@@ -171,7 +174,9 @@ Endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 **Details**:
 
-- **guild-create**: Code: `x/structs/keeper/msg_server_guild_create.go` | Proto: `proto/structs/structs/tx.proto` | Entitlement or charter proof
+- **guild-create**: Code: `x/structs/keeper/msg_server_guild_create.go` | Proto: `proto/structs/structs/tx.proto` | 1,000,000 burned + 1,000,000 collateral; legacy proof fields rejected (`legacy_charter_fields_not_supported`)
+- **guild-update-rank-purchase** / **guild-rank-purchase** / **guild-membership-join-by-rank-purchase**: Code: `x/structs/keeper/msg_server_guild_update_rank_purchase.go`, `msg_server_guild_rank_purchase.go`, `msg_server_guild_membership_join_by_rank_purchase.go` | Emits `EventGuildRankPurchase`
+- **vault-send**: Code: `x/structs/keeper/msg_server_vault_send.go` | Fields: `ownerId`, `recipientOwnerId`, `amount` | `PermTokenTransfer` on the source owner
 - **guild-membership-join**: Code: `x/structs/keeper/msg_server_guild_membership_join.go` | Proto: `proto/structs/structs/tx.proto`
 - **guild-membership-kick**: Code: `x/structs/keeper/msg_server_guild_membership_kick.go` | Proto: `proto/structs/structs/tx.proto`
 - **guild-bank-mint**: Code: `x/structs/keeper/msg_server_guild_bank_mint.go` | Proto: `proto/structs/structs/tx.proto`
@@ -202,4 +207,4 @@ All player identity actions use endpoint: `POST /cosmos/tx/v1beta1/txs`
 
 ## Verification Notes
 
-All actions verified with code references against structsd v0.21.0. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`. Query `guild-charter` for the global charter puzzle; `reactor-restart` resyncs a reactor after unjail.
+All actions verified with code references against structsd v0.22.0. Energy from generators uses `struct-generator-infuse`; energy agreements use `agreement-open`; substation sourcing uses `substation-allocation-connect`; guild member removal uses `guild-membership-kick`. `reactor-restart` resyncs a reactor after unjail. Alpha for every paid action is debited from the acting owner's vault (`structsd query structs vault [owner-id]`).

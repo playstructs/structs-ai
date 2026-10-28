@@ -24,7 +24,7 @@ description: Fleet status, ID mapping, Command Ship rules, movement, and which o
 fleetId = "9-{index}"
 ```
 
-Fleet index matches player index: player `1-N` has fleet `9-N`.
+Fleet index matches player index: player `1-N` has fleet `9-N`. The id is canonical decimal with no padding — `9-7`, never `9-07`; a padded fleet id is rejected by `fleet-move` and raid messages.
 
 | Player ID | Fleet ID |
 |-----------|----------|
@@ -77,7 +77,7 @@ For an existing planet owner, `planet-explore` requires the fleet to be `onStati
 Fleets stay "away" until one of these triggers:
 1. **Explicit move** — The player issues `fleet-move` to return home
 2. **Command Ship destroyed** — If the fleet's Command Ship is destroyed, the fleet auto-returns
-3. **Planet completed** — If the defending planet's owner depletes all ore and explores a new planet, visiting fleets are sent away
+3. **Planet completed** — If the defending planet's owner depletes all ore and explores a new planet, visiting fleets are sent away. A completed planet is also **not a valid `fleet-move` destination** and can never be raided again.
 4. **Queue overflow** — Fleets beyond `1 + locationListExtra` are sent home (the upgrade path that seeded the limit did this; live moves simply reject `queue_full`)
 
 Fleets do **not** auto-return on a timer. For raids, you have until one of the above triggers to complete the raid PoW and submit `planet-raid-complete`.

@@ -1,17 +1,17 @@
 ---
 title: "structsd message catalog | Structs AI"
-description: "Every live Msg RPC structsd accepts, with CLI verb and @type, verified against tx.proto v0.21.0."
+description: "Every live Msg RPC structsd accepts, with CLI verb and @type, verified against tx.proto v0.22.0."
 permalink: /api/transactions/messages
 ---
 
 # Message catalog (structsd)
 
-**Verified against**: structsd `48686a9` (v0.21.0) `proto/structs/structs/tx.proto`
+**Verified against**: structsd `96cea3a` (v0.22.0) `proto/structs/structs/tx.proto` — 101 RPCs
 **CLI names**: [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md)
 
 This is the write surface. [api/transactions/](./) is the **submit envelope**. There is no `MsgStructBuild` — builds are `struct-build-initiate` then complete (or `struct-build-compute`).
 
-`@type` is `/structs.structs.MsgName`. Compute helpers (`*-compute`, `guild-create-compute`, `planet-raid-compute`, `guild-charter-consent`) are CLI wrappers, not extra RPCs.
+`@type` is `/structs.structs.MsgName`. Compute helpers (`*-compute`, `planet-raid-compute`) are CLI wrappers, not extra RPCs.
 
 Skills: [play-structs](/skills/play-structs/SKILL.html) for the first path; pick the domain skill for the rest.
 
@@ -26,7 +26,8 @@ Skills: [play-structs](/skills/play-structs/SKILL.html) for the first path; pick
 | `MsgPlayerUpdateName` | `player-update-name` | [ugc-moderation](../../knowledge/mechanics/ugc-moderation.md) |
 | `MsgPlayerUpdatePfp` | `player-update-pfp` | |
 | `MsgPlayerUpdatePfpClientRenderAttributes` | `player-update-pfp-cr-attributes` | Owner-only; CLI abbreviates `cr` |
-| `MsgPlayerSend` | `player-send` | Token send |
+| `MsgPlayerSend` | `player-send` | Token send; `from` may be a vault address (needs `PermTokenTransfer` on the vault's owner) |
+| `MsgVaultSend` | `vault-send` | `[owner-id] [recipient-owner-id] [amount]` — vault-to-vault transfer |
 
 ## Permissions
 
@@ -45,8 +46,8 @@ Skills: [play-structs](/skills/play-structs/SKILL.html) for the first path; pick
 
 | Msg | CLI | Notes |
 |-----|------|--------|
-| `MsgGuildCreate` | `guild-create` | Entitlement path; charter uses `guild-create-compute` |
-| `MsgGuildBankMint` | `guild-bank-mint` | [guild-banking](../../knowledge/economy/guild-banking.md) |
+| `MsgGuildCreate` | `guild-create` | Paid founding: 2,000,000 ualpha from the founder's vault. `proof`, `nonce`, `founderPlayerId`, `address`, `proofPubKey` are deprecated fields — nonempty values are rejected (`legacy_charter_fields_not_supported`) |
+| `MsgGuildBankMint` | `guild-bank-mint` | Spends the **guild vault**; [guild-banking](../../knowledge/economy/guild-banking.md) |
 | `MsgGuildBankRedeem` | `guild-bank-redeem` | |
 | `MsgGuildBankConvert` | `guild-bank-convert` | |
 | `MsgGuildBankConvertToken` | `guild-bank-convert-token` | |
@@ -61,6 +62,8 @@ Skills: [play-structs](/skills/play-structs/SKILL.html) for the first path; pick
 | `MsgGuildUpdateJoinInfusionMinimumBypassByInvite` | `guild-update-join-infusion-minimum-by-invite` | |
 | `MsgGuildUpdateJoinInfusionMinimumBypassByRequest` | `guild-update-join-infusion-minimum-by-request` | |
 | `MsgGuildUpdateEntryRank` | `guild-update-entry-rank` | |
+| `MsgGuildUpdateRankPurchase` | `guild-update-rank-purchase` | `[guild-id] [base-price] [step-increase] [minimum-rank] [join-by-rank-purchase-enabled]`; prices in `uguild.<id>`; `PermAdmin` on guild |
+| `MsgGuildRankPurchase` | `guild-rank-purchase` | `[guild-id] [target-rank] [max-price] [expected-rank]`; member buys a higher rank from their vault |
 | `MsgGuildUpdateName` | `guild-update-name` | UGC |
 | `MsgGuildUpdatePfp` | `guild-update-pfp` | |
 
@@ -73,6 +76,7 @@ Skills: [play-structs](/skills/play-structs/SKILL.html) for the first path; pick
 | `MsgGuildMembershipInviteDeny` | `guild-membership-invite-deny` |
 | `MsgGuildMembershipInviteRevoke` | `guild-membership-invite-revoke` |
 | `MsgGuildMembershipJoin` | `guild-membership-join` |
+| `MsgGuildMembershipJoinByRankPurchase` | `guild-membership-join-by-rank-purchase` |
 | `MsgGuildMembershipJoinProxy` | `guild-membership-join-proxy` |
 | `MsgGuildMembershipKick` | `guild-membership-kick` |
 | `MsgGuildMembershipRequest` | `guild-membership-request` |
@@ -116,15 +120,15 @@ Commented out in proto (not live): `StructBuildCompleteAndStash`, `StructStorage
 
 | Msg | CLI | Notes |
 |-----|------|--------|
-| `MsgReactorInfuse` | `reactor-infuse` | [energy](/skills/structs-energy/SKILL.html) |
-| `MsgReactorDefuse` | `reactor-defuse` | Cooldown |
-| `MsgReactorBeginMigration` | `reactor-begin-migration` | |
-| `MsgReactorCancelDefusion` | `reactor-cancel-defusion` | |
+| `MsgReactorInfuse` | `reactor-infuse` | `[reactor address] [amount]`; optional `ownerId` picks a player/guild vault (default: signer's own vault); `delegatorAddress` alone names a registered address that funds the stake from its own balance. [energy](/skills/structs-energy/SKILL.html) |
+| `MsgReactorDefuse` | `reactor-defuse` | `[reactor address] [amount]`; cooldown; same `ownerId` / `delegatorAddress` semantics |
+| `MsgReactorBeginMigration` | `reactor-begin-migration` | `[src] [dest] [amount]` |
+| `MsgReactorCancelDefusion` | `reactor-cancel-defusion` | `[reactor address] [amount] [creation height]` |
 | `MsgReactorRestart` | `reactor-restart` | After jail |
 | `MsgAllocationCreate` | `allocation-create` | |
 | `MsgAllocationUpdate` | `allocation-update` | Dynamic only |
 | `MsgAllocationDelete` | `allocation-delete` | |
-| `MsgAllocationTransfer` | `allocation-transfer` | |
+| `MsgAllocationTransfer` | `allocation-transfer` | `[allocation id] [new controller ownerId]` — player or guild |
 | `MsgSubstationCreate` | `substation-create` | |
 | `MsgSubstationDelete` | `substation-delete` | |
 | `MsgSubstationAllocationConnect` | `substation-allocation-connect` | |
@@ -134,7 +138,7 @@ Commented out in proto (not live): `StructBuildCompleteAndStash`, `StructStorage
 | `MsgSubstationPlayerMigrate` | `substation-player-migrate` | |
 | `MsgSubstationUpdateName` | `substation-update-name` | |
 | `MsgSubstationUpdatePfp` | `substation-update-pfp` | |
-| `MsgProviderCreate` | `provider-create` | [commerce](/skills/structs-commerce/SKILL.html) |
+| `MsgProviderCreate` | `provider-create` | Optional `ownerId` (guild-owned provider needs `PermSourceAllocation` on the guild). [commerce](/skills/structs-commerce/SKILL.html) |
 | `MsgProviderDelete` | `provider-delete` | |
 | `MsgProviderWithdrawBalance` | `provider-withdraw-balance` | |
 | `MsgProviderUpdateCapacityMinimum` | `provider-update-capacity-minimum` | |
@@ -145,13 +149,13 @@ Commented out in proto (not live): `StructBuildCompleteAndStash`, `StructStorage
 
 ## Agreements
 
-| Msg | CLI |
-|-----|------|
-| `MsgAgreementOpen` | `agreement-open` |
-| `MsgAgreementClose` | `agreement-close` |
-| `MsgAgreementCapacityIncrease` | `agreement-capacity-increase` |
-| `MsgAgreementCapacityDecrease` | `agreement-capacity-decrease` |
-| `MsgAgreementDurationIncrease` | `agreement-duration-increase` |
+| Msg | CLI | Notes |
+|-----|------|--------|
+| `MsgAgreementOpen` | `agreement-open` | Collateral debited from the payer's vault; optional `ownerId` pays from another owner's vault (`PermTokenTransfer` on that owner) |
+| `MsgAgreementClose` | `agreement-close` | |
+| `MsgAgreementCapacityIncrease` | `agreement-capacity-increase` | |
+| `MsgAgreementCapacityDecrease` | `agreement-capacity-decrease` | |
+| `MsgAgreementDurationIncrease` | `agreement-duration-increase` | |
 
 ## Governance
 
@@ -161,5 +165,5 @@ Commented out in proto (not live): `StructBuildCompleteAndStash`, `StructStorage
 
 ## Not in this catalog
 
-- **CLI compute wrappers** — `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`, `guild-charter-consent`. See [conventions](/skills/conventions.html) and [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md).
-- **Stale docs** that still say 33 actions or list `MsgStructBuild` — ignore them; this page plus the generated CLI catalog win.
+- **CLI compute wrappers** — `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`. See [conventions](/skills/conventions.html) and [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md).
+- **Stale docs** that still say 33 actions, list a `StructBuild` Msg, or describe a guild-charter compute/consent verb — ignore them; this page plus the generated CLI catalog win.

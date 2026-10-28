@@ -7,7 +7,7 @@ description: "Lookup table of API routes across consensus and webapp. LCD famili
 
 **Last Updated**: 2026-09-15
 
-**Canonical routes**: [api/endpoints.md](../api/endpoints.md) (index) and [api/queries/](../api/queries/) (per-entity LCD). This table is a lookup, not a completeness claim — grid, infusion, attributes, and charter live on the query pages.
+**Canonical routes**: [api/endpoints.md](../api/endpoints.md) (index) and [api/queries/](../api/queries/) (per-entity LCD). This table is a lookup, not a completeness claim — grid, infusion, attributes, vault, and reactor stake-share/diversity live on the query pages.
 
 ---
 

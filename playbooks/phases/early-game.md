@@ -27,9 +27,9 @@ Follow this sequence in phases. **Initiate everything you can upfront** — the 
 
 1. **Command Ship** (type 1, space) — Your fleet is your mobility. Without it, you cannot explore, raid, or relocate. (~17 min to D=3, 50 W)
 
-2. **Ore Extractor** (type 14, land) — Start the resource pipeline. Initiate immediately after Command Ship. (~57 min to D=3, 500 W)
+2. **Ore Extractor** (type 14, land) — Start the resource pipeline. Initiate immediately after Command Ship. Build difficulty 10: the proof is ready in about a minute. (500 W)
 
-3. **Ore Refinery** (type 15, land) — Initiate alongside the Extractor. Both planet builds age simultaneously. (~57 min to D=3, 500 W)
+3. **Ore Refinery** (type 15, land) — Initiate one block after the Extractor. This is the long pole of the pipeline. (~57 min to D=3, 500 W)
 
 ### Phase 2: Defense (initiate as soon as Phase 1 is initiated)
 
@@ -43,7 +43,7 @@ Protect your base before it produces anything worth stealing.
 
 ### Phase 3: Fleet (initiate while Phase 2 ages)
 
-Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Batch-initiate paced by build charge (~8 charge ≈ ~48 s apart); they age in parallel once initiated.
+Build one of every fleet type. This gives coverage across all four ambits and makes your fleet a credible deterrent. Batch-initiate one per block (~6 s apart — the ante accepts one charge message per player per block); they age in parallel once initiated.
 
 | Ambit | Struct | Type ID | D=3 Wait | Draw |
 |-------|--------|---------|----------|------|
@@ -135,12 +135,12 @@ End-to-end ramp from player creation to first combat-ready state. All times are 
 |------|--------|------|------------|
 | 1 | Create player + explore planet | ~30 sec | 0 min |
 | 2 | Initiate Command Ship (type 1) | ~17 min | 17 min |
-| 3 | Initiate Ore Extractor (type 14) | ~57 min | 17 min (parallel) |
+| 3 | Initiate Ore Extractor (type 14) | ~1 min | 17 min (parallel) |
 | 4 | Initiate Ore Refinery (type 15) | ~57 min | 17 min (parallel) |
 | 5 | Initiate Orbital Shield (type 16) | ~58 min | 17 min (parallel) |
 | 6 | Initiate all fleet structs (types 2-13) | 20 min - 1 hr each | 17 min (parallel) |
 | 7 | Compute Command Ship (ready ~17 min) | instant at D=3 | ~17 min |
-| 8 | Compute Extractor + Refinery (~57 min) | instant at D=3 | ~57 min |
+| 8 | Compute Extractor (~1 min) then Refinery (~57 min) | instant at D=3 | ~57 min |
 | 9 | Launch first mine + refine computes together | mine ~17 hr; refine ~34 hr | ~57 min |
 | 10 | Compute defense structs (PDC ~3.7 hr, Jamming ~3.7 hr) | instant at D=3 | ~4 hr |
 | 11 | Compute fleet structs (longest: Battleship ~1 hr) | instant at D=3 | ~4 hr |

@@ -15,6 +15,12 @@ struct-ore-miner-compute
 #   Real commands: `planet-raid-compute` and `planet-raid-complete`.
 struct-ore-raid-compute
 struct-ore-raid-complete
+# Retired in structsd v0.22.0: guild founding is a single paid path
+#   (`guild-create [reactor id] [endpoint] [substation id]`, 2,000,000 ualpha from
+#   the founder's vault). The charter proof-of-work, solver consent and reactor
+#   entitlement no longer exist; these commands are gone from the binary.
+guild-create-compute
+guild-charter-consent
 # Phantom queries / paths — never existed on v0.21.0 (see BASELINE.md).
 # Allowlisted only in BASELINE.md / CHANGELOG.md via lint-commands SKIP.
 player-charge

@@ -41,18 +41,40 @@ This guide helps troubleshoot issues with reactor staking and validation delegat
 
 **Symptom**: `reactor-infuse` transaction fails with insufficient funds error
 
-**Cause**: Player doesn't have enough Alpha Matter
+**Cause**: The funding **vault** does not hold enough `ualpha`. Reactor stake is debited from the owner's vault (your own by default, or the `--owner-id` vault), never from the signing key's balance — so a key with plenty of `ualpha` can still fail here.
 
 **Diagnosis**:
-1. Query player resources: `GET /structs/player/{playerId}`
-2. Check `player.alphaMatter` amount
-3. Compare to required amount for infuse
-4. If insufficient, cannot infuse
+1. Query the player: `GET /structs/player/{playerId}` → `playerInventory.rocks` is the vault's spendable `ualpha`
+2. Resolve the vault: `structsd query structs vault {ownerId}` → `address`
+3. Compare the vault balance to the amount you asked to infuse
+4. If the error names the vault address and the amount is short, this is the cause
 
 **Solution**:
-1. Acquire more Alpha Matter
-2. Verify sufficient amount available
-3. Retry `reactor-infuse` action
+1. Refine ore (Alpha lands in the vault) or move `ualpha` into the vault with `player-send` to the vault address
+2. Verify `playerInventory.rocks` covers the amount
+3. Retry `reactor-infuse`
+
+---
+
+### Issue 2b: Infuse Fails - `reactor stake cap exceeded` (code 1613)
+
+**Symptom**: `reactor-infuse` or `reactor-begin-migration` into a reactor is rejected with `reactor stake cap exceeded`
+
+**Cause**: Ten or more validators are bonded and this reactor already holds ≥ 30% (`reactorStakeCapBps` = 3000) of bonded stake. The cap is sticky once activated.
+
+**Diagnosis**: `structsd query structs reactor-stake-share {reactorId}` → `capActive`, `externalDepositHeadroom` (room for new infusions), `bondedRedelegationHeadroom` (room for migrations)
+
+**Solution**: Infuse a reactor with headroom. Spreading stake also earns the diversity bonus (`owner-reactor-diversity {ownerId}`), so this is rarely a loss.
+
+---
+
+### Issue 2c: `vault_owner_mismatch`
+
+**Symptom**: Rejected with `vault_owner_mismatch`
+
+**Cause**: Both `--owner-id` and `--delegator-address` were given and the address is not that owner's vault
+
+**Solution**: Drop one of the two flags. No flags stakes from your own vault; `--delegator-address` alone stakes from a registered key's own balance (needs `PermTokenInfuse` on its owner).
 
 **Reference**: `schemas/errors.md#/INSUFFICIENT_FUNDS`, `protocols/economic-protocol.md`
 

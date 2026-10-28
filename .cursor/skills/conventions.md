@@ -22,7 +22,7 @@ Every `structsd tx structs` command needs gas flags. Two named bundles are used 
 
 ### The `-y` rule
 
-`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, `guild-create-compute`): they run for hours to weeks and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
+`-y` is **off by default**. Add it only after your commander has approved the action (see [SAFETY.md](https://structs.ai/SAFETY)). The one documented exception is **compute commands** (`struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`): they run for minutes to days and auto-submit their completion transaction when no shell is attached, so they ship with `-y` paired with an **Approval Block** that surfaces consent up front. For those, the Approval Block — not the CLI prompt — is your gate.
 
 ---
 
@@ -78,7 +78,26 @@ charge = CurrentBlockHeight - player.lastActionBlock
 
 Every charge-consuming action by **any** of your structs (build, activate, attack, move, defense change, stealth) draws from and resets this one bar. It regenerates at 1 per block (~6 sec/block) whenever you are idle. To know whether an action can fire, query the **player**, not the struct.
 
-Action costs: activate 2, build-initiate 8, trash 8, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost.
+Action costs: activate 2, build-initiate 1, trash 1, defense-change 1, Command Ship move 3, primary weapon 3-5, secondary weapon 3-5, stealth activate 2. Deactivate (single or batch) costs 0 and works even while offline. Full table: [knowledge/mechanics/building#charge-accumulation](https://structs.ai/knowledge/mechanics/building). The practical constraint is **chaining**: each action resets the bar, so a burst of actions (activating several structs, repeated attacks) must be spaced by the next action's cost. The ante additionally refuses a second charge-consuming message from the same player in one block, and two charge messages in one transaction, so even 1-charge actions (build-initiate, trash) go one per block.
+
+---
+
+## Your Alpha lives in your vault
+
+Every player (`1-N`) and guild (`0-N`) has a **vault**: a protocol-controlled bank account derived from the owner ID (`structsd query structs vault [owner-id]` → `address`; balances via `structsd query bank balances [address]`). It is not a keyring key and is never a signing address. The rule of thumb: **game income lands in the vault, game spends are paid from the vault, and your signing key pays only native fees.**
+
+- Refined Alpha is deposited in the vault; `playerInventory.rocks` on the player query is the vault's spendable ualpha.
+- `reactor-infuse` / `reactor-defuse` / `reactor-cancel-defusion` / `reactor-begin-migration` act on the vault unless `--delegator-address` names a registered key (or `--owner-id` names a guild vault you control).
+- `struct-generator-infuse`, `guild-create` (2,000,000 ualpha) and guild rank purchases spend from the vault with no fallback to the key.
+- Move funds with `vault-send [owner-id] [recipient-owner-id] [amount]` (vault→vault), `player-send -- [vault-address] [your-address] [amount]` (vault→key), or a plain `bank send` to the vault address (key→vault).
+
+Canonical explainer: [knowledge/mechanics/energy#vaults](https://structs.ai/knowledge/mechanics/energy). Skills say "from the vault" and assume this section.
+
+---
+
+## Query pagination
+
+Every paginated `structsd query structs` endpoint defaults to 100 rows and silently clamps `--limit` to 1000; `--count-total` is silently forced off, so `pagination.total` is always `0`; an `--offset` above 1000 is refused (`pagination offset exceeds maximum; use pagination key`). Walk large collections with `--page-key` from the previous response's `next_key`; do not size loops from `total`.
 
 ---
 

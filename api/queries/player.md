@@ -71,7 +71,7 @@ Returns a single player by their entity ID.
 }
 ```
 
-There is no `halted` field. Online = `(load + structsLoad) ≤ (capacity + connected substation connectionCapacity)`. Charge = current height − `gridAttributes.lastAction`.
+`playerInventory.rocks`, when present, is the spendable `ualpha` in the player's **vault** — it is the only inventory key. Stored ore is a grid attribute (`ore`), not an inventory field. There is no `halted` field. Online = `(load + structsLoad) ≤ (capacity + connected substation connectionCapacity)`. Charge = current height − `gridAttributes.lastAction`.
 
 ---
 

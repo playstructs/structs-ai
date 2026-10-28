@@ -66,7 +66,7 @@ verification for consequential actions.
 
 ### Tendermint WebSocket vs GRASS
 
-These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries the indexer projection (NATS). Tendermint at `wss://public.testnet.structs.network:26657/websocket` carries the original structsd events. Catalog, typed `Event*` types, and `ugc_moderated`: [api/chain-events](https://structs.ai/api/chain-events). GRASS is not a 1:1 mirror of that log.
+These are two different streams. GRASS at `ws://crew.oh.energy:1443` carries the indexer projection (NATS). Tendermint at `wss://public.testnet.structs.network:26657/websocket` carries the original structsd events. Catalog, typed `Event*` types, and `ugc_moderated`: [api/chain-events](https://structs.ai/api/chain-events). GRASS is not a 1:1 mirror of that log — in particular the vault, reactor-diversity, stake-cap and rank-purchase events (`EventVaultAddress`, `EventOwnerReactorDiversity`, `EventReactorStakeCap`, `EventGuildRankPurchase`, …) are available on the Tendermint stream; subscribe there when you need them.
 
 ---
 

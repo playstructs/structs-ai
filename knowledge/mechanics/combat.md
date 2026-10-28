@@ -334,7 +334,7 @@ A planet holds at most **`1 + locationListExtra` visiting fleets**. `locationLis
 
 Query `locationListStart`, `locationListLast`, `locationListCount`, and `locationListExtra` on the planet. First-in-queue (`LocationListForward == ""` on the raiding fleet) is still required to complete a raid — with default extra=0, the only visitor *is* first.
 
-Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge.
+Note: `planet-raid-complete` does **not** consume charge (it is a proof-of-work message, not a charge message). Direct `struct-attack` does consume the player's charge, and like every charge message it is limited to one per player per block by the ante (`ErrChargeAlreadyUsedThisBlock`, 2021). Raid proofs are additionally throttled to one attempt per fleet per block, keyed on the canonical `9-<decimal>` fleet id.
 
 ---
 
@@ -456,7 +456,7 @@ Everything above is derivable from the source. It is also confirmed by outcomes:
 
 ## Edge Cases
 
-- **Raid loot**: Only the player's mined ore (`storedOre` / `StoredOreAttributeId` on the **player**) can be stolen — not unmined ore on the planet (`buriedOre` / `BuriedOreAttributeId`). Alpha Matter is secure. A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. One raid = total loss of that snapshot.
+- **Raid loot**: Only the player's mined ore (`storedOre` / `StoredOreAttributeId` on the **player**) can be stolen — not unmined ore on the planet (`buriedOre` / `BuriedOreAttributeId`). Alpha Matter is secure — it sits in the player's **vault**, which no combat message touches. A **completed** planet cannot be raided at all, and a struct cannot be assigned to defend itself (`self_defense`). A successful raid seizes **all** of the target player's `storedOre`, not a partial amount. There is no partial-loot and no refund path — settlement is atomic at `MsgPlanetRaidComplete`. The amount is whatever the player's `storedOre` holds at that moment; "refine promptly" is a defender incentive, not a guarantee. One raid = total loss of that snapshot.
 - **Success rate**: `IsSuccessful` uses `hash(blockHash, playerNonce) % Denominator < Numerator`
 - **Damage overflow**: Post-destruction damage carries over to adjacent structs
 - **Blocking**: Defender must be in the same ambit as the **target being defended** to block. Block does NOT fire on evaded shots. Counter-attacks are separate -- they require the defender's weapons to reach the attacker's ambit.

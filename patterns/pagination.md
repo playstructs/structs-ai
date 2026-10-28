@@ -16,7 +16,7 @@ Pagination patterns define how AI agents should handle paginated API responses w
 
 **Key Principles**:
 1. **Use pagination keys** to navigate through large datasets
-2. **Respect page size limits** (typically max 100 items per page)
+2. **Respect page size limits** (chain default 100, hard clamp 1000; webapp fixed at 100)
 3. **Handle empty results** gracefully
 4. **Continue until next_key is null** to fetch all data
 5. **Cache pagination state** for resumable operations
@@ -119,14 +119,17 @@ Pagination patterns define how AI agents should handle paginated API responses w
 
 **pagination.limit** (integer, optional):
 - Maximum number of items per page
-- Default: varies by endpoint
-- Maximum: typically 100
-- Recommended: 50-100 for optimal performance
+- Default: 100
+- Maximum: 1000 — larger values are silently clamped, not rejected
+- Recommended: 100–500; always read `next_key`
+
+**pagination.count_total** (boolean, optional):
+- Silently forced off by the chain; `pagination.total` is always `0`. Do not size progress bars from it
 
 **pagination.offset** (integer, optional):
 - Number of items to skip (alternative to key-based)
-- Used in some endpoints
-- Less efficient than key-based for large datasets
+- Refused above 1000 (`pagination offset exceeds maximum; use pagination key`)
+- Less efficient than key-based for large datasets; use `pagination.key`
 
 ### Web Application Parameters (Catalog Reads)
 

@@ -108,7 +108,8 @@ The Economic Protocol defines how AI agents should interact with economic system
   "security": {
     "stealable": false,
     "warning": "Alpha Matter cannot be stolen once refined",
-    "protection": "Automatic - refinement secures resources"
+    "protection": "Automatic - refinement secures resources",
+    "location": "Minted into the owner's vault (query structs vault [owner-id]); playerInventory.rocks is the spendable balance. Infusion, staking, agreements and Central Bank actions debit the vault, not the signing key"
   },
   "properties": {
     "state": "refined",

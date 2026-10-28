@@ -61,7 +61,7 @@ This guide is a **skim of common verbs**. The live Msg list is [messages.md](../
 **Requirements**:
 - `struct-activate` requires the player online, sufficient charge (`activateCharge` = 2), and sufficient power
 - `struct-deactivate` / `struct-deactivate-batch` do **not** require the player online (recovery actions) and cost no charge; the struct(s) must be built and currently online
-- `struct-trash` requires charge equal to the type's `buildCharge` (8) and resets the charge bar; the struct must be built and not already destroyed
+- `struct-trash` requires charge equal to the type's `buildCharge` (1) and resets the charge bar; the struct must be built and not already destroyed
 - `struct-move` requires a valid location
 
 ---
@@ -95,17 +95,18 @@ This guide is a **skim of common verbs**. The live Msg list is [messages.md](../
 - `struct-ore-refine-complete` - Complete ore refining (requires proof-of-work)
 
 **Power**:
-- `reactor-infuse` - Infuse reactor with resources (produces energy). Also handles validation delegation
+- `reactor-infuse` - Stake Alpha from a vault into a reactor (`[reactor address] [amount]`; `--owner-id` picks a player/guild vault, default your own). Produces capacity; subject to the stake cap
 - `reactor-restart` - Resync a reactor's energy output from its validator after unjail
-- `reactor-defuse` - Defuse reactor (remove resources). Also handles validation undelegation
-- `reactor-begin-migration` - Begin redelegation process for reactor validation stake
-- `reactor-cancel-defusion` - Cancel undelegation process for reactor validation stake
+- `reactor-defuse` - Unbond stake back to the funding vault (`[reactor address] [amount]`)
+- `reactor-begin-migration` - Redelegate stake between reactors (`[src] [dest] [amount]`)
+- `reactor-cancel-defusion` - Cancel an unbonding entry (`[reactor address] [amount] [creation height]`)
 - `substation-create` - Create substation
 - `substation-player-connect` - Connect player to substation
 - `substation-allocation-connect` - Connect an allocation to a substation as its energy source
 
 **Reactor Staking**:
-- Reactor staking is now managed at player level
+- Stake is funded from the owner's **vault**, not the signing key; capacity accrues to the funding owner (flat 1:1 minus 4% commission, plus up to 50% diversity bonus for spreading across ten reactors)
+- A reactor at ≥30% of bonded stake refuses inflows once ten validators are bonded (`reactor-stake-share` shows headroom)
 - Validation delegation is abstracted via Reactor Infuse/Defuse actions
 - Use `reactor-infuse` for delegation, `reactor-defuse` for undelegation
 - Use `reactor-begin-migration` to begin redelegation
@@ -168,23 +169,25 @@ This guide is a **skim of common verbs**. The live Msg list is [messages.md](../
 ### Guild Actions
 
 **Guild Management**:
-- `guild-create` - Found a guild via reactor entitlement (`PermReactorGuildCreate` on a bonded reactor past charter age)
-- `guild-create-compute` - Solve the chain-global charter PoW and submit `guild-create` with proof
-- `guild-charter-consent` - Offline founder consent file for a third-party charter solver (not a chain message; pass `--consent-file` on `guild-create-compute`)
+- `guild-create` - Found a guild for 2,000,000 ualpha from your vault (`[reactor id] [endpoint] [substation id]`); half burned, half becomes Central Bank collateral minting 1,000,000 `uguild.<id>` to the guild vault
+- `guild-update-rank-purchase` - Price ranks for sale in `uguild.<id>` (`[guild-id] [base-price] [step-increase] [minimum-rank] [join-by-rank-purchase-enabled]`; `PermAdmin`)
+- `guild-rank-purchase` - Buy a higher rank from your vault (`[guild-id] [target-rank] [max-price] [expected-rank]`)
+- `guild-membership-join-by-rank-purchase` - Join and buy a rank in one message (`[guild-id] [target-rank] [max-price]`)
 - `guild-update-entry-rank` - Update default rank for new members (requires `PermUpdate` on guild)
 - `guild-membership-join` - Join guild
 - `guild-membership-join-proxy` - Sign a new player into the guild on their behalf; accepts optional `--player-name` and `--player-pfp` flags to seed the new player's UGC fields immediately
 - `guild-membership-kick` - Remove member from guild
-- `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on guild or rank-based authority)
+- `player-update-guild-rank` - Set a player's guild rank (requires `PermAdmin` on the guild: ownership or a direct grant)
 
 **Guild Bank**:
-- `guild-bank-mint` - Mint guild tokens (privileged)
+- `guild-bank-mint` - Mint guild tokens from the **guild vault** (`[alpha amount] [token amount]`, optional `--guild-id`; privileged)
 - `guild-bank-redeem` - Redeem guild tokens (`floor` payout; `[token] [min-amount-alpha]`)
 - `guild-bank-convert` - Convert ualpha into an existing guild token at the live ratio (`min-amount-token` required)
 - `guild-bank-convert-token` - Atomic token → alpha → other token (both guilds keep their fees)
 
 **Token Transfer**:
-- `player-send` - Send tokens via structs module (requires `PermTokenTransfer`)
+- `player-send` - Send tokens via structs module (requires `PermTokenTransfer`); `from` may be a vault address
+- `vault-send` - Move coins between owner vaults (`[owner-id] [recipient-owner-id] [amount]`; `PermTokenTransfer` on the source owner)
 
 **UGC Identity**:
 - `guild-update-name` - Rename a guild (requires `PermUpdate` on guild)
@@ -517,8 +520,9 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 
 **Guild**:
 - `guild-create`
-- `guild-create-compute`
-- `guild-charter-consent`
+- `guild-update-rank-purchase`
+- `guild-rank-purchase`
+- `guild-membership-join-by-rank-purchase`
 - `guild-update-entry-rank`
 - `guild-membership-join`
 - `guild-bank-mint`
@@ -527,6 +531,7 @@ See `knowledge/mechanics/ugc-moderation.md` for the validation rules every name/
 - `guild-bank-convert-token`
 - `player-update-guild-rank`
 - `player-send`
+- `vault-send`
 
 **Permissions**:
 - `permission-grant-on-object`

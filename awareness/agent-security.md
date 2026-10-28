@@ -141,7 +141,7 @@ Halt every running `*-compute` job for the affected key. Find PIDs in `memory/jo
 Start the cooldown clocks. Defused alpha is locked but not yet stolen.
 
 ```
-structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [your-address] [reactor-address] [amount]
+structsd tx structs reactor-defuse --from [compromised-key] --gas auto --gas-adjustment 1.5 -y -- [reactor-address] [amount]ualpha
 ```
 
 Do this for every reactor the player has infused into.

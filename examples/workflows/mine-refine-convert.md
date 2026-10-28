@@ -46,7 +46,7 @@ Monitor mining operation status.
 
 ### 2. Refine Ore to Alpha Matter (SECURE)
 
-Refine ore to Alpha Matter immediately to secure resources.
+Refine ore to Alpha Matter immediately to secure resources. The refined Alpha is minted into your **vault** (`EventAlphaRefine.vaultAddress`); read it as `playerInventory.rocks` on the player record, not as a balance on your signing key.
 
 - **Action**: `refine`
 - **Planet ID**: `2-1`

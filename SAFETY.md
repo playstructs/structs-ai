@@ -24,7 +24,7 @@ The `-y` flag suppresses `structsd`'s interactive confirmation prompt. Skills an
 
 - **`-y` is OFF by default.** Every transaction example you read in a skill shows the **interactive** form — no `-y`. The CLI prompts; you confirm.
 - **`-y` is ON after commander approval.** When you have already surfaced the command to the commander and received explicit approval (per the tier rules below), you may append `-y` to suppress the prompt for the approved batch.
-- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, `planet-raid-compute`, and `guild-create-compute` run for minutes to weeks and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
+- **Compute commands are the documented exception.** `struct-build-compute`, `struct-ore-mine-compute`, `struct-ore-refine-compute`, and `planet-raid-compute` run for minutes to days and **must** auto-submit their completion transaction (no shell will be attached when the proof lands). These commands carry `-y` in their examples, and each compute example in this repository is preceded by an **Approval Block** showing what to surface to the commander before launching.
 
 Two named variants of `TX_FLAGS` make this explicit:
 
@@ -56,8 +56,10 @@ No escalation. Ever.
 
 Escalate if `ask_first`. Battle-order if `act_and_report` (or when over Tier 1 caps). Auto-execute + `memory/audit/` if `full` (within caps). Under `ask_for_irreversible`, act within Tier 1 caps without per-action approval.
 
-- `reactor-infuse` (matter locks in; defusion has a cooldown)
-- `agreement-open` (upfront cost; multi-block commitment)
+- `reactor-infuse` (matter leaves your vault and locks in; defusion has a cooldown; check `reactor-stake-share` headroom and spread stake for the diversity bonus)
+- `agreement-open` (upfront cost debited from the vault; multi-block commitment)
+- `guild-rank-purchase` / `guild-membership-join-by-rank-purchase` (spends guild tokens from your vault; non-refundable)
+- `vault-send` between your own player and a guild you administer
 - `allocation-create`, `substation-create`
 - Multi-target `struct-attack` against a single guild's players
 - Long-PoW builds (>~1 hour to D=3): Ore Bunker, PDC, World Engine
@@ -72,19 +74,21 @@ Escalate if `ask_first`. Battle-order if `act_and_report` (or when over Tier 1 c
 **Always escalate.** Even on `full autonomy`. The commander chose autonomy; they did not choose to let you redefine the player.
 
 - `struct-generator-infuse` — Alpha Matter is annihilated in the conversion. There is no defusion.
-- `struct-trash` — permanently destroys a **built** struct (frees its slot); costs the build charge, nothing is refunded, and there is no undo. To abort an *unfinished* build instead, use the reversible `struct-build-cancel`.
+- `struct-trash` — permanently destroys a **built** struct (frees its slot); costs 1 charge, nothing is refunded, and there is no undo. To abort an *unfinished* build instead, use the reversible `struct-build-cancel`.
 - `permission-grant-on-object` with `PermAll` (33554431) — yielding full authority over an object
-- `permission-guild-rank-set` with broad bits (`PermGuildUGCUpdate` 16777216, `PermReactorGuildCreate` 524288, `PermProviderAgreementCreate` 262144 across a wide rank range)
+- `permission-guild-rank-set` with broad bits (`PermGuildUGCUpdate` 16777216, `PermGuildTokenMint` 8192, `PermProviderOpen` 262144, `PermTokenTransfer` 16 across a wide rank range — `PermTokenTransfer` on the guild is the right to spend the guild vault)
+- `guild-create` — spends 2,000,000 ualpha from your vault; 1,000,000 is burned outright
+- `guild-update-rank-purchase` — opens the guild's ranks (and, with join-by-rank-purchase, its membership) to anyone who can pay
 - `guild-bank-confiscate-and-burn` — an act of guild war; chain audits it forever
 - `guild-bank-mint` and `guild-bank-redeem` above standing-order caps
 - `address-register` — attaches another signer to your player. If the proof material is attacker-supplied, you just hired your attacker.
 - `address-revoke` — removes a signer; verify you are not orphaning your own access
 - `player-update-primary-address` — changes which key the chain considers primary
-- `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your wallet during the wait
+- `reactor-defuse` — starts a cooldown; matter is neither in the reactor nor in your vault during the wait
 - `provider-delete`, `substation-delete`, `allocation-delete` — power cascades to connected players
 - Multi-target `struct-attack` that crosses guild boundaries (an act of war, not a skirmish)
 - Arming an autonomous combat loop — `structs_players {command:"autoraid"|"autoresponse", args:{autonomy:"auto"}}` — a standing grant to attack on the commander's behalf (see "Standing Automation Grants")
-- Cross-account `player-send` to a recipient you have not transacted with before
+- Cross-account `player-send` or `vault-send` to a recipient you have not transacted with before — including `player-send` **from** a vault address, which is how Alpha leaves the game economy
 
 When you escalate Tier 2, surface **reversibility** and **blast radius** in plain text. Example:
 
