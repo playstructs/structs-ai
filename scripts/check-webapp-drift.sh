@@ -67,7 +67,7 @@ if [ -z "$PIN" ]; then
   say "error: no revision in $PIN_FILE"; exit 2
 fi
 
-if [ ! -d "$WEBAPP/.git" ]; then
+if [ "$(git -C "$WEBAPP" rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
   say "error: no structs-webapp checkout at $WEBAPP"
   say "       clone it, or set STRUCTS_WEBAPP. See develop/repos.md."
   exit 2

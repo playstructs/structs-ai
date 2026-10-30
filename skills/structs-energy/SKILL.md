@@ -68,13 +68,12 @@ Once ten validators are bonded the **reactor stake cap** activates (and stays ac
 
 ### "Am I about to go offline?"
 
-Online requires `(load + structsLoad) ≤ (capacity + capacitySecondary)`. Player passive draw is 25,000 mW; each online struct adds its `passiveDraw`. Before building, confirm headroom — `scripts/power-budget.sh [player-id] --type [struct-type-id]` projects headroom-after-activation in one call. If you're already offline, that's an emergency (recovery below).
+Online requires load to fit the chain's usable capacity. Player passive draw is 25,000 mW; each online struct adds its `passiveDraw`. `scripts/power-budget.sh [player-id] --type [struct-type-id]` reports an exact stored margin and the proposed passive draw at one query height. It does not prove live reactor eligibility, supply validity or that activation will succeed. Confirm the actual action with native preflight and its committed result. If you're already offline, use the recovery procedure below.
 
 ## Power math
 
 ```
-availablePower = (capacity + capacitySecondary) - (load + structsLoad)
-online         = (load + structsLoad) <= (capacity + capacitySecondary)
+storedMargin = (capacity + capacitySecondary) - (load + structsLoad)
 ```
 
 - `capacity` — your own generation (infusions); the only part you can allocate out.
@@ -83,6 +82,11 @@ online         = (load + structsLoad) <= (capacity + capacitySecondary)
 - `structsLoad` — player passive (25,000 mW) + sum of `passiveDraw` of your online structs.
 
 Units are milliwatts (1 W = 1,000 mW; 1 ualpha = 1 mW).
+
+The chain checks usable primary capacity and the connected substation when deciding
+whether the player is online. Stored values can lag bounded repairs. A positive
+`storedMargin` is a diagnostic, not authorization to add load. The helper refuses
+failed or incomplete reads; a failed substation query never means zero capacity.
 
 ### Worked load budget
 

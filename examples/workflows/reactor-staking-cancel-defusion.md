@@ -1,5 +1,5 @@
 ---
-description: A worked workflow for cancelling an in-flight reactor defusion — finding the unbonding entry's creation height, re-bonding the stake, and verifying capacity returns.
+description: "Cancel reactor defusion: find the pending entry's creation height, re-bond the stake before maturity and verify capacity returns."
 ---
 
 # Reactor Staking - Cancel Defusion Workflow

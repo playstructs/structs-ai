@@ -56,8 +56,17 @@ secondary_capacity() {
   local player_json="$1" sub_id sub_json
   sub_id="$(jget "$player_json" '(.Player // .player // .).substationId // (.Player // .player // .).substation_id')"
   if [[ -z "$sub_id" ]]; then printf '0'; return; fi
-  sub_json="$(q substation "$sub_id" 2>/dev/null || true)"
-  jget "$sub_json" '(.gridAttributes // .GridAttributes // {}).connectionCapacity' 0
+  sub_json="$(q substation "$sub_id")" || die "substation capacity is unavailable"
+  # A failed/malformed query is not the protobuf default for a known object.
+  printf '%s' "$sub_json" | jq -er --arg id "$sub_id" '
+    if .Substation.id != $id or (.gridAttributes | type) != "object"
+    then error("invalid substation response")
+    else (.gridAttributes | if has("connectionCapacity") then .connectionCapacity else "0" end)
+      | if type == "string" and test("^(0|[1-9][0-9]{0,19})$")
+           and (length < 20 or . <= "18446744073709551615")
+        then . else error("invalid connectionCapacity") end
+    end' \
+    || die "substation capacity is unavailable"
 }
 
 # Common preflight for scripts that need both binaries.

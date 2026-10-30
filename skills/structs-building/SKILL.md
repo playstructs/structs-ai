@@ -31,7 +31,7 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 4. **Defense before your first big refine** — at least one shield struct; keep the Command Ship online.
 5. **Expand** — more defense (Ore Bunkers/OSGs are unlimited now), then military.
 
-**Always pre-check power.** Initiate needs headroom for **BuildDraw only**; complete then applies **PassiveDraw** (sequential — not summed). For equal draws (all current types), peak = one draw, not 2×. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to project PassiveDraw after activation. If it won't fit, raise capacity first or the struct will materialize but never come online.
+**Always pre-check power.** Initiate needs headroom for **BuildDraw only**; complete then applies **PassiveDraw** (sequential — not summed). For equal draws (all current types), peak = one draw, not 2×. Use `scripts/power-budget.sh [player-id] --type [struct-type-id]` to compare PassiveDraw with the exact stored margin at one height. This does not establish live supply or activation eligibility; native preflight and the committed result decide the action. If load does not fit, raise usable capacity first.
 
 **Advanced considerations**:
 - **Defense scaling**: Orbital Shield Generator and Ore Bunker are **unlimited per player** — stack them (power permitting) to drive your planetary shield well past a single set. Everything else is 1 per player.
@@ -40,7 +40,7 @@ Conventions (TX_FLAGS, `--` rule, the `-D 3` PoW policy, the per-player charge b
 
 ## Procedure
 
-1. **Pre-check** — player online (capacity covers load); BuildDraw headroom; valid open slot (0-3 per ambit, correct ambit for the type); for planet builds: Command Ship online and fleet `onStation`. Run `scripts/power-budget.sh` to confirm headroom.
+1. **Pre-check** — player online (usable capacity covers load); BuildDraw headroom; valid open slot (0-3 per ambit, correct ambit for the type); for planet builds: Command Ship online and fleet `onStation`. Use `scripts/power-budget.sh` for stored power diagnostics, then verify native action eligibility.
 2. **Initiate** (CLI prompts — review type, ambit, slot; builds cost charge + power, not Alpha). `[operating-ambit]` is a lowercase string `space`/`air`/`land`/`water`, not a bitmask:
    ```
    structsd tx structs struct-build-initiate TX_FLAGS -- [player-id] [struct-type-id] [operating-ambit] [slot]

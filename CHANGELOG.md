@@ -11,6 +11,23 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Assessment and power-budget helpers use exact integers, a shared node and query
+  height, bounded CLI reads, validated entity/default semantics and explicit source
+  identity. Valid uint64 capacity no longer wraps through signed shell arithmetic,
+  and failed substation/fleet reads no longer become zero capacity or an on-station
+  fleet. Output describes stored accounting instead of asserting live action
+  eligibility. Python 3 is required for these two helpers; no third-party Python
+  package, private key or transaction is used. Deterministic boundary and failure
+  tests run in CI. Canonical energy/building skills and their generated mirrors,
+  power reference and assessment guidance describe the same limits.
+- The webapp drift checker recognizes Git worktrees as well as ordinary clones.
+- Energy and reactor-defusion page descriptions fit the site's metadata limit,
+  preserving their own summaries instead of falling back to the homepage summary.
+
 ## [1.32.0] - 2026-10-26
 
 structsd **v0.22.0** (`96cea3a`) refresh. This is the chain release that moves game Alpha

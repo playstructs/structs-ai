@@ -1,5 +1,5 @@
 ---
-description: A worked workflow for defusing a reactor — unbonding stake back to the funding vault, what happens to capacity immediately, and how to verify the unbonding entry.
+description: "Defuse reactor stake into its funding vault: check the immediate capacity drop, verify the unbonding entry and wait for Alpha to return."
 ---
 
 # Reactor Staking - Defuse Workflow

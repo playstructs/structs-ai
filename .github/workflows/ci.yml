@@ -28,6 +28,9 @@ jobs:
       - name: Invocation lint (arity, `--` order, --gas auto)
         run: python3 scripts/ci/check-invocations.py
 
+      - name: Read-only assessment contracts
+        run: python3 scripts/ci/test-assessment.py
+
       - name: Internal link check
         run: bash scripts/ci/check-links.sh
 

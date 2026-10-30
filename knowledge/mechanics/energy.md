@@ -1,6 +1,6 @@
 ---
 title: "Energy mechanics: infusion and brownout"
-description: "The canonical energy system: units, the online equation, vaults, the 96/4 infusion split and diversity bonus, the reactor stake cap, substation 90% passthrough and dilution, allocations, and the bounded GridCascade brownout."
+description: "Energy mechanics: vaults, usable power, infusion, diversity bonuses, reactor stake caps, substation dilution, allocations and brownout."
 ---
 
 # Energy mechanics: infusion and brownout
@@ -31,10 +31,11 @@ When a doc shows a struct drawing "50 W", the chain value is `50000`. All power 
 
 ## The online equation
 
-A player (and each of their structs) is online only while load fits within capacity:
+A player's online check requires load to fit the chain's usable capacity. The stored
+grid accounting provides a useful diagnostic:
 
 ```
-online  ⇔  (load + structsLoad) ≤ (capacity + capacitySecondary)
+storedMargin = (capacity + capacitySecondary) - (load + structsLoad)
 ```
 
 Four quantities drive everything:
@@ -46,7 +47,16 @@ Four quantities drive everything:
 | `load` | Power you've allocated **out** (as an allocation source). |
 | `structsLoad` | `PlayerPassiveDraw` (25 W) + the sum of `passiveDraw` of your **online** structs. |
 
-Available power is `(capacity + capacitySecondary) − (load + structsLoad)`; allocatable power (what you can route out) is only `capacity − load`.
+Keep the signed stored margin distinct from available power, which the native API
+clamps at zero. Player readiness uses usable primary capacity and checks the
+connected substation. A repair backlog or invalid source can make stored accounting
+insufficient evidence of live eligibility. Allocatable stored power is
+`max(0, capacity − load)`; creating an allocation also validates its supply.
+
+The read-only assessment helpers pin related CLI queries to one node and height,
+preserve exact uint64 fields and wider sums, and refuse missing or failed evidence.
+They report stored margins rather than a guarantee that a build or activation will
+succeed. Native preflight and the committed transaction remain necessary.
 
 > **Going offline is not a transaction freeze.** Online status is checked **per message** — an offline player's build/attack/mine messages reject — but **recovery actions are not gated**. You can always `struct-deactivate` a struct or infuse more capacity to climb back out. (Verified: `IsOnline()` in `x/structs/keeper/player_cache.go`.)
 

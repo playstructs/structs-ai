@@ -18,9 +18,8 @@ The chain stores power in **milliwatts**: 1 W = 1,000 chain units, 1 kW = 1,000,
 ## Core formulas
 
 ```
-online         = (load + structsLoad) <= (capacity + capacitySecondary)
-availablePower = (capacity + capacitySecondary) - (load + structsLoad)
-allocatable    = capacity - load
+storedMargin = (capacity + capacitySecondary) - (load + structsLoad)
+allocatable  = max(0, capacity - load)
 ```
 
 | Term | Meaning |
@@ -31,6 +30,13 @@ allocatable    = capacity - load
 | `structsLoad` | Player passive draw (25 W) + sum of `passiveDraw` of your online structs. |
 
 If `load + structsLoad` exceeds `capacity + capacitySecondary`, the player goes **offline** and cannot act until load is reduced (deactivate structs) or capacity raised (infuse/agreement). Online is checked **per message**; recovery actions are never gated. **Energy is per-block and ephemeral** — idle capacity is waste, not savings. A jailed or missing validator zeros that reactor's infusion ratio (fuel stays); `reactor-restart` resyncs after unjail.
+
+The displayed grid fields are stored accounting. The chain's online check uses
+usable primary capacity and checks the connected substation; stored totals can lag
+bounded repairs. A nonnegative `storedMargin` alone does not prove that a new action
+will be accepted. The read-only `scripts/power-budget.sh` reports that exact signed
+margin at one height, including totals above uint64, and refuses incomplete reads.
+Use native action preflight and committed results for actual eligibility.
 
 ---
 
@@ -70,8 +76,8 @@ Worst-case load during onboarding is ~1,075 W (all three structs online plus a b
 
 | Entity | Online When |
 |--------|-------------|
-| Player | `availablePower ≥ 0` |
-| Struct | available capacity `≥ struct.passiveDraw` |
+| Player | The native check finds usable capacity covers load |
+| Struct | Native readiness checks pass and usable available capacity covers `struct.passiveDraw` |
 
 **False positive**: a player on a substation pool can show `capacity = 0` while structs run fine — the substation supplies `capacitySecondary`. Use `structsLoad > 0` as the real "functioning" signal, not `capacity > 0`.
 

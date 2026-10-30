@@ -20,11 +20,11 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 
 | Check | MCP Tool | What to Look For |
 |-------|----------|------------------|
-| Player online | `structs_intel` / `structs_dashboard` | `(load + structsLoad) <= (capacity + capacitySecondary)` — there is no `halted` field |
-| Power status | `structs_intel` | Same inequality; headroom = capacity side − load side |
+| Player online | `structs_intel` / `structs_dashboard` | Native usable-capacity check; there is no `halted` field |
+| Power status | `structs_intel` | Stored margin = `(capacity + capacitySecondary) - (load + structsLoad)`; a positive value alone does not prove live eligibility |
 | Command Ship | `structs_intel` | Fleet has Command Ship struct, online |
 
-**Power formula**: `availablePower = (capacity + capacitySecondary) - (load + structsLoad)`. If load exceeds capacity, you go offline and most actions are blocked. Use `structs_intel` to model Alpha Matter → Watts conversion before building.
+**Stored power formula**: `storedMargin = (capacity + capacitySecondary) - (load + structsLoad)`. Native readiness checks usable capacity, including current source eligibility; bounded repairs can leave stored accounting behind. Use the stored margin to diagnose load, then verify the proposed action against native preflight and its committed result.
 
 **Critical**: If offline, nothing else matters. Recovery actions are **not** gated by being offline — `struct-deactivate` (single or batch, no charge) and reactor infusion always work, so you can shed load or add capacity to climb back online. Fix power, then resume.
 
@@ -36,7 +36,7 @@ Run these checks in sequence. Each layer builds on the previous. Stop and act if
 |-------|----------|------------------|
 | Alpha Matter | `structs_intel` / player `playerInventory.rocks` | Spendable `ualpha` in your **vault** (`query structs vault [id]` → bank balance). The signing key's own balance is not your game Alpha |
 | Ore (unrefined) | `structs_dashboard` / player `gridAttributes.ore` | Stealable `storedOre` on the **player**, not in the Ore Bunker (bunker only adds planetary shield) |
-| Charge | `structs_dashboard` / player | `charge = blockHeight − lastAction`; a **missing** `lastAction` means 0 → full charge |
+| Charge | `structs_dashboard` / player | `charge = blockHeight − lastAction` at the query height; an omitted `lastAction` inside valid grid data defaults to zero |
 
 **Ore rule**: Ore is stealable. Alpha Matter is not. Launch refine with `struct-ore-refine-compute` (PoW + auto-complete) as soon as ore lands. Unrefined ore = raid target.
 
@@ -92,6 +92,12 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 
 ## Quick Assessment Script
 
+`scripts/assess.sh [player-id]` uses Python 3 and the configured `STRUCTSD` binary.
+`STRUCTS_NODE` applies to status and every query; `STRUCTS_CHAIN_ID` optionally
+requires a network. It pins related reads to one height, prints exact stored values,
+and exits without a partial assessment when required evidence fails. It does not
+sign, read local keys or prove action eligibility.
+
 ```
 1. structs_intel({ player_id }) → survival, resources, power
 2. structs_intel({ fleet_id }) → military readiness
@@ -106,9 +112,9 @@ Use `structs_intel` before building to ensure new struct's passive draw fits. Us
 
 | Field | Meaning |
 |-------|---------|
-| `capacity` + `capacitySecondary` | Total power you can supply |
+| `capacity` + `capacitySecondary` | Total stored power accounting; usable supply is checked separately |
 | `load` + `structsLoad` | Total power you consume |
-| `availablePower` | Headroom; must stay positive |
+| `storedMargin` | Signed stored headroom; nonnegative accounting is not a live permission check |
 | `storedOre` | Stealable; refine ASAP |
 | `alphaMatter` | Safe; cannot be stolen |
 | `onStation` | Fleet at planet (for building) |
