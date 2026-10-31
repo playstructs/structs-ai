@@ -23,7 +23,11 @@ Three compose variants exist:
 | Reactor node | `compose-reactor.yaml` | Validator node (adds reactor bootstrap; no sync-state/webapp) |
 | Guild + Discord | `compose-discord.yaml` | Discord-oriented topology: `structsd-indexer-config` + `structs-proxy` + `structs-discord`; **no** `structs-sync-state` / `structs-control` (not “standard + bot”) |
 
-**Network identifiers** (`.env`): `NETWORK_CHAIN_ID=structstestnet-111`, `NETWORK_VERSION=116b` (compose default; do not invent a newer tag until `.env.example` ships one).
+**Network identifiers**: `NETWORK_CHAIN_ID=structstestnet-111`; the reviewed Compose
+example retains `NETWORK_VERSION=116b` as its bootstrap setting. That does not
+select the running protocol. The node image stages v0.22.0 for height 3,353,000;
+its committed-height reconciler selects the next block's binary. Verify the
+executing version and pin the tested image digest.
 
 ---
 
@@ -64,7 +68,7 @@ One blockchain block is ~6 seconds. Charge is a single **per-player** bar (share
 |---------|-------|---------|
 | `structsd` | 26656, 26657, 1317 | Blockchain node (CometBFT + Cosmos SDK). Chain only — does not write to PG. |
 | `structs-pg-init` | — | One-shot: database creation, role setup, initial Sqitch deploy. Exits on success. |
-| `structs-pg` | 5432 | PostgreSQL 17 + TimescaleDB. Central data store. |
+| `structs-pg` | 5432 | PostgreSQL + TimescaleDB. Server/extension versions belong to the image and volume, not the Sqitch schema version. |
 | `structs-pg-auto-migrate` | — | Re-runs `sqitch deploy` on a loop for schema updates. |
 | `structs-sync-state` | — | Chain event indexer. Polls `structsd` RPC, writes `structs.*` and `sync_state.*`. **Do not scale** (writer lock). |
 | `structs-nats` | 4222, 8222, 1443 | NATS message broker (cluster: GRASS). WebSocket on 1443, monitoring on 8222. |
@@ -76,9 +80,9 @@ One blockchain block is ~6 seconds. Charge is a single **per-player** bar (share
 
 Two services mount source trees from **sibling checkouts on the host**, not from their images: `structs-webapp` needs `WEBAPP_SOURCE` (default `../structs-webapp/src`) and `structs-control` needs `CONTROL_SOURCE` (default `../structs-control`). Start either without that checkout and the container crash-loops — `structs-control` fails immediately on a missing `/app/package.json`. Neither is needed for PG query work.
 
-`structs-pg` starts `structs-pg-init` automatically through a `service_completed_successfully` dependency, but `structs-pg-auto-migrate` has no such link. If you start only the query services, schema migrations are applied once at init and then never again; start `structs-pg-auto-migrate` explicitly to keep pulling `STRUCTS_PG_BRANCH` updates.
+`structs-pg` starts `structs-pg-init` automatically through a `service_completed_successfully` dependency, but `structs-pg-auto-migrate` has no such link. Init uses a completion marker, so a container restart does not itself advance an existing schema. Start `structs-pg-auto-migrate` explicitly to deploy/verify the configured target. The current image defaults to a bundled commit and bounded compatible target; tracking a remote branch requires explicit `STRUCTS_PG_MIGRATION_MODE=branch` opt-in.
 
-The PostgreSQL schema (`structs.*`, `sync_state.*`, `cache.*` views, `signer.*`, `view.*` — see [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. Pin the schema branch with `STRUCTS_PG_BRANCH` in `.env`.
+The PostgreSQL schema (`structs.*`, `sync_state.*`, `cache.*` views, `signer.*`, `view.*` — see [database-schema.md](database-schema.md)) is owned by [`playstructs/structs-pg`](https://github.com/playstructs/structs-pg) and applied with **Sqitch**. Pin the full `STRUCTS_PG_REF` and image digest, and pass the reviewed migration mode/target into the containers through Compose. The default staging target `table-signer-tx-20261030-authority-contract` is insufficient for the full v0.22 writer/TSA/webapp contract.
 
 The Guild Stack does not include an MCP server. Agents connect to the game through the MCP server embedded in [`structs-desktop`](https://github.com/playstructs/structs-desktop); the Guild Stack provides the PostgreSQL data store and event bridge that back it. See [`TOOLS.md`](../../TOOLS.md) for the MCP interface.
 
@@ -138,7 +142,7 @@ structsd (CometBFT + Cosmos SDK)
 
 `structs-sync-state` is the sole chain-to-PG ingester:
 
-- Image: `structs/structs-pg:latest`, command: `/src/scripts/sync_state.sh`
+- Packaged in the same pinned `structs/structs-pg` image as schema tooling; command: `/src/scripts/sync_state.sh`
 - Connects to `structsd` RPC and PG as `structs_indexer`; polls every `SYNC_POLL_INTERVAL` (default `3s`)
 - Writes directly into `structs.*` tables and `sync_state.*` audit tables
 - `cache.*` is a **compatibility view layer** over `sync_state.raw_*` (not an event-sink schema)
@@ -152,9 +156,11 @@ PG game state is empty or stale until sync-state is running and caught up. The d
 
 The request-path inventory and work models are current-state tables, not repeated aggregates of history:
 
-- `structs.api_inventory` holds address/player balances. Its reconciler compares against the ledger and writes `api_inventory_drift`.
+- `structs.api_inventory` holds exact address/player/guild balances under current asset ownership. Real bank denoms use ledger history; synthetic infused/defusing assets use current native staking snapshots and stored generator fuel. Missing native evidence stays NULL. Reconciliation compares against that same specification.
 - `structs.api_work` holds BUILD/MINE/REFINE/RAID rows. `view.work` reads it; `view.work_live` is only the specification. Sync-state calls `api_work_refresh()` after each block's writes, while an hourly full refresh repairs and logs drift.
-- `structs.api_refresh_state` records the source height/time for each model. A fresh timestamp is the operational freshness check; a transaction broadcast or healthy container alone does not prove a projection is current.
+- `structs.api_refresh_state` records source height/time for each model. `structs.api_readiness` checks these against the cursor/block identity, current-claims authority and complete economy source coverage. `data_ready` permits the requested coherent reads; `transaction_ready` additionally requires a current, same-era index. Native completeness and live transaction eligibility are checked separately.
+- `sync_state.economy_contract` records contiguous `events-v022-1` coverage from activation. A stale `status=current` or rebuilt projection cannot create it. The writer commits source changes, coverage and cursor together; required event failures roll the block back.
+- Native staking refreshes are height-pinned and bounded. Validator/redelegation exposure invalidations can make a stored snapshot stale without a local player event. `defusion` receipts and wall-clock maturity do not establish current spendable funds.
 
 ### Derived rows and historical gaps
 
@@ -199,9 +205,50 @@ This is the same system documented in the `structs-streaming` skill. The guild s
 
 The webapp also acts as an OIDC provider for Matrix authentication. Four `structs.oidc_*` tables hold client registration and short-lived authorization request/code/token state—never wallet material. The webapp owns their lifecycle; `CLEAN_OIDC()` runs every 59 seconds.
 
-Schema upgrades are ordered contracts. Deploy the structs-pg migration before enabling a sync-state writer that uses a new unique key, table, enum, or wrapper. The `view.work` cutover verifies the refresh function is live and the retired self-referential writer is gone; activity compression verifies the key-first `LATERAL` feed shape. Do not bypass those guards or cherry-pick only the consumer-side change.
+Schema upgrades are ordered contracts. Compatible additive changes may be staged
+with bounded migration automation. Coordinate the incompatible denomination-key,
+signer and work-type switches with their matching writer/TSA/application. Stop old
+writers and enqueueing before selecting the full target and explicit contracts.
+The [packaged migration procedure](https://github.com/playstructs/docker-structs-pg/blob/d0b59243b510f564d7f15b84d30b2a7d26ccd0e1/docs/v022-migrations.md)
+explains the gates; flags alone do not stop services.
+
+If a legacy index already passed activation without economy coverage, restore a
+verified complete checkpoint at/before the boundary and replay with the new writer,
+preserving newer off-chain state. `reconcile-current-block` only repairs the exact
+indexed boundary with matching hash/time; it is not a historical rewind. Never
+lower only the cursor, invent coverage, or overwrite newer state with old events.
+Back up the full database, role/ACL configuration, application configuration/session
+storage and TSA volume before cutover. PostgreSQL data/config volumes are a pair;
+changing their server major version is a separate operation.
 
 ---
+
+## Transaction Signing Agent
+
+TSA uses the dedicated `structs_tsa` SQL login, guarded `v022-1` functions and the
+pinned release CLI/helper. SQL stores explicit acting-player authority and immutable
+signed identity; the persistent key volume also journals a send before the one-use
+permit. Timeout or lost acknowledgement causes observation of that identity, not
+another broadcast. Admission and definitive block inclusion are separate states.
+
+Startup and periodic inventory reconciliation restore usable legacy or current
+local keys after native ownership/permissions agree with a ready index. Empty key
+pool tables do not by themselves require manual seeding. An explicit onboarding
+request can create the first key and wait for external guild approval. A missing
+index, missing volume, conflict and pending approval are different conditions.
+
+Queue pressure may request another key for an existing role with one eligible
+source key's exact grant, up to 40 total including pending keys. It never unions
+grants or scales past a shared player/charge throttle. Manual new-key requests
+require a mask; additional roles remain manual. A key's small bank balance does
+not limit vault spending authorized by its asset bits.
+
+Preserve `/var/structs/accounts` including keys, public request UUIDs and journals.
+Mixed flat/nested keyring layouts refuse startup instead of silently choosing one.
+Recovery can reconstruct known key inventory, not a lost business queue. Configure
+180 seconds for graceful stop, and retain unresolved evidence through rollback.
+The [worker guide](https://github.com/playstructs/structs-tsa/blob/3258529/README.md)
+provides exact configuration and idempotent operator commands.
 
 ## Node Upgrades (Cosmovisor)
 
@@ -238,3 +285,8 @@ The initial sync is the main cost. After that, warm starts are fast.
 - `schemas/database-schema.md` — Full structural schema catalog
 - `.cursor/skills/structs-streaming/SKILL.md` — GRASS real-time events via NATS
 - `TOOLS.md` — Environment configuration and deployment options
+
+**Verified scope:** migration/readiness and TSA contracts against structs-pg
+`400e1c1`, docker-structs-pg `d0b5924`, structs-tsa `3258529`, docker-structsd
+`3fe312e`; Compose topology/bootstrap at `dee42ac`. Timing/performance examples
+are illustrative, not deployment acceptance measurements.

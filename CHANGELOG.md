@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Guild Stack and database guidance now describes pinned schema staging versus full
+  coordinated activation, contiguous event coverage, current native staking claims,
+  vault ownership, denomination-aware ledger identity and exact work/rank values.
+  TSA documentation replaces implicit full grants and a fictitious signing HTTP
+  boundary with guarded SQL, explicit masks, same-grant pool growth (40 keys),
+  automatic retained-key inventory and durable uncertain-send recovery. Scoped
+  source reviews name PG `400e1c1`, writer `d0b5924` and TSA `3258529`.
+
 - Webapp economy/read-model references now distinguish exact vault spendability,
   complete reactor positions, stored generator output and source-matched ledger
   history. Response schemas include coherent readiness and session/bearer contracts;

@@ -13,14 +13,14 @@ description: "The Guild Stack PostgreSQL schema: core game state tables, the key
 
 ## Schema Overview
 
-PostgreSQL 17 with TimescaleDB extension. Six application schemas (plus `cron` for pg_cron jobs and the `_timescaledb_*` internals):
+PostgreSQL (version belongs to the deployed image) with TimescaleDB extension. Six application schemas (plus `cron` for pg_cron jobs and the `_timescaledb_*` internals):
 
 | Schema | Purpose |
 |--------|---------|
-| `structs` | Game state and API projections (structs-pg `f66fd81`; use the categorized inventory below rather than a brittle historical table count) |
+| `structs` | Game state, current economic ownership and API projections |
 | `sync_state` | Chain indexer state: sync cursor, block log, raw blocks/events, handler error log |
 | `cache` | Compatibility views over `sync_state.raw_*` (read-only; not an event-sink) |
-| `view` | 22 computed views (`view.player`, `view.guild`, leaderboards, inventories, permissions, work specification) |
+| `view` | Computed views (`view.player`, `view.guild`, leaderboards, inventories, permissions, work specification) |
 | `signer` | Transaction signing queue (TSA account/role/tx management) |
 | `sqitch` | Schema migration tracking |
 
@@ -33,11 +33,18 @@ Chain events are ingested by the **`structs-sync-state`** service (not `structsd
 | Role | Access | Used By |
 |------|--------|---------|
 | `structs` | Superuser (owner) | Administration, migrations |
-| `structs_indexer` | Read/write on `structs.*`, `sync_state.*`, `cache.*` (views) | `structs-sync-state`, `structs-grass` |
-| `structs_webapp` | Read/write on most `structs.*`, full on `signer.*` | Webapp, TSA |
+| `structs_indexer` | Projection writes on granted `structs.*`/`sync_state.*` objects; reads on compatibility views | `structs-sync-state`, `structs-grass` |
+| `structs_webapp` | Application reads, off-chain state and permitted queue wrappers; indexed permissions are read-only | Webapp |
+| `structs_tsa` | Selected reads and guarded signer functions; no direct game/queue mutation grants | TSA |
 | `structs_crawler` | Read-only on select tables | Crawler |
 
 For agent queries, use `structs_indexer` via the GRASS container (see guild-stack skill).
+
+These are service boundaries, not a guarantee that a legacy deployment has no
+administrative grants. Inspect `pg_roles` and actual ACLs. The migration verifies
+explicit webapp ACLs even on legacy superusers; it does not silently demote them.
+A non-superuser fixture verifies effective access. `structs_tsa` must not have
+administrative role attributes.
 
 ---
 
@@ -50,7 +57,7 @@ For agent queries, use `structs_indexer` via the GRASS container (see guild-stac
 | `id` | varchar PK | `1-{index}` (e.g., `1-142`) |
 | `index` | integer | Numeric portion of ID |
 | `guild_id` | varchar | Guild membership (e.g., `0-1`) |
-| `guild_rank` | bigint | Player's rank within their guild (1 = highest, 101 = default on join, 0 = unset) |
+| `guild_rank` | numeric (uint64) | Player's rank within their guild (1 = highest, 101 = default on join, 0 = unset) |
 | `planet_id` | varchar | Home planet (e.g., `2-105`) |
 | `fleet_id` | varchar | Fleet (e.g., `9-142`) |
 | `substation_id` | varchar | Substation the player draws capacity from (e.g., `4-5`) |
@@ -367,11 +374,38 @@ Continuous aggregates backing the stats endpoints: `planet_activity_hourly` (mat
 
 ## Energy Commerce Tables
 
+### Economic ownership and native evidence
+
+| Relation | Contract |
+|----------|----------|
+| `structs.vault` | Owner ID (player or guild), unique address, exact uint64 account number, nullable `account_created` origin evidence |
+| `structs.asset_owner` | Current ownership of player/guild vaults and approved retained player addresses; economic identity, not signing authority |
+| `structs.owner_reactor_diversity` | Exact nonnegative `power`, `squared_power`, uint64 `applied_bonus` per owner |
+| `structs.reactor_commission_revision` | `slash_revision` and `reconciled_slash_revision`; delayed reconciliation is explicit |
+| `structs.reactor_stake_cap` | Authoritative active/cap-bps/min-validator snapshot; an absent row is unknown |
+| `sync_state.native_staking_snapshot` | Complete address-level native balances and required/source heights, retry and receipt/position completeness |
+| `sync_state.native_staking_position` | Exact bonded/unbonding totals and entry counts per address/validator |
+| `sync_state.native_staking_exposure`, `native_staking_invalidation` | Validator/redelegation exposure and invalidation watermarks |
+| `sync_state.native_staking_claim`, `native_staking_position_state` | Readiness-qualified native evidence; an absent position is zero only under a complete address snapshot |
+| `sync_state.economy_contract` | Contiguous complete-block coverage with activation height, last height/hash and contract `events-v022-1` |
+
+Never insert a vault into `player_address` to make an ownership join work: that table
+also authorizes login/signing. A guild vault remains a guild asset, not the leader's
+personal balance. Nullable `account_created` is meaningful: only true proves the
+release created a BaseAccount; false means adopted and NULL means unknown.
+Neither false nor NULL proves unrestricted spendability.
+
+Keep raw uint64 values as exact integers/decimal strings, including ranks,
+attribute/work clocks and catalog difficulties. Some economic totals and diversity
+aggregates exceed uint64 and use unscaled NUMERIC with their own constraints.
+Display-unit columns are not transaction inputs. Work clients preserve the original
+block-start anchor; rounding a height or difficulty changes the proof.
+
 | Table | Key Columns | Notes |
 |-------|-------------|-------|
 | `reactor` | `id`, `guild_id`, `validator`, `owner` | Links validator address to guild; `owner` is PlayerId |
-| `infusion` | `destination_id`, `address`, `destination_type`, `player_id`, `fuel_p`, `power_p`, `ratio_p`, `defusing_p`, `commission` | Composite PK: `(destination_id, address)`. `destination_type` is `reactor` or `struct`. `player_id` is the **current owner of `address`** and is re-homed on register/revoke. The bare `fuel`/`power`/`ratio`/`defusing` columns are GENERATED from the `_p` values. |
-| `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing; `controller` is PlayerId (not address) |
+| `infusion` | `destination_id`, `address`, `destination_type`, `owner_id`, `player_id`, `fuel_p`, `power_p`, `ratio_p`, `defusing_p`, `commission`, `generator_disabled` | Composite PK `(destination_id,address)`. Resolve `COALESCE(NULLIF(owner_id,''),player_id)` for legacy-compatible ownership; owners can be players or guilds. Stored game fuel/power is distinct from current native staking claims. Bare display columns are GENERATED. |
+| `allocation` | `id`, `source_id`, `destination_id`, `controller` | Energy routing; controller is an owner ID (player or guild), not an address |
 | `substation` | `id`, `owner` | Power distribution nodes |
 | `provider` | `id`, `rate_amount`, `rate_denom`, `access_policy` | Energy marketplace listings |
 | `agreement` | `id`, provider/consumer refs, capacity, duration | Active purchase contracts |
@@ -381,7 +415,7 @@ Continuous aggregates backing the stats endpoints: `planet_activity_hourly` (mat
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | varchar PK | `0-{index}` (e.g., `0-1`) |
-| `entry_rank` | bigint | Default guild rank assigned to new members (chain default: 101) |
+| `entry_rank` | numeric (uint64) | Default guild rank assigned to new members (chain default: 101) |
 | `name` | varchar | Guild display name (chain UGC; from `MsgGuildUpdateName`) |
 | `pfp` | varchar | Guild profile picture (chain UGC; from `MsgGuildUpdatePfp`) |
 
@@ -420,7 +454,7 @@ Guild presentation and infrastructure metadata — **not** chain UGC name/pfp (t
 | `object_id` | varchar | The object permissions are set on |
 | `guild_id` | varchar | The guild whose members receive the permission |
 | `permission` | bigint | Single permission bit (power of 2) |
-| `rank` | bigint | Worst-allowed guild rank; 0 = revoked |
+| `rank` | numeric (uint64) | Worst-allowed guild rank; 0 = revoked |
 | `updated_at` | timestamptz | Last update timestamp |
 
 Primary key: `(object_id, guild_id, permission)`. See [permissions.md](../mechanics/permissions.md) for the guild rank permission system.
@@ -485,24 +519,23 @@ Seeded keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `
 
 ### `structs.defusion`
 
-In-flight reactor defusion records — Alpha Matter being unbonded from a reactor.
+`structs.defusion` stores historical operation receipts, not current unbonding
+balances or native entry IDs. `amount_p` is the original receipt amount;
+`completed_at` is its scheduled completion time, not evidence of release. Source
+identity is `(chain_id,block_height,tx_index,event_index,denom)` when known; a
+legacy observation height is not fabricated source identity.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `validator_address` | varchar | Validator operator address |
-| `delegator_address` | varchar | Delegator account address |
-| `defusion_type` | varchar | Defusion category |
-| `amount` | numeric | Amount being unbonded |
-| `denom` | varchar | Token denom |
-| `created_at` / `completes_at` | timestamptz | Lifecycle timestamps |
-
-Old rows are reaped by the `structs.CLEAN_DEFUSION()` cron. Read endpoints live in [`api/webapp/defusion.md`](../../api/webapp/defusion.md).
+`structs.defusion_current` filters retired receipts and labels pending evidence as
+`pending`, `unknown`, or `unidentified`. Native snapshot publication retires
+proven-absent receipts and retains replay tombstones. `CLEAN_DEFUSION()` is a no-op
+and its clock-based cron job is unscheduled: held entries can outlive the schedule.
+Read endpoints are documented in [defusion.md](../../api/webapp/defusion.md).
 
 ---
 
 ## Aggregated Views
 
-The `view` schema holds 22 views at structs-pg `f66fd81`. The ones worth reaching for:
+The `view` schema provides these request-path projections:
 
 | View | Purpose |
 |------|---------|
@@ -521,7 +554,7 @@ Use views, not raw tables, when building leaderboard, inventory, or treasury sur
 
 > **Mine/refine clocks are planet-scoped.** `view.planet`, `view.struct`, `view.work_live`, and `view.work` now resolve `planet_attribute.blockStartOreMine` / `blockStartOreRefine` (ID prefixes `12-` / `13-`). Completing any extractor/refinery resets the shared planet clock; do not treat a struct as owning an independent clock.
 
-> **Guild event fields not persisted.** Chain guild events also emit `bankConvertInFee`, `bankConvertOutFee`, and `charterSolverId`. docker-structs-pg's payload decoder ignores those JSON keys; they are not columns. Read convert fees and the current charter solver from chain queries (`guild`, `guild-charter`), not from PG.
+`structs.guild` persists `bank_convert_in_fee`, `bank_convert_out_fee`, `charter_solver_id`, rank-purchase base price/step/minimum rank, and `join_by_rank_purchase_enabled`. Source coverage must be complete before treating an absent/default value as authoritative. Substations also carry `deletion_pending` and `deletion_migration_substation_id` for continuing migration work.
 
 ---
 
@@ -551,22 +584,40 @@ Use views, not raw tables, when building leaderboard, inventory, or treasury sur
 
 Each row is one side of a movement: `address` is the party the row belongs to, `counterparty` is the other side, and `direction` (`credit`/`debit`) gives the sign. `amount_p` is the raw integer; `amount` is GENERATED via `unit_legacy_format(amount_p, denom)` for display. Use `amount_p` for arithmetic and for matching.
 
-Source identity is all-or-none: `chain_id`, `tx_index`, `msg_index`, `event_index`. Together with block `time`, these form the idempotency key for `ON CONFLICT DO NOTHING`; begin/end-block events use `-1` indexes. Legacy rows may have all four NULL. If one chain event produces multiple ledger legs, each leg still needs a distinct identity.
+Source identity is all-or-none: `chain_id`, `tx_index`, `msg_index`, `event_index`.
+The unique key is `(time,chain_id,tx_index,msg_index,event_index,denom)`: each full
+denomination is part of the identity. Keep slash-containing denoms intact and parse
+every coin in a bank event. Legacy rows may have all four coordinates NULL. Event
+phase is tracked separately for ordered state mutations; begin/tx/end order must
+not be inferred by sorting a sentinel transaction index alone. Conflicting values
+for an existing financial identity are errors, not permission to overwrite history.
 
 ### API current-state projections
 
-`structs.api_inventory` stores chain-precision address and player balances. The intended writer applies deltas only from newly inserted ledger rows, then derives player totals from address rows. `api_inventory_reconcile(false)` performs a full ledger comparison; the nightly logged run writes mismatches to `api_inventory_drift` for 90 days.
+`structs.api_inventory` stores exact address, player and guild balances. Real bank
+denominations use idempotently inserted ledger deltas. Current owner totals use
+`structs.asset_owner`, so guild vaults stay guild assets and revoked addresses do
+not remain attached to their former player. Do not sum address and owner layers.
 
-`structs.api_work` has the nine `view.work` columns plus `source_height` and `updated_at`, keyed by `(category, object_id, target_id)`. Triggers enqueue affected struct/planet/player/fleet keys in `api_work_dirty`; sync-state calls `api_work_refresh()` after authoritative block writes. An empty queue takes a ~0.03 ms fast path, while an hourly full pass repairs and logs `missing` / `extra` / `stale` rows to `api_work_drift`. `api_refresh_state` is the freshness authority for both models.
+Synthetic `ualpha.infused` is current native bonded stake plus stored generator
+fuel (including disabled generators); `ualpha.defusing` is native unbonding.
+Redelegation is exposure, never a second asset. Missing/incomplete native evidence
+propagates NULL rather than zero. Full rebuild, incremental updates and
+`api_inventory_reconcile(false)` share this current-claims specification;
+`ledger_balance` in the drift result is a compatibility column name, not a claim
+that synthetic balances are ledger sums. The logged reconciler retains drift for
+90 days. Total economic holdings are not the vault's spendable bank balance.
 
-> **Historical duplicate rows on `refined` and `infused` (affects any balance query).** Two chain messages each produced *two* ledger rows for the same movement, because sync-state's event handler and the Cosmos bank-event handler both wrote one:
+`structs.api_work` has the nine `view.work` columns plus `source_height` and `updated_at`, keyed by `(category, object_id, target_id)`. Triggers enqueue affected struct/planet/player/fleet keys in `api_work_dirty`; sync-state calls `api_work_refresh()` after authoritative block writes. An empty queue takes a fast path, while an hourly full pass repairs and logs `missing` / `extra` / `stale` rows to `api_work_drift`. `api_refresh_state` supplies model watermarks. `structs.api_readiness(ARRAY['inventory','work']::text[])` also requires matching cursor/block identity, inventory authority and contiguous economy coverage after activation. `data_ready` and `transaction_ready` serve different purposes; neither replaces native position completeness or action preflight.
+
+> **Historical duplicate rows on `refined` and `infused` (affects ledger-derived bank balances).** Two chain messages each produced *two* ledger rows for the same movement, because sync-state's event handler and the Cosmos bank-event handler both wrote one:
 >
 > | Message | Correct row | Spurious duplicate |
 > |---------|-------------|--------------------|
 > | `MsgStructOreRefineryComplete` | `refined` credit, `ualpha` | `received` credit, `ualpha` |
 > | `MsgStructGeneratorInfuse` | `infused` debit, `ualpha` | `sent` debit, `ualpha` |
 >
-> The duplicate shares the same `address`, `time`, `block_height`, and `amount_p` as the correct row. Current sync-state suppresses the bank-side row, but **the duplicates persist in already-indexed data** — on `structstestnet-111` there are 123 refine and 13 infusion pairs still present. Any query of the form `SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END)` over `ualpha` therefore double-counts every historical refine and infusion. Until an operator runs the upstream repairs (`sync-state/sql/repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`), exclude the shadowed actions when computing a net position:
+> The duplicate shares the same `address`, `time`, `block_height`, and `amount_p` as the correct row. Current sync-state suppresses the bank-side row, but **the duplicates persist in already-indexed data** — inspect the particular database before assuming those rows remain. Any query of the form `SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END)` over `ualpha` therefore double-counts every historical refine and infusion. Until an operator runs the upstream repairs (`sync-state/sql/repair-refine-ledger-dupes.sql`, `repair-infusion-ledger-dupes.sql`), exclude the shadowed actions when computing a net position:
 >
 > ```sql
 > SELECT address, denom,
@@ -594,13 +645,31 @@ Source identity is all-or-none: `chain_id`, `tx_index`, `msg_index`, `event_inde
 
 ## Signer Schema (Transaction Signing Agent)
 
-The TSA (Transaction Signing Agent, [`playstructs/structs-tsa`](https://github.com/playstructs/structs-tsa)) manages a pool of signing accounts. Services insert rows into `signer.tx` with `status='pending'`. TSA claims them, signs, and broadcasts.
+The TSA ([structs-tsa](https://github.com/playstructs/structs-tsa)) consumes
+requests made through the guarded `v022-1` wrappers. Each request binds an acting
+player and required authority; SQL and native preflight recheck current key grants.
 
-| Table | Key Columns | Notes |
-|-------|-------------|-------|
-| `signer.role` | `id`, `player_id`, `guild_id`, `status` | Status: `stub`, `generating`, `pending`, `ready` |
-| `signer.account` | `id`, `role_id`, `address`, `status` | Status: `stub`, `generating`, `pending`, `available`, `signing` |
-| `signer.tx` | `id`, `module`, `command`, `args` (JSONB), `status` | Status: `pending`, `claimed`, `broadcast`, `error`. 100+ command types. |
+| Table | Purpose |
+|-------|---------|
+| `signer.role`, `signer.account` | Existing player roles and signing-key pool; a reserved account remains reserved while its outcome is uncertain |
+| `signer.tx`, `signer.tx_authority` | Queue request and explicit authorization requirements |
+| `signer.tx_submission` | Immutable signed bytes/hash/account state plus `prepared`, `sending`, `unknown`, `accepted`, `rejected`, `committed`, `cancelled` lifecycle |
+| `signer.local_key` | Public inventory of retained local keys and their verification state |
+| `signer.account_request`, `account_registration`, `account_pool_source` | Idempotent key requests, native registration and exact source-grant evidence |
+| `signer.role_key_request`, `role_operator_request`, `role_proxy_attempt` | Role bootstrap/operator identity and approval evidence |
+| `signer.tx_registration_proof`, `tx_proxy_proof`, `tx_unsent_abort` | Bound proofs and unsent cancellation history |
+
+SQL persists signed identity before transport. The TSA volume journal is written
+before the one-use SQL send permit. Admission (`accepted`) is not inclusion;
+`committed` retains the actual DeliverTx result, including failure. Timeout or lost
+acknowledgement never permits replacing or resending the transaction. Recovery
+observes the same hash/bytes in authoritative block results. Back up the full SQL
+database and key volume together; do not reset pending states to free a key.
+
+Startup/periodic inventory reconciliation supports legacy flat and nested keyring
+layouts and restores only keys whose live registration agrees with the ready
+index. Unknown/conflicting/held keys remain inactive. It recovers key inventory,
+not a lost business queue. See [TSA lifecycle](guild-stack.md#transaction-signing-agent).
 
 ### `signer.signer_tx_type`
 
@@ -625,9 +694,20 @@ The signing layer ships 12 PL/pgSQL wrapper functions that queue UGC updates int
 
 There is no `MsgGuildModerate*` chain message — moderation is the same `Msg*Update*` message, gated by the actor's `PermGuildUGCUpdate` on the owner's guild. The chain emits a `ugc_moderated` event whenever the actor differs from the target object's owner.
 
-`signer.UPDATE_PENDING_ACCOUNT` defaults to `PermAll = 33554431` (bits 0..24) so newly provisioned signer addresses receive every permission, including `PermGuildUGCUpdate`, by default.
+New account requests require an explicit permission mask and native registration
+proof context. There is no default full grant. Queue growth copies one eligible
+key's exact current grant, never the union of several keys; the cap is 40 keys per
+role including pending keys. A new role's primary key uses the protocol-required
+`33554431`, but creating additional roles is a manual action and does not grant
+them authority over another player or guild.
 
-Structsd v0.21 adds signer types and wrappers for guild-bank convert / token convert, bank convert in/out fees, reactor restart, and charter-based guild creation. Existing wrappers also changed: redeem requires `min_amount_alpha`; mint, confiscate/burn, and rank updates carry explicit guild arguments. Co-version the enum migration and wrapper migration; PostgreSQL cannot use a newly added enum value in the same transaction that adds it.
+Wallet wrappers carry explicit acting-player and asset-owner authority. Reactor
+operations route an omitted source to the selected owner's vault, or validate an
+explicit retained delegator address. Generator infusion burns the acting player's
+vault funds. `alpha` is the supported display alias for `ualpha`; other coin denoms
+remain exact, with no guessed prefix or scale. Guild-bank wrappers use the current
+message arguments and minimum outputs. Co-version wrappers, enums, worker and
+release CLI; a successful SQL enqueue is not a committed transaction.
 
 ### Display formatting
 
@@ -674,3 +754,9 @@ All game object IDs follow `{type_prefix}-{index}`. See [entity-relationships.md
 - `schemas/database-schema.md` -- Full structural schema catalog
 - `knowledge/entities/entity-relationships.md` -- Full entity graph and ID format
 - `knowledge/entities/struct-types.md` -- Struct type stats (mirrors `struct_type` table)
+
+**Verified scope:** economic ownership, ranks, native evidence, defusion receipts,
+ledger identity, readiness, service-role boundaries and signer lifecycle against
+structs-pg `400e1c1`, docker-structs-pg `d0b5924`, structs-tsa `3258529`. Other
+entity/statistics examples retain their earlier `f66fd81` review scope. Historical
+repair notes describe possible retained data, not a new measurement of every guild.

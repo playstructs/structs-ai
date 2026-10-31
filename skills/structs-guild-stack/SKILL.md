@@ -82,10 +82,27 @@ NETWORK_VERSION=116b
 NETWORK_CHAIN_ID=structstestnet-111
 DATABASE_NAME=structs
 SQITCH_PG_CONNECTION=postgres://structs@structs-pg:5432/structs
-STRUCTS_PG_BRANCH=main
+STRUCTS_PG_BRANCH=origin
 ```
 
-`NETWORK_VERSION=116b` is the compose default in `.env.example`. Do not invent a newer tag until that file ships one. The webapp and Struct Control SPA additionally require `WEBAPP_SOURCE` and `CONTROL_SOURCE` to point at sibling host checkouts; leave those services stopped and you can ignore both.
+`NETWORK_VERSION=116b` is the bootstrap setting in the reviewed Compose template, not a statement of the executing chain binary. The node image must contain the official v0.22.0 binary and its height schedule for `structstestnet-111` (activation 3,353,000). Pin tested image digests and verify the running binary separately. The webapp and Struct Control SPA additionally require `WEBAPP_SOURCE` and `CONTROL_SOURCE` to point at sibling host checkouts; leave those services stopped and you can ignore both.
+
+### Schema and runtime selection
+
+The Compose checkout alone does not pin the schema. The PG image bundles an exact
+`STRUCTS_PG_REF`; init and auto-migrate default to `STRUCTS_PG_MIGRATION_MODE=pinned`
+and target `table-signer-tx-20261030-authority-contract`. That is a compatible
+staging boundary, **not a complete schema for the current writer, TSA or webapp**.
+Use a reviewed Compose override that passes the same image/ref/mode/target to the
+PG services. Merely adding a variable to `.env` does not pass it into a container
+unless Compose references it.
+
+For a new installation, deploy the full paired schema before starting the writer.
+For an existing installation, follow the [coordinated activation procedure](https://github.com/playstructs/docker-structs-pg/blob/d0b59243b510f564d7f15b84d30b2a7d26ccd0e1/docs/v022-migrations.md).
+The explicit ledger and signer contracts acknowledge a stopped old writer and TSA;
+they are not a repair for a failing compatibility check. A database already indexed
+past activation without source coverage needs verified checkpoint recovery and
+replay. Preserve off-chain data and the complete TSA volume.
 
 ### 4. Start the Stack (Read-Only Profile — Recommended Default)
 
@@ -137,7 +154,7 @@ docker exec docker-structs-guild-structs-grass-1 \
   -t -A -c "SELECT count(*) FROM structs.player;"
 ```
 
-If this returns a number, the stack is working.
+A count proves SQL connectivity only. Before using indexed data, also check source coverage and API readiness below.
 
 ---
 
@@ -322,7 +339,22 @@ SELECT * FROM structs.api_inventory_reconcile(false);
 
 `view.work` reads `structs.api_work`; `view.work_live` is the expensive live specification and should only be used by refresh/reconciliation. Work rows include `location_type`, `location_id`, and `planet_id`; mine/refine `block_start` values come from shared planet attributes, not per-struct clocks. Sync-state must call `api_work_refresh(height, block_time)` after all authoritative writes for the block.
 
-The reconciler functions are read-only with respect to their API tables. Any returned rows are drift evidence; recurring work drift means a missed dirty-key dependency or bad refresh ordering, while inventory drift means the incremental ledger-balance path needs repair.
+The reconciler functions do not repair their API tables. Any returned rows are
+drift evidence. Inventory reconciliation compares real token balances with ledger
+history, but synthetic infused/defusing claims with current native snapshots and
+stored generator fuel. Missing native evidence is unknown, not zero.
+
+```sql
+SELECT * FROM structs.api_readiness(ARRAY['inventory','work']::text[]);
+SELECT chain_id, contract, activation_height, last_height, last_block_hash
+FROM sync_state.economy_contract;
+```
+
+Check `data_ready` before using the requested projections and `transaction_ready`
+before preparing an action. A recently refreshed timestamp, `status='current'`
+left by a stopped writer, or a healthy PG container is insufficient. The readiness
+function checks matching source height/hash and projection watermarks; native
+position completeness and live action preflight remain separate requirements.
 
 ### Struct Health and Defense Assignments
 
@@ -371,7 +403,7 @@ The setup procedure above starts `structsd`, `structs-pg`, `structs-nats`, `stru
 
 | Service | What it is | When to enable |
 |---------|-----------|----------------|
-| `structs-pg-auto-migrate` | Re-runs `sqitch deploy` on a loop | When you want schema updates from `STRUCTS_PG_BRANCH` after the initial deploy. Not started as a dependency of anything. |
+| `structs-pg-auto-migrate` | Deploys or verifies the configured Sqitch target | Enable for the reviewed pinned target; branch tracking requires explicit opt-in. Not started as a dependency of anything. |
 | `structs-webapp` | Browser/API dashboard on port 8080 | When you need the HTTP guild API locally. **Requires a `WEBAPP_SOURCE` host checkout** (default `../structs-webapp/src`). |
 | `structs-control` | Struct Control SPA, an operator console on port 8081 | When you want a browser UI over the webapp. **Requires a `CONTROL_SOURCE` host checkout** (default `../structs-control`); without it the container crash-loops on a missing `package.json`. |
 | `structs-tsa` | Transaction signing daemon | **Only after reviewing its source.** See `Signing-Agent Caveat` below. |
@@ -395,12 +427,30 @@ Tracking `main` means a `git pull` can silently change which images get pulled, 
 
 ### Signing-Agent Caveat
 
-The `structs-tsa` service is designed to sign transactions on behalf of a stored key. The default Compose ships it **unconfigured** (no key), but if you ever wire a real key into it:
+TSA polls the SQL queue; it has no public signing HTTP endpoint. Use its dedicated
+`structs_tsa` database role and protect the database/network policy. A signing key's
+asset permission can authorize spending its player's vault, even when the key's
+own bank balance is zero. Scope grants to the work, rather than relying on a
+low-balance key to limit authority.
 
-- Read its source. Understand exactly which message types it will sign.
-- Bind it to `127.0.0.1`. A signing agent reachable from the network is a remote-spending API.
-- Use a dedicated, low-balance signing key — not your main player key.
-- Document, in `memory/audit/`, when you enabled it and which key is loaded.
+The current worker inventories every local key on startup and periodically,
+including legacy `account_*` names. It restores usable keys to SQL only after
+current native registration, ownership, permissions and index readiness agree.
+`manual-reload.sh` is an optional immediate reconciliation; a new installation's
+existing onboarding request can generate its first key without a seed command.
+
+Queue pressure can add keys to an existing role with one eligible key's exact
+current grant, up to 40 total including pending keys. It does not union grants,
+bypass shared player/charge throttles, or create extra roles automatically.
+Manual key requests require an explicit mask. Additional roles are manual and
+need their own scoped authority.
+
+Keep `/var/structs/accounts` intact: keys, request identities and the send journal
+must survive container/database recreation. SQL recovery does not reconstruct lost
+business requests. An uncertain signed transaction is observed by its saved hash;
+it is never automatically replaced or resent. Configure a 180-second TSA stop
+grace period. See the [worker operations guide](https://github.com/playstructs/structs-tsa/blob/3258529/README.md)
+for configuration and idempotent operator commands.
 
 For read-only intelligence work this service is unnecessary. Keep it stopped or remove it from the Compose override.
 
@@ -444,7 +494,7 @@ If you spun the stack up to investigate something, tear it down when you're done
 | Error | Cause | Fix |
 |-------|-------|-----|
 | "connection refused" on PG | Stack not started or PG not healthy yet | `docker compose ps` to check; wait for PG healthy |
-| Query returns 0 rows | Chain sync or sync-state catch-up incomplete | Check `sync_state.sync_cursor`; wait for `status` to reach `current` |
+| Query returns 0 rows | Empty result or incomplete indexing | Check source coverage and `api_readiness`; zero rows alone cannot distinguish the two |
 | Query returns 0 rows but data exists | Snake_case guess at a camelCase value | Chain-derived string values are camelCase: `onStation` not `on_station`, `raidSuccessful` not `completed`, `planetaryShield`, `structsLoad` |
 | Poller misses events on some planets | `planet_activity.seq` is per-planet, not table-wide | Keep one cursor per planet, or order on `block_height` |
 | Ledger balances are too high | Historical duplicate `received`/`sent` rows shadowing `refined`/`infused` | See the ledger note in [database-schema](https://structs.ai/knowledge/infrastructure/database-schema) |
@@ -452,7 +502,7 @@ If you spun the stack up to investigate something, tear it down when you're done
 | Player activity history is slow | Plain join defeats compressed-chunk exclusion | Page `planet_activity_player` keys first and fetch parents through `LATERAL` |
 | `structs-control` restarting | Missing `CONTROL_SOURCE` sibling checkout | Clone `structs-control` next to the stack, or leave the service stopped |
 | Container name not found | Container naming varies by installation | Run `docker compose ps` to find actual container names |
-| "role does not exist" | Wrong PG role in connection string | Use `structs_indexer` role via the GRASS container |
+| "role does not exist" | Missing schema/role migration or wrong connection | Verify the intended schema and service-specific login; do not substitute an administrative role |
 | Slow PoW with guild stack | Multiple agents running concurrent PoW | CPU contention; stagger PoW operations or reduce parallelism |
 | Second sync-state instance fails | Writer lock — only one indexer allowed | Never scale `structs-sync-state` |
 
@@ -462,7 +512,7 @@ The schema configures the webapp role with a 60-second statement timeout and a 5
 
 The webapp's OIDC provider state lives in `structs.oidc_client`, `oidc_authorization_request`, `oidc_authorization_code`, and `oidc_access_token`. These tables contain client/flow/token metadata, not wallet keys. Expired rows are cleaned by the `oidc_cleaner` cron job every 59 seconds.
 
-Treat structs-pg and its writers/readers as a co-versioned rollout. Migrations deliberately guard the `view.work` re-point and `planet_activity` compression cutovers; never bypass those guards. New signer v0.21 enum values must be deployed before their wrapper functions because PostgreSQL cannot add and consume an enum literal in the same transaction.
+Treat structs-pg and its writers/readers as a co-versioned rollout. Migrations deliberately guard the `view.work` re-point and `planet_activity` compression cutovers; never bypass those guards. Signer enum additions precede their wrappers because PostgreSQL cannot add and consume an enum literal in the same transaction. The denomination identity and `v022-1` signer switches also require their matching runtimes; ordinary compatible migration automation can remain enabled at its bounded target.
 
 ---
 
@@ -473,3 +523,8 @@ Treat structs-pg and its writers/readers as a co-versioned rollout. Migrations d
 - [schemas/database-schema](https://structs.ai/schemas/database-schema) — Full structural schema catalog
 - [structs-intel skill](/skills/structs-intel/SKILL.html) — Intelligence gathering (CLI + PG)
 - [structs-streaming skill](/skills/structs-streaming/SKILL.html) — GRASS real-time events via NATS
+
+**Verified scope:** migration selection/readiness and TSA lifecycle against structs-pg
+`400e1c1`, docker-structs-pg `d0b5924`, structs-tsa `3258529`, docker-structsd
+`3fe312e`, and Compose `dee42ac`. Tactical SQL examples retain their independent
+review scope; Desktop compatibility is not implied.
