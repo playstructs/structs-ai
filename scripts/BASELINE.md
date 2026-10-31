@@ -114,7 +114,7 @@ that keeps it honest:
 - **Authority**: `structs-webapp` is canonical for the SUI design system and for client
   behaviour. `structsd` outranks it on chain rules; `structs-ui` (last commit 2024-06)
   is illustrative only. Full ordering in [`develop/repos.md`](../develop/repos.md).
-- **Pin**: [`.structs-webapp-version`](../.structs-webapp-version) = `581fcd0f` (2026-10-31, local integration pending human review).
+- **Pin**: [`.structs-webapp-version`](../.structs-webapp-version) = `8ec23661` (2026-10-31, local integration pending human review).
   A page's "Verified against" footer records the newest revision actually reviewed for
   that page; unaffected pages may intentionally retain an older revision.
 - **Baseline**: `generated/sui-inventory.md` is machine-extracted by

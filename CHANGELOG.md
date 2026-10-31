@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Webapp signing references follow integration `8ec23661`: legacy retry-lane entries and ambiguous `.corrupt` backups preserve uncertain-send evidence rather than becoming expired unsigned work. Identity-free recovery remains an explicit rollout gate.
+
 - Webapp references follow local integration `581fcd0f`: bounded signed expiry with native non-execution evidence, explicit retained-refund collection, prompt GRASS approval wakeups, referenced device-history retention, MessageChannel hashing and public registration rate limits. The legacy no-identity recovery limitation and bounded 16-address funding window remain explicit. Only re-reviewed page footers advance; this is not deployment acceptance.
 
 - Webapp builder references now cover navigation/drawer cancellation, matching

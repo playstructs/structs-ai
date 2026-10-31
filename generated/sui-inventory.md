@@ -1,7 +1,7 @@
 ---
 kind: ui
 authority: source
-verified_against: structs-webapp @ 581fcd0f2a98 (2026-10-30)
+verified_against: structs-webapp @ 8ec2366100e7 (2026-10-31)
 verified_at: 2026-10-31
 volatility: high
 generated_by: scripts/gen-sui-inventory.sh
@@ -13,7 +13,7 @@ generated_by: scripts/gen-sui-inventory.sh
 > design system. Do not hand-edit. Regenerate with `scripts/gen-sui-inventory.sh`;
 > diff against upstream with `scripts/check-webapp-drift.sh`.
 
-Source commit: `581fcd0f2a98164ac61c1784ac43034ce1270705` (2026-10-30)
+Source commit: `8ec2366100e7778315854821ef37a2c6972bb197` (2026-10-31)
 
 | Inventory | Count |
 |---|---|

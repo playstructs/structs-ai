@@ -7,7 +7,7 @@ description: "Exact transaction intents, wallet proofs, native preparation, dura
 The client saves an intent, prepares it against current indexed/native evidence,
 signs and verifies the exact transaction, journals it before sending, then reconciles
 its committed result. A timeout or CheckTx acceptance cannot establish success.
-This page describes webapp integration `581fcd0f`; a client must deploy its matching
+This page describes webapp integration `8ec23661`; a client must deploy its matching
 API, schema, generated types and workers together.
 
 ## Wallet
@@ -160,6 +160,14 @@ even without a usable hash, do not become fresh sends. Corrupt/unrecognized stor
 block signing and remain available for recovery. Logout clears private browser
 state and closes the unsigned session boundary while retaining public journals. A legacy send with neither signed identity nor baseline account sequence cannot gain safe expiry retroactively. Its signing key stays blocked; another authorized key is a different queue scope. Do not erase that record or reuse the uncertain key as an automatic recovery step.
 
+Legacy lane entries with a nonzero attempt count or recorded broadcast block are
+possible sends, even when their status says queued or an earlier import saved them
+as version 3. They remain unknown. The current endpoint/account's `.corrupt` backup
+is inspected before loading: malformed or possibly submitted evidence blocks new
+sends and is preserved. A valid backup containing only unsigned queued work is not
+replayed. These guards preserve evidence; they do not solve an identity-free
+transaction's outcome or inspect another origin's storage.
+
 ### Retries and settlement
 
 There are no automatic signed-send retries. `broadcastTxSync` code 0 is admission,
@@ -238,7 +246,7 @@ This is a custody change, not an MCP key-export feature: tool callers still requ
 signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
 inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
 
-*Webapp claims verified against integration `581fcd0f`: WalletManager,
+*Webapp claims verified against integration `8ec23661`: WalletManager,
 SigningClientManager, SigningQueueManager, SigningSubmission, TransactionJournal,
 SigningTransaction, MessagePayload, protocol/fee constants and intent preparation.
 The checked release fixtures include exact signed bytes, simulation, native atomic
