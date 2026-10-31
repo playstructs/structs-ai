@@ -8,7 +8,7 @@ description: "Exact values, coherent API snapshots, vault spendability, scoped r
 The reference client retains exact values and source metadata alongside its existing
 display models. Readiness is evidence about the response used by an action, not a
 property that can be borrowed from a newer `/api/block` response. This page describes
-webapp integration `5991ca95` with structs-pg `400e1c1`.
+webapp integration `581fcd0f` with structs-pg `400e1c1`.
 
 ## Numbers arrive as strings
 
@@ -94,9 +94,10 @@ carry their independent source identity.
 
 `GET /api/player/{id}` adds `vault_address`, exact `spendable_alpha_p` in ualpha,
 and `funds_meta` (`height`, `ready`, `source`, `provisioned`, `reason`). Unavailable
-funds are null; proved zero is `"0"`. Post-activation `alpha` is a display of vault
-funds, not total wealth across retained addresses or bonded stake. An unprovisioned
+funds are null; proved zero is `"0"`. `spendable_alpha_p` remains vault-only. The existing `alpha` display floors `available_alpha_p`, which adds verified liquid retained funds from a bounded funding window. This is not total wealth or bonded stake. An unprovisioned
 vault can already hold transferred coins; provisioning alone does not determine zero.
+
+`retained_sources` and `retained_alpha_p` describe currently owned native spendable coins. `retained_funds_meta` distinguishes ready/unknown evidence and complete/partial candidate coverage. Up to 16 positive indexed candidates are verified at the same height; additional candidates are reported, not silently claimed as inspected. A retained read failure leaves known vault funds usable. See the [player API](../../api/webapp/player.md#retained-liquid-funding) for exact fields. Transfers and reactor infusions collect only their shortfall in the same transaction; generator funding remains vault-only. Player reads have a 16-second client timeout covering the shared 15-second native verification budget.
 
 `GET /api/infusion/player/{id}` retains its aggregate display and supplies exact
 positions plus completeness metadata. Positions distinguish the vault from retained
@@ -184,7 +185,7 @@ closing the session prevents late startup work from restoring it. The original
 [signing journal](actions-and-signing.md#persistence) remains authoritative across
 reload and account handoff.
 
-*Verified against webapp integration `5991ca95`: GameState, KeyPlayer, GuildAPI,
+*Verified against webapp integration `581fcd0f`: GameState, KeyPlayer, GuildAPI,
 JsonAjaxer, Player/Infusion/Work/GuildAPIResponse factories, AuthManager,
 AlphaRefreshManager, WorkRefreshManager, SessionAuthorityManager, PlayerFunds and
 ChainProtocol. Matching database/API evidence is required at deployment.*

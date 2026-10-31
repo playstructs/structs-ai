@@ -3921,7 +3921,7 @@ UGC name/pfp updates emit two distinct streams:
 ### Inventory Events
 
 Notifications invalidate a committed read; they are not balance deltas or payment
-receipts. Read exact spendable vault funds and complete positions through the event
+receipts. Read exact vault/available-funds evidence and complete positions through the event
 or inclusion height, preserving API readiness metadata. Coalesce duplicates and
 refresh after reconnect/resume; Core NATS does not replay missed messages.
 
@@ -12678,7 +12678,7 @@ description: "Exact values, coherent API snapshots, vault spendability, scoped r
 The reference client retains exact values and source metadata alongside its existing
 display models. Readiness is evidence about the response used by an action, not a
 property that can be borrowed from a newer `/api/block` response. This page describes
-webapp integration `5991ca95` with structs-pg `400e1c1`.
+webapp integration `581fcd0f` with structs-pg `400e1c1`.
 
 ## Numbers arrive as strings
 
@@ -12764,9 +12764,10 @@ carry their independent source identity.
 
 `GET /api/player/{id}` adds `vault_address`, exact `spendable_alpha_p` in ualpha,
 and `funds_meta` (`height`, `ready`, `source`, `provisioned`, `reason`). Unavailable
-funds are null; proved zero is `"0"`. Post-activation `alpha` is a display of vault
-funds, not total wealth across retained addresses or bonded stake. An unprovisioned
+funds are null; proved zero is `"0"`. `spendable_alpha_p` remains vault-only. The existing `alpha` display floors `available_alpha_p`, which adds verified liquid retained funds from a bounded funding window. This is not total wealth or bonded stake. An unprovisioned
 vault can already hold transferred coins; provisioning alone does not determine zero.
+
+`retained_sources` and `retained_alpha_p` describe currently owned native spendable coins. `retained_funds_meta` distinguishes ready/unknown evidence and complete/partial candidate coverage. Up to 16 positive indexed candidates are verified at the same height; additional candidates are reported, not silently claimed as inspected. A retained read failure leaves known vault funds usable. See the [player API](../../api/webapp/player.md#retained-liquid-funding) for exact fields. Transfers and reactor infusions collect only their shortfall in the same transaction; generator funding remains vault-only. Player reads have a 16-second client timeout covering the shared 15-second native verification budget.
 
 `GET /api/infusion/player/{id}` retains its aggregate display and supplies exact
 positions plus completeness metadata. Positions distinguish the vault from retained
@@ -12854,7 +12855,7 @@ closing the session prevents late startup work from restoring it. The original
 [signing journal](actions-and-signing.md#persistence) remains authoritative across
 reload and account handoff.
 
-*Verified against webapp integration `5991ca95`: GameState, KeyPlayer, GuildAPI,
+*Verified against webapp integration `581fcd0f`: GameState, KeyPlayer, GuildAPI,
 JsonAjaxer, Player/Infusion/Work/GuildAPIResponse factories, AuthManager,
 AlphaRefreshManager, WorkRefreshManager, SessionAuthorityManager, PlayerFunds and
 ChainProtocol. Matching database/API evidence is required at deployment.*
@@ -12872,7 +12873,7 @@ description: "Exact transaction intents, wallet proofs, native preparation, dura
 The client saves an intent, prepares it against current indexed/native evidence,
 signs and verifies the exact transaction, journals it before sending, then reconciles
 its committed result. A timeout or CheckTx acceptance cannot establish success.
-This page describes webapp integration `5991ca95`; a client must deploy its matching
+This page describes webapp integration `581fcd0f`; a client must deploy its matching
 API, schema, generated types and workers together.
 
 ## Wallet
@@ -12929,7 +12930,7 @@ before preparation and sending.
 
 | Intent | Preparation |
 |---|---|
-| Alpha transfer | Current native ownership/TokenTransfer and vault balance; selected player resolves to that player's vault, explicit address stays literal |
+| Alpha transfer | Current native ownership/TokenTransfer and vault-first funding with eligible retained collection; selected player resolves to that player's vault, explicit address stays literal |
 | Reactor change | Same-height native/indexed complete positions; vault first, then eligible retained addresses deterministically |
 | Generator funding | Native target/type/owner/TokenInfuse, exact vault funds and current stored output |
 | Address registration | Target consent, current nonce/protocol, current signing key and requested grant |
@@ -12950,7 +12951,7 @@ ineligible retained stake does not become a fabricated available balance. See
 
 The legacy `FEE` fallback is zero `ualpha` with gas `500000`. Reviewed gameplay,
 registration/device, reactor and generator preparation explicitly use zero `ualpha`
-and the release free-gas ceiling `20000000`; transfer preparation retains the fallback.
+and the release free-gas ceiling `20000000`. A transfer that collects retained funds uses that ceiling too; a single-message transfer retains the fallback.
 These are client limits, not proof that arbitrary state will fit or a gas-price rule
 for native Cosmos staking messages.
 
@@ -12967,7 +12968,7 @@ protocol and connection/account identity are rechecked. Simulation reserves noth
 only committed chain execution determines success.
 
 For the configured `structstestnet-111` transition at `3353000`, pre-activation
-transactions expire at `3352999`. Post-activation preparation uses the new protocol.
+transactions expire at `3352999`. Post-activation transactions expire at the observed preparation height plus 60 blocks. This client validity window is separate from native permission, staking cooldown and the address-consent proof context.
 Other networks require an explicit authoritative configuration.
 
 ## The dual-lane queue
@@ -12982,7 +12983,7 @@ A pending uncertain submission blocks new sends in both lanes.
 Same-origin tabs share a Web Lock keyed by chain and signing account. Inside that
 lock the queue reloads the per-intent journal before preparing or sending. A missing
 Web Locks implementation or failed durable storage prevents a new send; there is no
-unlocked fallback. Different origins/devices need their own account coordination.
+unlocked fallback. A secure context with Web Locks is required: localhost was tested; a non-local deployment needs HTTPS and origin-specific acceptance. Different origins/devices need their own account coordination.
 
 Account changes suspend and drain the old queue, persist its evidence under its own
 scope, cancel its observers and only then attach the new wallet. A save failure
@@ -13009,7 +13010,7 @@ Queue snapshot version 3 uses `signingQueue:{wsUrl}:{address}`. Each intent also
 an independent `signingJournal:{chainId}:{address}:{id}` record. The snapshot cannot
 erase signed evidence. Signed bytes/hash and the `prepared` record must be durably
 written before the separate `broadcasting` marker; only then can the network send
-run. Terminal history is bounded; unresolved records never expire.
+run. Terminal history is bounded, except records still referenced by saved device-action pointers. Unresolved evidence is never pruned simply for its age.
 
 | Journal/state | Recovery meaning |
 |---|---|
@@ -13017,13 +13018,13 @@ run. Terminal history is bounded; unresolved records never expire.
 | prepared journal | Exact bytes saved, but no durable send marker; rebuild only this unsent intent |
 | broadcasting / accepted / unknown | May have reached the chain; retain bytes/hash and reconcile only |
 | succeeded | Matching committed code 0 |
-| dropped | Definitive rejection or failure before sending |
+| dropped | Definitive rejection, failure before sending, or proved non-execution after signed expiry |
 | cancelled | Explicit cancellation of unsent work |
 
 The 30-minute age limit applies only to unsent intents. Legacy in-flight records,
 even without a usable hash, do not become fresh sends. Corrupt/unrecognized stores
 block signing and remain available for recovery. Logout clears private browser
-state and closes the unsigned session boundary while retaining public journals.
+state and closes the unsigned session boundary while retaining public journals. A legacy send with neither signed identity nor baseline account sequence cannot gain safe expiry retroactively. Its signing key stays blocked; another authorized key is a different queue scope. Do not erase that record or reuse the uncertain key as an automatic recovery step.
 
 ### Retries and settlement
 
@@ -13031,7 +13032,7 @@ There are no automatic signed-send retries. `broadcastTxSync` code 0 is admissio
 not completion. A valid CheckTx rejection can settle failure; an ambiguous transport
 failure cannot. `find` looks up the original hash and verifies exact bytes, hash,
 chain, block/commit identity, transaction index and execution code. A missing hash,
-RPC outage or local deadline leaves the result unknown. Bounded work rotates pending
+RPC outage or local deadline leaves the result unknown. After exact native TxNotFound, a nonzero signed timeout can settle as dropped only when a later committed snapshot proves the same account number and an unchanged signed account sequence. A passed height alone is insufficient; changed sequence or conflicting/unavailable evidence remains unknown. Retain the original bytes and proof; never automatically sign a replacement. Bounded work rotates pending
 lookups so one unavailable hash does not starve the others.
 
 `whenSettled(id, signal)` resolves with the terminal transaction; check `status`.
@@ -13075,7 +13076,7 @@ notifications must not complete a different action or affect a new wallet sessio
 
 The existing transfer flow returns a definitive failure to its confirmation screen
 with recipient/amount preserved. An unknown send stays protected against duplicates.
-Device and gameplay actions likewise require terminal evidence before reporting
+Deploy and action controls handle enqueue refusal before adding pending visuals, and release only their own operation lock after a definitive failure. Device and gameplay actions likewise require terminal evidence before reporting
 success; a successful self-revoke may clear local state without waiting for an API
 read that the revoked key can no longer authenticate.
 
@@ -13103,7 +13104,7 @@ This is a custody change, not an MCP key-export feature: tool callers still requ
 signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
 inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
 
-*Webapp claims verified against integration `5991ca95`: WalletManager,
+*Webapp claims verified against integration `581fcd0f`: WalletManager,
 SigningClientManager, SigningQueueManager, SigningSubmission, TransactionJournal,
 SigningTransaction, MessagePayload, protocol/fee constants and intent preparation.
 The checked release fixtures include exact signed bytes, simulation, native atomic
@@ -13126,7 +13127,7 @@ description: "Exact proof difficulty, observed-height workers, original anchors,
 
 The browser hashes current authoritative work with its original chain anchor.
 Finding a hash and confirming its completion transaction are separate lifecycles.
-This page describes integration `5991ca95`; protocol rules come from structsd release
+This page describes integration `581fcd0f`; protocol rules come from structsd release
 `96cea3a`. See [hashing](../../knowledge/mechanics/hashing.md) for the CLI/mechanics.
 
 ## The hash
@@ -13182,7 +13183,7 @@ setting changes native verification.
 ## The worker loop
 
 The worker hashes at most 4096 candidates per batch, yields to process messages,
-and schedules another batch. This bounds how long a height/rule/cancellation update
+and schedules another batch with MessageChannel. This avoids nested `setTimeout(0)` clamping while still allowing control messages between batches. This bounds how long a height/rule/cancellation update
 waits behind hashing. It publishes progress every five million iterations and on
 important state changes. A previously found candidate is reusable only if its hash
 still satisfies the current observed-height rule.
@@ -13270,7 +13271,7 @@ worker replies, original anchors, stale work, unknown/failed/committed submissio
 and logout. Native release fixtures and rendered isolated build/tutorial checks are
 separate evidence. Keep those distinctions when reporting client acceptance.
 
-*Verified against webapp `5991ca95`: TaskManager, TaskProcess, TaskState,
+*Verified against webapp `581fcd0f`: TaskManager, TaskProcess, TaskState,
 TaskStateFactory, TaskWorker, WorkFactory, WorkDifficulty, WorkSubmission,
 WorkRefreshManager and TaskConstants. Integer eligibility cross-checked directly
 against release `x/structs/types/work.go`; no chain checkout was modified.*
@@ -13369,6 +13370,8 @@ Economic/device completion is owned by its transaction observer and current evid
 not the first similar-looking notification. Removed one-shot transfer/infusion/device
 listeners are not an integration API to copy.
 
+`RegistrationRefreshListener` gives pending-consent and registration-status observers a prompt read wakeup. It matches the current activation/device context, coalesces bursts and in-flight reads, and spaces notification-driven reads by at least one second. Polling still backs off from two to thirty seconds if notifications are lost. A wakeup never establishes successful approval or substitutes for the exact native nonce/owner and indexed association checks. Aborted observers unregister and cancel their timers.
+
 ## Refresh committed funds and work
 
 `AlphaChangeListener` matches the current owner on inventory subjects and on explicit
@@ -13380,7 +13383,7 @@ The ledger trigger carries `amount_p_exact`, `id_exact`, `block_height_exact`,
 canonical `owner_type`/`owner_id`/`is_vault` and counterparty ownership. Those fields
 preserve precision; they do not establish that a client has every preceding event.
 Infusion changes notify old/new/live owners with `invalidates: "infusion"`, including
-reassignment and deletion. Refetch exact spendable vault funds and complete positions.
+reassignment and deletion. Refetch exact available-funds evidence and complete positions; a retained native refund is an invalidation, not permission to run a background sweep.
 
 `AlphaRefreshManager` coalesces notifications, checks monotonic source heights, and
 refreshes on resume/reconnect and visible polling. Work/catalog refresh similarly
@@ -13438,7 +13441,7 @@ queue drainage and final health for counter/rebound and large-event cases.
 - Stale notifications or failed reads do not authorize a new send, reset a proof's
   original anchor, or erase a local key.
 
-*Verified against webapp `5991ca95`: GrassManager, PlanetActivityNotification,
+*Verified against webapp `581fcd0f`: GrassManager, PlanetActivityNotification,
 AlphaChangeListener, PlayerAddressRevokedListener, current listener registration and
 scoped refresh managers. Subject/ownership paths were checked against structs-pg
 `400e1c1` and the bridge forwarding logic. Captured release-event transport and real

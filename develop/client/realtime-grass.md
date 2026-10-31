@@ -88,6 +88,8 @@ Economic/device completion is owned by its transaction observer and current evid
 not the first similar-looking notification. Removed one-shot transfer/infusion/device
 listeners are not an integration API to copy.
 
+`RegistrationRefreshListener` gives pending-consent and registration-status observers a prompt read wakeup. It matches the current activation/device context, coalesces bursts and in-flight reads, and spaces notification-driven reads by at least one second. Polling still backs off from two to thirty seconds if notifications are lost. A wakeup never establishes successful approval or substitutes for the exact native nonce/owner and indexed association checks. Aborted observers unregister and cancel their timers.
+
 ## Refresh committed funds and work
 
 `AlphaChangeListener` matches the current owner on inventory subjects and on explicit
@@ -99,7 +101,7 @@ The ledger trigger carries `amount_p_exact`, `id_exact`, `block_height_exact`,
 canonical `owner_type`/`owner_id`/`is_vault` and counterparty ownership. Those fields
 preserve precision; they do not establish that a client has every preceding event.
 Infusion changes notify old/new/live owners with `invalidates: "infusion"`, including
-reassignment and deletion. Refetch exact spendable vault funds and complete positions.
+reassignment and deletion. Refetch exact available-funds evidence and complete positions; a retained native refund is an invalidation, not permission to run a background sweep.
 
 `AlphaRefreshManager` coalesces notifications, checks monotonic source heights, and
 refreshes on resume/reconnect and visible polling. Work/catalog refresh similarly
@@ -157,7 +159,7 @@ queue drainage and final health for counter/rebound and large-event cases.
 - Stale notifications or failed reads do not authorize a new send, reset a proof's
   original anchor, or erase a local key.
 
-*Verified against webapp `5991ca95`: GrassManager, PlanetActivityNotification,
+*Verified against webapp `581fcd0f`: GrassManager, PlanetActivityNotification,
 AlphaChangeListener, PlayerAddressRevokedListener, current listener registration and
 scoped refresh managers. Subject/ownership paths were checked against structs-pg
 `400e1c1` and the bridge forwarding logic. Captured release-event transport and real

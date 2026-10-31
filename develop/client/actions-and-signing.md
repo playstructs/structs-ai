@@ -7,7 +7,7 @@ description: "Exact transaction intents, wallet proofs, native preparation, dura
 The client saves an intent, prepares it against current indexed/native evidence,
 signs and verifies the exact transaction, journals it before sending, then reconciles
 its committed result. A timeout or CheckTx acceptance cannot establish success.
-This page describes webapp integration `5991ca95`; a client must deploy its matching
+This page describes webapp integration `581fcd0f`; a client must deploy its matching
 API, schema, generated types and workers together.
 
 ## Wallet
@@ -64,7 +64,7 @@ before preparation and sending.
 
 | Intent | Preparation |
 |---|---|
-| Alpha transfer | Current native ownership/TokenTransfer and vault balance; selected player resolves to that player's vault, explicit address stays literal |
+| Alpha transfer | Current native ownership/TokenTransfer and vault-first funding with eligible retained collection; selected player resolves to that player's vault, explicit address stays literal |
 | Reactor change | Same-height native/indexed complete positions; vault first, then eligible retained addresses deterministically |
 | Generator funding | Native target/type/owner/TokenInfuse, exact vault funds and current stored output |
 | Address registration | Target consent, current nonce/protocol, current signing key and requested grant |
@@ -85,7 +85,7 @@ ineligible retained stake does not become a fabricated available balance. See
 
 The legacy `FEE` fallback is zero `ualpha` with gas `500000`. Reviewed gameplay,
 registration/device, reactor and generator preparation explicitly use zero `ualpha`
-and the release free-gas ceiling `20000000`; transfer preparation retains the fallback.
+and the release free-gas ceiling `20000000`. A transfer that collects retained funds uses that ceiling too; a single-message transfer retains the fallback.
 These are client limits, not proof that arbitrary state will fit or a gas-price rule
 for native Cosmos staking messages.
 
@@ -102,7 +102,7 @@ protocol and connection/account identity are rechecked. Simulation reserves noth
 only committed chain execution determines success.
 
 For the configured `structstestnet-111` transition at `3353000`, pre-activation
-transactions expire at `3352999`. Post-activation preparation uses the new protocol.
+transactions expire at `3352999`. Post-activation transactions expire at the observed preparation height plus 60 blocks. This client validity window is separate from native permission, staking cooldown and the address-consent proof context.
 Other networks require an explicit authoritative configuration.
 
 ## The dual-lane queue
@@ -117,7 +117,7 @@ A pending uncertain submission blocks new sends in both lanes.
 Same-origin tabs share a Web Lock keyed by chain and signing account. Inside that
 lock the queue reloads the per-intent journal before preparing or sending. A missing
 Web Locks implementation or failed durable storage prevents a new send; there is no
-unlocked fallback. Different origins/devices need their own account coordination.
+unlocked fallback. A secure context with Web Locks is required: localhost was tested; a non-local deployment needs HTTPS and origin-specific acceptance. Different origins/devices need their own account coordination.
 
 Account changes suspend and drain the old queue, persist its evidence under its own
 scope, cancel its observers and only then attach the new wallet. A save failure
@@ -144,7 +144,7 @@ Queue snapshot version 3 uses `signingQueue:{wsUrl}:{address}`. Each intent also
 an independent `signingJournal:{chainId}:{address}:{id}` record. The snapshot cannot
 erase signed evidence. Signed bytes/hash and the `prepared` record must be durably
 written before the separate `broadcasting` marker; only then can the network send
-run. Terminal history is bounded; unresolved records never expire.
+run. Terminal history is bounded, except records still referenced by saved device-action pointers. Unresolved evidence is never pruned simply for its age.
 
 | Journal/state | Recovery meaning |
 |---|---|
@@ -152,13 +152,13 @@ run. Terminal history is bounded; unresolved records never expire.
 | prepared journal | Exact bytes saved, but no durable send marker; rebuild only this unsent intent |
 | broadcasting / accepted / unknown | May have reached the chain; retain bytes/hash and reconcile only |
 | succeeded | Matching committed code 0 |
-| dropped | Definitive rejection or failure before sending |
+| dropped | Definitive rejection, failure before sending, or proved non-execution after signed expiry |
 | cancelled | Explicit cancellation of unsent work |
 
 The 30-minute age limit applies only to unsent intents. Legacy in-flight records,
 even without a usable hash, do not become fresh sends. Corrupt/unrecognized stores
 block signing and remain available for recovery. Logout clears private browser
-state and closes the unsigned session boundary while retaining public journals.
+state and closes the unsigned session boundary while retaining public journals. A legacy send with neither signed identity nor baseline account sequence cannot gain safe expiry retroactively. Its signing key stays blocked; another authorized key is a different queue scope. Do not erase that record or reuse the uncertain key as an automatic recovery step.
 
 ### Retries and settlement
 
@@ -166,7 +166,7 @@ There are no automatic signed-send retries. `broadcastTxSync` code 0 is admissio
 not completion. A valid CheckTx rejection can settle failure; an ambiguous transport
 failure cannot. `find` looks up the original hash and verifies exact bytes, hash,
 chain, block/commit identity, transaction index and execution code. A missing hash,
-RPC outage or local deadline leaves the result unknown. Bounded work rotates pending
+RPC outage or local deadline leaves the result unknown. After exact native TxNotFound, a nonzero signed timeout can settle as dropped only when a later committed snapshot proves the same account number and an unchanged signed account sequence. A passed height alone is insufficient; changed sequence or conflicting/unavailable evidence remains unknown. Retain the original bytes and proof; never automatically sign a replacement. Bounded work rotates pending
 lookups so one unavailable hash does not starve the others.
 
 `whenSettled(id, signal)` resolves with the terminal transaction; check `status`.
@@ -210,7 +210,7 @@ notifications must not complete a different action or affect a new wallet sessio
 
 The existing transfer flow returns a definitive failure to its confirmation screen
 with recipient/amount preserved. An unknown send stays protected against duplicates.
-Device and gameplay actions likewise require terminal evidence before reporting
+Deploy and action controls handle enqueue refusal before adding pending visuals, and release only their own operation lock after a definitive failure. Device and gameplay actions likewise require terminal evidence before reporting
 success; a successful self-revoke may clear local state without waiting for an API
 read that the revoked key can no longer authenticate.
 
@@ -238,7 +238,7 @@ This is a custody change, not an MCP key-export feature: tool callers still requ
 signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
 inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
 
-*Webapp claims verified against integration `5991ca95`: WalletManager,
+*Webapp claims verified against integration `581fcd0f`: WalletManager,
 SigningClientManager, SigningQueueManager, SigningSubmission, TransactionJournal,
 SigningTransaction, MessagePayload, protocol/fee constants and intent preparation.
 The checked release fixtures include exact signed bytes, simulation, native atomic

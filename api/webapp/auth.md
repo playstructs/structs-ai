@@ -6,7 +6,7 @@ description: "Wallet-signature session and bearer authentication, logout, and th
 
 **Category**: webapp
 **Base URL**: the guild's advertised webapp origin; paths below include `/api`.
-**Reviewed implementation**: structs-webapp `5991ca95` (integration branch).
+**Reviewed implementation**: structs-webapp `581fcd0f` (integration branch).
 
 These contracts require the matching API deployment. A chain version or a database
 image alone does not establish that a guild serves them.
@@ -27,6 +27,10 @@ image alone does not establish that a guild serves them.
 
 The [device API](player-address.md) defines activation and private metadata routes.
 An API session is separate from the signing key's chain authority.
+
+## Registration request limits
+
+The proof/status GET routes and pending-consent POST share a client-IP token bucket (12-request burst, one token per two seconds) and a container-wide bucket (60-request burst, ten tokens per second). Symfony uses trusted-proxy-aware client IPs, filesystem cache and flock locks shared by PHP workers. Rejection returns 429, Retry-After and Cache-Control: no-store before native queries. Configure shared cache/locks for replicas and explicit trusted proxies for deployment; this is not a substitute for an edge limit. Other public signup/discovery routes retain their existing access policy.
 
 ## Signed login request
 
@@ -147,5 +151,5 @@ tokens after one day. Client seeding and endpoint configuration are deployment c
 
 *OIDC storage/cleanup retains its separate verification against structs-pg `f66fd81`
 (`table-oidc-20260826-provider`, `role-structs-webapp-20260826-oidc`). Authentication,
-public-route and logout behavior reviewed against webapp `5991ca95`; real signed
+public-route and logout behavior reviewed against webapp `581fcd0f`; real signed
 session/bearer HTTP checks passed against an isolated release node.*

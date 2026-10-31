@@ -5,4 +5,4 @@
 #   scripts/gen-sui-inventory.sh
 # Check for upstream churn since this pin:
 #   scripts/check-webapp-drift.sh
-ae4457e2df6ab7604d1f79048cfc31d54f6d11ff
+581fcd0f2a98164ac61c1784ac43034ce1270705

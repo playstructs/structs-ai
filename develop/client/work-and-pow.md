@@ -6,7 +6,7 @@ description: "Exact proof difficulty, observed-height workers, original anchors,
 
 The browser hashes current authoritative work with its original chain anchor.
 Finding a hash and confirming its completion transaction are separate lifecycles.
-This page describes integration `5991ca95`; protocol rules come from structsd release
+This page describes integration `581fcd0f`; protocol rules come from structsd release
 `96cea3a`. See [hashing](../../knowledge/mechanics/hashing.md) for the CLI/mechanics.
 
 ## The hash
@@ -62,7 +62,7 @@ setting changes native verification.
 ## The worker loop
 
 The worker hashes at most 4096 candidates per batch, yields to process messages,
-and schedules another batch. This bounds how long a height/rule/cancellation update
+and schedules another batch with MessageChannel. This avoids nested `setTimeout(0)` clamping while still allowing control messages between batches. This bounds how long a height/rule/cancellation update
 waits behind hashing. It publishes progress every five million iterations and on
 important state changes. A previously found candidate is reusable only if its hash
 still satisfies the current observed-height rule.
@@ -150,7 +150,7 @@ worker replies, original anchors, stale work, unknown/failed/committed submissio
 and logout. Native release fixtures and rendered isolated build/tutorial checks are
 separate evidence. Keep those distinctions when reporting client acceptance.
 
-*Verified against webapp `5991ca95`: TaskManager, TaskProcess, TaskState,
+*Verified against webapp `581fcd0f`: TaskManager, TaskProcess, TaskState,
 TaskStateFactory, TaskWorker, WorkFactory, WorkDifficulty, WorkSubmission,
 WorkRefreshManager and TaskConstants. Integer eligibility cross-checked directly
 against release `x/structs/types/work.go`; no chain checkout was modified.*

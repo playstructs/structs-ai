@@ -91,7 +91,11 @@ Web application player response (`data` payload of `GET /api/player/{player_id}`
 | primary_address | string | Player's primary signing address |
 | vault_address | string or null | Canonical economic address, independently verified |
 | spendable_alpha_p | string or null | Exact spendable vault ualpha; unknown is not zero |
-| alpha | string or null | Floored Alpha display |
+| available_alpha_p | string or null | Vault spendability plus verified retained funding window |
+| retained_alpha_p | string or null | Verified retained total; null when unavailable |
+| retained_sources | array | Verified `{address, spendable_alpha_p}` candidates |
+| retained_funds_meta | object | ready, height, source_limit (16), exact candidate_count, complete, reason |
+| alpha | string or null | Floored available Alpha display |
 | funds_meta | object | Funds height/readiness/source/provisioning/reason |
 | guild_id | string | Guild identifier (e.g. `0-1`) |
 | guild_name | string | Guild name |

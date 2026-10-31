@@ -166,7 +166,7 @@ UGC name/pfp updates emit two distinct streams:
 ### Inventory Events
 
 Notifications invalidate a committed read; they are not balance deltas or payment
-receipts. Read exact spendable vault funds and complete positions through the event
+receipts. Read exact vault/available-funds evidence and complete positions through the event
 or inclusion height, preserving API readiness metadata. Coalesce duplicates and
 refresh after reconnect/resume; Core NATS does not replay missed messages.
 

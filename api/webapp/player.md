@@ -1,5 +1,5 @@
 ---
-description: "Read player identity, exact spendable vault Alpha, source metadata, activity statistics and player catalog rows."
+description: "Read player identity, exact vault and eligible retained Alpha, source metadata, activity statistics and player catalog rows."
 ---
 
 # Webapp Player API Endpoints
@@ -45,7 +45,10 @@ row. A primary signing address and an economic vault are different identities.
 |---|---|
 | `vault_address` | Canonical player vault address when verified |
 | `spendable_alpha_p` | Exact ualpha available in that vault, or null when unknown |
-| `alpha` | Floored Alpha display; 1 Alpha = 1,000,000 ualpha |
+| `available_alpha_p` | Vault funds plus the verified retained funding window, in exact ualpha |
+| `retained_alpha_p`, `retained_sources` | Exact retained total or null; verified `{address, spendable_alpha_p}` rows |
+| `retained_funds_meta` | Ready/height/reason plus source limit, candidate count and completeness |
+| `alpha` | Floored available Alpha display; 1 Alpha = 1,000,000 ualpha |
 | `funds_meta.height`, `ready`, `source`, `provisioned`, `reason` | Evidence specific to spendable funds |
 | `ore`, `load`, `structs_load`, `capacity`, `connection_capacity` | Exact SQL grid values, before browser display conversion |
 | envelope `meta` | Indexed inventory snapshot, chain/protocol and readiness |
@@ -66,6 +69,14 @@ Data and indexed `meta` come from one consistent SQL snapshot. Native fallback r
 after that snapshot closes and must prove its original height. Before spending,
 validate the response and funds metadata, then independently prepare/simulate against
 current native state. See [snapshot metadata](../../protocols/webapp-api-protocol.md#snapshot-metadata).
+
+## Retained liquid funding
+
+The individual-player read chooses up to 16 approved, non-vault addresses with positive indexed ualpha, ordered by indexed balance descending and bytewise address ties. Native current ownership and SpendableBalanceByDenom are checked at the indexed height. Locked vesting funds, bonded/unbonding stake and reassigned addresses are excluded. The vault fallback and retained verification share a 15-second deadline.
+
+`retained_funds_meta` contains `ready`, `height`, `source_limit:16`, exact-string `candidate_count`, `complete` and `reason`. Ready describes the inspected funding window; `complete:false` explicitly reports more indexed candidates. Its returned amount is not total many-address wallet wealth. Later refreshes can include other addresses as funds are spent. On unavailable retained evidence, the total is null, sources are empty, and `available_alpha_p` includes only the independently verified vault amount.
+
+The existing transfer/infusion flows prefer the vault. With fresh native ownership and the signing key's TokenTransfer bit, they can prepend bounded MsgPlayerSend collection messages for only the shortfall, followed by the requested spend, in one simulated signed transaction. Nothing runs automatically when a refund matures. An infusion-only key can use existing vault funds but cannot collect retained funds. Generator funding remains vault-only. See [actions and signing](../../develop/client/actions-and-signing.md).
 
 ## Search and recipient selection
 
@@ -111,6 +122,6 @@ See [catalog conventions](../../protocols/webapp-api-protocol.md#pattern-7-catal
 Keep response metadata attached; paged requests are separate snapshots.
 
 *Player detail/funds, transfer search and the listed activity shapes verified against
-webapp `43bc1086` PlayerManager, PlayerController and VaultFundsManager, with
+webapp `581fcd0f` PlayerManager, PlayerController, VaultFundsManager and RetainedFundsManager, with
 structs-pg `400e1c1` ownership/readiness. Analytics-specific tunables retain their
 separate reference and validation scope.*

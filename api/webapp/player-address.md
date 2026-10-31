@@ -5,7 +5,7 @@ description: "Device activation, native registration proofs, permission transact
 # Webapp Player Address API Endpoints
 
 **Category**: webapp
-**Reviewed implementation**: structs-webapp `5991ca95` and structs-pg `400e1c1`.
+**Reviewed implementation**: structs-webapp `581fcd0f` and structs-pg `400e1c1`.
 
 These routes add signing devices to an existing player. New-player guild signup is
 separate. API authentication uses a [session or bearer](auth.md); native permission
@@ -70,6 +70,8 @@ Do not replace a persisted key or an uncertain signed registration to recover a 
 HTTP response. A changed nonce requires fresh target-device consent before a new
 transaction, and only after any prior send is definitively resolved.
 
+Proof/status GET and pending-consent POST share registration rate budgets. A 429 includes Retry-After and Cache-Control: no-store; retain the existing key/consent and retry reads after backoff. GRASS wakes both approval observers promptly but cannot prove approval. Saved device-action pointers retain their terminal journal evidence; genuinely missing historical evidence still requires recovery rather than a fresh send.
+
 ## Native registration proof
 
 GET `/api/auth/player-address/{address}/player/{player_id}/proof` returns:
@@ -88,7 +90,7 @@ GET `/api/auth/player-address/{address}/player/{player_id}/proof` returns:
 ```
 
 This is the `data` payload; the example address is a placeholder. A real address is
-validated. Source height and nonce are exact decimal strings. The target must be
+validated. `timeout_height` describes the consent proof context; its post-activation `"0"` does not select the signed transaction timeout. The reference signer independently gives the enclosing transaction a 60-block validity window. Source height and nonce are exact decimal strings. The target must be
 unassociated (`registered_player_id` empty). Sign SHA-256 of these UTF-8 bytes:
 
 ```text
@@ -152,6 +154,6 @@ The schema dependencies include `table-player-address-20261030-activation-instan
 with these API ownership checks; an older API cannot safely consume them.
 
 *Reviewed against the controllers, proof manager and device manager at webapp
-`5991ca95`; activation, recovery, permissions, revocation and metadata were exercised
+`581fcd0f`; activation, recovery, permissions, revocation and metadata were exercised
 with restricted database roles and an isolated native chain. See
 [permissions](../../knowledge/mechanics/permissions.md) for chain authority.*

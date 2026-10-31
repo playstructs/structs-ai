@@ -112,8 +112,7 @@ public evidence of any uncertain signed transaction. See the
 
 `GET /api/player/1-11` returns flat identity/association/grid fields plus
 `vault_address`, exact `spendable_alpha_p`, `funds_meta` and envelope `meta`.
-`alpha` is the existing floored vault Alpha display. Retained-address wealth,
-bonded stake and pending refunds are separate. Unknown funds are null, not zero.
+`spendable_alpha_p` remains vault-only. `available_alpha_p` and the floored `alpha` display include verified liquid retained funds from the bounded candidate window described by `retained_funds_meta`. Bonded stake and pending refunds are excluded. Unknown funds are null, not zero; ready partial coverage is not a total-wealth claim.
 The [player reference](../api/webapp/player.md) describes individual and search reads.
 
 ### Pattern 2: Planet Information
