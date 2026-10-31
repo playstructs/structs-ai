@@ -15,11 +15,11 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 | Situation | Use GRASS | Use Polling |
 |-----------|-----------|-------------|
 | Detect incoming raid | Yes — instant alert | Too slow |
-| Wait for player creation after guild signup | Yes — listen for `address_register` | Polling every 10s works too |
+| Wait for player creation after guild signup | Yes — matching approved `player_address` | Polling every 10s works too |
 | Monitor fleet arriving at your planet | Yes — `fleet_arrive` event | Might miss it |
 | Track struct health during combat | Yes — `planet_activity` with `struct_health` | Too slow |
 | Check your own resource balance | No | Yes — one-off query |
-| Read struct type stats | No | Yes — static data |
+| Read struct type stats | No | Yes — current versioned catalog |
 
 **Rule of thumb**: If you need to *react* to something, use GRASS. If you need to *read* something, use a query.
 
@@ -27,7 +27,7 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 
 ## Finding Your GRASS Endpoint
 
-The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.
+Discover the guild's GRASS WebSocket URL from its configuration. The reference browser uses its own host on port 1443; other clients should use the advertised service.
 
 1. Query the guild list: `curl https://public.testnet.structs.network/structs/guild`
 2. Follow the guild's `endpoint` URL to get its config
@@ -47,7 +47,7 @@ Example (Orbital Hydro guild):
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja). GRASS is hosted by individual guilds and is currently HTTP only — do not rewrite to `wss://`.
+The URLs above are configuration examples, not a live availability guarantee. Preserve the advertised scheme and verify the deployment's TLS/origin policy; use the service URL supplied by the guild.
 
 ### Structs Desktop native source
 
@@ -83,7 +83,7 @@ for await (const msg of sub) {
 
 Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1.1-11`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
 
-**Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
+**Important**: The reviewed writer emits struct attacks/status/build activity on the **planet subject**. Do not wait on an invented `structs.struct.{id}` subject; select the struct's planet and filter its event detail.
 
 ---
 
@@ -96,12 +96,9 @@ Subscribe to subjects matching the entities you care about:
 | Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
 | Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.2-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
-| Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
-| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
 | Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
 | Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | Attribute changes (ore, power, load, etc.) |
-| Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
@@ -131,7 +128,7 @@ For raid settlement, `raid_status` with `status: raidSuccessful` is the authorit
 
 ### Struct Events
 
-**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{planet_id}.{player_id}`, i.e. subscribe `structs.planet.{planet_id}.*`) rather than the struct subject. Subscribe to both if you need complete coverage.
+**Note**: Subscribe to the **planet subject** `structs.planet.{planet_id}.*` for struct activity. Refetch current structs after reconnect or a missing detail row.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -167,6 +164,23 @@ UGC name/pfp updates emit two distinct streams:
 2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates). Subscribe and attributes: [api/chain-events](https://structs.ai/api/chain-events). Validation rules: `knowledge/mechanics/ugc-moderation.md`.
 
 ### Inventory Events
+
+Notifications invalidate a committed read; they are not balance deltas or payment
+receipts. Read exact spendable vault funds and complete positions through the event
+or inclusion height, preserving API readiness metadata. Coalesce duplicates and
+refresh after reconnect/resume; Core NATS does not replay missed messages.
+
+The ledger trigger resolves canonical `owner_type`, `owner_id`, `is_vault` and
+counterparty ownership. Exact helpers include `amount_p_exact`, `id_exact` and
+`block_height_exact`. A guild vault keeps a guild owner and uses `noPlayer` in the
+subject; do not assign it to the guild leader. Dotted synthetic denominations add
+subject tokens, so match the complete denomination rather than fixed offsets.
+
+Infusion changes separately invalidate `structs.grid.player.{owner_id}` or
+`structs.grid.guild.{owner_id}` with `invalidates: "infusion"` and
+`notification_owner_type`/`notification_owner_id`. Reassignment invalidates both old
+and new owners. Exact values do not authorize arithmetic over incomplete state.
+
 
 Subject: `structs.inventory.{denom}.{guild_id}.{player_id}.{address}`
 
@@ -273,7 +287,7 @@ for await (const msg of sub) {
 }
 ```
 
-### Global Events
+### Consensus Events
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -351,21 +365,31 @@ for await (const msg of sub) {
 
 ### Player Creation Watcher (example pattern)
 
-Instead of polling `structsd query structs address` after guild signup, watch for the address registration event:
+Listen for the new address's indexed approval, then query native/indexed state to
+confirm it. The short-code subject carries pending device consent, not new-player
+completion.
 
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
-const sub = nc.subscribe("structs.address.register.*");
-
+const [endpoint, guildId, address] = process.argv.slice(2);
+const nc = await connect({ servers: endpoint });
+const sub = nc.subscribe(`structs.player.${guildId}.*`);
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
-  console.log(JSON.stringify(event));
-  break; // exit after first match
+  if (event.category !== "player_address" || event.address !== address
+      || event.guild_id !== guildId || event.status !== "approved") continue;
+  console.log(JSON.stringify({ address, player_id: event.player_id }));
+  break;
 }
 await nc.close();
 ```
+
+Add a bounded deadline and query fallback for a production workflow: a missed
+notification must not strand signup. Existing-player device activation uses the
+[activation UUID and native nonce proof](https://structs.ai/api/webapp/player-address).
+Refetch pending consent through its owner-scoped API; an incoming notification must
+not silently grant a device authority.
 
 ---
 
@@ -406,8 +430,8 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 ### For Ongoing Monitoring
 
 1. Subscribe to your planet(s): `structs.planet.{id}.*` — raid alerts, fleet arrivals (trailing `*` matches any owner `player_id`)
-2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
-3. Subscribe to global: `structs.global` — block tick for game loop timing
+2. Filter planet activity for your struct IDs — attack/status alerts
+3. Subscribe to `consensus` — observed block ticks for game loop timing
 4. Log events to [continuity memory](https://structs.ai/awareness/continuity) for cross-session awareness
 
 ---
@@ -420,12 +444,12 @@ The Structs permission system and GRASS event stream were designed for AI agents
 
 | Event | Action | Permission Needed |
 |-------|--------|-------------------|
-| `struct_ore_mine_complete` on your extractor | Immediately start `struct-ore-refine-compute` | Signer key for the player |
-| `struct_ore_refine_complete` on your refinery | Immediately start next `struct-ore-mine-compute` | Signer key for the player |
-| `planet_raid_start` on your planet | Alert, activate stealth, reposition defenders | Signer key or delegated permission |
+| `ore` grid change or current mine clock/work | Reconcile current refinery work and start approved computation | Required signing-key hash bit |
+| `refined` inventory invalidation or current work | Refresh vault/work and continue the approved production plan | Required signing-key hash bit |
+| `block_raid_start` / `raid_status` on your planet | Alert, activate stealth, reposition defenders | Signer key or delegated permission |
 | `struct_attack` targeting your struct | Log attacker, assess threat, counter-attack if able | Signer key or delegated permission |
 | `struct_health` showing HP drop | Prioritize defense, consider fleet retreat | Signer key for fleet-move |
-| `fleet_move` to your planet from unknown fleet | Identify incoming player, assess threat level | Read-only (query) |
+| `fleet_arrive` at your planet from unknown fleet | Identify incoming player, assess threat level | Read-only (query) |
 
 ### Permission Scoping for Automated Agents
 
@@ -433,28 +457,31 @@ When delegating actions to an automation agent (separate key or service):
 
 1. **Grant minimal permissions**: Use `permission-grant-on-object` to allow specific actions on specific structs, not blanket access.
 2. **Separate keys**: The automation agent should use its own signing key, registered as a secondary address on the player via `address-register`.
-3. **Scope by struct**: Grant mine/refine permissions on extractors and refineries only. Grant defense permissions on fleet structs only.
+3. **Verify effective authority**: The signing key's bits are a hard ceiling; an object grant cannot add a bit the key lacks. Use the canonical permission recipes and current native simulation.
 4. **Revoke when not needed**: Use `permission-revoke-on-object` to remove automation access during sensitive operations.
 
-### Example: Refine-on-Mine-Complete Loop
+### Example: Reconcile production after an event
 
+```text
+Subscribe to the player's ore grid and inventory subjects
+On ore/clock/refined invalidation:
+  → Fetch current, complete work and vault state through the event height
+  → Keep original work anchors and current difficulty rules
+  → Adopt any existing uncertain completion transaction
+  → Start only missing, approved computation
+On reconnect or a bounded periodic check:
+  → Repeat the same reconciliation
 ```
-Subscribe to: structs.struct.{extractor-id}
-On event: struct_ore_mine_complete
-  → Run: structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [refinery-id]
 
-Subscribe to: structs.struct.{refinery-id}
-On event: struct_ore_refine_complete
-  → Run: structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [extractor-id]
-```
-
-This creates a continuous mine-refine loop that runs unattended. Ore is never left unrefined.
+Run mining and refining according to the [production skill](/skills/structs-production/SKILL.html).
+Events do not eliminate exposed ore or establish transaction success. Preserve the
+commander's signing/automation approval policy when building an unattended tool.
 
 ### Example: Defend-on-Raid-Detected
 
 ```
 Subscribe to: structs.planet.{planet-id}.*
-On event: planet_raid_start
+On event: block_raid_start or raid_status
   → Activate stealth on vulnerable structs
   → Set defenders on high-value structs
   → Log raid to memory/intel/threats.md

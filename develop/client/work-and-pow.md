@@ -1,281 +1,156 @@
 ---
-description: How a client computes the SHA-256 proofs that mining, refining, building and raiding require, and why difficulty decay rewards waiting.
+description: "Exact proof difficulty, observed-height workers, original anchors, current work snapshots, and durable completion transactions."
 ---
 
 # Work and proof-of-work
 
-**Purpose**: How a client computes the SHA-256 proofs that mining, refining, building and
-raiding require — and why the reference client spends most of its time deliberately idle.
-
-For the protocol itself — what the chain validates, the decay maths, the CLI path — see
-[knowledge/mechanics/hashing.md](../../knowledge/mechanics/hashing.md). This page is the
-client implementation.
-
----
+The browser hashes current authoritative work with its original chain anchor.
+Finding a hash and confirming its completion transaction are separate lifecycles.
+This page describes integration `5991ca95`; protocol rules come from structsd release
+`96cea3a`. See [hashing](../../knowledge/mechanics/hashing.md) for the CLI/mechanics.
 
 ## The hash
 
-Single-pass SHA-256 over an ASCII string, hex digest, checked for leading zeros. The
-webapp uses `js-sha256` rather than `SubtleCrypto`, because the loop needs to be
-synchronous and run millions of times.
+Use one SHA-256 pass over the exact UTF-8 input and a lowercase hex digest:
 
-**Input format** — concatenation, no separators except the raid target delimiter:
-
-```
-{objectId}{TASK_TYPE}{blockStart}NONCE{nonce}          build, mine, refine
-{fleetId}@{planetId}RAID{blockStart}NONCE{nonce}       raid
+```text
+{structId}{BUILD|MINE|REFINE}{originalBlockStart}NONCE{nonce}
+{fleetId}@{planetId}RAID{originalBlockStart}NONCE{nonce}
 ```
 
-Built as a prefix once, then completed per attempt:
+The braces and choice bars are notation, not bytes. There are no other separators.
+`TaskStateFactory` preserves exact start/difficulty strings and builds the prefix;
+postfix is empty. Examples for nonce `42` are `5-1BUILD3352900NONCE42`,
+`5-2MINE3352900NONCE42`, `5-3REFINE3352900NONCE42` and
+`9-1@2-10RAID3352900NONCE42`.
 
-```js
-// src/js/factories/TaskStateFactory.js
-task_state.prefix = task_state.object_id + task_state.task_type
-                  + task_state.block_start + TASK.NONCE_PREFIX;
-
-// src/js/models/TaskState.js
-getMessage(nonce) { return this.prefix + nonce + this.postfix; }
-```
-
-`postfix` is always empty. `TASK.IDENTITY_PREFIX` exists in the constants and is never
-used — dead code, not a protocol feature.
-
-Worked examples:
-
-| Type | Full input for nonce `42` |
-|---|---|
-| Build | `5-1BUILD1283900NONCE42` |
-| Mine | `14-5MINE1283900NONCE42` |
-| Refine | `15-5REFINE1290000NONCE42` |
-| Raid | `4-5@6-10RAID1300000NONCE42` |
-
-**Difficulty is a count of leading hex zeros**, not a target integer:
-
-```js
-// src/js/workers/TaskWorker.js
-function difficultyCheck(hash, difficulty) {
-    for (let position = 1; position <= difficulty; position++) {
-        if (hash[position - 1] !== "0") {
-            return false;
-        }
-    }
-    return true;
-}
-```
-
-This matches `HashBuildAndCheckDifficulty` in the chain's `x/structs/types/work.go`
-exactly, which is what makes any conformant client interoperable.
-
-**Nonces start at a random point**, unlike the CLI which starts at 1:
-
-```js
-this.nonce_start = Math.floor(Math.random() * 10000000000);
-this.nonce_current = this.nonce_start;
-```
-
-Any nonce is valid, so this is purely a choice. It does mean two clients working the same
-task will not duplicate each other's effort.
-
----
+`js-sha256` runs in a dedicated worker. Nonces begin at a random offset; workers do
+not partition ranges. A digest's leading zero count is checked against the required
+number of hexadecimal zeroes. Before submission, recompute the hash from the expected
+identity/prefix and nonce, not a worker's claimed result alone.
 
 ## Difficulty decays, so waiting is cheaper than working
 
-```js
-// src/js/models/TaskState.js
-getCurrentDifficulty(){
-  const age = this.getCurrentAgeEstimate();
-  if (age <= 1) {
-    return 64;
-  }
-  let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
-  return Math.max(1, difficulty)
-}
+For observed age `a` and difficulty range `r`, v0.22 uses integer arithmetic:
+
+```text
+if a <= 1 or r <= 1: difficulty = 64
+otherwise: difficulty = 64 - max{k in [0,63] : r^k <= a^63}
 ```
 
-`age` is blocks since the on-chain anchor. `difficulty_target` is the per-operation range
-(`build_difficulty`, `ore_mining_difficulty`, `ore_refining_difficulty`, or the planet's
-`planetary_shield` for raids). At `age <= 1` difficulty is 64, which is unreachable in
-practice; it falls to 1 once age reaches the range.
+`integerWorkDifficulty` uses BigInt and at most 63 products, matching the release's
+`CalculateDifficulty`. Do not use floating logarithms for eligibility: a boundary
+rounding difference can change the required leading-zero count.
 
-**The client estimates age from the wall clock**, not by querying each iteration:
+`workDifficultyAtHeight` chooses the configured rule using an observed chain height.
+It refuses a zero anchor or a height before the anchor. The scheduled testnet boundary
+is `3353000`; a task started before it keeps that same original start height while
+adopting current difficulty rules and current type data. Resetting the anchor to the
+upgrade height creates a different proof input.
 
-```js
-getCurrentAgeEstimate() {
-  const current_time = new Date();
-  const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
-  this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
-  return this.block_current_estimated - this.block_start;
-}
-```
-
-At 6,000ms per block, anchored to a checkpoint refreshed from real block height. It can
-drift, which is exactly why the result is re-checked before submission.
+The wall-clock estimate (nominal six-second blocks) is for progress/ETA only. It cannot
+wake a waiting worker or make its proof eligible. Block/rule messages supply the
+checkpoint used by `getCurrentDifficulty()`.
 
 ### The idle policy
 
-The worker refuses to start while difficulty is above 10, polling every ten seconds:
-
-```js
-if (state.status === TASK_STATUS.WAITING){
-    while (difficulty > TASK.DIFFICULTY_START) {   // DIFFICULTY_START = 10
-        await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
-        difficulty = state.getCurrentDifficulty();
-    }
-    state.setStatus(TASK_STATUS.RUNNING);
-    postMessage([state]);
-}
-```
-
-This is a **policy choice, not a protocol rule** — and it is a different choice from the
-`-D 3` this documentation recommends for the CLI. Difficulty 10 is 10 leading hex zeros,
-around 2^40 expected attempts; difficulty 3 is around 4,096. The webapp starts hashing
-far earlier than the CLI would and burns considerably more CPU for it.
-
-For an agent, `-D 3` remains the right default: initiate early, come back later, hash for
-milliseconds. `forceRun(pid)` is the escape hatch if you ever need a proof now regardless
-of cost.
-
----
+The browser waits until difficulty is at most 10, unless explicitly forced. That is
+a CPU policy, not a chain requirement: ten leading hex zeroes take roughly 2^40
+attempts in expectation. The CLI guidance uses `-D 3` for lower compute cost. Neither
+setting changes native verification.
 
 ## The worker loop
 
-```js
-let sessionIterations = 1;
-while (true) {
-    const nonce = state.getNextNonce();
-    const message = state.getMessage(nonce);
-    const hash = sha256(message);
+The worker hashes at most 4096 candidates per batch, yields to process messages,
+and schedules another batch. This bounds how long a height/rule/cancellation update
+waits behind hashing. It publishes progress every five million iterations and on
+important state changes. A previously found candidate is reusable only if its hash
+still satisfies the current observed-height rule.
 
-    if (difficultyCheck(hash, difficulty)){
-        state.setResult(nonce, message, hash, difficulty);
-        postMessage([state]);
-        break;
-    }
+`TaskProcess` and `TaskWorker` exchange `version: "work-v022-1"`, a monotonically
+increasing revision, and `start`/`update` messages. A wrong-version reply fails the
+worker; no handshake within ten seconds does too. Replies from replaced workers or
+older revisions cannot replace current task state or submit a proof.
 
-    if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
-        state.iterations_since_last_start = sessionIterations;
-        postMessage([state]);
-    }
+### Same object, new rules
 
-    if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
-        difficulty = state.getCurrentDifficulty();
+The process ID is the object ID, so process existence alone does not establish that
+its work is current. Full identity includes object, category, raid target, original
+anchor and prefix. When only rules or observed height change, update the same worker
+and preserve its searched nonces/candidate. Reject older rule snapshots. When the
+work identity changes, replace the worker; a late reply from the old one is ignored.
 
-        // Check to see if a previous hash result is now relevant again
-        if (state.result_exists && state.result_difficulty >= difficulty) {
-            state.setPreviousResult(difficulty);
-            postMessage([state]);
-            break;
-        }
-    }
-    sessionIterations++;
-}
-```
+The manager caps active processes at five and starts after the existing eight-second
+startup delay. These controls and progress displays remain unchanged.
 
-Every five million iterations it reports progress and recomputes difficulty. That second
-job enables a neat trick: if you previously found a hash at difficulty 12, and decay has
-since brought the requirement down to 12 or below, that old hash is **now good enough**
-and the task completes without hashing again.
+### Ore clocks and raids
 
-### Orchestration
+Mining/refining anchors belong to the planet. Each eligible extractor/refinery gets
+its own struct-bound proof using the shared anchor. Native-chain notifications prompt
+a fresh scoped work read; their unversioned values do not replace the API anchor.
+A complete accepted snapshot determines which structs still have work.
 
-One `Worker` per task, capped at five concurrent (`MAX_CONCURRENT_PROCESSES`); the rest
-queue. There is **no nonce-range partitioning** — each worker picks its own random start
-and never coordinates. Progress arrives on the main thread as periodic state snapshots,
-so the UI stays responsive even with five workers saturating cores.
-
-Cancellation is explicit. In chain 0.21, mine and refine `block_start` clocks belong
-to the **planet**, so every eligible extractor or refinery of one type shares that
-clock. GRASS supplies the planet clock; the manager fetches `view.work` to discover the
-structs it currently covers, starts/replaces only tasks whose clock changed, and stops a
-task that disappeared from work even if the shared clock remains non-zero.
-
-An incoming raid stops all local mine/refine hashing because those proofs cannot be
-redeemed while a raider is present. If the chain publishes shifted clocks before the
-client has finished processing the raid result, they are held and reconciled after the
-raid ends. A zero clock terminates that task type. Raid proof tasks are killed when the
-raid ends or the target's shields come back up.
-
----
+An incoming raid stops local mine/refine hashing. The manager reconciles after the
+raid using current clocks/work; it does not reassign a new start height based on the
+browser's receive time. Raid completion work also depends on the target's shield
+state. A work removal can discard a local candidate, but never its signed journal.
 
 ## Restoring after a reload
 
-**Proof-of-work progress is not persisted.** Nonce position, iteration counts and partial
-results are all lost on reload. But the *tasks* survive, because they are reconstructed
-from the server:
+`GET /api/work/player/{id}` supplies the ready `work` projection and coherent source
+metadata. `WorkFactory` validates owner, category, object/raid-target identity and
+exact uint64 anchor/difficulty strings. Empty complete snapshots retain metadata and
+can authorize removals; a failed or incomplete read cannot.
 
-```js
-async restoreTasksFromDB() {
-  if (Object.keys(this.processes).length || this.running_queue.length || this.waiting_queue.length) {
-    return;
-  }
-  const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
-  work.forEach((workTask) => {
-    const task = this.taskStateFactory.initTaskFromWork(workTask);
-    this.spawn(task);
-  });
-}
-```
+Partial hashing progress is not durably saved, so an unsent search restarts. A queued
+or signed completion is different: `WorkSubmission` matches its expected object,
+category, raid target and original anchor through the actual proof hash. For a signed
+submission it decodes the durable bytes, which outrank a mutable saved payload.
+Reattach the observer to that queue ID instead of generating another completion.
 
-`GET /api/work/player/{id}` reads the guild stack's `view.work`, which derives outstanding
-work from chain state. Losing nonce progress costs nothing in expectation — every attempt
-is independent, so a restarted search has exactly the same expected remaining work as one
-that had been running for an hour.
-
-The lesson for your own client: **the chain already knows what work you owe**. You do not
-need to persist a task list, only to ask.
-
----
+`WorkRefreshManager` periodically refreshes catalog and work, including reconnect,
+resume and activation boundaries. Older/conflicting snapshots and responses for a
+replaced player/session are refused. Existing type-object references update in place
+so open controls see the new catalog without a new UI.
 
 ## Completion
 
-Before submitting, the client re-checks the proof against current difficulty:
-
-```js
-checkResultHashDifficulty() {
-  return this.result_difficulty >= this.getCurrentDifficulty();
-}
-```
-
-Because age is estimated from the wall clock, a proof found near a difficulty boundary can
-be stale by the time it surfaces. If it is, the task **respawns** rather than submitting a
-transaction that would fail on-chain. Worth copying.
-
-Valid proofs go out on the **immediate lane** — no charge cost:
-
-| Task | Message | Payload |
+| Work | Native message | Fields after creator injection |
 |---|---|---|
-| Build | `/structs.structs.MsgStructBuildComplete` | `{ structId, proof, nonce }` |
-| Mine | `/structs.structs.MsgStructOreMinerComplete` | `{ structId, proof, nonce }` |
-| Refine | `/structs.structs.MsgStructOreRefineryComplete` | `{ structId, proof, nonce }` |
-| Raid | `/structs.structs.MsgPlanetRaidComplete` | `{ fleetId, proof, nonce }` |
+| Build | `MsgStructBuildComplete` | `structId`, `proof`, `nonce` |
+| Mine | `MsgStructOreMinerComplete` | `structId`, `proof`, `nonce` |
+| Refine | `MsgStructOreRefineryComplete` | `structId`, `proof`, `nonce` |
+| Raid | `MsgPlanetRaidComplete` | `fleetId`, `proof`, `nonce` |
 
-`proof` is the hex digest, `nonce` the winning integer. The raid message carries only the
-fleet ID — the chain reconstructs the planet from fleet position, so a mismatch there is
-not something you can paper over client-side.
+Proof and nonce are strings. Raid target remains bound by the proof input and current
+fleet state even though the completion message carries no separate target field.
+These reviewed gameplay intents use the immediate queue lane and exact signed
+simulation before sending.
 
----
+A successful committed completion suppresses hashing of the same stale work. An
+unknown send only reconciles its original transaction. A definitive failure permits
+another automatic hashing attempt only after a newer complete work snapshot. If
+storage or queue pressure prevents enqueueing, the unsent completed candidate remains
+in memory for a later block; it is not silently reported as submitted.
 
-## Task lifecycle
+The view's observer can be cancelled without cancelling a send. Logout stops workers,
+clears observers and closes the session boundary while retaining signed transaction
+evidence. Tutorial work remains simulated and cannot enter the native queue.
 
-```
-INITIATED → STARTING → WAITING → RUNNING → COMPLETED
-                          ↑         ↓
-                        PAUSED ←────┘        (capacity, or manager offline)
-              any state → TERMINATED         (kill, sweep, cycle cleared)
-              COMPLETED → STARTING           (proof went stale, respawn)
-```
+## Deployment and verification
 
-Tasks are spawned by GRASS events rather than by the code that requested the action:
-`struct_block_build_start`, `struct_block_ore_mine_start`,
-`struct_block_ore_refine_start`, and a shield-vulnerable raid status. The chain tells you
-when there is work; you do not assume it from your own transaction.
+Production HTML selects the fingerprinted application bundle through its asset
+manifest; that bundle references its fingerprinted worker chunk. Deploy matching
+assets together and retain needed old hashed assets for already-open pages. The
+version/revision handshake prevents an incompatible worker from submitting results;
+a reload alone is not proof that all tabs adopted the new application.
 
-The manager itself starts `OFFLINE` and comes online eight seconds after page load, which
-keeps five hashing workers from competing with initial render.
+The source suites cover exact integer boundaries, same-process rule changes, old
+worker replies, original anchors, stale work, unknown/failed/committed submissions,
+and logout. Native release fixtures and rendered isolated build/tutorial checks are
+separate evidence. Keep those distinctions when reporting client acceptance.
 
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/workers/TaskWorker.js`,
-`src/js/managers/TaskManager.js`, `src/js/models/TaskState.js`,
-`src/js/factories/TaskStateFactory.js`. Cross-checked against
-`structsd/x/structs/types/work.go`.*
+*Verified against webapp `5991ca95`: TaskManager, TaskProcess, TaskState,
+TaskStateFactory, TaskWorker, WorkFactory, WorkDifficulty, WorkSubmission,
+WorkRefreshManager and TaskConstants. Integer eligibility cross-checked directly
+against release `x/structs/types/work.go`; no chain checkout was modified.*

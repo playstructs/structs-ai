@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Reference-client signing, state, work and streaming pages now describe current
+  protocol-aware preparation, exact raw values/readiness, durable unknown outcomes,
+  native integer proof eligibility and versioned worker updates. Canonical streaming
+  guidance replaces phantom subjects/completion triggers and first-message signup
+  detection with owner-scoped invalidation and exact status reads. Obsolete balance
+  arithmetic and retry advice is removed. These reviewed pages name webapp
+  `5991ca95`; Desktop and unrelated page baselines remain independent.
+
 - Authentication guidance now covers the implemented bearer endpoint, hex wallet
   proof encoding, bounded login timestamps, real server-session invalidation and
   token revocation. Public guild reads are explicit; private entity/device access

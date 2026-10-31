@@ -57,7 +57,30 @@ src/js/util/DeviceChangeCompletion.js|api/webapp/player-address.md
 src/js/workers|develop/client/work-and-pow.md
 src/js/managers/TaskManager.js|develop/client/work-and-pow.md
 src/js/models/TaskState.js|develop/client/work-and-pow.md
+src/js/models/TaskProcess.js|develop/client/work-and-pow.md
+src/js/util/WorkDifficulty.js|develop/client/work-and-pow.md
+src/js/util/WorkSubmission.js|develop/client/work-and-pow.md
+src/js/managers/WorkRefreshManager.js|develop/client/work-and-pow.md, develop/client/state-and-data.md
+src/js/managers/SigningSubmission.js|develop/client/actions-and-signing.md
+src/js/util/SignedSubmission.js|develop/client/actions-and-signing.md
+src/js/models/SigningTransaction.js|develop/client/actions-and-signing.md
+src/js/constants/Fee.js|develop/client/actions-and-signing.md
+src/js/constants/SigningQueueConstants.js|develop/client/actions-and-signing.md
+src/js/managers/TransactionJournal.js|develop/client/actions-and-signing.md, develop/client/state-and-data.md
+src/js/util/MessagePayload.js|develop/client/actions-and-signing.md, develop/client/state-and-data.md
+src/js/util/ChainProtocol.js|develop/client/actions-and-signing.md, develop/client/state-and-data.md
+src/js/managers/AlphaRefreshManager.js|develop/client/state-and-data.md, develop/client/realtime-grass.md
+src/js/managers/SessionAuthorityManager.js|develop/client/state-and-data.md
+src/js/framework/JsonAjaxer.js|develop/client/state-and-data.md
+src/js/constants/ChainConstants.js|develop/client/actions-and-signing.md, develop/client/work-and-pow.md
+src/js/constants/TaskConstants.js|develop/client/work-and-pow.md
+src/js/managers/TransferPreparation.js|develop/client/actions-and-signing.md
+src/js/managers/ReactorPreparation.js|develop/client/actions-and-signing.md
+src/js/managers/GeneratorPreparation.js|develop/client/actions-and-signing.md
+src/js/managers/GameplayPreparation.js|develop/client/actions-and-signing.md
 src/js/framework/GrassManager.js|develop/client/realtime-grass.md
+src/js/util/PlanetActivityNotification.js|develop/client/realtime-grass.md
+src/js/index.js|develop/client/state-and-data.md, develop/client/realtime-grass.md
 src/js/grass_listeners|develop/client/realtime-grass.md
 src/js/models/GameState.js|develop/client/state-and-data.md
 src/js/factories|develop/client/state-and-data.md

@@ -1,266 +1,164 @@
 ---
-description: "How a client consumes the live event stream: the NATS connection, the listener contract, all 26 listeners, and what the stream won't do."
+description: "GRASS connection recovery, committed-state invalidation, exact combat hydration, listener scope, and notification limits."
 ---
 
 # Real-time events with GRASS
 
-**Purpose**: How the reference client consumes the live event stream — connection,
-the listener contract, the full listener catalogue, and what the stream will not do
-for you.
-
-For the event schema and subject taxonomy from the server side, see the
-[structs-streaming skill](/skills/structs-streaming/SKILL.html) and
-[api/streaming/event-types.md](../../api/streaming/event-types.md). This page is how a
-client wires it up.
-
----
+GRASS transports committed database notifications through NATS. Use them to request
+current state and drive captured activity; they are not a durable transaction receipt
+or a complete balance history. The reference browser keeps its existing UI while
+refresh managers reconcile funds, work and signing authority.
 
 ## Connection
 
-NATS over WebSocket via `@nats-io/nats-core` 3.0.0, using `wsconnect`:
+`GrassManager` uses `@nats-io/nats-core` `wsconnect`. The stock browser constructs two
+managers at `ws://{hostname}:1443`, without NATS credentials:
 
-```js
-this.nc = await natsCore.wsconnect({
-  servers: this.grassServerUrl,
-  maxReconnectAttempts: -1, // never give up on transient drops
-  reconnectTimeWait: 2000,
-  waitOnFirstConnect: true,
-});
-```
-
-The client runs **two managers**, both against `ws://{hostname}:1443`:
-
-| Manager | NATS subject | Listeners |
+| Manager | Subscription | Purpose |
 |---|---|---|
-| `grassManager` | `structs.>` | all 25 game listeners |
-| `blockGrassManager` | `consensus` | `BlockListener` only |
+| `grassManager` | `structs.>` | Game and device notifications |
+| `blockGrassManager` | `consensus` | Observed block clock |
 
-**No authentication is sent.** No token, no credentials. The scheme is `ws://`, not
-`wss://` — production TLS, if any, is handled by a reverse proxy outside this code.
+Other clients discover the advertised guild service and its auth/TLS requirements;
+do not infer a public host's current availability or rewrite its URL scheme.
 
-### Reconnection is doubly defended
+NATS retries transient disconnections indefinitely with a two-second reconnect wait.
+The outer supervisor handles closed/failed streams with backoff from one to thirty
+seconds. Listener registrations survive reconnect. Resume/watchdog checks use the
+shared consensus clock to detect a stale connection and avoid duplicate reconnects.
+A quiet game subject alone does not mean the connection is dead.
 
-The NATS client retries forever on its own, and an outer supervisor loop catches anything
-that escapes it, with exponential backoff from 1s to a 30s ceiling:
-
-```js
-while (this.running) {
-  try {
-    this.nc = await natsCore.wsconnect({ … });
-    this.backoffMs = 1000;                       // reset on a good connect
-    this.subscription = this.nc.subscribe(this.subject);
-    for await (const message of this.subscription) { /* decode, fan out */ }
-  } catch (e) {
-    console.warn('[GrassManager] connection error:', this.subject, e);
-  }
-  await this.nc?.close();
-  if (!this.running) break;
-  await new Promise((resolve) => setTimeout(resolve, this.backoffMs));
-  this.backoffMs = Math.min(this.backoffMs * 2, this.backoffMax);
-}
-```
-
-Registered listeners live in a `Map` that persists across reconnects, so nothing needs
-re-registering. Malformed JSON is skipped; a listener that throws is caught and logged
-without killing the loop.
-
-> **Connection state still never reaches the UI.** Drops and forced reconnects are
-> `console.warn` only. The transport now self-heals, but an operator still cannot tell
-> whether the displayed state is live; operational clients should expose that state.
-
-`reconnect()` deliberately closes the current connection so the supervisor rebuilds it.
-`resumeCheck()` does so only when the shared block clock has been stale long enough, with
-a guard against duplicate focus/visibility triggers. Both GRASS managers run this check
-on tab resume, browser online/focus, and a periodic watchdog.
-
----
+Initial connection and NATS reconnect status dispatch `GRASS_CONNECTED`. Funds,
+work and authority refresh managers use that signal for fresh reads. No new status
+screen is implied. Core NATS does not backfill the gap merely because a socket
+reconnected.
 
 ## One subscription, client-side filtering
 
-This is the architectural decision to understand: **there is one NATS subscription per
-manager, and every listener sees every message.** Listeners do not subscribe to subjects.
-They filter, in JavaScript, on fields in the decoded payload.
+Each manager has one NATS subscription. `GrassManager` decodes JSON, requires envelope
+`subject` and `category`, then fans out to registered listeners. Listeners filter
+scope/category themselves. Use narrower subjects for a custom client that does not
+need the reference browser's broad subscription.
 
-```js
-getMessageData(message) {
-  return message.json();
-}
+Representative reviewed paths:
 
-shouldIgnoreMessage(messageData) {
-  return !messageData.hasOwnProperty('subject')
-    || !messageData.hasOwnProperty('category');
-}
-```
-
-Messages are JSON with `subject` and `category` as required envelope fields; anything
-missing either is dropped before listeners run.
-
-Subject strings inside the payload follow these shapes:
-
-| Pattern | Carries |
+| Subject | Meaning |
 |---|---|
-| `consensus` | block height |
-| `structs.player.{guildId}.{playerId}` | player consensus, address approve/revoke |
-| `structs.grid.player.{playerId}.{playerId}` | alpha, load, capacity, ore, lastAction |
-| `structs.grid.substation.{substationId}` | connection capacity |
-| `structs.grid.struct.{structId}.{playerId}` | struct fuel |
-| `structs.planet.{planetId}.{playerId}` | structs, combat, raids, shields, fleet, mining |
-| `structs.inventory.ualpha.{guildId}.{playerId}` | alpha sent / received / refined |
-| `structs.inventory.ualpha.infused.{guildId}.{playerId}` | infusion |
-| `structs.inventory.ualpha.defusing.{guildId}.{playerId}` | defusion |
-| `structs.address.register.{activationCode}` | pending device registration |
+| `consensus` | Block notifications, independent of activity hydration |
+| `structs.player.{guild_id}.{player_id}` | Player and indexed address updates |
+| `structs.planet.{planet_id}.{player_id}` | Struct/combat/fleet/raid activity |
+| `structs.grid.{object_type}.{object_id}.{player_id}` | Grid attribute notification |
+| `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Ledger invalidation with canonical owner metadata |
+| `structs.grid.player.{owner_id}` | Player infusion invalidation |
+| `structs.grid.guild.{owner_id}` | Guild infusion invalidation |
+| `structs.address.register.{code}` | Pending consent for an existing player's new device |
+| `structs.guild.{guild_id}` | Guild consensus/meta/membership-application notification |
 
-Fan-out cost grows with listener count, since every listener runs its filter on every
-message. At 26 listeners this is fine. If you are building something that registers
-hundreds, subscribe to narrower NATS subjects instead.
+Unresolved ownership can use `noPlayer`/`noGuild`. A guild vault's owner remains the
+guild, not its leader. Dotted synthetic denominations create extra NATS tokens, so
+do not parse inventory ownership by a fixed token offset. `*` matches one token;
+`>` matches trailing tokens. Planet observers use `structs.planet.{planet_id}.*`.
 
----
+Struct activity lives on the planet path; the reviewed triggers do not provide
+separate `structs.struct.{id}` or `structs.fleet.{id}` activity subscriptions.
+`consensus` is the block subscription, not `structs.global`.
 
 ## The listener contract
 
-```js
-export class AbstractGrassListener {
-  constructor(name) { this.name = name; }
-  handler(messageData) { throw new NotImplementedError(); }
-  shouldUnregister() { return false; }
-}
+A listener supplies a unique `name`, synchronous `handler(messageData)` and optional
+`shouldUnregister()`. Names are Map keys; re-registering a name replaces that listener.
+Unregistration is checked immediately after the handler returns. Async work inside
+a listener still needs its own stale-context/cancellation checks; a flag set later
+is noticed on a later dispatch.
+
+Current listener groups include:
+
+| Group | Behavior |
+|---|---|
+| Block and last action | Update observed height and confirmed charge base |
+| Player load/capacity/ore/shields | Update established display/state paths |
+| `PlayerAlphaListener`, `AlphaChangeListener` | Request authoritative funds refresh; never apply balance deltas |
+| `StructListener` | Refresh structs, reconcile build work, and render ordered combat effects |
+| Mine/refine status listeners | Request current scoped work reconciliation |
+| Raid/planet raid listeners | Maintain offensive/defensive raid state and relevant local work |
+| Player created/new planet | Continue scoped onboarding/entity loading |
+| Address revoked | Request a native ownership check for the active key, or refresh another device's list |
+
+Economic/device completion is owned by its transaction observer and current evidence,
+not the first similar-looking notification. Removed one-shot transfer/infusion/device
+listeners are not an integration API to copy.
+
+## Refresh committed funds and work
+
+`AlphaChangeListener` matches the current owner on inventory subjects and on explicit
+infusion invalidations. It requests `AlphaRefreshManager` through
+`block_height_exact` (or a supported legacy height). `PlayerAlphaListener` also
+invalidates rather than assigning an unqualified grid balance.
+
+The ledger trigger carries `amount_p_exact`, `id_exact`, `block_height_exact`,
+canonical `owner_type`/`owner_id`/`is_vault` and counterparty ownership. Those fields
+preserve precision; they do not establish that a client has every preceding event.
+Infusion changes notify old/new/live owners with `invalidates: "infusion"`, including
+reassignment and deletion. Refetch exact spendable vault funds and complete positions.
+
+`AlphaRefreshManager` coalesces notifications, checks monotonic source heights, and
+refreshes on resume/reconnect and visible polling. Work/catalog refresh similarly
+uses coherent snapshots rather than notification anchors. `SessionAuthorityManager`
+checks native ownership before treating a key as revoked. See
+[state-and-data.md](state-and-data.md) for each manager's scope and cadence.
+
+## Hydrate large planet activity before dispatch
+
+PostgreSQL NOTIFY payloads are limited to 8 KB. A large attack can be a keyed stub
+with `stub: true` or `stub: "true"`, carrying `planet_id`, `seq`, `time`, category
+and subject without `detail`. The release's multi-target/projectile fixture exercises
+this path through the actual writer, database, bridge and browser.
+
+Fetch the exact row using the authenticated endpoint:
+
+```text
+GET /api/planet-activity/planet/{planet_id}/event/{seq}?time={URL-encoded-original-time}
 ```
 
-Three obligations: a unique `name`, a `handler`, and optionally `shouldUnregister`.
+Preserve the original timestamp string, microseconds and timezone. JavaScript Date
+round-trips lose needed precision. The endpoint returns an object-valued `detail`
+or null for a missing exact row. Match the full key and category; never substitute
+the latest activity row.
 
-```js
-registerListener(listener) { this.listeners.set(listener.name, listener); }
-unregisterListener(name)   { this.listeners.delete(name); }
-```
+`resolvePlanetActivityNotification` fetches only for a currently observed player and
+planet, and discards late replies after session/account/planet changes.
+`GrassManager` awaits hydration before dispatching the next message on that stream,
+then also checks the connection identity. The independent consensus subscription
+continues. Missing/malformed detail is skipped as unavailable, not converted into
+an empty successful attack. General async listener work still is not globally ordered.
 
-> **`name` is a `Map` key, so duplicates silently overwrite.** `AlphaInfusedChangeListener`
-> always names itself `ALPHA_INFUSED_CHANGE`, so registering it for both infuse and defuse
-> replaces the first with the second. Namespace your listener names per instance —
-> several in the codebase already do, e.g. `CONSUME_ALPHA_CHANGE_{structId}`.
+## Combat playback
 
-### Self-unregistering listeners
+Typed attack detail supplies rolled projectile damage, final net volley damage and
+observed health; they are not interchangeable. A target can counter and then die from
+the attacker's explosion. Render the counter at its intermediate health before the
+later destruction, including blocked/evaded cases. Do not apply effect damage again
+to indexed models; refresh involved structs.
 
-Many listeners exist to await exactly one event: a signup confirming, a device being
-approved, a transfer landing. The manager checks after each dispatch:
-
-```js
-this.listeners.forEach((listener) => {
-  try {
-    listener.handler(messageData);
-    if (listener.shouldUnregister()) {
-      this.unregisterListener(listener.name);
-    }
-  } catch (e) {
-    console.warn('[GrassManager] listener error:', listener.name, e);
-  }
-});
-```
-
-Two idioms are in use. Most one-shot listeners overwrite the method on the instance:
-
-```js
-this.shouldUnregister = () => true;
-```
-
-`StructListener` overrides it as a real method, tying its lifetime to a raid:
-
-```js
-shouldUnregister() {
-  if (this.gameState.keyPlayers[this.targetPlayerType].isRaidDependent()) {
-    return !this.gameState.getPlanetRaidInfoForKeyPlayer(this.targetPlayerType)?.isRaidActive();
-  }
-  return false;
-}
-```
-
-The check is synchronous, immediately after `handler()` returns. A listener that sets the
-flag inside a `.then()` will not be removed until the *next* message arrives — harmless
-here, but worth knowing if you build on it.
-
----
-
-## The listener catalogue
-
-All on `structs.>` except `BlockListener`, which is on `consensus`.
-
-| Listener | Fires on | Does |
-|---|---|---|
-| `BlockListener` | `block` | Sets block height; dispatches `BLOCK_HEIGHT_CHANGED`. **This is the client's clock** — the signing queue and charge bar both hang off it |
-| `PlayerCreatedListener` | `player_consensus`, matching primary address | Logs in, finds a first planet. One-shot |
-| `NewPlanetListener` | `player_consensus` with `planet_id` | Fetches planet/fleet/structs, configures the map, navigates. One-shot |
-| `PlayerAlphaListener` | `alpha` | `setAlpha` |
-| `AlphaChangeListener` | `sent` / `received` / `refined` | Adjusts alpha by delta |
-| `AlphaInfusedChangeListener` | `infused` / `defusion_started` | Refreshes player, navigates to reactor. One-shot |
-| `ConsumeAlphaChangeListener` | `infused` for one struct | Refreshes alpha. One-shot |
-| `TransferSentListener` | `sent`, matching counterparty and amount | Navigates to the transaction page. One-shot |
-| `PlayerLoadListener` | `load` | `setLoad` |
-| `PlayerCapacityListener` | `capacity` | `setPlayerCapacity` |
-| `PlayerStructsLoadListener` | `structsLoad` | `setStructsLoad` |
-| `ConnectionCapacityListener` | `connectionCapacity` | `setConnectionCapacity` |
-| `KeyPlayerLastActionListener` | `lastAction` | **Updates the confirmed charge base.** The signing queue depends on this |
-| `KeyPlayerOreListener` | `ore` | `setOre`, optional planet refresh |
-| `KeyPlayerShieldChangeStatusListener` | `shield_change`, `block_raid_start` | Updates shield info |
-| `StructListener` | `struct_block_build_start`, `struct_status`, `struct_move`, `struct_defense_add`/`remove`, `struct_attack` | The big one: refreshes structs, enqueues combat animations, spawns and kills build tasks |
-| `StructMineStatusListener` | `struct_block_ore_mine_start` | Spawns or kills the MINE proof-of-work task |
-| `StructRefineStatusListener` | `struct_block_ore_refine_start` | Spawns or kills the REFINE task |
-| `GridStructListener` | `fuel` for one struct | Updates fuel, releases the action-bar lock. One-shot |
-| `RaidStatusListener` | `raid_status`, `fleet_depart`/`arrive` on the target | Full offensive raid lifecycle |
-| `PlanetRaidStatusListener` | `raid_status` on your own planet | Defensive raid lifecycle |
-| `PlayerAddressApprovedListener` | `player_address` approved | Refreshes devices, navigates. One-shot |
-| `PlayerAddressApprovedLoginListener` | `player_address` approved for the signing address | Navigates to device activation. One-shot |
-| `PlayerAddressPendingCreatedListener` | `player_address_pending` | Prompts to approve a new device. One-shot |
-| `PlayerAddressRevokedListener` | `player_address` revoked | Logs out or refreshes devices. One-shot |
-| `RecoverAccountAddressApprovedListener` | `player_address` approved for recovery | Completes mnemonic login. One-shot |
-
-On `block_raid_start` / defensive `raid_status` that opens the window (`PlanetRaidStatusListener`, `KeyPlayerShieldChangeStatusListener`), the HUD should name the **real** exposure, not imply account loss. Suggested copy:
-
-> Raid window open. Exposed: unrefined ore (all of it if they finish) and structs in combat. Not exposed: your account, keys, planet, or guild.
-
-The flagship client does not yet show this toast — ship it there; do not invent a chain rule. Player-facing FAQ: [what a raid can take](/play/faq).
-
-Registration is spread across `index.js` (block), `AuthManager` (auth and device flows),
-`RaidManager`, and several view models that register a one-shot listener for the event
-they are waiting on and then navigate.
-
----
-
-## Reaching the UI
-
-Three patterns, in increasing order of side effects.
-
-**GRASS → GameState setter → CustomEvent → component.** The common case:
-
-```js
-// PlayerAlphaListener
-this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(parseInt(messageData.value));
-// → KeyPlayer.setAlpha dispatches SaveGameStateEvent + AlphaCountChangedEvent
-// → AlphaOwnedComponent updates its text node
-```
-
-**GRASS → direct CustomEvent**, for things with no natural model home — block height.
-
-**GRASS → side effects**, where a listener calls the REST API, navigates the router, or
-pushes onto the [animation queue](rendering-entities.md#the-animation-event-queue).
-`StructListener` does all three.
-
----
+A zero-health activity row is not guaranteed, so combine status/current-state reads
+with attack detail. The [captured event reference](../../api/streaming/event-schemas.md)
+and [exact event endpoint](../../api/webapp/planet-activity.md#exact-event-lookup)
+define those payloads. The renderer fixture verifies actual animation completion,
+queue drainage and final health for counter/rebound and large-event cases.
 
 ## What the stream will not do for you
 
-| | |
-|---|---|
-| **No replay** | Messages sent while you were disconnected are gone. There is no backfill and no sequence gap detection |
-| **No deduplication** | Nothing keyed on a message ID |
-| **No ordering guarantee** | Handled sequentially in one loop, but async work inside handlers is fire-and-forget and can interleave |
-| **Lag behind chain** | GRASS trails the chain by one to two blocks. The signing queue accounts for this; your code should too |
-| **Silence on disconnect** | No indicator, no event |
+- It has no durable replay or global client deduplication/gap recovery.
+- Notification order is not a replacement for coherent SQL/native source heights.
+- A balance, attack or address event does not prove an unrelated signed transaction
+  committed. Match its durable hash/bytes and native execution result first.
+- A connection event does not certify all displayed data as current. Reconcile the
+  required scoped models, honoring incomplete/unavailable responses.
+- Stale notifications or failed reads do not authorize a new send, reset a proof's
+  original anchor, or erase a local key.
 
-Which is why the architecture in [index.md](index.md) matters: **REST is authoritative,
-GRASS keeps you current.** Re-fetch on login and after anything significant. A client that
-treats the stream as its source of truth will drift, and it will drift silently — the
-worst failure mode there is, because everything keeps looking fine.
-
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/GrassManager.js`,
-`src/js/framework/AbstractGrassListener.js`, `src/js/grass_listeners/`.*
+*Verified against webapp `5991ca95`: GrassManager, PlanetActivityNotification,
+AlphaChangeListener, PlayerAddressRevokedListener, current listener registration and
+scoped refresh managers. Subject/ownership paths were checked against structs-pg
+`400e1c1` and the bridge forwarding logic. Captured release-event transport and real
+rendered hydration are separate from live deployment acceptance.*

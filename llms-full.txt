@@ -3770,11 +3770,11 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 | Situation | Use GRASS | Use Polling |
 |-----------|-----------|-------------|
 | Detect incoming raid | Yes — instant alert | Too slow |
-| Wait for player creation after guild signup | Yes — listen for `address_register` | Polling every 10s works too |
+| Wait for player creation after guild signup | Yes — matching approved `player_address` | Polling every 10s works too |
 | Monitor fleet arriving at your planet | Yes — `fleet_arrive` event | Might miss it |
 | Track struct health during combat | Yes — `planet_activity` with `struct_health` | Too slow |
 | Check your own resource balance | No | Yes — one-off query |
-| Read struct type stats | No | Yes — static data |
+| Read struct type stats | No | Yes — current versioned catalog |
 
 **Rule of thumb**: If you need to *react* to something, use GRASS. If you need to *read* something, use a query.
 
@@ -3782,7 +3782,7 @@ GRASS (Game Real-time Application Streaming Service) delivers real-time game eve
 
 ## Finding Your GRASS Endpoint
 
-The GRASS WebSocket URL is **not hardcoded** — it comes from the guild configuration.
+Discover the guild's GRASS WebSocket URL from its configuration. The reference browser uses its own host on port 1443; other clients should use the advertised service.
 
 1. Query the guild list: `curl https://public.testnet.structs.network/structs/guild`
 2. Follow the guild's `endpoint` URL to get its config
@@ -3802,7 +3802,7 @@ Example (Orbital Hydro guild):
 
 The `grass_nats_websocket` value is your NATS WebSocket endpoint. Not all guilds provide this service — check before relying on it.
 
-A reliable reference endpoint: **`ws://crew.oh.energy:1443`** (Orbital Hydro / Slow Ninja). GRASS is hosted by individual guilds and is currently HTTP only — do not rewrite to `wss://`.
+The URLs above are configuration examples, not a live availability guarantee. Preserve the advertised scheme and verify the deployment's TLS/origin policy; use the service URL supplied by the guild.
 
 ### Structs Desktop native source
 
@@ -3838,7 +3838,7 @@ for await (const msg of sub) {
 
 Watch the output for 30-60 seconds. You will see subjects like `structs.planet.2-1.1-11`, `consensus`, `healthcheck`, etc. Once you know what subjects carry the events you need, narrow your subscriptions to those specific subjects.
 
-**Important**: Struct events (attacks, builds, status changes) often arrive on the **planet subject** rather than the struct subject. If you are not receiving expected struct events, subscribe to the struct's planet subject instead.
+**Important**: The reviewed writer emits struct attacks/status/build activity on the **planet subject**. Do not wait on an invented `structs.struct.{id}` subject; select the struct's planet and filter its event detail.
 
 ---
 
@@ -3851,12 +3851,9 @@ Subscribe to subjects matching the entities you care about:
 | Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
 | Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.2-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
-| Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
-| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | -- |
 | Inventory | `structs.inventory.>` | `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Token movements |
 | Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | Attribute changes (ore, power, load, etc.) |
-| Global | `structs.global` | `structs.global` | Block updates |
 | Consensus | `consensus` | `consensus` | Chain consensus events |
 | Healthcheck | `healthcheck` | `healthcheck` | Node health status |
 
@@ -3886,7 +3883,7 @@ For raid settlement, `raid_status` with `status: raidSuccessful` is the authorit
 
 ### Struct Events
 
-**Note**: Struct events frequently arrive on the **planet subject** (`structs.planet.{planet_id}.{player_id}`, i.e. subscribe `structs.planet.{planet_id}.*`) rather than the struct subject. Subscribe to both if you need complete coverage.
+**Note**: Subscribe to the **planet subject** `structs.planet.{planet_id}.*` for struct activity. Refetch current structs after reconnect or a missing detail row.
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -3922,6 +3919,23 @@ UGC name/pfp updates emit two distinct streams:
 2. **Cosmos chain event `ugc_moderated`** — emitted by the keeper directly (untyped `sdk.Event`, not GRASS). Fires only when the actor of the update is **not** the target object's owner (i.e. only on guild-moderation overrides, never on self-service updates). Subscribe and attributes: [api/chain-events](https://structs.ai/api/chain-events). Validation rules: `knowledge/mechanics/ugc-moderation.md`.
 
 ### Inventory Events
+
+Notifications invalidate a committed read; they are not balance deltas or payment
+receipts. Read exact spendable vault funds and complete positions through the event
+or inclusion height, preserving API readiness metadata. Coalesce duplicates and
+refresh after reconnect/resume; Core NATS does not replay missed messages.
+
+The ledger trigger resolves canonical `owner_type`, `owner_id`, `is_vault` and
+counterparty ownership. Exact helpers include `amount_p_exact`, `id_exact` and
+`block_height_exact`. A guild vault keeps a guild owner and uses `noPlayer` in the
+subject; do not assign it to the guild leader. Dotted synthetic denominations add
+subject tokens, so match the complete denomination rather than fixed offsets.
+
+Infusion changes separately invalidate `structs.grid.player.{owner_id}` or
+`structs.grid.guild.{owner_id}` with `invalidates: "infusion"` and
+`notification_owner_type`/`notification_owner_id`. Reassignment invalidates both old
+and new owners. Exact values do not authorize arithmetic over incomplete state.
+
 
 Subject: `structs.inventory.{denom}.{guild_id}.{player_id}.{address}`
 
@@ -4028,7 +4042,7 @@ for await (const msg of sub) {
 }
 ```
 
-### Global Events
+### Consensus Events
 
 | Event | Description | React By |
 |-------|-------------|----------|
@@ -4106,21 +4120,31 @@ for await (const msg of sub) {
 
 ### Player Creation Watcher (example pattern)
 
-Instead of polling `structsd query structs address` after guild signup, watch for the address registration event:
+Listen for the new address's indexed approval, then query native/indexed state to
+confirm it. The short-code subject carries pending device consent, not new-player
+completion.
 
 ```javascript
 import { connect } from "nats.ws";
 
-const nc = await connect({ servers: "ws://crew.oh.energy:1443" });
-const sub = nc.subscribe("structs.address.register.*");
-
+const [endpoint, guildId, address] = process.argv.slice(2);
+const nc = await connect({ servers: endpoint });
+const sub = nc.subscribe(`structs.player.${guildId}.*`);
 for await (const msg of sub) {
   const event = JSON.parse(new TextDecoder().decode(msg.data));
-  console.log(JSON.stringify(event));
-  break; // exit after first match
+  if (event.category !== "player_address" || event.address !== address
+      || event.guild_id !== guildId || event.status !== "approved") continue;
+  console.log(JSON.stringify({ address, player_id: event.player_id }));
+  break;
 }
 await nc.close();
 ```
+
+Add a bounded deadline and query fallback for a production workflow: a missed
+notification must not strand signup. Existing-player device activation uses the
+[activation UUID and native nonce proof](https://structs.ai/api/webapp/player-address).
+Refetch pending consent through its owner-scoped API; an incoming notification must
+not silently grant a device authority.
 
 ---
 
@@ -4161,8 +4185,8 @@ Store custom tools in your workspace (e.g., `scripts/` or alongside the relevant
 ### For Ongoing Monitoring
 
 1. Subscribe to your planet(s): `structs.planet.{id}.*` — raid alerts, fleet arrivals (trailing `*` matches any owner `player_id`)
-2. Subscribe to your structs: `structs.struct.{id}` — attack/status alerts
-3. Subscribe to global: `structs.global` — block tick for game loop timing
+2. Filter planet activity for your struct IDs — attack/status alerts
+3. Subscribe to `consensus` — observed block ticks for game loop timing
 4. Log events to [continuity memory](https://structs.ai/awareness/continuity) for cross-session awareness
 
 ---
@@ -4175,12 +4199,12 @@ The Structs permission system and GRASS event stream were designed for AI agents
 
 | Event | Action | Permission Needed |
 |-------|--------|-------------------|
-| `struct_ore_mine_complete` on your extractor | Immediately start `struct-ore-refine-compute` | Signer key for the player |
-| `struct_ore_refine_complete` on your refinery | Immediately start next `struct-ore-mine-compute` | Signer key for the player |
-| `planet_raid_start` on your planet | Alert, activate stealth, reposition defenders | Signer key or delegated permission |
+| `ore` grid change or current mine clock/work | Reconcile current refinery work and start approved computation | Required signing-key hash bit |
+| `refined` inventory invalidation or current work | Refresh vault/work and continue the approved production plan | Required signing-key hash bit |
+| `block_raid_start` / `raid_status` on your planet | Alert, activate stealth, reposition defenders | Signer key or delegated permission |
 | `struct_attack` targeting your struct | Log attacker, assess threat, counter-attack if able | Signer key or delegated permission |
 | `struct_health` showing HP drop | Prioritize defense, consider fleet retreat | Signer key for fleet-move |
-| `fleet_move` to your planet from unknown fleet | Identify incoming player, assess threat level | Read-only (query) |
+| `fleet_arrive` at your planet from unknown fleet | Identify incoming player, assess threat level | Read-only (query) |
 
 ### Permission Scoping for Automated Agents
 
@@ -4188,28 +4212,31 @@ When delegating actions to an automation agent (separate key or service):
 
 1. **Grant minimal permissions**: Use `permission-grant-on-object` to allow specific actions on specific structs, not blanket access.
 2. **Separate keys**: The automation agent should use its own signing key, registered as a secondary address on the player via `address-register`.
-3. **Scope by struct**: Grant mine/refine permissions on extractors and refineries only. Grant defense permissions on fleet structs only.
+3. **Verify effective authority**: The signing key's bits are a hard ceiling; an object grant cannot add a bit the key lacks. Use the canonical permission recipes and current native simulation.
 4. **Revoke when not needed**: Use `permission-revoke-on-object` to remove automation access during sensitive operations.
 
-### Example: Refine-on-Mine-Complete Loop
+### Example: Reconcile production after an event
 
+```text
+Subscribe to the player's ore grid and inventory subjects
+On ore/clock/refined invalidation:
+  → Fetch current, complete work and vault state through the event height
+  → Keep original work anchors and current difficulty rules
+  → Adopt any existing uncertain completion transaction
+  → Start only missing, approved computation
+On reconnect or a bounded periodic check:
+  → Repeat the same reconciliation
 ```
-Subscribe to: structs.struct.{extractor-id}
-On event: struct_ore_mine_complete
-  → Run: structsd tx structs struct-ore-refine-compute -D 1 --from [key] --gas auto -y -- [refinery-id]
 
-Subscribe to: structs.struct.{refinery-id}
-On event: struct_ore_refine_complete
-  → Run: structsd tx structs struct-ore-mine-compute -D 1 --from [key] --gas auto -y -- [extractor-id]
-```
-
-This creates a continuous mine-refine loop that runs unattended. Ore is never left unrefined.
+Run mining and refining according to the [production skill](/skills/structs-production/SKILL.html).
+Events do not eliminate exposed ore or establish transaction success. Preserve the
+commander's signing/automation approval policy when building an unattended tool.
 
 ### Example: Defend-on-Raid-Detected
 
 ```
 Subscribe to: structs.planet.{planet-id}.*
-On event: planet_raid_start
+On event: block_raid_start or raid_status
   → Activate stealth on vulnerable structs
   → Set defenders on high-value structs
   → Log raid to memory/intel/threats.md
@@ -12436,342 +12463,419 @@ them.** This is the single most likely source of a subtle bug in a new client. S
 <source>develop/client/state-and-data.md</source>
 ---
 title: Client state, data, and precision
-description: How a client holds game state and turns JSON into models, including the numeric-precision trap where numbers arrive as strings.
+description: "Exact values, coherent API snapshots, vault spendability, scoped refresh, catalogs, and session state in the reference client."
 ---
 
 # Client state, data, and precision
 
-**Purpose**: How the reference client holds game state, gets it from the API, and turns
-JSON into models — including the numeric-precision trap that will bite you.
-
----
+The reference client retains exact values and source metadata alongside its existing
+display models. Readiness is evidence about the response used by an action, not a
+property that can be borrowed from a newer `/api/block` response. This page describes
+webapp integration `5991ca95` with structs-pg `400e1c1`.
 
 ## Numbers arrive as strings
 
-The chain returns `uint64` values as JSON **strings**, because they routinely exceed
-JavaScript's `Number.MAX_SAFE_INTEGER`. Energy values additionally carry three decimal
-places of precision as integers.
+Keep uint64/int64 values, coin amounts, masks, nonces and work inputs as canonical
+decimal strings at JSON boundaries. Use BigInt or exact decimal arithmetic internally,
+then stringify before queue/localStorage JSON. Reject an already-rounded Number;
+converting it to a string cannot recover the original integer.
 
-**The reference client is inconsistent about converting them.** Know this before you copy
-any of it.
+| Value | Representation/use |
+|---|---|
+| Chain uint64/int64 and generated Structs protobuf fields | Exact decimal strings with signed/unsigned range validation |
+| Bank coins | Exact SDK integer strings; do not limit every coin to uint64 |
+| Generator funding/work/catalog uint64 inputs | Enforce the specific uint64 domain |
+| Permission masks | Exact strings; preserve bits outside the existing controls |
+| LegacyDec | Decimal text in LCD JSON; scaled 18-place integer text in protobuf wire fields |
+| Energy | Raw milliwatts; divide by 1000 only for a watts display |
+| Alpha | Raw `ualpha`; 1 Alpha = 1,000,000 ualpha |
+| Installed CosmJS query/account inputs | Safe integers only where the library requires Number; refuse unsupported larger values |
 
-`PlayerFactory` is the careful case. It divides energy fields through `BigInt` before
-narrowing to `Number`:
+`PlayerFactory` retains `load_p`, `structs_load_p`, `capacity_p`,
+`connection_capacity_p` and `ore_p` before legacy display conversions. It also keeps
+`snapshot_meta`. Its display fields still divide/truncate into Number and are not
+suitable signing or accounting inputs. `InfusionFactory` preserves exact fields and
+metadata. `WorkFactory` validates identity/category and uint64 strings for the start
+anchor and difficulty. Generated request-schema validation rejects unknown fields
+that `fromPartial` alone would silently discard.
 
-```js
-// src/js/factories/PlayerFactory.js
-convertFromPreciseNumber(numberString) {
-  return Number(BigInt(numberString) / BigInt(PRECISION_CONVERSION.ENERGY));  // ENERGY = 1000
-}
-
-make(obj) {
-  const player = new Player();
-  Object.assign(player, obj);
-  player.load                = this.convertFromPreciseNumber(player.load);
-  player.structs_load        = this.convertFromPreciseNumber(player.structs_load);
-  player.capacity            = this.convertFromPreciseNumber(player.capacity);
-  player.connection_capacity = this.convertFromPreciseNumber(player.connection_capacity);
-  player.ore                 = parseInt(player.ore);
-  return player;
-}
-```
-
-Most other factories are `Object.assign` and nothing else, leaving values as strings:
-
-```js
-// src/js/factories/InfusionFactory.js — representative of most
-make(obj) {
-  const infusion = new Infusion();
-  Object.assign(infusion, obj);
-  return infusion;
-}
-```
-
-The full picture:
-
-| Path | Energy fields | Ore / counts |
-|---|---|---|
-| REST via `PlayerFactory` | `BigInt` ÷ 1000 → `Number` | `parseInt` |
-| REST via most other factories | **left as strings** | left as strings |
-| GRASS live updates | raw value straight to the setter — **no division** | `parseInt` in `setOre` only |
-| Protobuf codegen `longToNumber` | `Number(int64.toString())` — **lossy above 2^53** | same |
-| Signing queue payloads | `BigInt` is **rejected** — stringify first | same |
-
-Two consequences worth stating plainly. First, `"1000" + 1` is `"10001"`, and a string
-compares as a string — `"9" > "100"` is true. Sorting a leaderboard on an unconverted
-field gives silently wrong output with no error anywhere. Second, energy read from REST
-and energy read from GRASS **may not be on the same scale** in the reference client,
-because the GRASS listeners bypass the factory.
-
-**For a new client: normalise once, at the boundary.** Convert every field in one place,
-on both the REST and GRASS paths, and keep values above 2^53 as `BigInt` or as strings
-all the way to the formatter. Do not adopt the reference client's field-by-field
-approach.
-
----
-
-## GameState
-
-A single mutable object, constructed once at boot and passed to everything. It holds the
-wallet and signing client, the key players (yourself plus raid participants), struct
-types, the current block height, map components, and assorted UI state.
-
-**Mutation is uncontrolled.** Managers, GRASS listeners and view models all write to it
-directly. There is no reducer and no immutability.
-
-**Observation is via `window` CustomEvents.** There is no central event bus; setters
-dispatch events and interested components listen on `window`:
-
-```js
-// src/js/models/KeyPlayer.js
-setAlpha(alpha) {
-  if (this.player && this.player.hasOwnProperty('alpha')) {
-    this.player.alpha = parseInt(alpha);
-    window.dispatchEvent(new SaveGameStateEvent());
-    window.dispatchEvent(new AlphaCountChangedEvent(this.playerType));
-  }
-}
-```
-
-Event names live in `src/js/constants/Events.js` (50+ of them), each with a small
-`CustomEvent` subclass in `src/js/events/`. Components subscribe in `initPageCode()` and
-remove their listener when their DOM node is gone.
-
-This is simple and it works, but it means **any code can change any state and the only
-record of what changed is the event that happened to be dispatched**. If you are building
-something you intend to maintain, a narrower state layer is worth the effort.
-
-### What persists
-
-`localStorage`, under `gameState`, holds only a thin slice: mnemonic, pubkey, player ID,
-last-action block heights, charge levels, and the active map. Player objects, structs,
-planets, guild data and struct types are **not** persisted — they are re-fetched at login.
-
-Three other things also live in `localStorage`: router position (`currentMenuPage`,
-`lastMenuPage`), a TTL cache of some API responses, and one-off migration flags.
-
-> **The mnemonic is stored in plaintext.** No encryption, no passphrase. Any script that
-> runs on the page can read the key that controls the account. Do not copy this. See
-> [awareness/agent-security.md](../../awareness/agent-security.md) on key hygiene, and
-> [SAFETY.md](../../SAFETY.md).
-
----
+The migration does not make every unrelated display setter an exact accounting
+system. Use the preserved raw fields and validated snapshots for decisions, and
+format only at the rendering boundary.
 
 ## The REST client
 
-`src/js/api/GuildAPI.js` wraps `fetch` against `/api`, backed by the guild's PostgreSQL
-read models rather than by chain queries directly — which is why it is fast enough for
-search and pagination. See [knowledge/infrastructure/guild-stack.md](../../knowledge/infrastructure/guild-stack.md).
+`GuildAPI` wraps the guild's PHP/PostgreSQL API. The stock browser uses its same-origin
+session cookie; the API also offers [bearer login](../../api/webapp/auth.md) for other
+clients. Public guild discovery/statistics require no credentials. Private entity
+and device reads retain authentication and owner checks.
 
-**Auth is a same-origin session cookie**, not a bearer token. Login POSTs a signed message
-to `/api/auth/login`; Symfony verifies the signature, establishes a session, and every
-later `/api/*` call is authenticated by the cookie that `fetch` sends automatically.
-
-Every response is expected in one envelope:
+The application envelope is:
 
 ```json
-{ "success": true, "errors": {}, "data": … }
+{"success":true,"errors":[],"data":null}
 ```
 
-`GuildAPIResponseFactory` throws `GuildAPIError` if any of the three keys is missing, and
-`handleResponseFailure` throws if `success` is false.
+`GuildAPIResponseFactory` validates the required fields and retains optional `meta`
+and `total`, including false/null/zero values. Errors are usually keyed maps; do not
+require them always to be objects. `JsonAjaxer` defaults to a 15-second abortable
+request, treats 5xx/non-JSON as transport errors, and handles 401/403 through a shared
+wallet-backed reauthentication attempt before retrying once. Login itself disables
+that recursive recovery. An aborted observer must not keep waiting on shared login.
 
-The fetch wrapper now handles `401`/`403` explicitly: it asks a wallet-backed
-reauthenticator to renew the session, collapses concurrent failures onto one login, and
-retries each request once. A second auth failure becomes `AuthenticationError`; a
-non-JSON response becomes `HttpError` with the HTTP status. Other non-2xx JSON responses
-still flow through the normal envelope check, so new clients should keep status and
-envelope handling explicit.
+A read retry does not authorize replaying a chain transaction. Confirm the specific
+write's identity/idempotency contract before reissuing an HTTP operation.
 
-Representative endpoints:
+## Snapshot metadata and readiness
 
-| Purpose | Endpoint |
-|---|---|
-| Bootstrap | `GET /api/guild/this`, `GET /api/setting` |
-| Auth | `POST /api/auth/signup`, `POST /api/auth/login`, `GET /api/auth/logout` |
-| Player | `GET /api/player/{id}`, `GET /api/player/{id}/action/last/block/height` |
-| Structs | `GET /api/struct/player/{id}`, `GET /api/struct/type` (cached 24h) |
-| Fleet and planets | `GET /api/fleet/player/{id}`, `GET /api/planet/{id}` |
-| Raid search | `GET /api/player/raid/search?…` and `…/count` |
-| Guild | `GET /api/guild/{id}/roster` |
-| Ledger | `GET /api/ledger/player/{id}/page/{page}` |
-| Outstanding work | `GET /api/work/player/{id}` |
+Converted responses obtain their data and `meta` in one SQL snapshot. Metadata carries:
 
-That last one matters more than it looks: it is how proof-of-work tasks survive a page
-reload. See [work-and-pow.md](work-and-pow.md#restoring-after-a-reload).
+- `chain_id`, `protocol`, `observed_protocol`, `activation_height`
+- `api_contract: "structs-api-v022-1"` and matching `cache_epoch`
+- exact/null `height`, `indexed_height`, `observed_tip`
+- `required_models`, with each model's height, source time and ready flag
+- `data_ready`, `transaction_ready`, and current inventory authority
 
-Many more read endpoints exist in the Symfony controllers than are wrapped in
-`GuildAPI.js`. If something you need is missing from the JS client, check the PHP side
-before concluding it isn't available.
+`validateReadSnapshot` checks the response's actual chain, protocol, epoch, heights
+and required models. `validateSigningSnapshot` also requires transaction readiness.
+A complete read can be useful while the writer catches up; it is not necessarily
+ready for signing. Spendable-funds display currently uses the stricter signing-ready
+inventory check. API tip evidence is cached; native preflight still reads the chain.
 
----
+For this deployment the chain is `structstestnet-111`, activation height `3353000`.
+The post-activation inventory authority is `current-claims-v1`. Each required model
+must be explicitly named and ready at the response height. Missing model state is
+not zero and cannot be replaced by the general indexed cursor. The backend also
+requires contiguous v0.22 source coverage; an old writer merely advancing height
+cannot establish readiness.
 
-## Factories
+Keep metadata attached through factories, empty lists and caches. Never assign a
+fresh native height to an older SQL row. Native device/position reads deliberately
+carry their independent source identity.
 
-The convention is one factory per model in `src/js/factories/`, each with
-`make(obj)` and an inherited `parseList(list)`:
+## Vault funds and reactor positions
 
-```js
-// src/js/framework/AbstractFactory.js
-export class AbstractFactory {
-  make(obj) { throw new NotImplementedError(); }
-  parseList(list) { return list.map(this.make); }
-}
-```
+`GET /api/player/{id}` adds `vault_address`, exact `spendable_alpha_p` in ualpha,
+and `funds_meta` (`height`, `ready`, `source`, `provisioned`, `reason`). Unavailable
+funds are null; proved zero is `"0"`. Post-activation `alpha` is a display of vault
+funds, not total wealth across retained addresses or bonded stake. An unprovisioned
+vault can already hold transferred coins; provisioning alone does not determine zero.
 
-Beyond numeric coercion, factories are where nested structures get parsed —
-`PlayerFactory` builds `PfpClientRenderAttributes` from JSON, `StructFactory` runs
-`JSON.parse` on `defending_struct_ids`, `StructTypeFactory` on its ambit arrays.
+`GET /api/infusion/player/{id}` retains its aggregate display and supplies exact
+positions plus completeness metadata. Positions distinguish the vault from retained
+addresses and require current owner attribution. Withdrawal preparation consumes
+vault stake first, then eligible retained positions in deterministic order, in one
+atomic transaction. The snapshot and native query must agree at the selected height;
+an incomplete native page or unknown position cannot be treated as absent.
 
-**GRASS bypasses factories entirely.** Listeners take `messageData.value` and hand it
-straight to a setter. That is the root of the scale inconsistency above, and it is worth
-fixing on your own event path rather than reproducing.
+The generator snapshot endpoint reads stored fuel/applied power plus the selected
+source position. Preview changes only that selected position at the current rate;
+untouched historical or disabled positions keep their stored output. The address
+selector is a read filter, not permission to spend.
 
----
+### Refresh from committed state
+
+`AlphaRefreshManager` owns one cancellable stream per player/signing account. Inventory,
+infusion and related notifications invalidate it; notification values are never
+added to or subtracted from the balance. It coalesces bursts, fetches through the
+requested event/inclusion height, and rejects stale or conflicting snapshots.
+
+Successful committed transactions request refresh through their inclusion height.
+Focus, online, pageshow, GRASS reconnect and a 30-second visible-page poll cover lost
+notifications. Failed reads back off while preserving uncertainty. Account changes,
+logout or replaced sessions cancel the old stream. Funds metadata remains separate
+from the rest of a player row so a newer balance cannot certify stale unrelated data.
+
+## Catalogs and work
+
+`getStructTypes()` performs a fresh, consistent catalog read and shares only concurrent
+requests. It does not trust the old metadata-free 24-hour cache. `GameState` validates
+complete unique IDs and exact difficulty inputs, refuses older or conflicting
+same-height catalogs, and keeps existing type-object references when updating data.
+
+`getWorkByPlayerId()` requires a ready `work` projection, validates owner/object
+identity, and retains metadata on every item and on the list, including an empty
+list. Only a complete accepted snapshot may stop work that is no longer present.
+
+`WorkRefreshManager` refreshes catalog and scoped outstanding work on reconnect,
+resume, protocol boundary changes and a 60-second visible-page poll. Existing workers
+must adopt the current rule/catalog epoch while retaining the chain's original start
+anchor. See [work-and-pow.md](work-and-pow.md#restoring-after-a-reload).
+
+## GameState
+
+A mutable `GameState` remains shared by managers, listeners and view models.
+Observation uses window CustomEvents. Exact snapshots coexist with the established
+UI events and display models; no global state-management rewrite is required.
+
+### What persists
+
+`gameState` localStorage keeps wallet material, player ID, saved/last-action heights,
+charge display, transfer amount and active map. Player/fleet/struct/planet/catalog
+objects are refetched. Router position, some bounded display caches and scoped
+pending device keys are separate. Transaction snapshots/journals preserve public
+signed evidence independently of private session state.
+
+`TransactionJournal.clearSession()` publishes a cross-tab boundary before clearing
+private state. Late wallet derivation, GameState saves and device-key writes honor
+that boundary. Tutorial sessions disable persistence, background authority/refresh
+work and native signing; returning restores the saved real account.
+
+### Session authority
+
+`SessionAuthorityManager` checks current native address ownership at login/resume,
+reconnect and on a visible-page poll. A revocation notification prompts that read;
+it does not itself erase the key. Stale/malformed/unavailable responses cannot prove
+revocation. A newer confirmed change of owner ends the session and stops workers.
 
 ## Bootstrap order
 
-```
-gameState.load()                    // restore localStorage, rebuild wallet from mnemonic
-  ↓
-guildAPI.getSettings()              // chain params
-guildAPI.getThisGuild()             // guild identity
-  ↓
-authManager.login(playerId)         // player, structs, fleet, planet, struct types
-  ↓  registers GRASS listeners
-  ↓  initSigningClient() → restores the persisted signing queue
-  ↓  restoreTasksFromDB() → respawns proof-of-work from GET /api/work/player/{id}
-  ↓
-router.restore()                    // return to the last page
+```text
+restore local wallet/session and initial settings/guild identity
+  → signed API login, guarded against account/navigation changes
+  → register current-player GRASS listeners
+  → restore signing evidence and connect the bounded RPC client
+  → read player, confirmed action height, catalog, fleet and structs
+  → install validated state and start funds/authority refresh
+  → restore outstanding work and start catalog/work refresh
+  → restore the existing route
 ```
 
-The ordering matters. GRASS listeners must be registered before the client starts acting,
-and the signing queue must know the confirmed last-action height before it releases any
-charged transaction — otherwise it would compute charge against a default of `0` and
-conclude it had a full bar. See
-[actions-and-signing.md](actions-and-signing.md#charge-gating).
+The action lane remains gated until confirmed last-action state is loaded. API/RPC
+outages follow bounded recovery; a rejected login is distinct from an outage, and
+closing the session prevents late startup work from restoring it. The original
+[signing journal](actions-and-signing.md#persistence) remains authoritative across
+reload and account handoff.
 
-The current login/fleet flow also closes several partial-state gaps: a signup interrupted
-before planet assignment requests a planet on the next login; an active raid renders a
-loading card until the enemy player and planet arrive; the Alpha Base “Depart” action is
-hidden while the Command Ship is away; and fleet-index raid listeners replace and
-self-remove instead of accumulating across renders.
-
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/models/GameState.js`,
-`src/js/api/GuildAPI.js`, `src/js/framework/JsonAjaxer.js`, `src/js/factories/`,
-`src/js/managers/AuthManager.js`, `src/js/builders/PlanetCardBuilder.js`, and
-`src/js/view_models/fleet/FleetIndexViewModel.js`.*
+*Verified against webapp integration `5991ca95`: GameState, KeyPlayer, GuildAPI,
+JsonAjaxer, Player/Infusion/Work/GuildAPIResponse factories, AuthManager,
+AlphaRefreshManager, WorkRefreshManager, SessionAuthorityManager, PlayerFunds and
+ChainProtocol. Matching database/API evidence is required at deployment.*
 
 </document>
 
 <document>
 <source>develop/client/actions-and-signing.md</source>
 ---
-description: "How a client turns a click into a broadcast transaction: wallet, protobuf registry, the dual-lane queue, and charge gating."
+description: "Exact transaction intents, wallet proofs, native preparation, durable submissions, charge scheduling, and confirmed outcomes."
 ---
 
 # Actions and signing
 
-**Purpose**: How the reference client turns a click into a broadcast transaction —
-wallet, protobuf registry, the dual-lane queue, and charge gating.
-
-Everything that changes game state goes through here. It is also where the two failure
-modes that plague new clients live: `account sequence mismatch`, and acting before you
-have charge.
-
----
+The client saves an intent, prepares it against current indexed/native evidence,
+signs and verifies the exact transaction, journals it before sending, then reconciles
+its committed result. A timeout or CheckTx acceptance cannot establish success.
+This page describes webapp integration `5991ca95`; a client must deploy its matching
+API, schema, generated types and workers together.
 
 ## Wallet
 
-CosmJS, bech32 prefix `structs`, 12-word mnemonic from 16 bytes of entropy:
-
-```js
-// src/js/managers/WalletManager.js
-createMnemonic() {
-  const getNewRandom = Random.getBytes(16);
-  return Bip39.encode(getNewRandom).toString();
-}
-
-async createWallet(mnemonic) {
-  return await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: "structs" });
-}
-```
-
-No `hdPaths` is passed, so derivation falls back to the CosmJS default. If you need the
-exact path, read it off your installed version rather than assuming — this codebase does
-not state it.
-
-> **The mnemonic is stored unencrypted in `localStorage`.** Do not copy that. See
-> [SAFETY.md](../../SAFETY.md).
+`WalletManager` uses CosmJS `DirectSecp256k1HdWallet` with prefix `structs` and a
+12-word mnemonic generated from 16 random bytes. It supplies no custom `hdPaths`.
+The reference browser stores wallet material in localStorage; that storage is within
+the page's trust boundary. See [SAFETY.md](../../SAFETY.md) before adopting its custody
+model. Do not put private keys in API bodies, journals or diagnostics.
 
 ### Off-chain proof signatures
 
-Guild signup, login and address registration authenticate with a signature over a
-**plain concatenated string** — not an ADR-036 `SignDoc`. SHA-256 the UTF-8 bytes, sign
-the digest with secp256k1, return lowercase hex of the 64-byte fixed-length signature:
+SHA-256 the UTF-8 bytes of the exact string, sign with secp256k1, and hex-encode the
+raw 64-byte R followed by S signature. Public key is compressed 33-byte hex.
+These proofs are separate from protobuf transaction signing.
 
-```js
-async createSignatureForProxyMessage(message, privateKey) {
-  const encodedMessage = this.textEncoder.encode(message);
-  const digest = sha256(encodedMessage);
-  const rawSignature = await Secp256k1.createSignature(digest, privateKey);
-  return this.bytesToHex(rawSignature.toFixedLength());
-}
+| Use | Signed message |
+|---|---|
+| Guild proxy signup | `GUILD{guildId}ADDRESS{address}NONCE0` |
+| API login/token | `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unixTimestamp}` |
+| Address registration | Exact preimage below; the separator is one literal pipe |
+
+```text
+CHAIN{chainId}|REGISTERADDRESSPLAYER{playerId}ADDRESS{address}NONCE{proofNonce}
 ```
 
-The message formats are exact — get a character wrong and the server rejects it:
-
-| Use | Format |
-|---|---|
-| Guild signup | `GUILD{guildId}ADDRESS{address}NONCE{nonce}` |
-| Login | `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unixTimestamp}` |
-| Address register | `PLAYER{playerId}ADDRESS{address}` |
-
----
+Login timestamps are canonical decimal strings less than 600 seconds from server
+time in either direction. Registration reads the current native address nonce and
+requires the target to be unassociated. It also carries the issued activation UUID
+through the [device workflow](../../api/webapp/player-address.md). A new proof cannot
+replace an uncertain signed registration.
 
 ## Signing client and registry
 
-```js
-// src/js/managers/SigningClientManager.js
-this.registry = new Registry([...defaultRegistryTypes, ...msgTypes]);
+`SigningClientManager` combines CosmJS `defaultRegistryTypes` with generated
+`src/js/ts/structs.structs/registry.ts`. The generator pins structsd release
+`96cea3a322c406b46ca1feb880dc4497ebd9353f`, its Buf dependency lock and a separate tool
+lock. Generate/check through `npm --prefix src run proto:sync -- --source <checkout>`
+and `proto:check`, rather than hand-editing generated files.
 
-this.wsUrl = this.publicEndpoint
-    ? `wss://public.testnet.structs.network:26657`
-    : `ws://${window.location.hostname}:26657`;
+`forceLong=string` preserves 64-bit protobuf fields. `MessagePayload` validates the
+actual generated request schema before persistence and again on restore; unknown
+fields and already-rounded unsafe numbers are rejected. Keep integer and coin
+amounts as canonical decimal strings. LegacyDec protobuf strings encode scaled
+18-place integer atoms, while LCD JSON uses decimal text; the codec adapter handles
+that distinction without Number arithmetic.
 
-this.gameState.signingClient = await SigningStargateClient.connectWithSigner(
-  this.wsUrl, wallet, { registry: this.registry },
-);
+`creator` is injected from the transaction's fixed signing account when encoding.
+A source address, target device or spending owner is a subject, not an alternate
+signer. Vault addresses have no private keys. The queue checks account scope again
+before preparation and sending.
+
+### Protocol-aware intents
+
+| Intent | Preparation |
+|---|---|
+| Alpha transfer | Current native ownership/TokenTransfer and vault balance; selected player resolves to that player's vault, explicit address stays literal |
+| Reactor change | Same-height native/indexed complete positions; vault first, then eligible retained addresses deterministically |
+| Generator funding | Native target/type/owner/TokenInfuse, exact vault funds and current stored output |
+| Address registration | Target consent, current nonce/protocol, current signing key and requested grant |
+| Device change | Current ownership, nonce lifetime and appropriate permission ceiling; native permission-set/revoke |
+| Gameplay | Explicit allowlist for the 17 existing control messages, current signing owner/key bits, native simulation of target/charge/proof rules |
+
+Generated support for a message does not make every low-level builder a reviewed
+v0.22 action. A stale primary-address payload is not made vault-aware by new codecs.
+Generic queued messages without current-protocol preparation remain deferred.
+
+Reactor withdrawal creates one atomic transaction across at most 16 positions;
+it rejects an incomplete request rather than making a partial withdrawal. Native
+pagination and request/time budgets are bounded, every batch is simulated, and
+ineligible retained stake does not become a fabricated available balance. See
+[state-and-data.md](state-and-data.md) for exact read models.
+
+### Fees and exact signed preparation
+
+The legacy `FEE` fallback is zero `ualpha` with gas `500000`. Reviewed gameplay,
+registration/device, reactor and generator preparation explicitly use zero `ualpha`
+and the release free-gas ceiling `20000000`; transfer preparation retains the fallback.
+These are client limits, not proof that arbitrary state will fit or a gas-price rule
+for native Cosmos staking messages.
+
+`SigningSubmission.prepare` reads account number/sequence and authority at a pinned
+native height, checks the API contract and required projection evidence, then calls
+CosmJS `sign` with that explicit account/chain context. Installed CosmJS uses Number
+for account number/sequence and query heights; unsupported unsafe values are refused.
+
+The client decodes and checks the wallet's returned message bytes, order, memo,
+timeout, fee, mode, signer and signature against the intended transaction. It hashes
+the exact TxRaw bytes. Reviewed intents simulate those same signed bytes at the
+preparation height; simulation must fit the selected gas limit. Before sending,
+protocol and connection/account identity are rechecked. Simulation reserves nothing;
+only committed chain execution determines success.
+
+For the configured `structstestnet-111` transition at `3353000`, pre-activation
+transactions expire at `3352999`. Post-activation preparation uses the new protocol.
+Other networks require an explicit authoritative configuration.
+
+## The dual-lane queue
+
+`SigningQueueManager` keeps FIFO action and immediate lanes. It selects at most one
+new transaction per observed block per address. An eligible charged action has
+priority; a blocked action head permits immediate work, including proof completions.
+A pending uncertain submission blocks new sends in both lanes.
+
+### Sequence numbers and account ownership
+
+Same-origin tabs share a Web Lock keyed by chain and signing account. Inside that
+lock the queue reloads the per-intent journal before preparing or sending. A missing
+Web Locks implementation or failed durable storage prevents a new send; there is no
+unlocked fallback. Different origins/devices need their own account coordination.
+
+Account changes suspend and drain the old queue, persist its evidence under its own
+scope, cancel its observers and only then attach the new wallet. A save failure
+refuses the handoff. A sequence change elsewhere never proves an old transaction
+failed and never authorizes automatically signing its replacement.
+
+### Charge gating
+
+The browser's conservative scheduler/display convention is:
+
+```text
+projectedCharge(H) = H - (max(confirmedLastAction, scheduleAnchor) + 1)
 ```
 
-`msgTypes` comes from `src/js/ts/structs.structs/registry.ts` — roughly 330
-`[typeUrl, GeneratedType]` pairs covering messages, queries, events and domain objects.
-Type URLs are all of the form `/structs.structs.Msg…`:
+This client offset is separate from the chain's elapsed-block charge calculation.
+The action lane waits until its confirmed last-action source has loaded. A local
+optimistic drain affects only display. The anchor advances on a verified successful
+charged transaction's inclusion height and disappears when confirmed state catches
+up. When charge is short the head waits for another block.
 
-```ts
-["/structs.structs.MsgStructBuildInitiate", MsgStructBuildInitiate],
+### Persistence
+
+Queue snapshot version 3 uses `signingQueue:{wsUrl}:{address}`. Each intent also has
+an independent `signingJournal:{chainId}:{address}:{id}` record. The snapshot cannot
+erase signed evidence. Signed bytes/hash and the `prepared` record must be durably
+written before the separate `broadcasting` marker; only then can the network send
+run. Terminal history is bounded; unresolved records never expire.
+
+| Journal/state | Recovery meaning |
+|---|---|
+| queued / current-format preparing without send evidence | Demonstrably unsent; revalidate before trying |
+| prepared journal | Exact bytes saved, but no durable send marker; rebuild only this unsent intent |
+| broadcasting / accepted / unknown | May have reached the chain; retain bytes/hash and reconcile only |
+| succeeded | Matching committed code 0 |
+| dropped | Definitive rejection or failure before sending |
+| cancelled | Explicit cancellation of unsent work |
+
+The 30-minute age limit applies only to unsent intents. Legacy in-flight records,
+even without a usable hash, do not become fresh sends. Corrupt/unrecognized stores
+block signing and remain available for recovery. Logout clears private browser
+state and closes the unsigned session boundary while retaining public journals.
+
+### Retries and settlement
+
+There are no automatic signed-send retries. `broadcastTxSync` code 0 is admission,
+not completion. A valid CheckTx rejection can settle failure; an ambiguous transport
+failure cannot. `find` looks up the original hash and verifies exact bytes, hash,
+chain, block/commit identity, transaction index and execution code. A missing hash,
+RPC outage or local deadline leaves the result unknown. Bounded work rotates pending
+lookups so one unavailable hash does not starve the others.
+
+`whenSettled(id, signal)` resolves with the terminal transaction; check `status`.
+It remains pending for uncertainty. Aborting a view observer rejects only that
+observer, not the transaction. Persist the queue ID with the action/work so reload
+reattaches to the same operation. `SIGNING_TRANSACTION_SETTLED` notifies observers,
+including the authoritative Alpha refresh path.
+
+### Recovering a silently dead signing socket
+
+`OwnedRpcClient` owns the socket and bounds requests. Resume checks use fresh chain
+status, share one in-flight probe, respect connection/session epochs and do not
+replace the first startup connection. Visibility, focus, pageshow, online and
+watchdog paths can recover transport and reconcile journals. A dead socket does
+not become a failed payment.
+
+## End to end: building a struct
+
+```text
+Existing Deploy control
+  → capture gameplay intent and enqueue in the action lane
+Block / confirmed charge
+  → read API/native authority, sign, verify, simulate exact bytes
+  → journal prepared + send marker
+  → broadcast once and reconcile original hash
+Matching committed success
+  → observe indexed work with the original start anchor
+  → compute proof using the current catalog/rule epoch
+  → queue completion and retain its durable transaction ID
 ```
 
-**Fees are a single flat constant.** No simulation, no gas price, no adjustment:
+Pending visuals are not receipts. Refresh authoritative indexed state after inclusion
+and on notification loss/reconnect. The [work lifecycle](work-and-pow.md) keeps local
+worker completion distinct from successful native completion.
 
-```js
-// src/js/constants/Fee.js
-export const FEE = {
-  amount: [{ denom: "ualpha", amount: "0" }],
-  gas: "500000",
-};
-```
+## Error handling
 
-This differs from the CLI guidance in [AGENTS.md](../../AGENTS.md), which uses
-`--gas auto --gas-adjustment 1.5`. Both work; the webapp just picks a limit generous
-enough for every message it sends and stops thinking about it.
+Keep view, session and action lifetimes separate. Closing an offcanvas cancels its
+preview work, while the action observes its persisted transaction. Stale reads and
+notifications must not complete a different action or affect a new wallet session.
+
+The existing transfer flow returns a definitive failure to its confirmation screen
+with recipient/amount preserved. An unknown send stays protected against duplicates.
+Device and gameplay actions likewise require terminal evidence before reporting
+success; a successful self-revoke may clear local state without waiting for an API
+read that the revoked key can no longer authenticate.
 
 ### Desktop adds a native virtual-player signer
 
-The webapp queue above is still the primary-player action path, but current Structs
-Desktop has two additional virtual-player modes:
+The separately reviewed Desktop source has two additional virtual-player modes.
+Its baseline below does not certify compatibility with this webapp integration:
 
 - `sync` / `async` use the Rust ↔ webview bridge and CosmJS.
 - `native` / `native_async` sign in Rust and broadcast through LCD REST.
@@ -12792,786 +12896,346 @@ This is a custody change, not an MCP key-export feature: tool callers still requ
 signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
 inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
 
-`creator` is never stored in a queued payload — it is injected from the signing account
-at broadcast time, so a persisted queue cannot be replayed against the wrong account:
+*Webapp claims verified against integration `5991ca95`: WalletManager,
+SigningClientManager, SigningQueueManager, SigningSubmission, TransactionJournal,
+SigningTransaction, MessagePayload, protocol/fee constants and intent preparation.
+The checked release fixtures include exact signed bytes, simulation, native atomic
+rollback, reload/unknown outcomes and unchanged rendered controls.*
 
-```js
-// src/js/models/SigningTransaction.js
-toCosmosMsg(registry) {
-  const type = registry.lookupType(this.message.typeUrl);
-  if (!type) throw new Error(`Unknown typeUrl in registry: ${this.message.typeUrl}`);
-  return {
-    typeUrl: this.message.typeUrl,
-    value: type.fromPartial({ ...this.message.payload, creator: this.accountAddress }),
-  };
-}
-```
-
----
-
-## The dual-lane queue
-
-`SigningQueueManager` is the most transferable idea in the client. Two lanes and one
-in-flight slot:
-
-```js
-/** @type {SigningTransaction[]} Unordered lane; fired ASAP. */
-this.immediateQueue = [];
-/** @type {SigningTransaction[]} Ordered action lane; head gated lazily on charge. */
-this.actionQueue = [];
-/** @type {SigningTransaction|null} Tx currently being broadcast. */
-this.inFlight = null;
-```
-
-| Lane | Enqueue | For |
-|---|---|---|
-| Immediate | `enqueueImmediate(typeUrl, payload)` | Anything not charge-costed — notably proof-of-work completions |
-| Action | `enqueueAction(typeUrl, payload, chargeCost)` | Charged game actions, strictly FIFO |
-
-On every block, `transactOnBlock` picks at most one transaction:
-
-1. Return immediately if something is in flight, the signing client is missing, or a
-   transaction already went out at this height.
-2. If the action head exists, the confirmed last-action height is loaded, and projected
-   charge covers its cost → broadcast the action head.
-3. Otherwise, if the immediate queue is non-empty → broadcast its head.
-
-**A blocked action head does not block the immediate lane.** That is the whole point of
-the split: your mine completions keep flowing while a charged action waits for the bar to
-refill.
-
-### Sequence numbers: don't track them, just serialise
-
-The client never touches sequence numbers. It avoids `account sequence mismatch` with
-three mechanical guarantees:
-
-- an `inFlight` mutex, so at most one broadcast is outstanding;
-- a `lastBroadcastHeight` governor, so at most one transaction per block per address;
-- strict FIFO within each lane.
-
-CosmJS fetches and increments the sequence internally. Serialising submissions is enough.
-This is the same reasoning behind the CLI rule in [AGENTS.md](../../AGENTS.md) — one
-transaction at a time per account, roughly six seconds apart.
-
-### Recovering a silently dead signing socket
-
-A WebSocket can remain `OPEN` after a suspended tab while no longer carrying traffic.
-`SigningClientManager.resumeCheck()` probes with `getHeight()` (not the memoised
-`getChainId()`), gives it five seconds, and rebuilds the client only when recent GRASS
-blocks prove the wider network is alive. Concurrent checks collapse onto one promise;
-unforced checks are throttled to five minutes. Resume triggers (`visibilitychange`,
-BFCache `pageshow`, `online`, and `focus`) force the probe, while a periodic watchdog
-uses the throttle.
-
-Broadcast itself has a separate hard deadline. This prevents a dead transport from
-leaving `inFlight` set forever and wedging both lanes; the ordinary timeout-with-tx-hash
-path still polls for inclusion before declaring failure.
-
-### Charge gating
-
-Charge is elapsed blocks since your last charged action, with a `+1` offset:
-
-```js
-// src/js/util/ChargeCalculator.js
-calcCharge(currentBlockHeight, lastActionBlockHeight) {
-  return currentBlockHeight - (lastActionBlockHeight + 1);
-}
-```
-
-The queue projects the same value against a walking base:
-
-```js
-projectedChargeAt(blockHeight) {
-  return blockHeight - (this.getWalkingBase() + 1);
-}
-```
-
-Three distinct heights are in play, and conflating them is a real bug:
-
-| Value | Source | Used for |
-|---|---|---|
-| `confirmedLastActionBlockHeight` | GRASS `lastAction`, or REST at login | **The scheduler.** The only trustworthy base |
-| `scheduleAnchorHeight` | Inclusion height of the last charged tx this client sent | Advancing the base between confirmations |
-| `lastActionBlockHeight` (optimistic) | Set locally the moment you enqueue | **Display only** — the charge bar |
-
-The walking base is `max(confirmed, anchor)`. The optimistic value drains the bar in the
-UI immediately so the interface feels responsive, and deliberately never reaches the
-scheduler — otherwise a dropped transaction would leave the client believing it had spent
-charge it still has.
-
-> **Hold the action lane until the confirmed height has loaded.** The base defaults to
-> `0`, which projects as effectively infinite charge, and the client would empty its
-> entire queue into one block. The reference client checks `isConfirmedActionLoaded()`
-> before releasing anything.
-
-When charge is short, the head simply stays put and is re-evaluated next block. Nothing
-is dropped and nothing is retried.
-
-### Persistence
-
-The queue survives a reload. Key is `signingQueue:{wsUrl}:{address}`, so switching
-account or network cannot cross-contaminate. Snapshots older than 30 minutes, or corrupt
-JSON, are moved aside to `{key}.corrupt` rather than being parsed. An in-flight
-transaction found at startup has its attempt count incremented and is re-queued or
-dropped, because the client cannot know whether it landed.
-
-Payloads are validated as JSON-safe at enqueue (`assertSerializable`), which is why
-`BigInt` throws — stringify before enqueueing.
-
-### Retries
-
-```js
-// src/js/constants/SigningQueueConstants.js
-DEFAULT_RETRY_LIMIT: 0,           // 0 retries => 1 attempt (no retries for now)
-MAX_QUEUE_AGE_MS: 30 * 60 * 1000,
-TIMEOUT_POLL_BLOCKS: 5,
-```
-
-One attempt by default, with no backoff — a retry, if enabled, goes to the **tail** of
-its lane and waits for the next eligible block. The one special case is a CosmJS
-`TimeoutError` carrying a `txId`, where the client polls `getTx` for five blocks before
-concluding failure, since a timeout is not the same as a rejection.
-
----
-
-## End to end: building a struct
-
-```
-DeployOffcanvas                 user releases on a deployable struct
-  → SigningClientManager.queueMsgStructBuildInitiate(playerId, typeId, ambit, slot, cost)
-      maps the ambit name to its enum index
-      → SigningQueueManager.enqueueAction('/structs.structs.MsgStructBuildInitiate', …)
-          → SigningTransaction.create → append to action lane → persist
-  ← UI updates optimistically right away (offcanvas closes, pending build appears)
-
-BlockListener (GRASS)           every block
-  → gameState.setCurrentBlockHeight → BLOCK_HEIGHT_CHANGED
-      → SigningQueueManager.transactOnBlock
-          charge gate passes → toCosmosMsg → signAndBroadcast(address, [msg], FEE)
-          on code 0 → advance scheduleAnchorHeight → settle → persist
-
-StructListener (GRASS)          chain emits struct_block_build_start
-  → refreshStruct, and spawn the BUILD proof-of-work task
-StructListener                  chain emits struct_status = BUILT
-  → clear the pending build, render the struct
-```
-
-Note where the UI updates: **immediately on enqueue, not on confirmation**. That is a
-deliberate responsiveness choice, and it is only safe because GRASS will correct the
-display when the real event arrives.
-
----
-
-## Error handling, and its gap
-
-`whenSettled(id)` resolves — it never rejects — with the transaction object. **Callers
-must check `status` themselves.**
-
-| Failure | Handling | Reaches the user? |
-|---|---|---|
-| Unknown type URL | failure handler | no, `console.warn` |
-| `signAndBroadcast` throws | failure handler (timeout polled first) | no |
-| Broadcast `code !== 0` | treated as failure | no |
-| Signer address mismatch | held, restored to lane head | no, `console.warn` |
-| Retries exhausted | status `DROPPED`, settled | no |
-
-```js
-#handleBroadcastFailure(tx, err) {
-  console.warn('Sign and Broadcast Error:', err);
-  tx.attempts++;
-  tx.error = String(err);
-  if (this.canRetry(tx)) {
-    this.appendToLane(tx);
-  } else {
-    tx.status = TX_STATUS.DROPPED;
-    this.settle(tx);
-    this.persist();
-  }
-}
-```
-
-A `SIGNING_TRANSACTION_SETTLED` event is dispatched on every terminal state — and
-**nothing in the codebase listens to it**. Most call sites are fire-and-forget: the
-deploy flow calls `.then()` with no handler and never inspects the status. So a dropped
-build transaction leaves an optimistic pending-build in the UI with no error shown.
-
-The auth flow is the one place it is done properly:
-
-```js
-if (registerTx.status === TX_STATUS.SUCCEEDED) { … }
-```
-
-**Do it the auth flow's way.** The queue already gives you the event and the status; the
-only missing piece is a listener that turns a `DROPPED` transaction into something the
-operator can see. That is a handful of lines, and it is the difference between an agent
-that knows its action failed and one that reports success it never achieved — see
-[AGENTS.md](../../AGENTS.md) rule 3, verify after acting.
-
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/managers/WalletManager.js`,
-`SigningClientManager.js`, `SigningQueueManager.js`, `src/js/models/SigningTransaction.js`.*
-
-*Desktop integration verified against structs-desktop
+*Desktop integration retains its separate verification against
 `3f04437d5606d6736df41301bb980893129a7912`: `mcp/native_signer.rs`,
-`vplayer_bridge.rs`, `tx_gate.rs`, `tx_retry.rs`, and `tools/system.rs`.*
+`vplayer_bridge.rs`, `tx_gate.rs`, `tx_retry.rs`, and `tools/system.rs`. No new Desktop
+compatibility or deployment claim is made here.*
 
 </document>
 
 <document>
 <source>develop/client/work-and-pow.md</source>
 ---
-description: How a client computes the SHA-256 proofs that mining, refining, building and raiding require, and why difficulty decay rewards waiting.
+description: "Exact proof difficulty, observed-height workers, original anchors, current work snapshots, and durable completion transactions."
 ---
 
 # Work and proof-of-work
 
-**Purpose**: How a client computes the SHA-256 proofs that mining, refining, building and
-raiding require — and why the reference client spends most of its time deliberately idle.
-
-For the protocol itself — what the chain validates, the decay maths, the CLI path — see
-[knowledge/mechanics/hashing.md](../../knowledge/mechanics/hashing.md). This page is the
-client implementation.
-
----
+The browser hashes current authoritative work with its original chain anchor.
+Finding a hash and confirming its completion transaction are separate lifecycles.
+This page describes integration `5991ca95`; protocol rules come from structsd release
+`96cea3a`. See [hashing](../../knowledge/mechanics/hashing.md) for the CLI/mechanics.
 
 ## The hash
 
-Single-pass SHA-256 over an ASCII string, hex digest, checked for leading zeros. The
-webapp uses `js-sha256` rather than `SubtleCrypto`, because the loop needs to be
-synchronous and run millions of times.
+Use one SHA-256 pass over the exact UTF-8 input and a lowercase hex digest:
 
-**Input format** — concatenation, no separators except the raid target delimiter:
-
-```
-{objectId}{TASK_TYPE}{blockStart}NONCE{nonce}          build, mine, refine
-{fleetId}@{planetId}RAID{blockStart}NONCE{nonce}       raid
+```text
+{structId}{BUILD|MINE|REFINE}{originalBlockStart}NONCE{nonce}
+{fleetId}@{planetId}RAID{originalBlockStart}NONCE{nonce}
 ```
 
-Built as a prefix once, then completed per attempt:
+The braces and choice bars are notation, not bytes. There are no other separators.
+`TaskStateFactory` preserves exact start/difficulty strings and builds the prefix;
+postfix is empty. Examples for nonce `42` are `5-1BUILD3352900NONCE42`,
+`5-2MINE3352900NONCE42`, `5-3REFINE3352900NONCE42` and
+`9-1@2-10RAID3352900NONCE42`.
 
-```js
-// src/js/factories/TaskStateFactory.js
-task_state.prefix = task_state.object_id + task_state.task_type
-                  + task_state.block_start + TASK.NONCE_PREFIX;
-
-// src/js/models/TaskState.js
-getMessage(nonce) { return this.prefix + nonce + this.postfix; }
-```
-
-`postfix` is always empty. `TASK.IDENTITY_PREFIX` exists in the constants and is never
-used — dead code, not a protocol feature.
-
-Worked examples:
-
-| Type | Full input for nonce `42` |
-|---|---|
-| Build | `5-1BUILD1283900NONCE42` |
-| Mine | `14-5MINE1283900NONCE42` |
-| Refine | `15-5REFINE1290000NONCE42` |
-| Raid | `4-5@6-10RAID1300000NONCE42` |
-
-**Difficulty is a count of leading hex zeros**, not a target integer:
-
-```js
-// src/js/workers/TaskWorker.js
-function difficultyCheck(hash, difficulty) {
-    for (let position = 1; position <= difficulty; position++) {
-        if (hash[position - 1] !== "0") {
-            return false;
-        }
-    }
-    return true;
-}
-```
-
-This matches `HashBuildAndCheckDifficulty` in the chain's `x/structs/types/work.go`
-exactly, which is what makes any conformant client interoperable.
-
-**Nonces start at a random point**, unlike the CLI which starts at 1:
-
-```js
-this.nonce_start = Math.floor(Math.random() * 10000000000);
-this.nonce_current = this.nonce_start;
-```
-
-Any nonce is valid, so this is purely a choice. It does mean two clients working the same
-task will not duplicate each other's effort.
-
----
+`js-sha256` runs in a dedicated worker. Nonces begin at a random offset; workers do
+not partition ranges. A digest's leading zero count is checked against the required
+number of hexadecimal zeroes. Before submission, recompute the hash from the expected
+identity/prefix and nonce, not a worker's claimed result alone.
 
 ## Difficulty decays, so waiting is cheaper than working
 
-```js
-// src/js/models/TaskState.js
-getCurrentDifficulty(){
-  const age = this.getCurrentAgeEstimate();
-  if (age <= 1) {
-    return 64;
-  }
-  let difficulty = 64 - Math.floor(Math.log10(age) / Math.log10(this.difficulty_target) * 63);
-  return Math.max(1, difficulty)
-}
+For observed age `a` and difficulty range `r`, v0.22 uses integer arithmetic:
+
+```text
+if a <= 1 or r <= 1: difficulty = 64
+otherwise: difficulty = 64 - max{k in [0,63] : r^k <= a^63}
 ```
 
-`age` is blocks since the on-chain anchor. `difficulty_target` is the per-operation range
-(`build_difficulty`, `ore_mining_difficulty`, `ore_refining_difficulty`, or the planet's
-`planetary_shield` for raids). At `age <= 1` difficulty is 64, which is unreachable in
-practice; it falls to 1 once age reaches the range.
+`integerWorkDifficulty` uses BigInt and at most 63 products, matching the release's
+`CalculateDifficulty`. Do not use floating logarithms for eligibility: a boundary
+rounding difference can change the required leading-zero count.
 
-**The client estimates age from the wall clock**, not by querying each iteration:
+`workDifficultyAtHeight` chooses the configured rule using an observed chain height.
+It refuses a zero anchor or a height before the anchor. The scheduled testnet boundary
+is `3353000`; a task started before it keeps that same original start height while
+adopting current difficulty rules and current type data. Resetting the anchor to the
+upgrade height creates a different proof input.
 
-```js
-getCurrentAgeEstimate() {
-  const current_time = new Date();
-  const estimated_blocks_past = Math.floor((current_time - this.block_checkpoint_time) / TASK.ESTIMATED_BLOCK_TIME);
-  this.block_current_estimated = Math.floor(this.block_checkpoint + estimated_blocks_past);
-  return this.block_current_estimated - this.block_start;
-}
-```
-
-At 6,000ms per block, anchored to a checkpoint refreshed from real block height. It can
-drift, which is exactly why the result is re-checked before submission.
+The wall-clock estimate (nominal six-second blocks) is for progress/ETA only. It cannot
+wake a waiting worker or make its proof eligible. Block/rule messages supply the
+checkpoint used by `getCurrentDifficulty()`.
 
 ### The idle policy
 
-The worker refuses to start while difficulty is above 10, polling every ten seconds:
-
-```js
-if (state.status === TASK_STATUS.WAITING){
-    while (difficulty > TASK.DIFFICULTY_START) {   // DIFFICULTY_START = 10
-        await new Promise(r => setTimeout(r, TASK.DIFFICULTY_START_SLEEP_DELAY));
-        difficulty = state.getCurrentDifficulty();
-    }
-    state.setStatus(TASK_STATUS.RUNNING);
-    postMessage([state]);
-}
-```
-
-This is a **policy choice, not a protocol rule** — and it is a different choice from the
-`-D 3` this documentation recommends for the CLI. Difficulty 10 is 10 leading hex zeros,
-around 2^40 expected attempts; difficulty 3 is around 4,096. The webapp starts hashing
-far earlier than the CLI would and burns considerably more CPU for it.
-
-For an agent, `-D 3` remains the right default: initiate early, come back later, hash for
-milliseconds. `forceRun(pid)` is the escape hatch if you ever need a proof now regardless
-of cost.
-
----
+The browser waits until difficulty is at most 10, unless explicitly forced. That is
+a CPU policy, not a chain requirement: ten leading hex zeroes take roughly 2^40
+attempts in expectation. The CLI guidance uses `-D 3` for lower compute cost. Neither
+setting changes native verification.
 
 ## The worker loop
 
-```js
-let sessionIterations = 1;
-while (true) {
-    const nonce = state.getNextNonce();
-    const message = state.getMessage(nonce);
-    const hash = sha256(message);
+The worker hashes at most 4096 candidates per batch, yields to process messages,
+and schedules another batch. This bounds how long a height/rule/cancellation update
+waits behind hashing. It publishes progress every five million iterations and on
+important state changes. A previously found candidate is reusable only if its hash
+still satisfies the current observed-height rule.
 
-    if (difficultyCheck(hash, difficulty)){
-        state.setResult(nonce, message, hash, difficulty);
-        postMessage([state]);
-        break;
-    }
+`TaskProcess` and `TaskWorker` exchange `version: "work-v022-1"`, a monotonically
+increasing revision, and `start`/`update` messages. A wrong-version reply fails the
+worker; no handshake within ten seconds does too. Replies from replaced workers or
+older revisions cannot replace current task state or submit a proof.
 
-    if (state.iterations % TASK.CHECKPOINT_COMMIT === 0) {
-        state.iterations_since_last_start = sessionIterations;
-        postMessage([state]);
-    }
+### Same object, new rules
 
-    if (state.iterations % TASK.DIFFICULTY_RECALCULATE === 0) {
-        difficulty = state.getCurrentDifficulty();
+The process ID is the object ID, so process existence alone does not establish that
+its work is current. Full identity includes object, category, raid target, original
+anchor and prefix. When only rules or observed height change, update the same worker
+and preserve its searched nonces/candidate. Reject older rule snapshots. When the
+work identity changes, replace the worker; a late reply from the old one is ignored.
 
-        // Check to see if a previous hash result is now relevant again
-        if (state.result_exists && state.result_difficulty >= difficulty) {
-            state.setPreviousResult(difficulty);
-            postMessage([state]);
-            break;
-        }
-    }
-    sessionIterations++;
-}
-```
+The manager caps active processes at five and starts after the existing eight-second
+startup delay. These controls and progress displays remain unchanged.
 
-Every five million iterations it reports progress and recomputes difficulty. That second
-job enables a neat trick: if you previously found a hash at difficulty 12, and decay has
-since brought the requirement down to 12 or below, that old hash is **now good enough**
-and the task completes without hashing again.
+### Ore clocks and raids
 
-### Orchestration
+Mining/refining anchors belong to the planet. Each eligible extractor/refinery gets
+its own struct-bound proof using the shared anchor. Native-chain notifications prompt
+a fresh scoped work read; their unversioned values do not replace the API anchor.
+A complete accepted snapshot determines which structs still have work.
 
-One `Worker` per task, capped at five concurrent (`MAX_CONCURRENT_PROCESSES`); the rest
-queue. There is **no nonce-range partitioning** — each worker picks its own random start
-and never coordinates. Progress arrives on the main thread as periodic state snapshots,
-so the UI stays responsive even with five workers saturating cores.
-
-Cancellation is explicit. In chain 0.21, mine and refine `block_start` clocks belong
-to the **planet**, so every eligible extractor or refinery of one type shares that
-clock. GRASS supplies the planet clock; the manager fetches `view.work` to discover the
-structs it currently covers, starts/replaces only tasks whose clock changed, and stops a
-task that disappeared from work even if the shared clock remains non-zero.
-
-An incoming raid stops all local mine/refine hashing because those proofs cannot be
-redeemed while a raider is present. If the chain publishes shifted clocks before the
-client has finished processing the raid result, they are held and reconciled after the
-raid ends. A zero clock terminates that task type. Raid proof tasks are killed when the
-raid ends or the target's shields come back up.
-
----
+An incoming raid stops local mine/refine hashing. The manager reconciles after the
+raid using current clocks/work; it does not reassign a new start height based on the
+browser's receive time. Raid completion work also depends on the target's shield
+state. A work removal can discard a local candidate, but never its signed journal.
 
 ## Restoring after a reload
 
-**Proof-of-work progress is not persisted.** Nonce position, iteration counts and partial
-results are all lost on reload. But the *tasks* survive, because they are reconstructed
-from the server:
+`GET /api/work/player/{id}` supplies the ready `work` projection and coherent source
+metadata. `WorkFactory` validates owner, category, object/raid-target identity and
+exact uint64 anchor/difficulty strings. Empty complete snapshots retain metadata and
+can authorize removals; a failed or incomplete read cannot.
 
-```js
-async restoreTasksFromDB() {
-  if (Object.keys(this.processes).length || this.running_queue.length || this.waiting_queue.length) {
-    return;
-  }
-  const work = await this.guildAPI.getWorkByPlayerId(this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].id);
-  work.forEach((workTask) => {
-    const task = this.taskStateFactory.initTaskFromWork(workTask);
-    this.spawn(task);
-  });
-}
-```
+Partial hashing progress is not durably saved, so an unsent search restarts. A queued
+or signed completion is different: `WorkSubmission` matches its expected object,
+category, raid target and original anchor through the actual proof hash. For a signed
+submission it decodes the durable bytes, which outrank a mutable saved payload.
+Reattach the observer to that queue ID instead of generating another completion.
 
-`GET /api/work/player/{id}` reads the guild stack's `view.work`, which derives outstanding
-work from chain state. Losing nonce progress costs nothing in expectation — every attempt
-is independent, so a restarted search has exactly the same expected remaining work as one
-that had been running for an hour.
-
-The lesson for your own client: **the chain already knows what work you owe**. You do not
-need to persist a task list, only to ask.
-
----
+`WorkRefreshManager` periodically refreshes catalog and work, including reconnect,
+resume and activation boundaries. Older/conflicting snapshots and responses for a
+replaced player/session are refused. Existing type-object references update in place
+so open controls see the new catalog without a new UI.
 
 ## Completion
 
-Before submitting, the client re-checks the proof against current difficulty:
-
-```js
-checkResultHashDifficulty() {
-  return this.result_difficulty >= this.getCurrentDifficulty();
-}
-```
-
-Because age is estimated from the wall clock, a proof found near a difficulty boundary can
-be stale by the time it surfaces. If it is, the task **respawns** rather than submitting a
-transaction that would fail on-chain. Worth copying.
-
-Valid proofs go out on the **immediate lane** — no charge cost:
-
-| Task | Message | Payload |
+| Work | Native message | Fields after creator injection |
 |---|---|---|
-| Build | `/structs.structs.MsgStructBuildComplete` | `{ structId, proof, nonce }` |
-| Mine | `/structs.structs.MsgStructOreMinerComplete` | `{ structId, proof, nonce }` |
-| Refine | `/structs.structs.MsgStructOreRefineryComplete` | `{ structId, proof, nonce }` |
-| Raid | `/structs.structs.MsgPlanetRaidComplete` | `{ fleetId, proof, nonce }` |
+| Build | `MsgStructBuildComplete` | `structId`, `proof`, `nonce` |
+| Mine | `MsgStructOreMinerComplete` | `structId`, `proof`, `nonce` |
+| Refine | `MsgStructOreRefineryComplete` | `structId`, `proof`, `nonce` |
+| Raid | `MsgPlanetRaidComplete` | `fleetId`, `proof`, `nonce` |
 
-`proof` is the hex digest, `nonce` the winning integer. The raid message carries only the
-fleet ID — the chain reconstructs the planet from fleet position, so a mismatch there is
-not something you can paper over client-side.
+Proof and nonce are strings. Raid target remains bound by the proof input and current
+fleet state even though the completion message carries no separate target field.
+These reviewed gameplay intents use the immediate queue lane and exact signed
+simulation before sending.
 
----
+A successful committed completion suppresses hashing of the same stale work. An
+unknown send only reconciles its original transaction. A definitive failure permits
+another automatic hashing attempt only after a newer complete work snapshot. If
+storage or queue pressure prevents enqueueing, the unsent completed candidate remains
+in memory for a later block; it is not silently reported as submitted.
 
-## Task lifecycle
+The view's observer can be cancelled without cancelling a send. Logout stops workers,
+clears observers and closes the session boundary while retaining signed transaction
+evidence. Tutorial work remains simulated and cannot enter the native queue.
 
-```
-INITIATED → STARTING → WAITING → RUNNING → COMPLETED
-                          ↑         ↓
-                        PAUSED ←────┘        (capacity, or manager offline)
-              any state → TERMINATED         (kill, sweep, cycle cleared)
-              COMPLETED → STARTING           (proof went stale, respawn)
-```
+## Deployment and verification
 
-Tasks are spawned by GRASS events rather than by the code that requested the action:
-`struct_block_build_start`, `struct_block_ore_mine_start`,
-`struct_block_ore_refine_start`, and a shield-vulnerable raid status. The chain tells you
-when there is work; you do not assume it from your own transaction.
+Production HTML selects the fingerprinted application bundle through its asset
+manifest; that bundle references its fingerprinted worker chunk. Deploy matching
+assets together and retain needed old hashed assets for already-open pages. The
+version/revision handshake prevents an incompatible worker from submitting results;
+a reload alone is not proof that all tabs adopted the new application.
 
-The manager itself starts `OFFLINE` and comes online eight seconds after page load, which
-keeps five hashing workers from competing with initial render.
+The source suites cover exact integer boundaries, same-process rule changes, old
+worker replies, original anchors, stale work, unknown/failed/committed submissions,
+and logout. Native release fixtures and rendered isolated build/tutorial checks are
+separate evidence. Keep those distinctions when reporting client acceptance.
 
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/workers/TaskWorker.js`,
-`src/js/managers/TaskManager.js`, `src/js/models/TaskState.js`,
-`src/js/factories/TaskStateFactory.js`. Cross-checked against
-`structsd/x/structs/types/work.go`.*
+*Verified against webapp `5991ca95`: TaskManager, TaskProcess, TaskState,
+TaskStateFactory, TaskWorker, WorkFactory, WorkDifficulty, WorkSubmission,
+WorkRefreshManager and TaskConstants. Integer eligibility cross-checked directly
+against release `x/structs/types/work.go`; no chain checkout was modified.*
 
 </document>
 
 <document>
 <source>develop/client/realtime-grass.md</source>
 ---
-description: "How a client consumes the live event stream: the NATS connection, the listener contract, all 26 listeners, and what the stream won't do."
+description: "GRASS connection recovery, committed-state invalidation, exact combat hydration, listener scope, and notification limits."
 ---
 
 # Real-time events with GRASS
 
-**Purpose**: How the reference client consumes the live event stream — connection,
-the listener contract, the full listener catalogue, and what the stream will not do
-for you.
-
-For the event schema and subject taxonomy from the server side, see the
-[structs-streaming skill](/skills/structs-streaming/SKILL.html) and
-[api/streaming/event-types.md](../../api/streaming/event-types.md). This page is how a
-client wires it up.
-
----
+GRASS transports committed database notifications through NATS. Use them to request
+current state and drive captured activity; they are not a durable transaction receipt
+or a complete balance history. The reference browser keeps its existing UI while
+refresh managers reconcile funds, work and signing authority.
 
 ## Connection
 
-NATS over WebSocket via `@nats-io/nats-core` 3.0.0, using `wsconnect`:
+`GrassManager` uses `@nats-io/nats-core` `wsconnect`. The stock browser constructs two
+managers at `ws://{hostname}:1443`, without NATS credentials:
 
-```js
-this.nc = await natsCore.wsconnect({
-  servers: this.grassServerUrl,
-  maxReconnectAttempts: -1, // never give up on transient drops
-  reconnectTimeWait: 2000,
-  waitOnFirstConnect: true,
-});
-```
-
-The client runs **two managers**, both against `ws://{hostname}:1443`:
-
-| Manager | NATS subject | Listeners |
+| Manager | Subscription | Purpose |
 |---|---|---|
-| `grassManager` | `structs.>` | all 25 game listeners |
-| `blockGrassManager` | `consensus` | `BlockListener` only |
+| `grassManager` | `structs.>` | Game and device notifications |
+| `blockGrassManager` | `consensus` | Observed block clock |
 
-**No authentication is sent.** No token, no credentials. The scheme is `ws://`, not
-`wss://` — production TLS, if any, is handled by a reverse proxy outside this code.
+Other clients discover the advertised guild service and its auth/TLS requirements;
+do not infer a public host's current availability or rewrite its URL scheme.
 
-### Reconnection is doubly defended
+NATS retries transient disconnections indefinitely with a two-second reconnect wait.
+The outer supervisor handles closed/failed streams with backoff from one to thirty
+seconds. Listener registrations survive reconnect. Resume/watchdog checks use the
+shared consensus clock to detect a stale connection and avoid duplicate reconnects.
+A quiet game subject alone does not mean the connection is dead.
 
-The NATS client retries forever on its own, and an outer supervisor loop catches anything
-that escapes it, with exponential backoff from 1s to a 30s ceiling:
-
-```js
-while (this.running) {
-  try {
-    this.nc = await natsCore.wsconnect({ … });
-    this.backoffMs = 1000;                       // reset on a good connect
-    this.subscription = this.nc.subscribe(this.subject);
-    for await (const message of this.subscription) { /* decode, fan out */ }
-  } catch (e) {
-    console.warn('[GrassManager] connection error:', this.subject, e);
-  }
-  await this.nc?.close();
-  if (!this.running) break;
-  await new Promise((resolve) => setTimeout(resolve, this.backoffMs));
-  this.backoffMs = Math.min(this.backoffMs * 2, this.backoffMax);
-}
-```
-
-Registered listeners live in a `Map` that persists across reconnects, so nothing needs
-re-registering. Malformed JSON is skipped; a listener that throws is caught and logged
-without killing the loop.
-
-> **Connection state still never reaches the UI.** Drops and forced reconnects are
-> `console.warn` only. The transport now self-heals, but an operator still cannot tell
-> whether the displayed state is live; operational clients should expose that state.
-
-`reconnect()` deliberately closes the current connection so the supervisor rebuilds it.
-`resumeCheck()` does so only when the shared block clock has been stale long enough, with
-a guard against duplicate focus/visibility triggers. Both GRASS managers run this check
-on tab resume, browser online/focus, and a periodic watchdog.
-
----
+Initial connection and NATS reconnect status dispatch `GRASS_CONNECTED`. Funds,
+work and authority refresh managers use that signal for fresh reads. No new status
+screen is implied. Core NATS does not backfill the gap merely because a socket
+reconnected.
 
 ## One subscription, client-side filtering
 
-This is the architectural decision to understand: **there is one NATS subscription per
-manager, and every listener sees every message.** Listeners do not subscribe to subjects.
-They filter, in JavaScript, on fields in the decoded payload.
+Each manager has one NATS subscription. `GrassManager` decodes JSON, requires envelope
+`subject` and `category`, then fans out to registered listeners. Listeners filter
+scope/category themselves. Use narrower subjects for a custom client that does not
+need the reference browser's broad subscription.
 
-```js
-getMessageData(message) {
-  return message.json();
-}
+Representative reviewed paths:
 
-shouldIgnoreMessage(messageData) {
-  return !messageData.hasOwnProperty('subject')
-    || !messageData.hasOwnProperty('category');
-}
-```
-
-Messages are JSON with `subject` and `category` as required envelope fields; anything
-missing either is dropped before listeners run.
-
-Subject strings inside the payload follow these shapes:
-
-| Pattern | Carries |
+| Subject | Meaning |
 |---|---|
-| `consensus` | block height |
-| `structs.player.{guildId}.{playerId}` | player consensus, address approve/revoke |
-| `structs.grid.player.{playerId}.{playerId}` | alpha, load, capacity, ore, lastAction |
-| `structs.grid.substation.{substationId}` | connection capacity |
-| `structs.grid.struct.{structId}.{playerId}` | struct fuel |
-| `structs.planet.{planetId}.{playerId}` | structs, combat, raids, shields, fleet, mining |
-| `structs.inventory.ualpha.{guildId}.{playerId}` | alpha sent / received / refined |
-| `structs.inventory.ualpha.infused.{guildId}.{playerId}` | infusion |
-| `structs.inventory.ualpha.defusing.{guildId}.{playerId}` | defusion |
-| `structs.address.register.{activationCode}` | pending device registration |
+| `consensus` | Block notifications, independent of activity hydration |
+| `structs.player.{guild_id}.{player_id}` | Player and indexed address updates |
+| `structs.planet.{planet_id}.{player_id}` | Struct/combat/fleet/raid activity |
+| `structs.grid.{object_type}.{object_id}.{player_id}` | Grid attribute notification |
+| `structs.inventory.{denom}.{guild_id}.{player_id}.{address}` | Ledger invalidation with canonical owner metadata |
+| `structs.grid.player.{owner_id}` | Player infusion invalidation |
+| `structs.grid.guild.{owner_id}` | Guild infusion invalidation |
+| `structs.address.register.{code}` | Pending consent for an existing player's new device |
+| `structs.guild.{guild_id}` | Guild consensus/meta/membership-application notification |
 
-Fan-out cost grows with listener count, since every listener runs its filter on every
-message. At 26 listeners this is fine. If you are building something that registers
-hundreds, subscribe to narrower NATS subjects instead.
+Unresolved ownership can use `noPlayer`/`noGuild`. A guild vault's owner remains the
+guild, not its leader. Dotted synthetic denominations create extra NATS tokens, so
+do not parse inventory ownership by a fixed token offset. `*` matches one token;
+`>` matches trailing tokens. Planet observers use `structs.planet.{planet_id}.*`.
 
----
+Struct activity lives on the planet path; the reviewed triggers do not provide
+separate `structs.struct.{id}` or `structs.fleet.{id}` activity subscriptions.
+`consensus` is the block subscription, not `structs.global`.
 
 ## The listener contract
 
-```js
-export class AbstractGrassListener {
-  constructor(name) { this.name = name; }
-  handler(messageData) { throw new NotImplementedError(); }
-  shouldUnregister() { return false; }
-}
+A listener supplies a unique `name`, synchronous `handler(messageData)` and optional
+`shouldUnregister()`. Names are Map keys; re-registering a name replaces that listener.
+Unregistration is checked immediately after the handler returns. Async work inside
+a listener still needs its own stale-context/cancellation checks; a flag set later
+is noticed on a later dispatch.
+
+Current listener groups include:
+
+| Group | Behavior |
+|---|---|
+| Block and last action | Update observed height and confirmed charge base |
+| Player load/capacity/ore/shields | Update established display/state paths |
+| `PlayerAlphaListener`, `AlphaChangeListener` | Request authoritative funds refresh; never apply balance deltas |
+| `StructListener` | Refresh structs, reconcile build work, and render ordered combat effects |
+| Mine/refine status listeners | Request current scoped work reconciliation |
+| Raid/planet raid listeners | Maintain offensive/defensive raid state and relevant local work |
+| Player created/new planet | Continue scoped onboarding/entity loading |
+| Address revoked | Request a native ownership check for the active key, or refresh another device's list |
+
+Economic/device completion is owned by its transaction observer and current evidence,
+not the first similar-looking notification. Removed one-shot transfer/infusion/device
+listeners are not an integration API to copy.
+
+## Refresh committed funds and work
+
+`AlphaChangeListener` matches the current owner on inventory subjects and on explicit
+infusion invalidations. It requests `AlphaRefreshManager` through
+`block_height_exact` (or a supported legacy height). `PlayerAlphaListener` also
+invalidates rather than assigning an unqualified grid balance.
+
+The ledger trigger carries `amount_p_exact`, `id_exact`, `block_height_exact`,
+canonical `owner_type`/`owner_id`/`is_vault` and counterparty ownership. Those fields
+preserve precision; they do not establish that a client has every preceding event.
+Infusion changes notify old/new/live owners with `invalidates: "infusion"`, including
+reassignment and deletion. Refetch exact spendable vault funds and complete positions.
+
+`AlphaRefreshManager` coalesces notifications, checks monotonic source heights, and
+refreshes on resume/reconnect and visible polling. Work/catalog refresh similarly
+uses coherent snapshots rather than notification anchors. `SessionAuthorityManager`
+checks native ownership before treating a key as revoked. See
+[state-and-data.md](state-and-data.md) for each manager's scope and cadence.
+
+## Hydrate large planet activity before dispatch
+
+PostgreSQL NOTIFY payloads are limited to 8 KB. A large attack can be a keyed stub
+with `stub: true` or `stub: "true"`, carrying `planet_id`, `seq`, `time`, category
+and subject without `detail`. The release's multi-target/projectile fixture exercises
+this path through the actual writer, database, bridge and browser.
+
+Fetch the exact row using the authenticated endpoint:
+
+```text
+GET /api/planet-activity/planet/{planet_id}/event/{seq}?time={URL-encoded-original-time}
 ```
 
-Three obligations: a unique `name`, a `handler`, and optionally `shouldUnregister`.
+Preserve the original timestamp string, microseconds and timezone. JavaScript Date
+round-trips lose needed precision. The endpoint returns an object-valued `detail`
+or null for a missing exact row. Match the full key and category; never substitute
+the latest activity row.
 
-```js
-registerListener(listener) { this.listeners.set(listener.name, listener); }
-unregisterListener(name)   { this.listeners.delete(name); }
-```
+`resolvePlanetActivityNotification` fetches only for a currently observed player and
+planet, and discards late replies after session/account/planet changes.
+`GrassManager` awaits hydration before dispatching the next message on that stream,
+then also checks the connection identity. The independent consensus subscription
+continues. Missing/malformed detail is skipped as unavailable, not converted into
+an empty successful attack. General async listener work still is not globally ordered.
 
-> **`name` is a `Map` key, so duplicates silently overwrite.** `AlphaInfusedChangeListener`
-> always names itself `ALPHA_INFUSED_CHANGE`, so registering it for both infuse and defuse
-> replaces the first with the second. Namespace your listener names per instance —
-> several in the codebase already do, e.g. `CONSUME_ALPHA_CHANGE_{structId}`.
+## Combat playback
 
-### Self-unregistering listeners
+Typed attack detail supplies rolled projectile damage, final net volley damage and
+observed health; they are not interchangeable. A target can counter and then die from
+the attacker's explosion. Render the counter at its intermediate health before the
+later destruction, including blocked/evaded cases. Do not apply effect damage again
+to indexed models; refresh involved structs.
 
-Many listeners exist to await exactly one event: a signup confirming, a device being
-approved, a transfer landing. The manager checks after each dispatch:
-
-```js
-this.listeners.forEach((listener) => {
-  try {
-    listener.handler(messageData);
-    if (listener.shouldUnregister()) {
-      this.unregisterListener(listener.name);
-    }
-  } catch (e) {
-    console.warn('[GrassManager] listener error:', listener.name, e);
-  }
-});
-```
-
-Two idioms are in use. Most one-shot listeners overwrite the method on the instance:
-
-```js
-this.shouldUnregister = () => true;
-```
-
-`StructListener` overrides it as a real method, tying its lifetime to a raid:
-
-```js
-shouldUnregister() {
-  if (this.gameState.keyPlayers[this.targetPlayerType].isRaidDependent()) {
-    return !this.gameState.getPlanetRaidInfoForKeyPlayer(this.targetPlayerType)?.isRaidActive();
-  }
-  return false;
-}
-```
-
-The check is synchronous, immediately after `handler()` returns. A listener that sets the
-flag inside a `.then()` will not be removed until the *next* message arrives — harmless
-here, but worth knowing if you build on it.
-
----
-
-## The listener catalogue
-
-All on `structs.>` except `BlockListener`, which is on `consensus`.
-
-| Listener | Fires on | Does |
-|---|---|---|
-| `BlockListener` | `block` | Sets block height; dispatches `BLOCK_HEIGHT_CHANGED`. **This is the client's clock** — the signing queue and charge bar both hang off it |
-| `PlayerCreatedListener` | `player_consensus`, matching primary address | Logs in, finds a first planet. One-shot |
-| `NewPlanetListener` | `player_consensus` with `planet_id` | Fetches planet/fleet/structs, configures the map, navigates. One-shot |
-| `PlayerAlphaListener` | `alpha` | `setAlpha` |
-| `AlphaChangeListener` | `sent` / `received` / `refined` | Adjusts alpha by delta |
-| `AlphaInfusedChangeListener` | `infused` / `defusion_started` | Refreshes player, navigates to reactor. One-shot |
-| `ConsumeAlphaChangeListener` | `infused` for one struct | Refreshes alpha. One-shot |
-| `TransferSentListener` | `sent`, matching counterparty and amount | Navigates to the transaction page. One-shot |
-| `PlayerLoadListener` | `load` | `setLoad` |
-| `PlayerCapacityListener` | `capacity` | `setPlayerCapacity` |
-| `PlayerStructsLoadListener` | `structsLoad` | `setStructsLoad` |
-| `ConnectionCapacityListener` | `connectionCapacity` | `setConnectionCapacity` |
-| `KeyPlayerLastActionListener` | `lastAction` | **Updates the confirmed charge base.** The signing queue depends on this |
-| `KeyPlayerOreListener` | `ore` | `setOre`, optional planet refresh |
-| `KeyPlayerShieldChangeStatusListener` | `shield_change`, `block_raid_start` | Updates shield info |
-| `StructListener` | `struct_block_build_start`, `struct_status`, `struct_move`, `struct_defense_add`/`remove`, `struct_attack` | The big one: refreshes structs, enqueues combat animations, spawns and kills build tasks |
-| `StructMineStatusListener` | `struct_block_ore_mine_start` | Spawns or kills the MINE proof-of-work task |
-| `StructRefineStatusListener` | `struct_block_ore_refine_start` | Spawns or kills the REFINE task |
-| `GridStructListener` | `fuel` for one struct | Updates fuel, releases the action-bar lock. One-shot |
-| `RaidStatusListener` | `raid_status`, `fleet_depart`/`arrive` on the target | Full offensive raid lifecycle |
-| `PlanetRaidStatusListener` | `raid_status` on your own planet | Defensive raid lifecycle |
-| `PlayerAddressApprovedListener` | `player_address` approved | Refreshes devices, navigates. One-shot |
-| `PlayerAddressApprovedLoginListener` | `player_address` approved for the signing address | Navigates to device activation. One-shot |
-| `PlayerAddressPendingCreatedListener` | `player_address_pending` | Prompts to approve a new device. One-shot |
-| `PlayerAddressRevokedListener` | `player_address` revoked | Logs out or refreshes devices. One-shot |
-| `RecoverAccountAddressApprovedListener` | `player_address` approved for recovery | Completes mnemonic login. One-shot |
-
-On `block_raid_start` / defensive `raid_status` that opens the window (`PlanetRaidStatusListener`, `KeyPlayerShieldChangeStatusListener`), the HUD should name the **real** exposure, not imply account loss. Suggested copy:
-
-> Raid window open. Exposed: unrefined ore (all of it if they finish) and structs in combat. Not exposed: your account, keys, planet, or guild.
-
-The flagship client does not yet show this toast — ship it there; do not invent a chain rule. Player-facing FAQ: [what a raid can take](/play/faq).
-
-Registration is spread across `index.js` (block), `AuthManager` (auth and device flows),
-`RaidManager`, and several view models that register a one-shot listener for the event
-they are waiting on and then navigate.
-
----
-
-## Reaching the UI
-
-Three patterns, in increasing order of side effects.
-
-**GRASS → GameState setter → CustomEvent → component.** The common case:
-
-```js
-// PlayerAlphaListener
-this.gameState.keyPlayers[PLAYER_TYPES.PLAYER].setAlpha(parseInt(messageData.value));
-// → KeyPlayer.setAlpha dispatches SaveGameStateEvent + AlphaCountChangedEvent
-// → AlphaOwnedComponent updates its text node
-```
-
-**GRASS → direct CustomEvent**, for things with no natural model home — block height.
-
-**GRASS → side effects**, where a listener calls the REST API, navigates the router, or
-pushes onto the [animation queue](rendering-entities.md#the-animation-event-queue).
-`StructListener` does all three.
-
----
+A zero-health activity row is not guaranteed, so combine status/current-state reads
+with attack detail. The [captured event reference](../../api/streaming/event-schemas.md)
+and [exact event endpoint](../../api/webapp/planet-activity.md#exact-event-lookup)
+define those payloads. The renderer fixture verifies actual animation completion,
+queue drainage and final health for counter/rebound and large-event cases.
 
 ## What the stream will not do for you
 
-| | |
-|---|---|
-| **No replay** | Messages sent while you were disconnected are gone. There is no backfill and no sequence gap detection |
-| **No deduplication** | Nothing keyed on a message ID |
-| **No ordering guarantee** | Handled sequentially in one loop, but async work inside handlers is fire-and-forget and can interleave |
-| **Lag behind chain** | GRASS trails the chain by one to two blocks. The signing queue accounts for this; your code should too |
-| **Silence on disconnect** | No indicator, no event |
+- It has no durable replay or global client deduplication/gap recovery.
+- Notification order is not a replacement for coherent SQL/native source heights.
+- A balance, attack or address event does not prove an unrelated signed transaction
+  committed. Match its durable hash/bytes and native execution result first.
+- A connection event does not certify all displayed data as current. Reconcile the
+  required scoped models, honoring incomplete/unavailable responses.
+- Stale notifications or failed reads do not authorize a new send, reset a proof's
+  original anchor, or erase a local key.
 
-Which is why the architecture in [index.md](index.md) matters: **REST is authoritative,
-GRASS keeps you current.** Re-fetch on login and after anything significant. A client that
-treats the stream as its source of truth will drift, and it will drift silently — the
-worst failure mode there is, because everything keeps looking fine.
-
----
-
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/GrassManager.js`,
-`src/js/framework/AbstractGrassListener.js`, `src/js/grass_listeners/`.*
+*Verified against webapp `5991ca95`: GrassManager, PlanetActivityNotification,
+AlphaChangeListener, PlayerAddressRevokedListener, current listener registration and
+scoped refresh managers. Subject/ownership paths were checked against structs-pg
+`400e1c1` and the bridge forwarding logic. Captured release-event transport and real
+rendered hydration are separate from live deployment acceptance.*
 
 </document>
 
