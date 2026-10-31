@@ -202,7 +202,6 @@ console should — add one back. The `--border-focus-friendly-dark` and
 | `sui.css` | `body { text-align: center }` is inherited by everything | Left-align data surfaces explicitly |
 | `sui.css` | `input:focus { outline: none }` with no replacement | Add a focus style |
 | `sui.css` | All asset URLs are root-absolute | Serve at root, or rewrite |
-| `structicons.css` | `.icon-attention` is declared twice | Harmless |
 
 Found something not on this list? [develop/maintenance.md](../maintenance.md) covers how
 to get it verified, documented, and reported upstream rather than worked around in
@@ -210,5 +209,5 @@ silence.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30), `src/public/css/sui/sui.css`
+*Verified against structs-webapp `ae4457e2` (2026-10-30), `src/public/css/sui/sui.css`
 and `src/js/sui/`.*

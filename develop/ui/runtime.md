@@ -107,8 +107,8 @@ have long-press interactions elsewhere, know that its open delay competes with y
 
 ```js
 oc.setHeader('Player 1-194');
+oc.setContent(''); // cancels observers of the previous drawer content
 const body = oc.offcanvasElm.querySelector('.sui-offcanvas-body');
-body.innerHTML = '';
 body.appendChild(node);
 oc.setPlacement('right');
 oc.open();          // oc.open('narrow') for the narrow variant
@@ -120,7 +120,14 @@ oc.close();
 - `setContent()` takes an HTML **string**. To append nodes, query `.sui-offcanvas-body`
   directly, as above.
 - Closes on outside click. The listener is attached inside a `setTimeout(0)` so the click
-  that opened it doesn't immediately close it — a nice detail worth copying.
+  that opened it does not immediately close it. `hide()` cancels the pending timer
+  and removes the listener, preventing a late attachment after closing.
+- `signal` is the lifetime of the current drawer content. `setContent()` aborts the
+  old signal and creates a new one; `hide()` aborts it; reopening renews an aborted
+  signal. Capture it when starting a read/observer and stop on abort. Directly
+  replacing `innerHTML` does not provide that cancellation boundary.
+- Cancelling a drawer observer does not cancel a submitted native transaction. Its
+  durable journal and account-scoped outcome reconciliation remain active.
 
 ### Upstream bug in `setPlacement`
 
@@ -152,5 +159,5 @@ chose — `#sui-offcanvas` needs it too, and the stylesheet already targets it b
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30), `src/js/sui/` and
+*Verified against structs-webapp `ae4457e2` (2026-10-30), `src/js/sui/` and
 `src/public/css/sui/sui.css`.*

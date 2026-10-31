@@ -1,8 +1,8 @@
 ---
 kind: ui
 authority: source
-verified_against: structs-webapp @ 08e13e293481 (2026-09-30)
-verified_at: 2026-10-01
+verified_against: structs-webapp @ ae4457e2df6a (2026-10-30)
+verified_at: 2026-10-31
 volatility: high
 generated_by: scripts/gen-sui-inventory.sh
 ---
@@ -13,13 +13,13 @@ generated_by: scripts/gen-sui-inventory.sh
 > design system. Do not hand-edit. Regenerate with `scripts/gen-sui-inventory.sh`;
 > diff against upstream with `scripts/check-webapp-drift.sh`.
 
-Source commit: `08e13e2934814e7ccb7f71f35f2408dad9d119c7` (2026-09-30)
+Source commit: `ae4457e2df6ab7604d1f79048cfc31d54f6d11ff` (2026-10-30)
 
 | Inventory | Count |
 |---|---|
 | `:root` tokens | 72 |
-| Glyph icons (icon font) | 68 |
-| Sprite icons (background art) | 31 |
+| Glyph icons (icon font) | 69 |
+| Sprite icons (background art) | 32 |
 | Component classes | 138 |
 | Modifiers | 27 |
 
@@ -105,9 +105,9 @@ Source commit: `08e13e2934814e7ccb7f71f35f2408dad9d119c7` (2026-09-30)
 Icon-font classes from `src/public/css/structicons.css`. These inherit `color`.
 
 `icon-add` `icon-adv-counter` `icon-alert` `icon-armour` `icon-arrow`
-`icon-attention` `icon-ballistic-weapon` `icon-beacon` `icon-blocked`
-`icon-caret-down` `icon-caret-left` `icon-caret-right` `icon-caret-up`
-`icon-chevron-down` `icon-chevron-left` `icon-chevron-right`
+`icon-attention` `icon-attention-12` `icon-ballistic-weapon` `icon-beacon`
+`icon-blocked` `icon-caret-down` `icon-caret-left` `icon-caret-right`
+`icon-caret-up` `icon-chevron-down` `icon-chevron-left` `icon-chevron-right`
 `icon-chevron-up` `icon-close` `icon-cmd-post` `icon-combat-log`
 `icon-computer` `icon-copy` `icon-counter` `icon-defend` `icon-deploy`
 `icon-detected` `icon-disabled` `icon-dmg` `icon-edit` `icon-enemy-tile`
@@ -121,16 +121,14 @@ Icon-font classes from `src/public/css/structicons.css`. These inherit `color`.
 `icon-transfers` `icon-undiscovered-ore` `icon-unknown`
 `icon-unknown-territory` `icon-unpowered` `icon-wreckage`
 
-Declared more than once in the stylesheet: `icon-attention`
-
 ## Sprite icons
 
 `i.sui-icon-*` rules carrying a `background-image` in `sui.css`. These are pixel
 art and do **not** inherit `color`.
 
-`air` `alpha-matter` `alpha-ore` `armour` `attacker` `counter-attack`
-`defended` `defender-block` `defender-counter` `defending` `deflector-shield`
-`deployed-structs` `destroyed` `electronic-warfare-system`
+`air` `alpha-matter` `alpha-ore` `armour` `attacker` `attention`
+`counter-attack` `defended` `defender-block` `defender-counter` `defending`
+`deflector-shield` `deployed-structs` `destroyed` `electronic-warfare-system`
 `enemy-deployed-structs` `enemy-indicator` `enemy-shield-health` `energy`
 `energy-deactivated` `energy-insufficient` `inert-alpha` `land` `local`
 `no-power` `player-indicator` `players` `shield-health` `space`

@@ -48,16 +48,17 @@ Everything else is convention rather than contract:
    `MenuPage.setBodyContent()` or `setPageTemplateContent()`, then call `initPageCode()`.
 3. **`initPageCode()`** — attach listeners, initialise child components.
 
-> **There is no teardown.** Navigating away replaces the DOM by assignment; listeners on
-> removed nodes are collected with them. That works for listeners bound to elements
-> inside the page, and **not** for listeners bound to `window` — which is most
-> live-updating components. Those self-remove by checking whether their element still
-> exists when they fire.
->
-> The exceptions are the components that hold external resources: map layers and struct
-> viewers implement real `destroy()` methods, because `lottie-web` keeps its own registry
-> and dropping the reference is not enough. See
-> [rendering-entities.md](client/rendering-entities.md#lottie).
+The base view-model interface does not impose universal teardown. The router now
+provides a navigation AbortSignal, and reviewed asynchronous views bind reads and
+outcome observers to that lifetime. Replacing the DOM alone still cannot remove
+listeners registered on `window`; components must release them explicitly or use
+their existing element-lifetime checks.
+
+Map layers and struct viewers implement `destroy()` because Lottie keeps its own
+registry. Drawers have a separate content AbortSignal. Neither navigation nor
+closing a drawer cancels an already submitted transaction; the account-scoped
+journal and outcome reconciliation outlive its observer. See
+[rendering-entities.md](client/rendering-entities.md#lottie).
 
 Nested components use a parallel base with two methods:
 
@@ -94,8 +95,9 @@ registerController(controller) {
 this.controllers.get(controllerName)[pageName](options);
 ```
 
-Five controllers: `Auth` (about 30 pages, including the whole onboarding sequence),
-`Fleet`, `Guild`, `Account`, `Generic`.
+The ordinary controllers are `Auth`, `Fleet`, `Guild`, `Account` and `Generic`.
+Combat Training registers `Tutorial` with simulated game/signing/API dependencies;
+its rendered activity is not evidence of a native transaction.
 
 Position is persisted to `localStorage` as `currentMenuPage` and `lastMenuPage`, which is
 what lets `restore()` put you back where you were after a reload. `back()` walks one step
@@ -106,10 +108,12 @@ Two details worth borrowing:
 **A preview mode** that skips the `localStorage` writes, used when viewing another
 player's profile so that browsing someone else's data doesn't become your restore point.
 
-**A `navigationId` counter** incremented on every `goto()`. Async work can snapshot it and
-check on completion whether the user has navigated away, rather than writing into a page
-that no longer exists. The mechanism is there; how consistently view models use it is
-another matter.
+**Navigation identity and cancellation.** Every `goto()` aborts the old
+`navigationSignal`, creates a fresh controller and increments `navigationId` before
+calling `onNavigate` and rendering the destination. Capture identity/signal when
+starting async work; late completion must not overwrite another page or session.
+`goto(..., {replace: true})` updates the current route without moving the previous
+route into the one-step back slot.
 
 The trade-off in all of this: no URLs. You cannot link to a page, the browser back button
 does nothing useful, and reloading depends on the `localStorage` restore. For a
@@ -188,34 +192,32 @@ static hideAndClearDialoguePanel() {
 
 ## Build
 
-Plain Webpack, not Symfony Encore, with three entry points:
+Plain Webpack, not Symfony Encore, with `index` and `test` entry points. Entry and
+chunk filenames include `contenthash`. `AssetManifestPlugin` writes
+`public/js/manifest.json`, mapping the logical entry paths to those emitted files;
+Symfony's webpack asset package resolves the shell's index URL through that manifest.
 
-```js
-entry: {
-  index: './js/index.js',
-  test:  './js/tests/test.js',
-  "workers/TaskWorker": "./js/workers/TaskWorker.js",
-},
-output: { path: path.resolve(__dirname, 'public/js') },
-experiments: { topLevelAwait: true },
-module: { rules: [{ test: /\.([cm]?ts|tsx)$/, loader: "ts-loader", options: { transpileOnly: true } }] },
-resolve: { extensions: [".ts", ".tsx", ".js"], fallback: { crypto: false } },
-plugins: [new webpack.ProvidePlugin({ Buffer: [require.resolve('buffer/'), 'Buffer'] })],
-```
+The proof worker is created using `new Worker(new URL(..., import.meta.url))`, so
+Webpack emits it as a chunk referenced by its matching parent build. It is not a
+separate fixed `workers/TaskWorker.js` entry. Deploy source, manifest, bundles and
+worker output together; a new page must not reuse an incompatible cached worker.
+The worker's protocol handshake remains required. An already-running old tab cannot
+acquire new guards merely because assets were deployed.
 
-Three things to note. The proof-of-work worker is a **separate entry point**, because a
-worker cannot share the main bundle. `topLevelAwait` is enabled, which the boot sequence
-relies on. And the Node compatibility surface is intentionally **Buffer-only**:
-CosmJS gets `Buffer` as a global, while `crypto: false` satisfies its browser-side Node
-probe without pulling `crypto-browserify` and its vulnerable `elliptic` dependency.
-Do not copy a broad Node polyfill plugin for this graph.
+`topLevelAwait` is enabled for startup. TypeScript transpilation uses `ts-loader` with
+`transpileOnly: true`, so run type checks separately. The Node compatibility surface
+is Buffer-only: CosmJS gets `Buffer` as a global, while `crypto: false` satisfies its
+browser-side Node probe without pulling in a broad crypto polyfill.
 
 Webpack's extension resolution is also why `SUI.js` gets away with an extensionless
 import that breaks everywhere else. See [ui/runtime.md](ui/runtime.md#loading-them).
 
 Symfony serves one route (`/`) rendering a shell template that defines the mount points —
 `#menu-page-layout`, `#hud-container`, the map containers, `#loading-screen` — and loads
-the bundle. Everything inside them is owned by JavaScript.
+the bundle. Everything inside them is owned by JavaScript. The clean Docker image
+creates writable Symfony cache/log directories for Apache; runtime caches are not
+a substitute for the source/build manifest. Preserve deployment session/token
+revocation storage separately when replacing a serving container.
 
 ---
 
@@ -227,12 +229,16 @@ the [animation event queue](client/rendering-entities.md#the-animation-event-que
 than from local storage, and the explicit Lottie teardown. These are hard-won solutions to
 real problems and they transfer to any stack.
 
-**Don't copy:** the plaintext mnemonic in `localStorage`, uncontrolled `GameState`
-mutation, incomplete non-auth HTTP status handling, per-factory numeric coercion, and
-the absence of any UI for a failed transaction. Each of these is a known weakness rather
-than a design choice, and each is called out where it appears.
+**Choose deliberately:** the reference browser stores its mnemonic in localStorage;
+that custody model belongs to the page's trust boundary. `GameState` is mutable, so
+retain source/owner/session checks at updates. Current `JsonAjaxer` rejects failed
+HTTP responses, bounds requests and supports cancellation; do not restore older
+silent-failure behavior. Definitive transaction failure returns existing flows to
+their retained intent, while uncertainty keeps the signed identity reserved.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/`,
-`src/js/controllers/`, `src/js/view_models/`, `src/webpack.config.js`.*
+*Reviewed against structs-webapp `ae4457e2`: router/request lifetimes, controller
+registration, accepted view flows, webpack/manifest/worker integration and Docker
+runtime ownership. Unchanged base interfaces and examples were compared with the
+previous source revision.*

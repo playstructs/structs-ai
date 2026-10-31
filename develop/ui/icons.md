@@ -1,6 +1,6 @@
 ---
 title: SUI icon systems and inventories
-description: "The two SUI icon systems: 68 tinting glyph icons and 31 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
+description: "The two SUI icon systems: 69 tinting glyph icons and 32 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
 ---
 
 # SUI icon systems and inventories
@@ -15,7 +15,7 @@ which one you are using determines whether the icon takes your text colour.
 
 ## Glyph icons — the icon font
 
-68 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
+69 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
 
 ```html
 <i class="sui-icon sui-icon-sm icon-refresh-8"></i>
@@ -31,7 +31,8 @@ They render as text, so they **inherit `color`** and take severity colour for fr
 
 ```
 add                 adv-counter        alert              armour
-arrow               attention          ballistic-weapon   beacon
+arrow               attention          attention-12       ballistic-weapon
+beacon
 blocked             caret-down         caret-left         caret-right
 caret-up            chevron-down       chevron-left       chevron-right
 chevron-up          close              cmd-post           combat-log
@@ -52,14 +53,14 @@ unknown-territory   unpowered          wreckage
 
 Each is prefixed `icon-` in markup: `icon-planetary-shield`, `icon-send-alpha`.
 
-`icon-attention` is declared twice in the stylesheet — 69 declarations, 68 names. The
-duplicate is harmless.
+`icon-attention` and `icon-attention-12` are distinct glyphs. Match the art grid
+to the intended display size; neither name duplicates the other declaration.
 
 ---
 
 ## Sprite icons — background art
 
-31 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
+32 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
 
 ```html
 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
@@ -73,7 +74,8 @@ because its container is red. If you need a hostile variant, check whether one e
 
 ```
 air                        alpha-matter          alpha-ore
-armour                     attacker              counter-attack
+armour                     attacker              attention
+counter-attack
 defended                   defender-block        defender-counter
 defending                  deflector-shield      deployed-structs
 destroyed                  electronic-warfare-system
@@ -93,7 +95,7 @@ tints; the sprite version is art. Pick deliberately.
 ### `sui-icon-value` is not an icon
 
 `span.sui-icon-value` exists in the stylesheet but only sets `margin-left`. It is a
-spacing utility for a value sitting beside an icon, not a nineteenth sprite. Do not put
+spacing utility for a value sitting beside an icon, not an additional sprite. Do not put
 it on an `<i>` expecting art.
 
 ---
@@ -129,5 +131,5 @@ source and is the one to trust if these ever disagree.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30),
+*Verified against structs-webapp `ae4457e2` (2026-10-30),
 `src/public/css/structicons.css` and `src/public/css/sui/sui.css`.*

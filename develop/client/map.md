@@ -150,6 +150,8 @@ and then takes one of three paths: no struct → destroy any old viewer and clea
 unbuilt struct → show the deployment indicator; built struct → create a
 `MapStructViewerComponent` and mount it.
 
+Planetary tile lookup also requires the struct's `location_id` to match the map's planet, preventing a same-owner/same-slot struct on another planet from landing here.
+
 **The old viewer is always destroyed before the tile is overwritten**, for the Lottie
 reasons in [rendering-entities.md](rendering-entities.md#lottie).
 
@@ -173,12 +175,18 @@ enqueued animation → the map layer.
 Selection is a separate transparent anchor grid above the art. Selecting a struct causes
 its HUD status context to dominate: unrelated destroyed/offline/overloaded indicators
 are hidden, while the selected struct's defender/protected relationships remain visible.
+Raid-halted extractor/refinery work uses the attention indicator and pauses its active
+loop; raid-status events refresh these views while leaving queued animations intact.
 Offline structs use the 32px `energy-deactivated` sprite; an online struct whose owner is
 overloaded uses `no-power`.
 
 Attack target validity is recomputed while choosing a target, including when stealth
 changes. Only the active map is repainted, avoiding stale invalid-selection marks on the
-other still-mounted map.
+other still-mounted map. During attack, move or defense target selection, an invalid
+or empty tile keeps the current source/selection mode; cancellation comes from the
+action control. A valid selection plays an 800 ms target indicator: enemy, friendly
+or neutral. Preloaded blobs receive per-play object URLs that are revoked on cleanup.
+The indicator confirms selection, not native execution.
 
 ### Mouse drag panning
 
@@ -204,7 +212,8 @@ side the struct is on, tracks visibility on scroll and resize, and slides out wh
 
 Each PIP is scoped to its owning `mapId` and struct-layer container. Hidden maps are
 ignored, so an animation on the background map cannot open its bubble on the visible
-map.
+map. Counter and block animations carry badges because a single-struct PIP lacks the
+other participant that explains the action.
 
 The critical detail is one flag:
 
@@ -220,6 +229,6 @@ mirror an animation, mute the copy.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30):
+*Verified against structs-webapp `ae4457e2` (2026-10-30):
 `src/js/view_models/components/map/`, `src/js/util/TileClassNameUtil.js`,
 `src/js/models/Planet.js`, and `src/js/framework/MapPanController.js`.*

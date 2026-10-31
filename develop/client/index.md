@@ -25,9 +25,9 @@ channels, and getting the division of labour right is most of the architecture.
 
 | Channel | Carries | Latency | Authority |
 |---|---|---|---|
-| **REST** — Guild API over PostgreSQL | Bulk reads, search, history, bootstrap | ~100ms | Authoritative but a moment stale |
-| **NATS/WebSocket** — [GRASS](realtime-grass.md) | Live deltas: block height, ore, power, combat | Sub-second | Fastest, but no replay |
-| **Cosmos RPC** — [signing](actions-and-signing.md) | Writes only | ~6s per block | The only way to change anything |
+| **REST** — Guild API over PostgreSQL | Bulk reads, search, history, bootstrap | Deployment-dependent | Indexed snapshot with explicit source/readiness metadata |
+| **NATS/WebSocket** — [GRASS](realtime-grass.md) | Notifications, invalidations and ordered combat events | Usually sub-second | No replay; reconcile from authoritative reads |
+| **Native RPC/LCD** — [signing](actions-and-signing.md) | Current authority/account/asset reads, simulation, signed sends and inclusion | Block-dependent | Chain state and committed execution |
 
 The rule that falls out of this: **read from REST on load, keep current with GRASS, write
 over RPC, and never assume a write you sent is a write that landed.**
@@ -60,24 +60,27 @@ model conventions — see [develop/frontend-architecture.md](../frontend-archite
 
 **Charge is a rate limit, not a resource.** It accrues as blocks elapse since your last
 charged action, and it gates *when* you can act rather than what you can afford. The
-client computes it locally as `currentBlock - (lastActionBlock + 1)` and holds
-transactions until the projected charge covers the action's cost. Get this wrong and your
+client schedules from `currentBlock - (max(confirmedLastAction, scheduleAnchor) + 1)`
+and holds transactions until projected charge covers the action's cost. Get this wrong and your
 transactions fail on-chain rather than queueing politely.
 
-**One transaction per block per account.** Not a chain rule but a practical one: the
-webapp serialises broadcasts behind an in-flight mutex and a per-block governor
-specifically to avoid `account sequence mismatch`. It never tracks sequence numbers
-manually — it just never has two in flight.
+**One new transaction per observed block per address.** This is the browser queue's
+policy, alongside real shared player/charge/object chain limits. Same-origin tabs
+coordinate with a Web Lock. Signed bytes, hash and account context are durably saved;
+uncertain submissions block new sends until the original outcome is established.
+A sequence change does not authorize replacing them.
 
 **Proof-of-work gets cheaper if you wait.** Difficulty decays logarithmically with the
 age of the on-chain anchor. Initiating early and completing later is strictly better than
 hashing hard immediately. The webapp's worker will sit idle for hours rather than burn
 CPU at high difficulty.
 
-**Numbers arrive as strings, and the reference client is inconsistent about converting
-them.** This is the single most likely source of a subtle bug in a new client. See
+**Exact values cross the API and journal as decimal strings.** Balances, ranks, work
+clocks and proof inputs must not be rounded through JavaScript Numbers. Explicit
+display conversions and safe-range library guards are separate from signing values. See
 [state-and-data.md](state-and-data.md#numbers-arrive-as-strings).
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30).*
+*Reviewed against structs-webapp `ae4457e2`; subsystem pages retain their individually
+verified source revisions.*

@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Webapp builder references now cover navigation/drawer cancellation, matching
+  hashed app/worker assets, clean-image Symfony directories, target/PIP/raid state
+  and ordered counter/rebound animation. The verified inventory contains 69 glyphs
+  and 32 sprites; the resolved duplicate-icon warning is removed. The webapp drift
+  baseline advances to `ae4457e2`; unaffected pages keep their earlier verified footers.
+
 - Authentication schemas now use the verified hex wallet proof and actual
   session/opaque-bearer responses. Retry guidance separates repeatable reads,
   UUID-bound requests and immutable signed submissions; fabricated retryable

@@ -106,8 +106,14 @@ src/js/api/GuildAPI.js|develop/client/state-and-data.md
 src/js/view_models/components/map|develop/client/map.md
 src/js/view_models/components/PfpViewerComponent.js|develop/client/rendering-entities.md
 src/js/data_structures/AnimationEventQueue.js|develop/client/rendering-entities.md
+src/js/grass_listeners/StructListener.js|develop/client/rendering-entities.md, develop/client/realtime-grass.md
+src/js/view_models/components/MapStructViewerComponent.js|develop/client/rendering-entities.md
 src/js/framework|develop/frontend-architecture.md
 src/webpack.config.js|develop/frontend-architecture.md
+src/webpack/AssetManifestPlugin.cjs|develop/frontend-architecture.md
+src/config/packages/assets.yaml|develop/frontend-architecture.md
+src/templates/base.html.twig|develop/frontend-architecture.md
+Dockerfile|develop/frontend-architecture.md
 "
 
 say() { printf '%s\n' "$*"; }

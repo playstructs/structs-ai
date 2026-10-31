@@ -10960,8 +10960,8 @@ real-time events — see [develop/client/](../client/index.md).
 
 | | |
 |---|---|
-| Stylesheet | `src/public/css/sui/sui.css` — one file, 2,701 lines |
-| Icon fonts | `src/public/css/structicons.css` (68 glyphs) + 31 sprite icons in `sui.css` |
+| Stylesheet | `src/public/css/sui/sui.css` — one file |
+| Icon fonts | `src/public/css/structicons.css` (69 glyphs) + 32 sprite icons in `sui.css` |
 | Display fonts | `ExtremeHazard` (chrome/labels), `DirectiveZero` (content/numbers), `Inter` (tickers) |
 | JS runtime | `src/js/sui/` — four optional behaviours, ES modules |
 | Naming | `.sui-<component>[-<part>]` + `.sui-mod-<variant>` + `.sui-theme-<faction>` |
@@ -11049,7 +11049,7 @@ webapp considerably.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30). Inventory:
+*Verified against structs-webapp `ae4457e2` (2026-10-30). Inventory:
 [generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md).*
 
 </document>
@@ -11254,7 +11254,7 @@ refresh. That is a sanctioned local addition, not a deviation — see
 <source>develop/ui/icons.md</source>
 ---
 title: SUI icon systems and inventories
-description: "The two SUI icon systems: 68 tinting glyph icons and 31 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
+description: "The two SUI icon systems: 69 tinting glyph icons and 32 fixed-colour sprite icons, both inventoried, plus the rule never to invent one."
 ---
 
 # SUI icon systems and inventories
@@ -11269,7 +11269,7 @@ which one you are using determines whether the icon takes your text colour.
 
 ## Glyph icons — the icon font
 
-68 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
+69 icons in the `Structicons` font, declared in `src/public/css/structicons.css`.
 
 ```html
 <i class="sui-icon sui-icon-sm icon-refresh-8"></i>
@@ -11285,7 +11285,8 @@ They render as text, so they **inherit `color`** and take severity colour for fr
 
 ```
 add                 adv-counter        alert              armour
-arrow               attention          ballistic-weapon   beacon
+arrow               attention          attention-12       ballistic-weapon
+beacon
 blocked             caret-down         caret-left         caret-right
 caret-up            chevron-down       chevron-left       chevron-right
 chevron-up          close              cmd-post           combat-log
@@ -11306,14 +11307,14 @@ unknown-territory   unpowered          wreckage
 
 Each is prefixed `icon-` in markup: `icon-planetary-shield`, `icon-send-alpha`.
 
-`icon-attention` is declared twice in the stylesheet — 69 declarations, 68 names. The
-duplicate is harmless.
+`icon-attention` and `icon-attention-12` are distinct glyphs. Match the art grid
+to the intended display size; neither name duplicates the other declaration.
 
 ---
 
 ## Sprite icons — background art
 
-31 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
+32 icons drawn as pixel art and applied as `background-image`, declared in `sui.css`.
 
 ```html
 <i class="sui-icon sui-icon-md sui-icon-alpha-matter"></i>
@@ -11327,7 +11328,8 @@ because its container is red. If you need a hostile variant, check whether one e
 
 ```
 air                        alpha-matter          alpha-ore
-armour                     attacker              counter-attack
+armour                     attacker              attention
+counter-attack
 defended                   defender-block        defender-counter
 defending                  deflector-shield      deployed-structs
 destroyed                  electronic-warfare-system
@@ -11347,7 +11349,7 @@ tints; the sprite version is art. Pick deliberately.
 ### `sui-icon-value` is not an icon
 
 `span.sui-icon-value` exists in the stylesheet but only sets `margin-left`. It is a
-spacing utility for a value sitting beside an icon, not a nineteenth sprite. Do not put
+spacing utility for a value sitting beside an icon, not an additional sprite. Do not put
 it on an `<i>` expecting art.
 
 ---
@@ -11383,7 +11385,7 @@ source and is the one to trust if these ever disagree.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30),
+*Verified against structs-webapp `ae4457e2` (2026-10-30),
 `src/public/css/structicons.css` and `src/public/css/sui/sui.css`.*
 
 </document>
@@ -11867,8 +11869,8 @@ have long-press interactions elsewhere, know that its open delay competes with y
 
 ```js
 oc.setHeader('Player 1-194');
+oc.setContent(''); // cancels observers of the previous drawer content
 const body = oc.offcanvasElm.querySelector('.sui-offcanvas-body');
-body.innerHTML = '';
 body.appendChild(node);
 oc.setPlacement('right');
 oc.open();          // oc.open('narrow') for the narrow variant
@@ -11880,7 +11882,14 @@ oc.close();
 - `setContent()` takes an HTML **string**. To append nodes, query `.sui-offcanvas-body`
   directly, as above.
 - Closes on outside click. The listener is attached inside a `setTimeout(0)` so the click
-  that opened it doesn't immediately close it — a nice detail worth copying.
+  that opened it does not immediately close it. `hide()` cancels the pending timer
+  and removes the listener, preventing a late attachment after closing.
+- `signal` is the lifetime of the current drawer content. `setContent()` aborts the
+  old signal and creates a new one; `hide()` aborts it; reopening renews an aborted
+  signal. Capture it when starting a read/observer and stop on abort. Directly
+  replacing `innerHTML` does not provide that cancellation boundary.
+- Cancelling a drawer observer does not cancel a submitted native transaction. Its
+  durable journal and account-scoped outcome reconciliation remain active.
 
 ### Upstream bug in `setPlacement`
 
@@ -11912,7 +11921,7 @@ chose — `#sui-offcanvas` needs it too, and the stylesheet already targets it b
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30), `src/js/sui/` and
+*Verified against structs-webapp `ae4457e2` (2026-10-30), `src/js/sui/` and
 `src/public/css/sui/sui.css`.*
 
 </document>
@@ -12123,7 +12132,6 @@ console should — add one back. The `--border-focus-friendly-dark` and
 | `sui.css` | `body { text-align: center }` is inherited by everything | Left-align data surfaces explicitly |
 | `sui.css` | `input:focus { outline: none }` with no replacement | Add a focus style |
 | `sui.css` | All asset URLs are root-absolute | Serve at root, or rewrite |
-| `structicons.css` | `.icon-attention` is declared twice | Harmless |
 
 Found something not on this list? [develop/maintenance.md](../maintenance.md) covers how
 to get it verified, documented, and reported upstream rather than worked around in
@@ -12131,7 +12139,7 @@ silence.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30), `src/public/css/sui/sui.css`
+*Verified against structs-webapp `ae4457e2` (2026-10-30), `src/public/css/sui/sui.css`
 and `src/js/sui/`.*
 
 </document>
@@ -12596,9 +12604,9 @@ channels, and getting the division of labour right is most of the architecture.
 
 | Channel | Carries | Latency | Authority |
 |---|---|---|---|
-| **REST** — Guild API over PostgreSQL | Bulk reads, search, history, bootstrap | ~100ms | Authoritative but a moment stale |
-| **NATS/WebSocket** — [GRASS](realtime-grass.md) | Live deltas: block height, ore, power, combat | Sub-second | Fastest, but no replay |
-| **Cosmos RPC** — [signing](actions-and-signing.md) | Writes only | ~6s per block | The only way to change anything |
+| **REST** — Guild API over PostgreSQL | Bulk reads, search, history, bootstrap | Deployment-dependent | Indexed snapshot with explicit source/readiness metadata |
+| **NATS/WebSocket** — [GRASS](realtime-grass.md) | Notifications, invalidations and ordered combat events | Usually sub-second | No replay; reconcile from authoritative reads |
+| **Native RPC/LCD** — [signing](actions-and-signing.md) | Current authority/account/asset reads, simulation, signed sends and inclusion | Block-dependent | Chain state and committed execution |
 
 The rule that falls out of this: **read from REST on load, keep current with GRASS, write
 over RPC, and never assume a write you sent is a write that landed.**
@@ -12631,27 +12639,30 @@ model conventions — see [develop/frontend-architecture.md](../frontend-archite
 
 **Charge is a rate limit, not a resource.** It accrues as blocks elapse since your last
 charged action, and it gates *when* you can act rather than what you can afford. The
-client computes it locally as `currentBlock - (lastActionBlock + 1)` and holds
-transactions until the projected charge covers the action's cost. Get this wrong and your
+client schedules from `currentBlock - (max(confirmedLastAction, scheduleAnchor) + 1)`
+and holds transactions until projected charge covers the action's cost. Get this wrong and your
 transactions fail on-chain rather than queueing politely.
 
-**One transaction per block per account.** Not a chain rule but a practical one: the
-webapp serialises broadcasts behind an in-flight mutex and a per-block governor
-specifically to avoid `account sequence mismatch`. It never tracks sequence numbers
-manually — it just never has two in flight.
+**One new transaction per observed block per address.** This is the browser queue's
+policy, alongside real shared player/charge/object chain limits. Same-origin tabs
+coordinate with a Web Lock. Signed bytes, hash and account context are durably saved;
+uncertain submissions block new sends until the original outcome is established.
+A sequence change does not authorize replacing them.
 
 **Proof-of-work gets cheaper if you wait.** Difficulty decays logarithmically with the
 age of the on-chain anchor. Initiating early and completing later is strictly better than
 hashing hard immediately. The webapp's worker will sit idle for hours rather than burn
 CPU at high difficulty.
 
-**Numbers arrive as strings, and the reference client is inconsistent about converting
-them.** This is the single most likely source of a subtle bug in a new client. See
+**Exact values cross the API and journal as decimal strings.** Balances, ranks, work
+clocks and proof inputs must not be rounded through JavaScript Numbers. Explicit
+display conversions and safe-range library guards are separate from signing values. See
 [state-and-data.md](state-and-data.md#numbers-arrive-as-strings).
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30).*
+*Reviewed against structs-webapp `ae4457e2`; subsystem pages retain their individually
+verified source revisions.*
 
 </document>
 
@@ -13570,8 +13581,9 @@ JSON lives at predictable paths:
 ```
 
 The still and the animation are mutually exclusive: playing an animation hides the still
-container, and structs with an active loop (extractors and refineries while online) hide
-the still permanently in favour of the loop.
+container. Online extractors/refineries use an active loop while their ore work is
+not halted by a raid; a halted loop returns to its still until authoritative state
+permits work again.
 
 **Lottie lifecycle is where the memory leaks are**, and the reference client is explicit
 about it:
@@ -13636,10 +13648,19 @@ list of `AnimationEvent`s and enqueues them in narrative order.
 
 Three consequences ripple outward from this design, and each is worth copying:
 
-**Game state and displayed state diverge on purpose.** `gameState` holds the final
-post-attack values the moment the event arrives, while animation events carry
-`options.healthAfter` so each step shows the health at *that* moment. The bars catch up as
-the sequence plays.
+**Game state and displayed state diverge on purpose.** Refreshes bring `gameState`
+to authoritative post-attack values, while queued animation events carry
+`options.healthAfter` for the intermediate moment. Do not write those temporary
+values back over final indexed state. The bars catch up as the sequence plays.
+
+A reported target counter plays even when rebound later destroys that target. Show
+volley damage, then the counter, then rebound and final destruction. A blocked or
+evaded volley does not damage the target; net volley damage is carried on the final
+projectile row. Preserve the release flags and defense metadata, rather than
+inferring that a final destroyed flag means the earlier counter never happened.
+Every participant is refreshed, including countering defenders. Large notification
+stubs must first resolve by exact event identity, preserving per-planet order; see
+[GRASS](realtime-grass.md).
 
 **Other renderers defer to the queue.** The HUD layer holds back struct-HUD renders while
 an animation is playing and flushes them on `ANIMATION_QUEUE_EMPTY`:
@@ -13671,7 +13692,7 @@ moment.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30):
+*Verified against structs-webapp `ae4457e2` (2026-10-30):
 `src/js/view_models/components/PfpViewerComponent.js`, `StructStillRenderer.js`,
 `MapStructViewerComponent.js`, `MapStructLottieAnimationSVG.js`,
 `src/js/data_structures/AnimationEventQueue.js`, and
@@ -13833,6 +13854,8 @@ and then takes one of three paths: no struct → destroy any old viewer and clea
 unbuilt struct → show the deployment indicator; built struct → create a
 `MapStructViewerComponent` and mount it.
 
+Planetary tile lookup also requires the struct's `location_id` to match the map's planet, preventing a same-owner/same-slot struct on another planet from landing here.
+
 **The old viewer is always destroyed before the tile is overwritten**, for the Lottie
 reasons in [rendering-entities.md](rendering-entities.md#lottie).
 
@@ -13856,12 +13879,18 @@ enqueued animation → the map layer.
 Selection is a separate transparent anchor grid above the art. Selecting a struct causes
 its HUD status context to dominate: unrelated destroyed/offline/overloaded indicators
 are hidden, while the selected struct's defender/protected relationships remain visible.
+Raid-halted extractor/refinery work uses the attention indicator and pauses its active
+loop; raid-status events refresh these views while leaving queued animations intact.
 Offline structs use the 32px `energy-deactivated` sprite; an online struct whose owner is
 overloaded uses `no-power`.
 
 Attack target validity is recomputed while choosing a target, including when stealth
 changes. Only the active map is repainted, avoiding stale invalid-selection marks on the
-other still-mounted map.
+other still-mounted map. During attack, move or defense target selection, an invalid
+or empty tile keeps the current source/selection mode; cancellation comes from the
+action control. A valid selection plays an 800 ms target indicator: enemy, friendly
+or neutral. Preloaded blobs receive per-play object URLs that are revoked on cleanup.
+The indicator confirms selection, not native execution.
 
 ### Mouse drag panning
 
@@ -13887,7 +13916,8 @@ side the struct is on, tracks visibility on scroll and resize, and slides out wh
 
 Each PIP is scoped to its owning `mapId` and struct-layer container. Hidden maps are
 ignored, so an animation on the background map cannot open its bubble on the visible
-map.
+map. Counter and block animations carry badges because a single-struct PIP lacks the
+other participant that explains the action.
 
 The critical detail is one flag:
 
@@ -13903,7 +13933,7 @@ mirror an animation, mute the copy.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30):
+*Verified against structs-webapp `ae4457e2` (2026-10-30):
 `src/js/view_models/components/map/`, `src/js/util/TileClassNameUtil.js`,
 `src/js/models/Planet.js`, and `src/js/framework/MapPanController.js`.*
 
@@ -14314,16 +14344,17 @@ Everything else is convention rather than contract:
    `MenuPage.setBodyContent()` or `setPageTemplateContent()`, then call `initPageCode()`.
 3. **`initPageCode()`** — attach listeners, initialise child components.
 
-> **There is no teardown.** Navigating away replaces the DOM by assignment; listeners on
-> removed nodes are collected with them. That works for listeners bound to elements
-> inside the page, and **not** for listeners bound to `window` — which is most
-> live-updating components. Those self-remove by checking whether their element still
-> exists when they fire.
->
-> The exceptions are the components that hold external resources: map layers and struct
-> viewers implement real `destroy()` methods, because `lottie-web` keeps its own registry
-> and dropping the reference is not enough. See
-> [rendering-entities.md](client/rendering-entities.md#lottie).
+The base view-model interface does not impose universal teardown. The router now
+provides a navigation AbortSignal, and reviewed asynchronous views bind reads and
+outcome observers to that lifetime. Replacing the DOM alone still cannot remove
+listeners registered on `window`; components must release them explicitly or use
+their existing element-lifetime checks.
+
+Map layers and struct viewers implement `destroy()` because Lottie keeps its own
+registry. Drawers have a separate content AbortSignal. Neither navigation nor
+closing a drawer cancels an already submitted transaction; the account-scoped
+journal and outcome reconciliation outlive its observer. See
+[rendering-entities.md](client/rendering-entities.md#lottie).
 
 Nested components use a parallel base with two methods:
 
@@ -14360,8 +14391,9 @@ registerController(controller) {
 this.controllers.get(controllerName)[pageName](options);
 ```
 
-Five controllers: `Auth` (about 30 pages, including the whole onboarding sequence),
-`Fleet`, `Guild`, `Account`, `Generic`.
+The ordinary controllers are `Auth`, `Fleet`, `Guild`, `Account` and `Generic`.
+Combat Training registers `Tutorial` with simulated game/signing/API dependencies;
+its rendered activity is not evidence of a native transaction.
 
 Position is persisted to `localStorage` as `currentMenuPage` and `lastMenuPage`, which is
 what lets `restore()` put you back where you were after a reload. `back()` walks one step
@@ -14372,10 +14404,12 @@ Two details worth borrowing:
 **A preview mode** that skips the `localStorage` writes, used when viewing another
 player's profile so that browsing someone else's data doesn't become your restore point.
 
-**A `navigationId` counter** incremented on every `goto()`. Async work can snapshot it and
-check on completion whether the user has navigated away, rather than writing into a page
-that no longer exists. The mechanism is there; how consistently view models use it is
-another matter.
+**Navigation identity and cancellation.** Every `goto()` aborts the old
+`navigationSignal`, creates a fresh controller and increments `navigationId` before
+calling `onNavigate` and rendering the destination. Capture identity/signal when
+starting async work; late completion must not overwrite another page or session.
+`goto(..., {replace: true})` updates the current route without moving the previous
+route into the one-step back slot.
 
 The trade-off in all of this: no URLs. You cannot link to a page, the browser back button
 does nothing useful, and reloading depends on the `localStorage` restore. For a
@@ -14454,34 +14488,32 @@ static hideAndClearDialoguePanel() {
 
 ## Build
 
-Plain Webpack, not Symfony Encore, with three entry points:
+Plain Webpack, not Symfony Encore, with `index` and `test` entry points. Entry and
+chunk filenames include `contenthash`. `AssetManifestPlugin` writes
+`public/js/manifest.json`, mapping the logical entry paths to those emitted files;
+Symfony's webpack asset package resolves the shell's index URL through that manifest.
 
-```js
-entry: {
-  index: './js/index.js',
-  test:  './js/tests/test.js',
-  "workers/TaskWorker": "./js/workers/TaskWorker.js",
-},
-output: { path: path.resolve(__dirname, 'public/js') },
-experiments: { topLevelAwait: true },
-module: { rules: [{ test: /\.([cm]?ts|tsx)$/, loader: "ts-loader", options: { transpileOnly: true } }] },
-resolve: { extensions: [".ts", ".tsx", ".js"], fallback: { crypto: false } },
-plugins: [new webpack.ProvidePlugin({ Buffer: [require.resolve('buffer/'), 'Buffer'] })],
-```
+The proof worker is created using `new Worker(new URL(..., import.meta.url))`, so
+Webpack emits it as a chunk referenced by its matching parent build. It is not a
+separate fixed `workers/TaskWorker.js` entry. Deploy source, manifest, bundles and
+worker output together; a new page must not reuse an incompatible cached worker.
+The worker's protocol handshake remains required. An already-running old tab cannot
+acquire new guards merely because assets were deployed.
 
-Three things to note. The proof-of-work worker is a **separate entry point**, because a
-worker cannot share the main bundle. `topLevelAwait` is enabled, which the boot sequence
-relies on. And the Node compatibility surface is intentionally **Buffer-only**:
-CosmJS gets `Buffer` as a global, while `crypto: false` satisfies its browser-side Node
-probe without pulling `crypto-browserify` and its vulnerable `elliptic` dependency.
-Do not copy a broad Node polyfill plugin for this graph.
+`topLevelAwait` is enabled for startup. TypeScript transpilation uses `ts-loader` with
+`transpileOnly: true`, so run type checks separately. The Node compatibility surface
+is Buffer-only: CosmJS gets `Buffer` as a global, while `crypto: false` satisfies its
+browser-side Node probe without pulling in a broad crypto polyfill.
 
 Webpack's extension resolution is also why `SUI.js` gets away with an extensionless
 import that breaks everywhere else. See [ui/runtime.md](ui/runtime.md#loading-them).
 
 Symfony serves one route (`/`) rendering a shell template that defines the mount points —
 `#menu-page-layout`, `#hud-container`, the map containers, `#loading-screen` — and loads
-the bundle. Everything inside them is owned by JavaScript.
+the bundle. Everything inside them is owned by JavaScript. The clean Docker image
+creates writable Symfony cache/log directories for Apache; runtime caches are not
+a substitute for the source/build manifest. Preserve deployment session/token
+revocation storage separately when replacing a serving container.
 
 ---
 
@@ -14493,15 +14525,19 @@ the [animation event queue](client/rendering-entities.md#the-animation-event-que
 than from local storage, and the explicit Lottie teardown. These are hard-won solutions to
 real problems and they transfer to any stack.
 
-**Don't copy:** the plaintext mnemonic in `localStorage`, uncontrolled `GameState`
-mutation, incomplete non-auth HTTP status handling, per-factory numeric coercion, and
-the absence of any UI for a failed transaction. Each of these is a known weakness rather
-than a design choice, and each is called out where it appears.
+**Choose deliberately:** the reference browser stores its mnemonic in localStorage;
+that custody model belongs to the page's trust boundary. `GameState` is mutable, so
+retain source/owner/session checks at updates. Current `JsonAjaxer` rejects failed
+HTTP responses, bounds requests and supports cancellation; do not restore older
+silent-failure behavior. Definitive transaction failure returns existing flows to
+their retained intent, while uncertainty keeps the signed identity reserved.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30): `src/js/framework/`,
-`src/js/controllers/`, `src/js/view_models/`, `src/webpack.config.js`.*
+*Reviewed against structs-webapp `ae4457e2`: router/request lifetimes, controller
+registration, accepted view flows, webpack/manifest/worker integration and Docker
+runtime ownership. Unchanged base interfaces and examples were compared with the
+previous source revision.*
 
 </document>
 

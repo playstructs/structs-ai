@@ -131,8 +131,9 @@ JSON lives at predictable paths:
 ```
 
 The still and the animation are mutually exclusive: playing an animation hides the still
-container, and structs with an active loop (extractors and refineries while online) hide
-the still permanently in favour of the loop.
+container. Online extractors/refineries use an active loop while their ore work is
+not halted by a raid; a halted loop returns to its still until authoritative state
+permits work again.
 
 **Lottie lifecycle is where the memory leaks are**, and the reference client is explicit
 about it:
@@ -197,10 +198,19 @@ list of `AnimationEvent`s and enqueues them in narrative order.
 
 Three consequences ripple outward from this design, and each is worth copying:
 
-**Game state and displayed state diverge on purpose.** `gameState` holds the final
-post-attack values the moment the event arrives, while animation events carry
-`options.healthAfter` so each step shows the health at *that* moment. The bars catch up as
-the sequence plays.
+**Game state and displayed state diverge on purpose.** Refreshes bring `gameState`
+to authoritative post-attack values, while queued animation events carry
+`options.healthAfter` for the intermediate moment. Do not write those temporary
+values back over final indexed state. The bars catch up as the sequence plays.
+
+A reported target counter plays even when rebound later destroys that target. Show
+volley damage, then the counter, then rebound and final destruction. A blocked or
+evaded volley does not damage the target; net volley damage is carried on the final
+projectile row. Preserve the release flags and defense metadata, rather than
+inferring that a final destroyed flag means the earlier counter never happened.
+Every participant is refreshed, including countering defenders. Large notification
+stubs must first resolve by exact event identity, preserving per-planet order; see
+[GRASS](realtime-grass.md).
 
 **Other renderers defer to the queue.** The HUD layer holds back struct-HUD renders while
 an animation is playing and flushes them on `ANIMATION_QUEUE_EMPTY`:
@@ -232,7 +242,7 @@ moment.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30):
+*Verified against structs-webapp `ae4457e2` (2026-10-30):
 `src/js/view_models/components/PfpViewerComponent.js`, `StructStillRenderer.js`,
 `MapStructViewerComponent.js`, `MapStructLottieAnimationSVG.js`,
 `src/js/data_structures/AnimationEventQueue.js`, and

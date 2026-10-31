@@ -26,8 +26,8 @@ real-time events — see [develop/client/](../client/index.md).
 
 | | |
 |---|---|
-| Stylesheet | `src/public/css/sui/sui.css` — one file, 2,701 lines |
-| Icon fonts | `src/public/css/structicons.css` (68 glyphs) + 31 sprite icons in `sui.css` |
+| Stylesheet | `src/public/css/sui/sui.css` — one file |
+| Icon fonts | `src/public/css/structicons.css` (69 glyphs) + 32 sprite icons in `sui.css` |
 | Display fonts | `ExtremeHazard` (chrome/labels), `DirectiveZero` (content/numbers), `Inter` (tickers) |
 | JS runtime | `src/js/sui/` — four optional behaviours, ES modules |
 | Naming | `.sui-<component>[-<part>]` + `.sui-mod-<variant>` + `.sui-theme-<faction>` |
@@ -115,5 +115,5 @@ webapp considerably.
 
 ---
 
-*Verified against structs-webapp `08e13e2` (2026-09-30). Inventory:
+*Verified against structs-webapp `ae4457e2` (2026-10-30). Inventory:
 [generated/sui-inventory.md](https://github.com/playstructs/structs-ai/blob/main/generated/sui-inventory.md).*
