@@ -28,6 +28,7 @@ Attribution is one row per parent event, player, and role. For `struct_attack`, 
 |--------|------|-------------|---------------|
 | GET | `/api/planet-activity/all/page/{page}` | List every planet activity row | Yes |
 | GET | `/api/planet-activity/planet/{planet_id}/page/{page}` | List activity for a planet | Yes |
+| GET | `/api/planet-activity/planet/{planet_id}/event/{seq}?time=...` | Retrieve one exact event, including full detail for a GRASS stub | Yes |
 | GET | `/api/planet-activity/category/{category}/page/{page}` | List activity by category | Yes |
 | GET | `/api/planet-activity/player/{player_id}/page/{page}` | Activity attributed to a player (`?category=`, `?role=`, `?since_height=`, `?order=`) | Yes |
 | GET | `/api/planet-activity/stats` | 30-day counts by category (`?category=`, `?bucket=1h\|1d`) | Yes |
@@ -59,6 +60,49 @@ Bucketed stats for charts: [`analytics.md`](analytics.md).
 |------|------|----------|--------|-------------|
 | `planet_id` | string | Yes | planet-id | Planet identifier |
 | `page` | integer | Yes | `\d+` | Page number |
+
+---
+
+### Exact event lookup
+
+`GET /api/planet-activity/planet/{planet_id}/event/{seq}?time={timestamp}`
+
+Supply the notification's complete `(time, planet_id, seq)` identity. `planet_id`
+is `2-N` with a positive uint64 suffix, and `seq` is a canonical unsigned decimal
+string up to `2147483647`. The only accepted query key is `time`: a valid ISO
+calendar timestamp with `T`, optional 1–6 fractional digits and explicit `Z` or
+`±HH:MM` timezone (maximum offset 14:00). URL-encode it with `URLSearchParams`;
+do not truncate microseconds through a JavaScript `Date` conversion.
+
+The endpoint remains authenticated. Invalid identity returns HTTP 400 with
+`errors.activity_key_invalid`. An absent exact row returns HTTP 200,
+`success: true`, `data: null`. A found row is a **single object**, not a page:
+
+```json
+{
+  "success": true,
+  "errors": {},
+  "data": {
+    "time": "2026-10-30T12:34:56.123456Z",
+    "planet_id": "2-1",
+    "seq": "4",
+    "category": "struct_attack",
+    "block_height": "3353001",
+    "detail": {"attackerStructId": "5-1", "eventAttackShotDetail": []}
+  }
+}
+```
+
+The example abbreviates the combat detail. `seq` and `block_height` are strings;
+`detail` is a decoded object. `time` echoes the equivalent requested timestamp.
+This uses equality on the existing unique hypertable key, rather than a page scan.
+Validate the returned key/category, preserve stream order while awaiting it, and
+reject late replies after session or observed-planet replacement.
+
+Exact-event contract verified against structs-webapp `e326b0af`:
+`PlanetActivityQuery.php`, `TableReadManager::planetActivityEvent`, and the
+Apache/control-proxy acceptance suite. Other endpoints retain the page's earlier
+review baseline.
 
 ---
 
@@ -121,4 +165,4 @@ Daily counts from `structs.planet_activity_player_daily`. Optional `category`, `
 
 Global hourly stats are materialized-only and refreshed every 10 minutes over the recent window. Daily and per-player daily aggregates include current data according to their continuous-aggregate policy, so aggregate counts can lag the raw feed.
 
-Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); catalog rows are returned **directly in `data` as a flat array** with a default page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.
+Responses use the shared envelope (`{ "success": true, "errors": {}, "data": [ ...rows ] }`); paged catalog rows are returned **directly in `data` as a flat array** with a default page size of 100 — if `data.length === 100`, request the next page. See `protocols/webapp-api-protocol.md`.

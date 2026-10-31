@@ -74,46 +74,69 @@ There is also a **field-casing split** inside `detail`: most struct events use s
 
 ## `struct_attack` event detail schema
 
-Attacker context is **flat at the top** of `detail`; the per-shot outcomes are in a **nested array** `eventAttackShotDetail[]`. (Verified against webapp `src/js/ts/structs.structs/types/structs/structs/events.ts` `EventAttackDetail` / `EventAttackShotDetail`.)
+Attacker context is flat at the top of `detail`; per-projectile outcomes are in
+`eventAttackShotDetail[]`. This excerpt is from the pinned release keeper's
+single-shot survivor capture (unrelated fields omitted):
 
-```jsonc
-// detail (flat attacker block)
+```json
 {
   "attackerStructId": "5-1",
-  "attackerStructType": 2,
-  "attackerStructOperatingAmbit": 4,        // ambit ENUM (space=4) — see Ambit note below
-  "weaponSystem": 0,
-  "weaponControl": 1,
-  "recoilDamage": 0,
-  "recoilDamageToAttacker": false,
-  "planetaryDefenseCannonDamage": 0,
-  "attackerPlayerId": "1-11",
-  "eventAttackShotDetail": [                 // nested: one entry PER PROJECTILE
+  "attackerStructType": "Health event attacker",
+  "attackerStructTypeId": "800",
+  "attackerStructOperatingAmbit": "land",
+  "weaponSystem": "primaryWeapon",
+  "attackerPlayerId": "1-1",
+  "attackerHealthBefore": "6",
+  "attackerHealthAfter": "6",
+  "attackerHealthMax": "6",
+  "eventAttackShotDetail": [
     {
-      "targetPlayerId": "1-22",
-      "targetStructId": "5-3",
-      "targetStructType": 3,
+      "targetPlayerId": "1-2",
+      "targetStructId": "5-2",
+      "targetStructType": "Health event target",
+      "targetStructTypeId": "801",
       "evaded": false,
-      "evadedCause": 0,
+      "evadedCause": "noUnitDefenses",
       "blocked": false,
       "blockedByStructId": "",
-      "damageDealt": 2,
-      "damage": 2,
-      "damageReduction": 0,
+      "damageDealt": "2",
+      "damage": "2",
+      "targetHealthBefore": "5",
+      "targetHealthAfter": "3",
+      "targetHealthMax": "6",
       "targetDestroyed": false,
       "targetCountered": false,
-      "targetCounteredDamage": 0
+      "targetCounteredDamage": "0"
     }
   ]
 }
 ```
 
-Notes:
-- `targetPlayerId` is **per shot**, not top-level. Multi-target attacks can therefore attribute different projectiles to different players. PostgreSQL's `planet_activity_player` attribution expands the shot array for role `target`.
-- Chain `EventAttack` **does** include health on the proto: `attackerHealthBefore` / `After` / `Max` on `eventAttackDetail`, and per-shot `targetHealth*` / `blockerHealth*` on `eventAttackShotDetail`. Catalog: [chain-events.md](chain-events.md).
-- The Guild API / GRASS activity feed may still runtime-enrich the same names for animation. Health values may arrive as strings (coerce).
-- Evasion is per-target (the whole volley); hit/miss is per-projectile (per `eventAttackShotDetail` entry).
-- A struct counters at most once per `struct-attack` invocation; defender counters nest under `eventAttackDefenderCounterDetail[]` inside each shot.
+Type names and enum labels are strings in this JSON. `attackerStructTypeId` and
+`targetStructTypeId` are separate decimal-string IDs. Do not use the TypeScript
+binary enum representation as a description of the GRASS JSON payload.
+
+- `targetPlayerId` belongs to each shot. The attribution projection expands the
+  array to identify each target player.
+- `damageDealt` is the projectile's rolled damage. `damage` carries net volley
+  damage only on the final projectile row; earlier rows carry zero and unchanged
+  observed target/blocker health. Do not sum both quantities as damage.
+- `*HealthBefore/After/Max` are keeper-observed values, preserved by sync-state.
+  Overkill cannot make health negative. A target's final health can include
+  rebound from an explosive attacker killed by that target's counter.
+- Play a reported target counter even when `targetDestroyed` is true. Its interim
+  health is `max(0, targetHealthBefore - damage)`, or unchanged if blocked, evaded
+  or evaded by planetary defenses. Apply final health/destruction after rebound.
+- Evasion applies to the target volley; each row records one projectile. Defender
+  counters nest under `eventAttackDefenderCounterDetail[]`.
+- Large planet notifications contain `stub: "true"` instead of `detail`.
+  [Retrieve the exact event](webapp/planet-activity.md#exact-event-lookup) with its
+  complete timestamp, planet and sequence; the authenticated response has
+  object-valued `data.detail`. Preserve microseconds and validate all key fields.
+
+Combat shape verified against structsd `96cea3a`, sync-state `d0b5924` and webapp
+`e326b0af`, including 14 captured release events through PostgreSQL/GRASS and
+exact-event HTTP acceptance. This does not change other sections' review baselines.
 
 See [combat.md](../knowledge/mechanics/combat.md#attack-resolution-sequence) for the resolution order, [chain-events.md](chain-events.md) for the Tendermint event, and [api/streaming/event-schemas.md](streaming/event-schemas.md) for the GRASS catalog.
 

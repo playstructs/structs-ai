@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Combat client guidance uses captured release JSON names, string numeric values,
+  final-volley damage and observed health, including counters followed by lethal
+  rebound. Large GRASS notifications use the authenticated exact-event lookup,
+  preserving the full timestamp and rejecting mismatched or stale replies. The
+  canonical streaming skill and generated mirrors replace invented combat field
+  names; the API reference documents object-valued exact-event responses and
+  missing-row behavior. The wider webapp documentation review remains in progress;
+  the global webapp pin and unrelated page verification footers are unchanged.
+
 - Assessment and power-budget helpers use exact integers, a shared node and query
   height, bounded CLI reads, validated entity/default semantics and explicit source
   identity. Valid uint64 capacity no longer wraps through signed shell arithmetic,

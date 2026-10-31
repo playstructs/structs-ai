@@ -125,7 +125,7 @@ Use wildcards to discover what events exist. Narrow to specific subjects once yo
 | `fleet_arrive` | Fleet arrived at planet | Prepare defense or welcome |
 | `fleet_depart` | Fleet left planet | Update threat assessment |
 
-All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for why these, not `struct_attack` detail, are what you reliably get live.
+All of the above (and the struct categories below) are `planet_activity` rows that arrive on the **planet subject** `structs.planet.{planet_id}.{player_id}` (subscribe with `structs.planet.{planet_id}.*`). `struct_health`, `struct_status`, `shield_change`, `raid_status`, and `fleet_arrive`/`fleet_depart` are the *effect* events that fire during combat — see the stub note under [Combat Event Payloads](#combat-event-payloads) for how to retrieve full `struct_attack` detail when a notification is stubbed.
 
 For raid settlement, `raid_status` with `status: raidSuccessful` is the authoritative GRASS outcome signal; corroborate with player ore/state deltas. Desktop's `tx_settled` is not a GRASS category and is not guaranteed when a PoW worker auto-submits the completion outside the MCP action bridge. If you need the missing hash, query the transactions at the success block and match `EventHashSuccess(category=raid)` with `EventRaid(status=raidSuccessful)` as described in [chain events](https://structs.ai/api/chain-events#recovering-a-pow-completion-transaction-hash).
 
@@ -211,56 +211,55 @@ Grid categories are the attribute name itself (e.g. `ore`, `load`), carried on `
 
 ### Combat Event Payloads
 
-> **The stub: why combat looks like effects, not attacks.** `struct_attack` *is* a published category, but the NATS NOTIFY payload has an ~8000-byte ceiling. When a `planet_activity` row's full payload (e.g. a `struct_attack` `detail` with its `eventAttackShotDetail[]` shot log) exceeds 7995 bytes — which any multi-shot, multi-defender fight does — the stream sends a **stub** instead. The stub keeps the routing/identity fields and drops the heavy `detail`: `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": "...", "player_id": "...", "seq": ..., "category": "struct_attack", "time": "...", "stub": "true" }` (note `stub` is the string `"true"`). So for real combat you cannot rely on the live `struct_attack` payload for the blow-by-blow. Detect combat from the **effect** events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`, `fleet_arrive`/`fleet_depart`), then **pull** the full shot detail from the Guild API `planet-activity` feed (or the chain) keyed by the stub's `seq`/`planet_id`. Small attacks ship full `detail` inline; large ones arrive stubbed. The canonical `struct_attack` `detail` schema is in [api/integration-notes.md — struct_attack event detail schema](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+The PostgreSQL notification trigger emits a keyed stub when a planet activity payload
+is too large for `NOTIFY`. A stub contains `subject`, `category`, `planet_id`,
+`player_id`, `seq`, `time`, and `stub: "true"`; it has no `detail`. Accept both the
+string and boolean forms of `true`. Small attacks contain their full detail inline.
 
-On Desktop, `structs_intel {query:"battle_log", args:{planet_id, category:"all"}}`
-pulls all categories from the full planet-activity feed; omit `category` to default to
-`struct_attack`, or filter by `struct_id`. This is the reliable follow-up to a live stub.
+Fetch a stub with the authenticated Guild API:
 
-`struct_attack` events (when not stubbed) include shot-by-shot resolution. Example payload (observed on planet subject; the full planet payload also carries `subject` and `player_id` alongside the row fields):
-
-```json
-{
-  "category": "struct_attack",
-  "player_id": "1-11",
-  "attackingStructId": "5-100",
-  "targetStructId": "5-200",
-  "weaponSystem": "primary",
-  "eventAttackShotDetail": [
-    {
-      "shotIndex": 0,
-      "damage": 2,
-      "evaded": false,
-      "blocked": false,
-      "blockerStructId": "",
-      "counterAttackDamage": 1,
-      "counterAttackerStructId": "5-200"
-    }
-  ],
-  "attackerHealthRemaining": 2,
-  "targetHealthRemaining": 1,
-  "targetDestroyed": false,
-  "attackerDestroyed": false
-}
+```text
+GET /api/planet-activity/planet/{planet_id}/event/{seq}?time={URL-encoded-original-time}
 ```
 
-Key fields in `eventAttackShotDetail`:
-- `evaded` -- true if the shot missed (defense type interaction)
-- `blocked` -- true if a defender intercepted
-- `blockerStructId` -- which struct blocked (if any)
-- `counterAttackDamage` / `counterAttackerStructId` -- counter-attack info per shot
+Keep the original timestamp string, including microseconds and timezone. Do not
+round-trip it through JavaScript `Date`, which loses precision. The exact lookup
+returns one object in `data`, with object-valued `detail`, or `data: null` when the
+row is absent. Validate its planet, sequence, time and category against the stub.
+Never substitute the first row of the latest activity page. See the
+[exact event contract](https://structs.ai/api/webapp/planet-activity#exact-event-lookup).
 
-`struct_health` events track HP changes:
+Await hydration before processing the next event on that planet's stream. Drop a
+late reply after the player/session or observed planet changes. A missing row or
+failed read means detail is unavailable; it is not successful combat. Re-fetch
+current state after gaps. NATS notifications do not provide durable replay.
 
-```json
-{
-  "category": "struct_health",
-  "structId": "5-200",
-  "health": 1,
-  "maxHealth": 3,
-  "destroyed": false
-}
-```
+`detail.attackerStructId` identifies the attacker;
+`detail.eventAttackShotDetail[]` contains one row per projectile. Unit type names
+and enum labels are strings in the notification JSON; separate `*StructTypeId`
+fields identify types. Numeric quantities normally arrive as decimal strings.
+See the [captured event shape](https://structs.ai/api/integration-notes#struct_attack-event-detail-schema).
+
+Health and damage have different meanings:
+
+- `damageDealt` records the projectile's rolled damage. `damage` is the net volley
+  damage, carried by the final projectile row; it is not another per-shot amount.
+- `attackerHealthBefore/After/Max`, `targetHealthBefore/After/Max` and
+  `blockerHealthBefore/After/Max` are observed health. Overkill and rebound mean
+  subtracting `damageDealt` is not a replacement for the observed values.
+- A target can counter and then die to the attacker's explosion. Play the counter
+  before the later destruction even when `targetDestroyed` is true. For that
+  counter, the target's interim health is `targetHealthBefore - damage`, clamped
+  at zero, or unchanged when blocked/evaded. Then apply `targetHealthAfter`.
+- `blockedByStructId` identifies a blocker. `targetCountered` and
+  `targetCounteredDamage` describe a target counter; defender counters are in
+  `eventAttackDefenderCounterDetail[]`.
+
+`struct_health` activity detail uses `struct_id`, `health`, and `health_old`.
+The writer omits a zero-health activity row, so also consume `struct_status` and
+refresh the struct; do not wait for a final `struct_health: 0` notification.
+Effects and hydrated attack detail complement each other. They are not proof that
+an unrelated pending transaction committed.
 
 ### Noise Filtering
 

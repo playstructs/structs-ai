@@ -18,7 +18,7 @@ This page is GRASS (NATS) only. For structsd Tendermint events (`structs.structs
 
 | Event Name | Description | Subject Pattern | Schema |
 |------------|-------------|-----------------|--------|
-| block | Block updates | `structs.block.*` | `event-schemas.md#BlockEvent` |
+| block | Block updates | `consensus` | `event-schemas.md#BlockEvent` |
 
 ### Guild Events
 
@@ -63,7 +63,15 @@ These are `planet_activity` rows and arrive on the **planet subject** `structs.p
 
 #### struct_attack payload stubbing
 
-`struct_attack` is published live, but the NATS NOTIFY payload is capped at ~8000 bytes. When a `planet_activity` row's payload exceeds 7995 bytes, the stream sends a **stub** — `{ "subject": "structs.planet.{planet_id}.{player_id}", "planet_id": ..., "player_id": ..., "seq": ..., "category": "struct_attack", "time": ..., "stub": "true" }` with **no `detail`** (note `stub` is the string `"true"`). Detect combat from the effect events (`struct_health`, `struct_status`, `shield_change`, `raid_status`), then pull the full shot detail from the Guild API `planet-activity` feed keyed by `seq`/`planet_id`. Small attacks ship `detail` inline.
+The PostgreSQL notification trigger can replace a large planet activity payload
+with a stub containing `subject`, `planet_id`, `player_id`, `seq`, `category`,
+`time`, and `stub: "true"`, without `detail`. Small attacks carry full detail.
+Accept the boolean form of `true` as well. Use the authenticated
+[exact event lookup](../webapp/planet-activity.md#exact-event-lookup) with the full
+`(time, planet_id, seq)` key, preserving microseconds, then validate the returned
+identity/category before replay. Await this fetch before later events on the same
+stream; discard late responses after session or planet replacement. No durable
+notification replay is implied. Refresh current state after delivery gaps.
 
 ### Player Events
 
@@ -93,9 +101,9 @@ The corresponding `player_consensus` GRASS events fire when sync-state commits U
 |--------|---------|-----------------|---------|
 | Player | `structs.player.>` | `structs.player.{guild_id}.{player_id}` | `structs.player.0-1.1-11` |
 | Guild | `structs.guild.*` | `structs.guild.{guild_id}` | `structs.guild.0-1` |
-| Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.3-1.1-11` |
+| Planet | `structs.planet.>` | `structs.planet.{planet_id}.{player_id}` | `structs.planet.2-1.1-11` |
 | Struct | `structs.struct.*` | `structs.struct.{struct_id}` | `structs.struct.5-1` |
-| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.7-1` |
+| Fleet | `structs.fleet.*` | `structs.fleet.{fleet_id}` | `structs.fleet.9-1` |
 | Address | `structs.address.register.*` | `structs.address.register.{code}` | `structs.address.register.ABC123` |
 | Grid | `structs.grid.>` | `structs.grid.{object_type}.{object_id}.{player_id}` | `structs.grid.struct.5-1.1-11` |
 | Global | `structs.global` | `structs.global` | `structs.global` |

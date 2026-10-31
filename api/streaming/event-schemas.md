@@ -15,14 +15,14 @@ This page is GRASS (NATS) only. For structsd Tendermint events see [chain-events
 
 ## Base Event
 
-All GRASS events share a common base structure.
+GRASS envelopes share routing fields; entity-specific fields depend on the category.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| subject | string | Yes | NATS subject for this event. Pattern: `^structs\..+$` |
+| subject | string | Yes | NATS subject for this event; game subjects begin `structs.`, block ticks use `consensus` |
 | category | string | Yes | Event category (see `event-types.yaml`) |
-| id | string | Yes | Entity identifier |
-| updated_at | string (date-time) | Yes | ISO 8601 timestamp of update |
+| id | string | Category-dependent | Entity identifier; not present on every envelope |
+| time / updated_at | string (date-time) | Category-dependent | Planet activity uses `time`, including microseconds |
 
 > **Grid and planet events carry the owner `player_id`** (added 2026-07-07). Their subjects append it — `structs.grid.{object_type}.{object_id}.{player_id}` and `structs.planet.{planet_id}.{player_id}` — and their payloads include a top-level `player_id` string field (the literal `noPlayer` when the owner can't be resolved). This holds for full and stubbed planet payloads. Subscribe with a trailing `*`/`>` (see [subscription-patterns.md](subscription-patterns.md)).
 
@@ -148,13 +148,13 @@ The `detail` payload has the **attacker context flat at the top** and the **per-
 | Field | Type | Description |
 |-------|------|-------------|
 | attackerStructId | string | Attacking struct ID |
-| attackerStructType | integer | Attacker struct type ID |
-| attackerStructOperatingAmbit | integer | Attacker ambit (enum: water=1…space=4) |
-| weaponSystem | integer | 0 = primary, 1 = secondary |
-| weaponControl | integer | Weapon control value |
-| recoilDamage | integer | Recoil damage amount |
+| attackerStructType / attackerStructTypeId | string / decimal string | Type name / separate type ID |
+| attackerStructOperatingAmbit | string | JSON ambit label, e.g. `land` |
+| weaponSystem | string | `primaryWeapon` or `secondaryWeapon` |
+| weaponControl | string | JSON control label, e.g. `unguided` |
+| recoilDamage | decimal string | Recoil damage amount |
 | recoilDamageToAttacker | boolean | Whether recoil hit the attacker |
-| planetaryDefenseCannonDamage | integer | PDC damage contribution |
+| planetaryDefenseCannonDamage | decimal string | PDC damage contribution |
 | attackerPlayerId | string | Attacking player ID |
 | eventAttackShotDetail | array | Per-projectile shot outcomes (see below) |
 
@@ -164,21 +164,33 @@ The `detail` payload has the **attacker context flat at the top** and the **per-
 |-------|------|-------------|
 | targetPlayerId | string | Player owning this shot's target |
 | targetStructId | string | Struct hit by this shot |
-| targetStructType | integer | Target struct type ID |
+| targetStructType / targetStructTypeId | string / decimal string | Type name / separate type ID |
 | evaded | boolean | Shot evaded |
-| evadedCause | integer | Evasion cause code |
+| evadedCause | string | Evasion label, e.g. `defensiveManeuver` |
 | blocked | boolean | Shot absorbed by a defender |
 | blockedByStructId | string | Defender struct that blocked (empty if none) |
-| damageDealt | integer | Final damage applied |
-| damage | integer | Pre-reduction damage |
-| damageReduction | integer | Damage reduced by armor/effects |
+| damageDealt | decimal string | Rolled projectile damage |
+| damage | decimal string | Net volley damage, carried by the final projectile row |
+| damageReduction | decimal string | Volley damage reduced by armor/effects |
 | targetDestroyed | boolean | Target reached 0 HP |
 | targetCountered | boolean | Target fired a counter |
-| targetCounteredDamage | integer | Counter damage dealt back |
+| targetCounteredDamage | decimal string | Counter damage dealt back |
 
-> `targetPlayerId` is per shot, not a top-level attack field. The database attribution function expands `eventAttackShotDetail[]` and records each distinct target as role `target`. Health fields are canonical in the v0.21 event shape (`attackerHealthBefore/After/Max` at the top level and `targetHealth*` / `blockerHealth*` per shot), though wire numerics may still arrive as strings. See [api/integration-notes.md — struct_attack event detail schema](../integration-notes.md#struct_attack-event-detail-schema) and [combat.md](../../knowledge/mechanics/combat.md#attack-resolution-sequence).
+`targetPlayerId` is per shot. The attribution function expands the array for role
+`target`. Canonical observed health is `attackerHealthBefore/After/Max` at the top
+level and `targetHealth*` / `blockerHealth*` per shot, normally decimal strings.
+Final target health can include rebound after a target counter; the animation
+must play that counter before destruction. See the
+[captured detail and health contract](../integration-notes.md#struct_attack-event-detail-schema).
 
-> **Stubbing on the live stream.** The NATS NOTIFY payload is capped at ~8000 bytes. When a `struct_attack` row's full `detail` exceeds 7995 bytes (typical of multi-shot, multi-defender fights), the realtime stream sends a **stub** — `{ "category": "struct_attack", "stub": true, "planet_id": ..., "seq": ..., "time": ... }` with **no `detail`**. The full `eventAttackShotDetail[]` is then only available by pulling the Guild API `planet-activity` row (keyed by `seq`/`planet_id`). Detect combat from the effect events that always stream in full (`struct_health`, `struct_status`, `shield_change`, `raid_status`); use the pull for per-shot detail. Small attacks ship `detail` inline.
+The PostgreSQL notification payload limit can produce a stub with `subject`,
+`category`, `planet_id`, `player_id`, `seq`, `time`, and `stub: "true"`, without
+`detail`. Accept boolean `true` too. Fetch the authenticated
+[exact event](../webapp/planet-activity.md#exact-event-lookup) by the full
+`(time, planet_id, seq)` key. Preserve timestamp microseconds; do not substitute a
+latest-page row. Keep stream ordering while awaiting detail and discard late
+responses after a session or observed-planet change. A missing row is unavailable
+detail, not an empty successful attack. Re-read current state after a stream gap.
 
 ### StructStatusEvent
 
