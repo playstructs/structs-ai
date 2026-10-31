@@ -11,6 +11,13 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-10-31 — client migration guide
+
+- Added the client migration checklist to the maintained developer documentation
+  and full LLM bundle, covering browser, API, database and managed-signer adoption.
+- Kept release history here and deployment-specific evidence in the coordinator.
+  The checklist describes current integration requirements and acceptance cases.
+
 ## 2026-10-31 — second webapp review
 
 - Reviewed local webapp `bde1cec8`: unknown legacy history no longer reserves all

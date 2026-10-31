@@ -134,6 +134,7 @@ FULL_FILES=(
 
   # Develop - Building clients
   develop/client/index.md
+  develop/client/migration.md
   develop/client/state-and-data.md
   develop/client/actions-and-signing.md
   develop/client/work-and-pow.md

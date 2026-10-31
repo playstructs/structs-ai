@@ -39,6 +39,8 @@ using GRASS only to stay current in between.
 
 ---
 
+For an existing fork, follow the [client migration checklist](migration.md).
+
 ## The subsystems
 
 | Page | Covers |

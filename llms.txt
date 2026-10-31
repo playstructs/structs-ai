@@ -146,6 +146,7 @@
 ## Build -- Clients
 
 - [Building a Structs client](https://structs.ai/develop/client/): The three-channel architecture -- REST for bulk reads, GRASS for live deltas, RPC for writes
+- [Client migration checklist](https://structs.ai/develop/client/migration): Adoption and acceptance for webapp forks, API operators and managed signers
 - [State and data](https://structs.ai/develop/client/state-and-data): GameState, factories, the string-number precision trap, the REST client and event bus
 - [Actions and signing](https://structs.ai/develop/client/actions-and-signing): Wallet, protobuf registry, the dual-lane queue, charge gating, avoiding sequence mismatch
 - [Work and proof-of-work](https://structs.ai/develop/client/work-and-pow): Hash input format, difficulty decay, worker orchestration, restoring work from the server
