@@ -76,7 +76,22 @@ The individual-player read chooses up to 16 approved, non-vault addresses with p
 
 `retained_funds_meta` contains `ready`, `height`, `source_limit:16`, exact-string `candidate_count`, `complete` and `reason`. Ready describes the inspected funding window; `complete:false` explicitly reports more indexed candidates. Its returned amount is not total many-address wallet wealth. Later refreshes can include other addresses as funds are spent. On unavailable retained evidence, the total is null, sources are empty, and `available_alpha_p` includes only the independently verified vault amount.
 
-The existing transfer/infusion flows prefer the vault. With fresh native ownership and the signing key's TokenTransfer bit, they can prepend bounded MsgPlayerSend collection messages for only the shortfall, followed by the requested spend, in one simulated signed transaction. Nothing runs automatically when a refund matures. An infusion-only key can use existing vault funds but cannot collect retained funds. Generator funding remains vault-only. See [actions and signing](../../develop/client/actions-and-signing.md).
+The existing transfer, reactor infusion and generator funding flows prefer the vault. With fresh native ownership and the signing key's TokenTransfer bit, they can prepend bounded MsgPlayerSend collection messages for only the shortfall, followed by the requested spend, in one simulated signed transaction. Nothing runs automatically when a refund matures. An infusion-only key can use existing vault funds but cannot collect retained funds. See [actions and signing](../../develop/client/actions-and-signing.md).
+
+Identical retained evidence is cached by owner, native endpoint, chain, exact height,
+vault and candidate window. A changed boundary forces fresh reads. Cache slots are
+replaced per owner and expire after 60 seconds; a shared lock avoids duplicate PHP
+worker reads. Partial/failing results are not cached. An uncached window reserves
+`1 + 2 * candidate_count` native-read tokens, up to 33. The client bucket allows a
+burst of 66 and refills 8/second; the shared container bucket allows 264 and refills
+32/second. Cache hits consume no tokens. Exhaustion reports unavailable retained
+evidence while retaining verified vault funds. These are API work limits, not an
+on-chain rule or permission to reuse evidence when signing.
+
+Per-client identity uses Symfony's resolved client IP. Behind a proxy, set
+`SYMFONY_TRUSTED_PROXIES` to the actual controlled proxy addresses and
+`SYMFONY_TRUSTED_HEADERS` to its trusted forwarded headers. Otherwise callers share
+the proxy's bucket. Multiple replicas need shared cache/locks or common edge limits.
 
 ## Search and recipient selection
 
@@ -122,6 +137,6 @@ See [catalog conventions](../../protocols/webapp-api-protocol.md#pattern-7-catal
 Keep response metadata attached; paged requests are separate snapshots.
 
 *Player detail/funds, transfer search and the listed activity shapes verified against
-webapp `581fcd0f` PlayerManager, PlayerController, VaultFundsManager and RetainedFundsManager, with
+webapp `bde1cec8` PlayerManager, PlayerController, VaultFundsManager and RetainedFundsManager, with
 structs-pg `400e1c1` ownership/readiness. Analytics-specific tunables retain their
 separate reference and validation scope.*

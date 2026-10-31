@@ -11,6 +11,17 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-10-31 — second webapp review
+
+- Reviewed local webapp `bde1cec8`: unknown legacy history no longer reserves all
+  signing; a consumed native sequence releases the hold without inventing an outcome.
+  No old action is replayed and no UI notice is introduced.
+- Generator funding uses vault-first atomic retained collection, like transfers
+  and reactor infusions. Document exact-height native evidence caching and read budgets.
+- Re-read the signing, state/data and player API pages; only their verification
+  revisions advance. Refreshed the mechanical SUI baseline; UI content is unchanged.
+- This reference update does not approve or perform a live deployment.
+
 ## [Unreleased]
 
 ### Fixed

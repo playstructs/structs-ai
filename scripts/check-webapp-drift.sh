@@ -46,6 +46,8 @@ src/src/Manager/PlayerManager.php|api/webapp/player.md, schemas/responses.md
 src/src/Controller/PlayerController.php|api/webapp/player.md
 src/src/Manager/VaultFundsManager.php|api/webapp/player.md, develop/client/state-and-data.md
 src/src/Manager/RetainedFundsManager.php|api/webapp/player.md, develop/client/state-and-data.md
+src/src/Manager/RetainedFundsReadCache.php|api/webapp/player.md, develop/client/state-and-data.md
+src/js/util/SubmissionHistory.js|develop/client/actions-and-signing.md
 src/src/EventSubscriber/RegistrationRateLimitSubscriber.php|api/webapp/auth.md, api/webapp/player-address.md
 src/config/packages/rate_limiter.yaml|api/webapp/auth.md
 src/js/managers/VaultFunding.js|develop/client/actions-and-signing.md, develop/client/state-and-data.md

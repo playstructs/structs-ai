@@ -7,7 +7,7 @@ description: "Exact transaction intents, wallet proofs, native preparation, dura
 The client saves an intent, prepares it against current indexed/native evidence,
 signs and verifies the exact transaction, journals it before sending, then reconciles
 its committed result. A timeout or CheckTx acceptance cannot establish success.
-This page describes webapp integration `8ec23661`; a client must deploy its matching
+This page describes webapp integration `bde1cec8`; a client must deploy its matching
 API, schema, generated types and workers together.
 
 ## Wallet
@@ -66,7 +66,7 @@ before preparation and sending.
 |---|---|
 | Alpha transfer | Current native ownership/TokenTransfer and vault-first funding with eligible retained collection; selected player resolves to that player's vault, explicit address stays literal |
 | Reactor change | Same-height native/indexed complete positions; vault first, then eligible retained addresses deterministically |
-| Generator funding | Native target/type/owner/TokenInfuse, exact vault funds and current stored output |
+| Generator funding | Native target/type/owner/TokenInfuse, vault-first funding with eligible retained collection and current stored output |
 | Address registration | Target consent, current nonce/protocol, current signing key and requested grant |
 | Device change | Current ownership, nonce lifetime and appropriate permission ceiling; native permission-set/revoke |
 | Gameplay | Explicit allowlist for the 17 existing control messages, current signing owner/key bits, native simulation of target/charge/proof rules |
@@ -110,7 +110,7 @@ Other networks require an explicit authoritative configuration.
 `SigningQueueManager` keeps FIFO action and immediate lanes. It selects at most one
 new transaction per observed block per address. An eligible charged action has
 priority; a blocked action head permits immediate work, including proof completions.
-A pending uncertain submission blocks new sends in both lanes.
+An uncertain submission that can still execute reserves new sends in both lanes. Historical unknown outcomes do not reserve the signing account.
 
 ### Sequence numbers and account ownership
 
@@ -151,22 +151,27 @@ run. Terminal history is bounded, except records still referenced by saved devic
 | queued / current-format preparing without send evidence | Demonstrably unsent; revalidate before trying |
 | prepared journal | Exact bytes saved, but no durable send marker; rebuild only this unsent intent |
 | broadcasting / accepted / unknown | May have reached the chain; retain bytes/hash and reconcile only |
+| historical / unknown | Legacy record without signed identity, or durable native proof its signed sequence was consumed; preserve the unknown outcome and permit new explicit actions, never replay it |
 | succeeded | Matching committed code 0 |
 | dropped | Definitive rejection, failure before sending, or proved non-execution after signed expiry |
 | cancelled | Explicit cancellation of unsent work |
 
-The 30-minute age limit applies only to unsent intents. Legacy in-flight records,
-even without a usable hash, do not become fresh sends. Corrupt/unrecognized stores
-block signing and remain available for recovery. Logout clears private browser
-state and closes the unsigned session boundary while retaining public journals. A legacy send with neither signed identity nor baseline account sequence cannot gain safe expiry retroactively. Its signing key stays blocked; another authorized key is a different queue scope. Do not erase that record or reuse the uncertain key as an automatic recovery step.
+The 30-minute age limit applies only to unsent intents. Legacy in-flight records
+without signed identity remain unknown history and never become fresh sends. They
+do not block new explicit actions. Corrupt active queues or journals still block
+signing and remain available for recovery. Logout clears private browser state
+and closes the unsigned session boundary while retaining public journals.
 
 Legacy lane entries with a nonzero attempt count or recorded broadcast block are
 possible sends, even when their status says queued or an earlier import saved them
-as version 3. They remain unknown. The current endpoint/account's `.corrupt` backup
-is inspected before loading: malformed or possibly submitted evidence blocks new
-sends and is preserved. A valid backup containing only unsigned queued work is not
-replayed. These guards preserve evidence; they do not solve an identity-free
-transaction's outcome or inspect another origin's storage.
+as version 3. They remain unknown history. The current endpoint/account's `.corrupt`
+backup is preserved verbatim. Identifiable possible sends are imported for
+observation; malformed backups are not executed and do not reserve the account.
+A backup with valid current signed identity still follows native reconciliation.
+Unsigned-only backups are not replayed. No notice or new screen is added.
+This preserves evidence without resolving an identity-free transaction's outcome
+or inspecting another origin's storage. A manually repeated action can execute
+again if the earlier action already committed; no automatic repeat is permitted.
 
 ### Retries and settlement
 
@@ -174,8 +179,13 @@ There are no automatic signed-send retries. `broadcastTxSync` code 0 is admissio
 not completion. A valid CheckTx rejection can settle failure; an ambiguous transport
 failure cannot. `find` looks up the original hash and verifies exact bytes, hash,
 chain, block/commit identity, transaction index and execution code. A missing hash,
-RPC outage or local deadline leaves the result unknown. After exact native TxNotFound, a nonzero signed timeout can settle as dropped only when a later committed snapshot proves the same account number and an unchanged signed account sequence. A passed height alone is insufficient; changed sequence or conflicting/unavailable evidence remains unknown. Retain the original bytes and proof; never automatically sign a replacement. Bounded work rotates pending
-lookups so one unavailable hash does not starve the others.
+RPC outage or local deadline leaves the result unknown. After exact native TxNotFound, a nonzero signed timeout can settle as dropped only when a later committed snapshot proves the same account number and an unchanged signed account sequence. A passed height alone is insufficient. A later committed snapshot of the same account
+with an advanced sequence proves the old signed bytes cannot execute again. Save
+that proof durably and release the signing reservation while keeping the outcome
+unknown; this is not a failed or successful receipt. Conflicting/unavailable
+evidence stays held. Retain the original bytes and proof; never automatically sign
+a replacement. Bounded lookups prioritize possible live sends before historical
+records and rotate within each group.
 
 `whenSettled(id, signal)` resolves with the terminal transaction; check `status`.
 It remains pending for uncertainty. Aborting a view observer rejects only that
@@ -246,7 +256,7 @@ This is a custody change, not an MCP key-export feature: tool callers still requ
 signatures and never receive the mnemonic, but the Rust process and OS keychain now belong
 inside the signing trust boundary. See [agent-security.md](../../awareness/agent-security.md).
 
-*Webapp claims verified against integration `8ec23661`: WalletManager,
+*Webapp claims verified against integration `bde1cec8`: WalletManager,
 SigningClientManager, SigningQueueManager, SigningSubmission, TransactionJournal,
 SigningTransaction, MessagePayload, protocol/fee constants and intent preparation.
 The checked release fixtures include exact signed bytes, simulation, native atomic
