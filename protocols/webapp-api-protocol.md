@@ -22,18 +22,18 @@ The surface has two layers:
 
 ## Response Envelope
 
-Every webapp response — both layers, success and failure — uses one envelope (`ApiResponseContentDto`):
+Application API responses use the envelope (`ApiResponseContentDto`):
 
 ```json
 {
   "success": true,
-  "errors": {},
+  "errors": [],
   "data": null
 }
 ```
 
-- `success` (boolean): `true` on HTTP 200, `false` on `400/401/403/404/409`.
-- `errors` (object): a **keyed map** of `error_key` → message (e.g. `{"signature_validation_failed":"Invalid signature"}`). Empty `{}` on success. It is never a string array, and there is no top-level `error`/`code`/`details`.
+- `success` (boolean): true for successful application responses (including 201/202); false for application errors. Check HTTP status too.
+- `errors` (array or object): empty `[]` on success; validation failures usually use a keyed map such as `{"signature_validation_failed":"Invalid signature"}`. Handle both representations rather than assuming an object. Infrastructure errors may not carry this application envelope.
 - `data` (object | array | null): the payload. Single-row reads → object; catalog list reads → **flat array** (see Pattern 7); `null` on error or an empty single lookup.
 - `total` (optional): present when the handler sets it.
 - `meta.height` (optional): indexer height. `ResponseMetaUtil::stampHeight` uses `structs.api_refresh_state.source_height` for a named model (leaderboards, inventory, guild bank) or `current_block.height`. Compare to `GET /api/block` (`height` vs `tip_height`, `lag_blocks`) when a chart must not outrun the chain.
@@ -59,65 +59,39 @@ For the public Orbital Hydro guild webapp use `http://crew.oh.energy` as the bas
 
 ## Authentication
 
-### Signature-Based Session Authentication
+### Signature-Based Session and Bearer Authentication
 
-The webapp authenticates by **Cosmos signature**, not username/password. The client signs a deterministic message with a Cosmos address's key; on success the server starts a session and returns a `PHPSESSID` cookie (no JWT/bearer token).
+POST `/api/auth/login` validates the wallet proof and creates a session cookie.
+POST `/api/auth/token` accepts the same proof and returns an opaque bearer with a
+24-hour lifetime. Send the cookie or `Authorization: Bearer <token>` for protected
+reads/writes. An invalid Bearer credential does not fall back to a valid cookie.
 
-**Public routes (no session required)** — only these four prefixes (`config/packages/security.yaml`): `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`. **Everything else under `/api/` requires a session** and returns `401` without a valid cookie.
+The signed UTF-8 message is:
 
-**Signed message format** (`SignatureValidationManager::buildLoginMessage`):
-
-```
+```text
 LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
 ```
 
-`unix_timestamp` must be within 600 seconds of server time.
+Supply `address`, `guild_id`, `unix_timestamp`, `pubkey`, `signature` in JSON.
+Timestamp is a canonical decimal string less than 600 seconds from server time in
+either direction. Public key is compressed secp256k1 hex; signature is raw 64-byte
+R followed by S, hex-encoded over SHA-256 of that message. The address must be
+indexed as approved in the requested guild.
 
-**Login Flow**:
-```json
-{
-  "request": {
-    "method": "POST",
-    "url": "/api/auth/login",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "body": {
-      "address": "structs1...",
-      "signature": "base64-signature",
-      "pubkey": "base64-pubkey",
-      "guild_id": "0-1",
-      "unix_timestamp": "1715000000"
-    }
-  },
-  "response": {
-    "status": 200,
-    "headers": {
-      "Set-Cookie": "PHPSESSID=..."
-    },
-    "body": {
-      "success": true,
-      "errors": {},
-      "data": null
-    }
-  }
-}
-```
+The [authentication reference](../api/webapp/auth.md) lists the exact public guild
+profile, directory, roster and statistic routes, plus public signup/proof/status
+routes. Catalog, struct and planet-activity reads remain authenticated. Public guild
+GET/HEAD supports anonymous CORS; omit cookies/tokens. Private bearer routes need a
+separate browser origin policy.
 
-On failure the server returns `401` with keyed errors (`signature_validation_failed`, `player_address_does_not_exists`, `player_does_not_exists`). See `examples/auth/webapp-login.md`.
+GET `/api/auth/logout` invalidates the presented session and revokes the presented
+bearer. Clear local key/session material even if HTTP logout fails, while retaining
+public evidence of any uncertain signed transaction. See the
+[login example](../examples/auth/webapp-login.md).
 
-**Using Authenticated Requests** (send the cookie; browser clients use `credentials: include`):
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/reactor/all/page/1",
-    "headers": {
-      "Cookie": "PHPSESSID=..."
-    }
-  }
-}
-```
+*This authentication/envelope section was reviewed against integration `5991ca95`.
+The rest of this page retains its earlier verification baseline pending its separate
+read-model review; deployment capability must be checked independently.*
 
 ## Query Patterns
 
@@ -141,7 +115,7 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": {
         "id": "1-11",
         "primary_address": "structs1...",
@@ -185,7 +159,7 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": {
         "planet": {...},
         "shield": {
@@ -222,7 +196,7 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": {
         "guild": {...},
         "members": [...],
@@ -261,7 +235,7 @@ Guild IDs are type `0` (`^0-[0-9]+$`), e.g. `0-1`. `GET /api/guild/{guild_id}` r
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": {
         "struct": {...}
       }
@@ -292,7 +266,7 @@ Guild IDs are type `0` (`^0-[0-9]+$`), e.g. `0-1`. `GET /api/guild/{guild_id}` r
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": [ { "tx_id": "...", "...": "..." } ]
     }
   }
@@ -326,7 +300,7 @@ The page endpoint returns a **flat array** of ledger rows in `data` (page size 1
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": {
         "raids": [...]
       }
@@ -363,7 +337,7 @@ Conventions:
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": [
         { "id": "6-1", "allocation_type": "static", "source_id": "4-1", "destination_id": "1-11", "creator": "structs1...", "controller": "1-11" }
       ]
@@ -394,7 +368,7 @@ Galaxy-wide LOCF aggregate (not a page of one object): `GET /api/stat/{metric}/a
     "status": 200,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": [
         { "time": "2024-05-06T14:18:20Z", "value": 1024 },
         { "time": "2024-05-06T14:23:20Z", "value": 1018 }

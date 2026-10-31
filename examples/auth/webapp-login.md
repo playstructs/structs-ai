@@ -12,7 +12,7 @@ description: "Web application authentication worked through: successful login, f
 
 Examples of webapp authentication flows including login, authenticated requests, unauthorized handling, and logout.
 
-The webapp does **not** use username/password. Login proves control of a Cosmos address by signing a deterministic message with that address's key; on success the server issues a `PHPSESSID` session cookie (there is no JWT/bearer token).
+The webapp does **not** use username/password. Login proves control of a Cosmos address by signing a deterministic message with that address's key; POST `/api/auth/login` returns a session cookie. POST `/api/auth/token` accepts the same proof and returns an opaque bearer token (not a JWT). These examples describe integration `5991ca95`; confirm the guild has deployed the matching API.
 
 ## Successful Webapp Login
 
@@ -22,7 +22,10 @@ The webapp does **not** use username/password. Login proves control of a Cosmos 
 LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
 ```
 
-For example, signing into guild `0-1` as `structs1abc...` at unix time `1715000000` signs the literal string `LOGIN_GUILD0-1ADDRESSstructs1abc...DATETIME1715000000`. The `unix_timestamp` must be within 600 seconds (10 minutes) of server time or login is rejected.
+For example, signing into guild `0-1` as `structs1abc...` at unix time `1715000000` signs the literal string `LOGIN_GUILD0-1ADDRESSstructs1abc...DATETIME1715000000`. The `unix_timestamp` must be a canonical decimal string less than 600 seconds (10 minutes) from server time in either direction or login is rejected.
+
+Sign SHA-256 of the UTF-8 message using secp256k1. Encode the compressed 33-byte
+public key and 64-byte raw signature as hex; the strings below are placeholders.
 
 **Request:**
 
@@ -35,8 +38,8 @@ For example, signing into guild `0-1` as `structs1abc...` at unix time `17150000
   },
   "body": {
     "address": "structs1abc...",
-    "signature": "base64-encoded-signature",
-    "pubkey": "base64-encoded-pubkey",
+    "signature": "hex-raw-R-then-S-signature",
+    "pubkey": "hex-compressed-pubkey",
     "guild_id": "0-1",
     "unix_timestamp": "1715000000"
   }
@@ -53,7 +56,7 @@ For example, signing into guild `0-1` as `structs1abc...` at unix time `17150000
   },
   "body": {
     "success": true,
-    "errors": {},
+    "errors": [],
     "data": null
   }
 }
@@ -62,7 +65,7 @@ For example, signing into guild `0-1` as `structs1abc...` at unix time `17150000
 **Next Steps:**
 
 1. Store session cookie: `session.cookie = 'PHPSESSID=abc123def456'`
-2. Use cookie in subsequent requests (e.g., `GET /api/guild/this` with `Cookie` header). Browser clients must set `credentials: include`.
+2. Use the cookie for private reads (for example, `GET /api/player/1-11`). Browsers use `credentials: 'include'` and manage HttpOnly cookies themselves; do not copy them into JavaScript storage.
 
 ---
 
@@ -82,7 +85,7 @@ Login failure (bad signature, expired timestamp, or unknown address) returns HTT
   "body": {
     "address": "structs1abc...",
     "signature": "bad-signature",
-    "pubkey": "base64-encoded-pubkey",
+    "pubkey": "hex-compressed-pubkey",
     "guild_id": "0-1",
     "unix_timestamp": "1715000000"
   }
@@ -114,14 +117,14 @@ Other possible error keys: `player_address_does_not_exists` (no approved address
 
 ## Authenticated Request
 
-Make an authenticated request using the session cookie obtained at login.
+Make an authenticated request using the session cookie obtained at login. The endpoint below needs authentication; the guild discovery routes do not.
 
 **Request:**
 
 ```json
 {
   "method": "GET",
-  "url": "http://localhost:8080/api/guild/this",
+  "url": "http://localhost:8080/api/player/1-11",
   "headers": {
     "Cookie": "PHPSESSID=abc123def456",
     "Accept": "application/json"
@@ -131,18 +134,10 @@ Make an authenticated request using the session cookie obtained at login.
 
 **Response (200):**
 
-`/api/guild/this` returns the **host/infrastructure guild** for this deployment (`guild_meta.this_infrastructure = TRUE`) — not the logged-in player's guild. It is one of the few public routes. Guild IDs are type `0`.
-
-```json
-{
-  "success": true,
-  "errors": {},
-  "data": {
-    "id": "0-1",
-    "name": "My Guild"
-  }
-}
-```
+The response uses the standard envelope; `data` is the player read model. Preserve
+its readiness metadata and exact amount strings. `/api/guild/this` instead returns
+the infrastructure guild and is public, as are the explicitly listed
+[guild reads](../../api/webapp/auth.md#public-guild-reads).
 
 ---
 
@@ -173,7 +168,7 @@ A session-gated request made without a valid `PHPSESSID` cookie returns HTTP 401
 
 ## Logout
 
-Logout and clear the session.
+Logout invalidates the server session and revokes a supplied bearer token. This does not revoke the native signing address.
 
 **Request:**
 
@@ -192,14 +187,30 @@ Logout and clear the session.
 ```json
 {
   "success": true,
-  "errors": {},
+  "errors": [],
   "data": null
 }
 ```
 
 **Next Steps:**
 
-1. Clear session cookie: `session.cookie = null`
+1. Clear locally saved credentials even if the HTTP request fails. A successfully
+   invalidated cookie cannot authenticate again.
+2. Preserve public evidence of uncertain native submissions; never turn logout
+   into a replacement transaction or a claim that a send failed.
+
+## Bearer variant
+
+Submit the same signed body to POST `/api/auth/token`. Read
+`data.access_token`, `data.token_type` (`Bearer`), `data.expires_in` (`86400`) and
+`data.player_id` from the successful envelope. Keep the token as an opaque secret
+and pass `Authorization: Bearer <token>` on private requests and logout. A malformed,
+expired or revoked Bearer token cannot rescue itself through an accompanying valid
+cookie. A different token remains valid after logout of the presented token.
+
+Browser CORS is a separate deployment requirement. For anonymous cross-guild reads,
+omit cookies and Authorization entirely. See [auth.md](../../api/webapp/auth.md)
+for the exact public paths and request-header policy.
 
 ---
 

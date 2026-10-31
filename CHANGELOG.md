@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Authentication guidance now covers the implemented bearer endpoint, hex wallet
+  proof encoding, bounded login timestamps, real server-session invalidation and
+  token revocation. Public guild reads are explicit; private entity/device access
+  remains authenticated. Device guidance carries the activation UUID through consent,
+  uses native nonce proofs and permission transactions, and distinguishes indexed
+  evidence from native authority. Canonical permission guidance is updated first,
+  and the drift checker watches these PHP/security sources. Reviewed sections name
+  integration `5991ca95`; unreviewed page baselines and the global pin stay unchanged.
+
 - Combat client guidance uses captured release JSON names, string numeric values,
   final-volley damage and observed health, including counters followed by lethal
   rebound. Large GRASS notifications use the authenticated exact-event lookup,

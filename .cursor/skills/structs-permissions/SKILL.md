@@ -88,6 +88,28 @@ Verify every grant after applying it (`permission-by-object`), and revoke prompt
 4. **Guild rank** — `permission-guild-rank-set -- [object-id] [guild-id] [permission] [rank]` / `permission-guild-rank-revoke -- [object-id] [guild-id] [permission]`. Rank-register `PermAdmin` grants **no** authority of its own — rank-setting still needs `PermAdmin` on the signing key. Kicked members keep their *direct* object grants; revoke those separately.
 5. **Address management** — register a key: `address-register -- [player-id] [address] [proof-pubkey] [proof-signature] [permissions]` (Tier 2, verify proof). The new key signs the exact string `CHAIN<chain-id>|REGISTERADDRESSPLAYER<player-id>ADDRESS<address>NONCE<n>`, where `n` is the per-address nonce served as `proofNonce` by `structsd query structs address [address]` (0 for a never-registered address). A successful registration burns that nonce, so a captured proof cannot be replayed — including after an `address-revoke`, which does not reset it. Revoke: `address-revoke -- [address]` (don't orphan your own `--from`; revoke leaves Cosmos stake and drops game capacity on that address); change primary: `player-update-primary-address -- [new-address]` (**requires `PermAll` on the signing address** — a limited delegate cannot rotate primary). Strict address moves refuse while a redelegation is in flight. **Distinguish two patterns:** `address-register` (or a webapp activation code) adds another signing key to **one existing player** (shared identity, planet, inventory); deriving fresh addresses from one mnemonic at `m/44'/118'/0'/0/N` and running a separate guild signup for each creates **fully independent players** (separate identities) recoverable from a single seed — see [team-operations — Keys and accounts](https://structs.ai/playbooks/meta/team-operations).
 
+## Webapp device workflow
+
+A webapp session or bearer token authenticates API access; it does not grant chain
+permission. Use the [device API contract](https://structs.ai/api/webapp/player-address)
+for activation: keep the issued `activation_id` with the short code, persist the new
+key before sending consent, and obtain the current native `proofNonce`. Sign the
+chain-bound registration message above with that new key. An authorized existing
+key submits `MsgAddressRegister`; pending SQL permission selection alone grants
+nothing. Confirm committed success and matching native/indexed ownership before
+using the new device.
+
+Confirmed-device permission edits use `MsgPermissionSetOnAddress`. The legacy SQL
+endpoint returns `410 chain_transaction_required`. Preserve unexposed mask bits;
+check the signer's ceiling over removed and added bits. Revocation requires the
+signing key's Delete bit. The existing Log Out control without that bit clears
+this browser's key/session only; it does not revoke the on-chain address.
+
+Retain an uncertain transaction's signed identity across reloads and device changes.
+Do not generate another key, proof or replacement transaction to resolve uncertainty.
+Public registration status contains chain/indexed identity; private IP/browser
+metadata and pending consent belong to the authenticated player.
+
 ## Commands reference
 
 | Action | Command |

@@ -1,5 +1,5 @@
 ---
-description: "How agents authenticate against Structs APIs: session auth for the web app, key-based signing for the consensus network, and streaming credentials."
+description: "Wallet-signature sessions and bearer tokens for the webapp, native transaction signing, and streaming credentials."
 ---
 
 # Authentication Protocol
@@ -12,7 +12,7 @@ description: "How agents authenticate against Structs APIs: session auth for the
 
 ## Overview
 
-The Authentication Protocol defines how AI agents should authenticate and authorize when interacting with Structs APIs. This includes session-based authentication for the web application, transaction signing for the consensus network, and NATS authentication for streaming.
+The Authentication Protocol defines how AI agents should authenticate and authorize when interacting with Structs APIs. This includes session or bearer authentication for the web application, transaction signing for the consensus network, and NATS authentication for streaming.
 
 **Key Principles**:
 1. **Use appropriate authentication** for each API type
@@ -25,13 +25,13 @@ The Authentication Protocol defines how AI agents should authenticate and author
 
 ## Authentication Types
 
-### 1. Web Application Authentication (Session-Based)
+### 1. Web Application Authentication (Session or Bearer)
 
 **Use Case**: Authenticating with `structs-webapp` API
 
 **Implementation**: PHP Symfony application (`structs-webapp`)
 
-**Method**: Session-based authentication using cookies
+**Method**: Wallet-signature login producing a session cookie or an opaque bearer token
 
 **Base URL**: `http://localhost:8080`  
 **Base Path**: `/api/auth`
@@ -64,7 +64,26 @@ The Authentication Protocol defines how AI agents should authenticate and author
 
 ## Web Application Authentication
 
-The webapp authenticates by **Cosmos signature**, not username/password. The client signs a deterministic message with a Cosmos address's key; on success the server starts a session and returns a `PHPSESSID` cookie. There is no JWT/bearer token. Only `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, and `/api/setting` are public; every other `/api/` route requires the session cookie.
+The webapp validates a signed login message from an approved address in the
+requested guild. POST `/api/auth/login` creates a session; POST `/api/auth/token`
+accepts the same proof and returns an opaque bearer token with `expires_in: 86400`.
+The token is not a JWT. Send it with `Authorization: Bearer <token>`; an invalid
+Bearer credential does not fall back to a session cookie.
+
+The [authentication reference](../api/webapp/auth.md#public-guild-reads) lists the
+exact anonymous guild profile/directory/roster/stat routes. Signup, login, native
+registration proof/status, timestamp, settings and onboarding events are public.
+Other entity/catalog reads and private device data require authentication. Public
+guild GET/HEAD supports anonymous cross-origin reads; private bearer access still
+requires an appropriate deployment CORS policy in a browser.
+
+Wallet proofs are hex-encoded compressed secp256k1 public keys (66 characters) and
+raw R followed by S signatures (128 characters), signing SHA-256 of the UTF-8 message.
+This encoding is separate from the base64 protobuf fields used in native transactions.
+
+*Webapp authentication and device scope reviewed against integration `5991ca95`.
+Other sections retain their independent source baselines; the chain version alone
+does not certify a guild API deployment.*
 
 ### Login Flow
 
@@ -74,7 +93,7 @@ The webapp authenticates by **Cosmos signature**, not username/password. The cli
 LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
 ```
 
-`unix_timestamp` (unix seconds) must be within 600 seconds of server time.
+`unix_timestamp` (unix seconds) must be a canonical decimal string less than 600 seconds from server time in either direction.
 
 **Step 1: Login Request**
 
@@ -88,8 +107,8 @@ LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
     },
     "body": {
       "address": "structs1...",
-      "signature": "base64-signature",
-      "pubkey": "base64-pubkey",
+      "signature": "hex-raw-signature",
+      "pubkey": "hex-compressed-pubkey",
       "guild_id": "0-1",
       "unix_timestamp": "1715000000"
     }
@@ -108,7 +127,7 @@ LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
     },
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": null
     }
   }
@@ -146,8 +165,8 @@ On failure the server returns `401` with keyed errors (`signature_validation_fai
         "url": "/api/auth/login",
         "body": {
           "address": "structs1...",
-          "signature": "base64-signature",
-          "pubkey": "base64-pubkey",
+          "signature": "hex-raw-signature",
+          "pubkey": "hex-compressed-pubkey",
           "guild_id": "0-1",
           "unix_timestamp": "1715000000"
         }
@@ -188,8 +207,8 @@ Registration is also signature-based and **asynchronous**: persisting the pendin
     },
     "body": {
       "primary_address": "structs1...",
-      "signature": "base64-signature",
-      "pubkey": "base64-pubkey",
+      "signature": "hex-raw-signature",
+      "pubkey": "hex-compressed-pubkey",
       "guild_id": "0-1",
       "username": "new_player",
       "pfp": "optional-pfp"
@@ -205,7 +224,7 @@ Registration is also signature-based and **asynchronous**: persisting the pendin
     "status": 202,
     "body": {
       "success": true,
-      "errors": {},
+      "errors": [],
       "data": null
     }
   }
@@ -234,11 +253,18 @@ Registration is also signature-based and **asynchronous**: persisting the pendin
     "status": 200,
     "body": {
       "success": true,
-      "message": "Logged out successfully"
+      "errors": [],
+      "data": null
     }
   }
 }
 ```
+
+Logout invalidates the presented server session and revokes the presented bearer
+until its expiry; other tokens are unaffected. Clear local credentials even when
+HTTP logout is unavailable. Retain the public journal for any uncertain native
+transaction. Repeating logout is safe. An API logout alone does not revoke a key
+on chain.
 
 ### Session Management
 
@@ -573,8 +599,9 @@ asyncio.run(main())
   "response": {
     "status": 401,
     "body": {
-      "error": "Unauthorized",
-      "message": "Authentication required"
+      "success": false,
+      "errors": {"authentication_error": "Login required"},
+      "data": null
     }
   },
   "action": "re-authenticate",
@@ -647,7 +674,7 @@ asyncio.run(main())
   "recovery": {
     "step1": "check-private-key",
     "step2": "verify-account-sequence",
-    "step3": "retry-with-correct-sequence"
+    "step3": "if-send-was-possible-reconcile-the-original-hash-before-any-new-signature"
   }
 }
 ```
@@ -674,7 +701,7 @@ asyncio.run(main())
 ### Transaction Signing
 
 1. **Verify account sequence** - Check sequence before signing
-2. **Handle nonce errors** - Retry with correct sequence
+2. **Preserve uncertain submissions** - Reconcile the original signed identity; an account-sequence change is not proof of failure
 3. **Validate transaction format** - Verify message structure
 4. **Check gas limits** - Ensure sufficient gas
 

@@ -39,6 +39,21 @@ src/js/sui|develop/ui/runtime.md
 src/js/managers/SigningQueueManager.js|develop/client/actions-and-signing.md
 src/js/managers/SigningClientManager.js|develop/client/actions-and-signing.md
 src/js/managers/WalletManager.js|develop/client/actions-and-signing.md
+src/src/Controller/AuthController.php|api/webapp/auth.md, protocols/authentication.md, examples/auth/webapp-login.md
+src/src/Manager/AuthManager.php|api/webapp/auth.md, protocols/authentication.md
+src/src/Manager/SignatureValidationManager.php|api/webapp/auth.md, protocols/authentication.md
+src/src/Security|api/webapp/auth.md, api/integration-notes.md, protocols/webapp-api-protocol.md
+src/config/packages/security.yaml|api/webapp/auth.md, api/integration-notes.md
+src/src/Controller/PlayerAddressController.php|api/webapp/player-address.md
+src/src/Manager/PlayerAddressManager.php|api/webapp/player-address.md
+src/src/Manager/AddressRegistrationProofManager.php|api/webapp/player-address.md
+src/src/Util/ChainProtocol.php|api/webapp/player-address.md
+src/js/managers/DeviceRegistrationStore.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
+src/js/managers/RegistrationPreparation.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
+src/js/managers/DeviceChangePreparation.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
+src/js/util/RegistrationProof.js|api/webapp/player-address.md
+src/js/util/RegistrationCompletion.js|api/webapp/player-address.md
+src/js/util/DeviceChangeCompletion.js|api/webapp/player-address.md
 src/js/workers|develop/client/work-and-pow.md
 src/js/managers/TaskManager.js|develop/client/work-and-pow.md
 src/js/models/TaskState.js|develop/client/work-and-pow.md

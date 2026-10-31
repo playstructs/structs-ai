@@ -268,16 +268,25 @@ The guild proxy signup flow (sign `GUILD{id}ADDRESS{addr}NONCE0` — the proxy p
 
 ## Guild API auth scope (public vs authenticated)
 
-Almost everything under `/api/` requires an authenticated session (the `PlayerAuthenticator` checks `player_id` in the PHP session; missing → `401 {"authentication_error":"Login required"}`). Only these prefixes are **public** (firewall `security: false`), verified in webapp `config/packages/security.yaml`:
+Private `/api/` routes accept a session cookie or an opaque bearer from
+POST `/api/auth/token`. Both login endpoints require the same signed wallet proof,
+hex-encoded compressed pubkey/raw signature and a fresh timestamp. An invalid bearer
+does not fall back to a valid cookie. Logout invalidates the presented session and
+revokes the presented token; chain address authority is separate.
 
-| Public prefix | Purpose |
-|---------------|---------|
-| `/api/auth/` | `signup`, `login`, `logout`, and the two `/api/auth/player-address*` onboarding routes |
-| `/api/guild/this` | This guild's metadata |
-| `/api/timestamp` | Server time |
-| `/api/setting` | Live tunables |
+Guild profiles, names, directory, rosters, member counts, power stats and completed
+planet counts are explicitly public GET/HEAD at the exact paths listed in
+[auth.md](webapp/auth.md#public-guild-reads). Anonymous cross-origin callers omit
+credentials and tokens. Signup, timestamp, settings, onboarding events and the
+public native proof/registration routes also retain public access.
 
-**Correction to a common assumption:** struct reads and the `planet-activity` feed are **not** public — `/api/struct/list/...`, `/api/struct/{id}`, `/api/planet-activity/...`, etc. all require a session. Authenticate first (see [api/webapp/auth.md](webapp/auth.md)) before any catalog or bespoke read.
+Struct, player, reactor, ledger and planet-activity reads remain authenticated.
+Device list/count/detail, metadata, pending consent and activation management are
+owner-scoped. SQL-only edits of confirmed permissions return 410; use the native
+transaction and confirmed indexing. See [player-address.md](webapp/player-address.md).
+
+*Auth scope reviewed against webapp integration `5991ca95`; check the actual guild
+API deployment before relying on these contracts.*
 
 ---
 

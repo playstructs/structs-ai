@@ -1,102 +1,151 @@
 ---
-description: "Authentication endpoints for the web application: how a session is established and how to carry it on later requests."
+description: "Wallet-signature session and bearer authentication, logout, and the public guild API boundary."
 ---
 
 # Webapp Authentication API Endpoints
 
-**Version**: 1.2.0
 **Category**: webapp
-**Entity**: Auth
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: September 30, 2026
+**Base URL**: the guild's advertised webapp origin; paths below include `/api`.
+**Reviewed implementation**: structs-webapp `5991ca95` (integration branch).
 
----
+These contracts require the matching API deployment. A chain version or a database
+image alone does not establish that a guild serves them.
 
 ## Endpoint Summary
 
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/auth/signup` | Register a new player (signature) | No (public) |
-| POST | `/api/auth/login` | Authenticate via Cosmos signature | No (public) |
-| GET | `/api/auth/logout` | Clear the current session | No (public prefix) |
-| GET | `/api/auth/player-address/{address}/guild/{guild_id}/player-id` | Resolve a player ID from an address + guild | No (public prefix) |
-| POST | `/api/auth/player-address` | Propose a pending signing address (signature-validated) | No (public) |
+| Method | Path | Purpose | API authentication |
+|---|---|---|---|
+| POST | `/api/auth/signup` | Submit signed guild proxy signup | Public, signature validated |
+| POST | `/api/auth/login` | Establish a session cookie | Public, signature validated |
+| POST | `/api/auth/token` | Obtain a bearer token | Public, same signature validation |
+| GET | `/api/auth/logout` | Invalidate the presented session and revoke the presented bearer | Public |
+| GET | `/api/auth/player-address/{address}/guild/{guild_id}/player-id` | Resolve approved player membership | Public |
+| GET | `/api/auth/activation-code/{code}` | Resolve the active code's player and activation identity | Public |
+| GET | `/api/auth/player-address/{address}/player/{player_id}/proof` | Read native registration proof context | Public |
+| GET | `/api/auth/player-address/{address}/player/{player_id}/registration` | Read native and indexed registration status | Public |
+| POST | `/api/auth/player-address` | Submit one device's signed consent | Public, signature and activation validated |
 
-All `/api/auth/*` routes are public (no session enforced by `PlayerAuthenticator`). `logout` operates on the current session cookie if one is present. The two `/api/auth/player-address*` routes are part of address registration — see [`player-address.md`](player-address.md) for the full address-management surface.
+The [device API](player-address.md) defines activation and private metadata routes.
+An API session is separate from the signing key's chain authority.
 
----
+## Signed login request
 
-## Endpoint Details
+`POST /api/auth/login` and `POST /api/auth/token` accept the same JSON body:
 
-### POST `/api/auth/signup`
+| Field | Type | Meaning |
+|---|---|---|
+| `address` | string | Approved signing address belonging to the requested guild |
+| `signature` | string | Hex-encoded raw secp256k1 signature (`R` followed by `S`) (64 bytes / 128 hex characters) |
+| `pubkey` | string | Hex-encoded compressed secp256k1 public key (33 bytes / 66 hex characters) |
+| `guild_id` | string | Guild ID, such as `0-1` |
+| `unix_timestamp` | string | Canonical decimal Unix seconds, less than 600 seconds from server time in either direction |
 
-Register a new player with the operating guild. Asynchronous: persisting the pending player triggers a `GuildMembershipJoinProxy` chain message and the player ID is assigned later — login must be called separately once the ID exists.
+Sign SHA-256 of the UTF-8 bytes of this exact string:
 
-- **ID**: `webapp-auth-signup`
-- **Authentication**: None
-
-**Request body:** `primary_address`, `signature`, `pubkey`, `guild_id` (required); `username`, `pfp` (optional). Signed message (`buildGuildMembershipJoinProxyMessage`): `GUILD{guildId}ADDRESS{address}NONCE{nonce}` (nonce `0`).
-
-Returns the standard envelope: `202 Accepted` with `{ "success": true, "errors": {}, "data": null }`, or `400`/`409` with keyed errors (`signature_validation_failed`, `resource_already_exists`).
-
-> **Signup is the whole onboarding path — no activation code, no funds, no prior account.** A brand-new, unfunded key signs its own join request; the guild fronts the join fee on-chain via `MsgGuildMembershipJoinProxy`. Do **not** confuse this with activation codes: those belong to a *different* flow — adding another address/device to an **already-existing** player — documented in [`player-address.md`](player-address.md). A fresh player never needs a code from anywhere.
-
----
-
-### POST `/api/auth/login`
-
-Authenticate by Cosmos signature and receive a `PHPSESSID` session cookie. There is no username/password and no JWT/bearer token.
-
-- **ID**: `webapp-auth-login`
-- **Authentication**: None (this is how you obtain a session)
-
-**Request body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `address` | string | Yes | Cosmos address logging in (e.g. `structs1...`) |
-| `signature` | string | Yes | Base64 signature over the login message |
-| `pubkey` | string | Yes | Base64 public key for `address` |
-| `guild_id` | string | Yes | Guild being logged into, type 0 (e.g. `0-1`) |
-| `unix_timestamp` | string | Yes | Unix seconds; must be within 600s of server time |
-
-**Signed message** (`SignatureValidationManager::buildLoginMessage`):
-
-```
+```text
 LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}
 ```
 
-**Success (200):** `{ "success": true, "errors": {}, "data": null }` plus `Set-Cookie: PHPSESSID=...`.
+Use a fresh timestamp. The login proof does not use the address-registration nonce
+or an Amino document. A matching public key/signature is insufficient if the indexed
+address is not approved in that guild or its player does not exist.
 
-**Failure (401):** `{ "success": false, "errors": { "signature_validation_failed": "Invalid signature" }, "data": null }`. Other keys: `player_address_does_not_exists`, `player_does_not_exists`.
+Success from `/login` is HTTP 200 with a session cookie and:
 
-See `examples/auth/webapp-login.md` for full flows.
+```json
+{"success":true,"errors":[],"data":null}
+```
 
----
+Success from `/token` is HTTP 200 with:
 
-### GET `/api/auth/logout`
+```json
+{
+  "success": true,
+  "errors": [],
+  "data": {
+    "access_token": "<opaque credential>",
+    "token_type": "Bearer",
+    "expires_in": 86400,
+    "player_id": "1-11"
+  }
+}
+```
 
-Clear the current session. Returns the standard envelope `{ "success": true, "errors": {}, "data": null }`.
+Treat the bearer as opaque; it is HMAC-signed, not a JWT. Carry it in
+`Authorization: Bearer <token>`. A syntactically valid Bearer header with an invalid,
+expired or revoked token returns 401 even if a valid session cookie accompanies it.
+No token is needed for the explicitly public guild reads below.
 
-- **ID**: `webapp-auth-logout`
-- **Authentication**: Public route (`^/api/auth/`); acts on the current session cookie if present
+Failure is HTTP 401 with `success:false`, `data:null` and keyed `errors`, including
+`signature_validation_failed`, `player_address_does_not_exists` or
+`player_does_not_exists`. Handle an API outage separately from a rejected identity.
 
----
+## Authenticated requests and logout
+
+Same-origin browser requests use `credentials: 'include'`; other clients preserve
+the session cookie or use the bearer. Private API reads and writes still enforce
+their owning-player checks. Bearer support does not by itself enable browser CORS:
+verify the deployment's origin policy before using private routes across origins.
+
+`GET /api/auth/logout` returns the success envelope above, also when already logged
+out. It loads and invalidates the cookie's server session, clears its player/guild
+claims, and revokes a presented valid bearer until that token expires. A different
+bearer is unaffected. Revocation records live in the application's cache, which
+must survive as required by the deployment's token lifetime.
+
+Clear the local wallet/session when logging out even if the HTTP request fails.
+Preserve public evidence of uncertain signed transactions; local logout is not
+proof of native address revocation. See the [login example](../../examples/auth/webapp-login.md).
+
+## Public guild reads
+
+These exact routes accept anonymous GET/HEAD for signup discovery and cross-guild
+statistics:
+
+- `/api/guild/this`, `/api/guild/name`, `/api/guild/count`, `/api/guild/directory`
+- `/api/guild/{guild_id}`, `/api/guild/{guild_id}/name`
+- `/api/guild/{guild_id}/members/count`, `/api/guild/{guild_id}/power/stats`
+- `/api/guild/{guild_id}/roster`, `/api/guild/{guild_id}/planet/complete/count`
+
+`guild_id` has the `0-N` form. The allowlist is exact; placing one of these strings
+inside a private path or query does not make that request public. These reads use
+`Access-Control-Allow-Origin: *`. Cross-origin callers omit cookies and tokens.
+OPTIONS preflight supports GET/HEAD with Accept/Content-Type request headers, not
+Authorization, credentialed requests or writes.
+
+The `/api/auth/`, `/api/timestamp` and `/api/setting` firewall paths and exact
+`/api/onboarding/events` route are public too. Struct, reactor, ledger, player and
+planet-activity reads remain authenticated. Device metadata and account management
+remain private.
+
+## POST `/api/auth/signup`
+
+Signup accepts required `primary_address`, `signature`, `pubkey`, `guild_id` and
+optional `username`, `pfp`, `pfp_client_render_attributes`. Sign
+`GUILD{guildId}ADDRESS{address}NONCE0` using the same hex encoding. Persisting the
+pending row starts asynchronous guild proxy onboarding; 202 means accepted, not
+registered on chain. Poll approved membership and then log in separately. The guild
+fronts the on-chain cost, so an unfunded new key can use this path.
+
+Invalid input/signature returns 400; an existing pending/approved address returns
+409 `resource_already_exists`. Resolve that address's actual player before adopting
+an existing signup. No activation code is needed for a new player; activation adds
+a device to an existing player.
 
 ## OIDC provider operations
 
-Separately from the wallet-signature endpoints above, the guild webapp can act as an OpenID Connect provider for Matrix Authentication Service. Structs-pg stores the operator-managed client registry in `structs.oidc_client` and short-lived flow state in `oidc_authorization_request`, `oidc_authorization_code`, and `oidc_access_token`. These tables store client metadata, hashes, redirect URIs, scopes, PKCE/state/nonce data, player IDs, and expiry/revocation timestamps—never wallet material.
+Separately from wallet-signature login, the guild webapp can act as an OpenID Connect
+provider for Matrix Authentication Service. Structs-pg stores the operator-managed
+client registry in `structs.oidc_client` and short-lived flow state in
+`oidc_authorization_request`, `oidc_authorization_code`, and `oidc_access_token`.
+These hold client metadata, hashes, redirect URIs, scopes, PKCE/state/nonce data,
+player IDs and expiry/revocation timestamps, never wallet material.
 
-The `structs_webapp` role owns the OIDC row lifecycle. `oidc_cleaner` runs every 59 seconds; it removes expired requests/codes after a one-hour grace period and expired access tokens after one day. Client seeding and endpoint configuration are deployment concerns; they do not replace the Cosmos-signature session login documented above.
+The `structs_webapp` role owns that row lifecycle. `oidc_cleaner` runs every 59 seconds;
+it removes expired requests/codes after a one-hour grace period and expired access
+tokens after one day. Client seeding and endpoint configuration are deployment concerns.
 
-*OIDC storage and cleanup verified against structs-pg `f66fd81`
-(`table-oidc-20260826-provider` and `role-structs-webapp-20260826-oidc`).*
-
-## Related Documentation
-
-- **Protocol**: `../../protocols/authentication.md` - Authentication patterns
-- **Example**: `../../examples/auth/webapp-login.md` - Working login example
-
----
-
-*Last Updated: January 1, 2026*
+*OIDC storage/cleanup retains its separate verification against structs-pg `f66fd81`
+(`table-oidc-20260826-provider`, `role-structs-webapp-20260826-oidc`). Authentication,
+public-route and logout behavior reviewed against webapp `5991ca95`; real signed
+session/bearer HTTP checks passed against an isolated release node.*
