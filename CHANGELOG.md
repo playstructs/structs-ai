@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Authentication schemas now use the verified hex wallet proof and actual
+  session/opaque-bearer responses. Retry guidance separates repeatable reads,
+  UUID-bound requests and immutable signed submissions; fabricated retryable
+  signature/gas codes and automatic broadcast retry advice are removed. Action
+  and error references now describe signed `TxRaw` transport, actual release
+  codespaces, paid GuildCreate/ReactorRestart exceptions and staking throttles
+  that also apply inside mixed paid transactions. Request schemas and the error
+  quick reference now link the same contracts instead of retaining incompatible
+  login/device fields, unsigned broadcast bodies and invented numeric errors.
+
 - Guild Stack and database guidance now describes pinned schema staging versus full
   coordinated activation, contiguous event coverage, current native staking claims,
   vault ownership, denomination-aware ledger identity and exact work/rank values.

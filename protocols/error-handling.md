@@ -1,656 +1,163 @@
 ---
-description: Error response formats, error categories, retry strategies, and recovery patterns for agents calling Structs APIs.
+description: "Interpret HTTP, API and native transaction failures by their source and stage, preserving uncertain outcomes during recovery."
 ---
 
 # Error Handling Protocol
 
-**Version**: 1.0.0  
-**Category**: Error  
-**Status**: Stable
-
----
-
 ## Overview
 
-The Error Handling Protocol defines how AI agents should handle errors when interacting with Structs APIs. This includes error response formats, retry strategies, error recovery patterns, and best practices.
-
-**Key Principles**:
-1. **Always check for errors** before processing responses
-2. **Categorize errors** by retryability and severity
-3. **Implement retry logic** for retryable errors
-4. **Log all errors** for debugging and monitoring
-5. **Provide fallback behavior** for non-retryable errors
-
----
+Keep the source and stage of an error: HTTP transport, webapp validation/readiness,
+native simulation, CheckTx admission or committed DeliverTx. A single invented
+numeric error list cannot represent all of them. The same transport failure calls
+for a read retry or signed-identity reconciliation depending on the operation.
 
 ## Error Response Formats
 
 ### Consensus Network API Error Response
 
-**Format**:
-```json
-{
-  "code": 2,
-  "message": "codespace structs code 1900: object not found",
-  "details": []
-}
-```
+An LCD/gRPC-gateway error may have `code`, `message` and `details`. That `code` is
+not automatically a Structs ABCI code. CometBFT admission/block results carry
+`codespace`, `code` and log/result fields. Preserve those fields together and the
+transaction hash, request stage and committed coordinates when available.
 
-**Fields**:
-- `code` (number): Error code (2 = not found)
-- `message` (string): Human-readable error message with codespace and error code
-- `details` (array): Additional error details (may be empty)
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/structs/player/1-999",
-    "headers": {
-      "Accept": "application/json"
-    }
-  },
-  "response": {
-    "status": 400,
-    "body": {
-      "code": 2,
-      "message": "codespace structs code 1900: object not found",
-      "details": []
-    }
-  }
-}
-```
+Do not assume HTTP 200 means a transaction succeeded, or that an entity lookup
+always uses one HTTP status. Validate the endpoint's result shape and identity.
 
 ### Web Application API Error Response
 
-Every webapp (`structs-webapp`) JSON response — success or failure — uses the same `ApiResponseContentDto` envelope. On failure the HTTP status is `400` (bad request / validation), `401` (unauthenticated or signature failure), `403`, `404`, or `409`, `success` is `false`, and `errors` is a **keyed object** (NOT an array).
+The application DTO uses `success`, `errors`, `data`, and where applicable `meta`.
+Success commonly has `errors: []`; failure can contain keyed error messages. Server,
+proxy or framework errors may return another body entirely. Reject a non-success
+HTTP response before trusting parseable JSON as current data.
 
-**Format**:
 ```json
 {
   "success": false,
-  "errors": {
-    "signature_validation_failed": "Invalid signature"
-  },
+  "errors": {"signature_validation_failed": "Invalid signature"},
   "data": null
 }
 ```
 
-**Fields**:
-- `success` (boolean): `false` for errors
-- `errors` (object): Map of `error_key` → human-readable message. Empty `{}` on success. Never a string array.
-- `data` (object | array | null): `null` on error
-
-**Example** (validation failure on a catalog read with a missing required param):
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/stat/power/object/1-11/range/page/1",
-    "headers": {
-      "Accept": "application/json"
-    }
-  },
-  "response": {
-    "status": 400,
-    "body": {
-      "success": false,
-      "errors": {
-        "start_time_end_time_required": "start_time and end_time query params are required (unix seconds)"
-      },
-      "data": null
-    }
-  }
-}
-```
-
-> Parsing rule: always check `success` first, then read `errors` (keyed object) or unwrap `data`. Never assume a top-level `error`/`code`/`details` body for webapp responses — that shape is only used by the consensus network API above.
+Incomplete financial/catalog/work evidence may carry readiness/reason metadata and
+HTTP 503. Unknown raw values remain null. An unavailable read is not an empty valid
+result or permission to use zero. See [read-model protocol](webapp-api-protocol.md).
 
 ### HTTP Status Codes
 
-**Standard HTTP Status Codes**:
-- `200` - Success
-- `400` - Bad Request (invalid request format)
-- `404` - Not Found (resource doesn't exist)
-- `429` - Too Many Requests (rate limit exceeded)
-- `500` - Internal Server Error (server error)
-- `503` - Service Unavailable (service temporarily unavailable)
+| Status | Typical handling |
+|---|---|
+| 400 | Validate the request; diagnose native result fields separately |
+| 401 | Reauthenticate a private read once; a failed login must not recurse |
+| 403 | Check actual route/authority; do not broaden keys automatically |
+| 404 | Verify resource/context and whether the result is authoritative |
+| 409 | Resolve the reported state/identity conflict; retain the original request |
+| 429 | Apply bounded backoff for repeatable reads |
+| 5xx | Treat as unavailable; repeat reads within budget, observe attempted sends |
 
----
+A proxy status is not definitive evidence that a native broadcast never reached a node.
 
 ## Error Categories
 
 ### Error Code Schema
 
-All error codes are defined in `schemas/errors.md`. Categories include:
-
-1. **Success** (`code: 0`): Operation successful
-2. **Game Errors** (`codes: 1-9`): Game-specific errors
-3. **HTTP Errors** (`codes: 400, 404, 500`): HTTP status codes
-4. **Network Errors** (`timeout`, `network`): Network-related errors
+Use [native code reference](../api/error-codes.md) and
+[error data structures](../schemas/errors.md). `structs` and `structs-ante` are
+different codespaces; Cosmos modules and transport layers also define their own.
+A zero CheckTx code proves admission, while a zero committed DeliverTx code proves
+execution success for that exact transaction.
 
 ### Retryable vs Non-Retryable Errors
 
-**Retryable Errors** (can be retried):
-- `GENERAL_ERROR` (code: 1)
-- `INVALID_SIGNATURE` (code: 3)
-- `INSUFFICIENT_GAS` (code: 4)
-- `INTERNAL_SERVER_ERROR` (code: 500)
-- `REQUEST_TIMEOUT` (timeout)
-- `NETWORK_ERROR` (network)
-
-**Non-Retryable Errors** (should not be retried):
-- `INSUFFICIENT_FUNDS` (code: 2)
-- `INVALID_MESSAGE` (code: 5)
-- `PLAYER_OFFLINE` (code: 6)
-- `INSUFFICIENT_CHARGE` (code: 7)
-- `INVALID_LOCATION` (code: 8)
-- `INVALID_TARGET` (code: 9)
-- `ENTITY_NOT_FOUND` (code: 404)
-- `BAD_REQUEST` (code: 400)
-
----
+Read timeouts/rate limits/transient failures may be retried within bounds. Invalid
+proofs, payloads or permissions require diagnosis. Temporary game conditions may
+permit a later revalidated action; they do not authorize blind retransmission.
+A signed unknown outcome must retain its bytes/hash and reserve its signing context.
 
 ## Retry Strategies
 
 ### Exponential Backoff
 
-**Recommended Strategy** for retryable errors:
-
-```json
-{
-  "retryStrategy": {
-    "type": "exponential",
-    "maxRetries": 3,
-    "initialDelay": 1000,
-    "maxDelay": 10000,
-    "backoffMultiplier": 2,
-    "retryableErrors": ["1", "3", "4", "500", "timeout", "network"]
-  }
-}
-```
-
-**Implementation Example**:
-```json
-{
-  "retryLogic": {
-    "attempt": 1,
-    "delay": 1000,
-    "maxRetries": 3,
-    "backoff": {
-      "attempt1": 1000,
-      "attempt2": 2000,
-      "attempt3": 4000
-    }
-  }
-}
-```
+Use deadlines, jitter, an attempt budget and route/session cancellation for reads.
+Coalesce identical requests and cancel stale consumers. Do not wrap signing or
+broadcast in a generic HTTP retry helper.
 
 ### Fixed Delay Retry
 
-**Alternative Strategy** for rate limiting:
-
-```json
-{
-  "retryStrategy": {
-    "type": "fixed",
-    "maxRetries": 3,
-    "delay": 5000,
-    "retryableErrors": ["429"]
-  }
-}
-```
+A readiness probe may wait for the next observation interval. It must still reject
+wrong-chain, old-session or older snapshots. A cached timestamp is not native authority.
 
 ### Rate Limit Handling
 
-**When receiving `429 Too Many Requests`**:
-
-```json
-{
-  "error": {
-    "code": 429,
-    "name": "RATE_LIMIT_EXCEEDED",
-    "response": {
-      "retry_after": 60
-    },
-    "handling": {
-      "action": "wait",
-      "waitTime": "response.retry_after",
-      "retry": true
-    }
-  }
-}
-```
-
-**Strategy**:
-1. Check `Retry-After` header or `retry_after` in response
-2. Wait for specified time
-3. Retry request
-4. If still rate limited, increase wait time
-
----
+Respect a valid Retry-After within the overall read budget. For attempted sends,
+reconcile the saved identity unless a definitive native rejection is established.
+See [retry strategies](../patterns/retry-strategies.md).
 
 ## Error Recovery Patterns
 
 ### Pattern 1: Resource Not Found
 
-**Error**: `ENTITY_NOT_FOUND` (404) or `codespace structs code 1900`
-
-**Recovery**:
-```json
-{
-  "error": "ENTITY_NOT_FOUND",
-  "recovery": {
-    "step1": "Verify entity ID format",
-    "step2": "Check if entity exists (list endpoint)",
-    "step3": "If doesn't exist, create or use alternative",
-    "step4": "If format invalid, correct and retry"
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "scenario": "Get player 1-999 (doesn't exist)",
-  "error": {
-    "code": 2,
-    "message": "codespace structs code 1900: object not found"
-  },
-  "recovery": {
-    "action": "List all players to find valid IDs",
-    "fallback": "Use default player or create new"
-  }
-}
-```
+Verify the ID and current source. Distinguish a complete empty result from unavailable
+or truncated evidence. A missing transaction-search result alone proves neither
+non-inclusion nor permission to create another payment.
 
 ### Pattern 2: Insufficient Resources
 
-**Error**: `INSUFFICIENT_FUNDS` (code: 2) or `INSUFFICIENT_CHARGE` (code: 7)
-
-**Recovery**:
-```json
-{
-  "error": "INSUFFICIENT_FUNDS",
-  "recovery": {
-    "step1": "Check current resources (query player/struct)",
-    "step2": "Wait for resources to accumulate",
-    "step3": "Monitor resource generation",
-    "step4": "Retry when resources available"
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "scenario": "Action requires charge but the player's shared charge bar is too low",
-  "error": {
-    "code": 7,
-    "name": "INSUFFICIENT_CHARGE",
-    "description": "Player has insufficient charge (charge is per-player, not per-struct)"
-  },
-  "recovery": {
-    "action": "Query player charge level (CurrentBlockHeight - gridAttributes.lastAction)",
-    "wait": "Monitor charge until sufficient",
-    "retry": "Retry the action when charge >= required"
-  }
-}
-```
+Read exact spendable vault funds and current action requirements. Total inventory,
+retained funds and unbonding receipts are not automatically spendable. A later action
+may be prepared after funding/charge changes and the prior outcome is established.
 
 ### Pattern 3: Player Offline
 
-**Error**: `PLAYER_OFFLINE` (code: 6)
-
-**Recovery**:
-```json
-{
-  "error": "PLAYER_OFFLINE",
-  "recovery": {
-    "step1": "Check player status (query player)",
-    "step2": "Wait for player to come online",
-    "step3": "Monitor player status",
-    "step4": "Retry when player online"
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "scenario": "Player is offline (load exceeds capacity)",
-  "error": {
-    "code": 6,
-    "name": "PLAYER_OFFLINE",
-    "description": "Player is offline (offline)"
-  },
-  "recovery": {
-    "action": "Query player status periodically",
-    "wait": "Wait for player to come online",
-    "retry": "Retry after shedding load or adding capacity until online"
-  }
-}
-```
+Refresh authoritative capacity/load and target state. Do not infer online status
+from a failed request or a fallback zero. Shared player/charge limits remain shared
+across keys and paid transactions.
 
 ### Pattern 4: Network Errors
 
-**Error**: `NETWORK_ERROR` or `REQUEST_TIMEOUT`
-
-**Recovery**:
-```json
-{
-  "error": "NETWORK_ERROR",
-  "recovery": {
-    "step1": "Retry with exponential backoff",
-    "step2": "Check network connectivity",
-    "step3": "Verify endpoint availability",
-    "step4": "Use alternative endpoint if available"
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "scenario": "Network timeout during request",
-  "error": {
-    "code": "timeout",
-    "name": "REQUEST_TIMEOUT"
-  },
-  "recovery": {
-    "retry": {
-      "attempt1": "Wait 1 second, retry",
-      "attempt2": "Wait 2 seconds, retry",
-      "attempt3": "Wait 4 seconds, retry"
-    },
-    "fallback": "Log error and abort if all retries fail"
-  }
-}
-```
-
----
+Reconnect, reauthenticate if appropriate, restore subscriptions and refresh state.
+Retain signed evidence and observe its original identity. GRASS reconnect supplies
+invalidation opportunities, not durable event replay or transaction cancellation.
 
 ## Error Handling Best Practices
 
-### 1. Always Check for Errors
-
-**Pattern**:
-```json
-{
-  "responseHandling": {
-    "step1": "Check HTTP status code",
-    "step2": "Check response body for error fields",
-    "step3": "Categorize error (retryable vs non-retryable)",
-    "step4": "Apply appropriate handling strategy"
-  }
-}
-```
-
-### 2. Log All Errors
-
-**Pattern**:
-```json
-{
-  "errorLogging": {
-    "include": [
-      "error code",
-      "error message",
-      "request details (method, URL, params)",
-      "response details",
-      "timestamp",
-      "retry attempt (if applicable)"
-    ]
-  }
-}
-```
-
-### 3. Implement Circuit Breaker
-
-**Pattern** for repeated failures:
-
-```json
-{
-  "circuitBreaker": {
-    "failureThreshold": 5,
-    "timeout": 60000,
-    "halfOpenRetries": 1,
-    "states": ["closed", "open", "half-open"]
-  }
-}
-```
-
-**Strategy**:
-- After 5 consecutive failures, open circuit
-- Wait 60 seconds before attempting again
-- Try 1 request (half-open state)
-- If successful, close circuit; if failed, reopen
-
-### 4. Provide Fallback Behavior
-
-**Pattern**:
-```json
-{
-  "fallback": {
-    "nonRetryableError": "Use cached data or default values",
-    "retryableError": "Retry with backoff",
-    "criticalError": "Abort operation and notify"
-  }
-}
-```
-
-### 5. Validate Before Retry
-
-**Pattern**:
-```json
-{
-  "retryValidation": {
-    "step1": "Verify error is retryable",
-    "step2": "Check retry count < max retries",
-    "step3": "Validate request parameters unchanged",
-    "step4": "Apply backoff delay",
-    "step5": "Retry request"
-  }
-}
-```
-
----
+- Check HTTP, body shape, `success`, identity and applicable readiness metadata.
+- Log redacted operation IDs/stages and bounded errors, never keys or credentials.
+- Keep unavailable financial/action evidence unavailable; stale data can inform a
+  labelled display but cannot manufacture signing eligibility.
+- Reject late callbacks from a prior route/account/session.
+- Keep SQL and TSA-volume evidence through recovery; never clear an unknown send
+  to make a queue look healthy.
 
 ## Error Code Reference
 
-**Complete error code catalog**: See `schemas/errors.md`
-
-**Quick Reference**:
-- `0` - SUCCESS
-- `1` - GENERAL_ERROR (retryable)
-- `2` - INSUFFICIENT_FUNDS (not retryable)
-- `3` - INVALID_SIGNATURE (retryable)
-- `4` - INSUFFICIENT_GAS (retryable)
-- `5` - INVALID_MESSAGE (not retryable)
-- `6` - PLAYER_OFFLINE (not retryable)
-- `7` - INSUFFICIENT_CHARGE (not retryable)
-- `8` - INVALID_LOCATION (not retryable)
-- `9` - INVALID_TARGET (not retryable)
-- `400` - BAD_REQUEST (not retryable)
-- `404` - ENTITY_NOT_FOUND (not retryable)
-- `429` - RATE_LIMIT_EXCEEDED (retryable with delay)
-- `500` - INTERNAL_SERVER_ERROR (retryable)
-- `timeout` - REQUEST_TIMEOUT (retryable)
-- `network` - NETWORK_ERROR (retryable)
-
----
+The [API code reference](../api/error-codes.md) lists selected release-native codes
+and links their source. There is no universal “1–9” game-error mapping.
 
 ## Examples
 
-### Example 1: Handling Entity Not Found
-
-```json
-{
-  "scenario": "Get player that doesn't exist",
-  "request": {
-    "method": "GET",
-    "url": "/structs/player/1-999"
-  },
-  "response": {
-    "status": 400,
-    "body": {
-      "code": 2,
-      "message": "codespace structs code 1900: object not found"
-    }
-  },
-  "handling": {
-    "errorCode": 2,
-    "category": "notRetryable",
-    "action": "Verify player ID exists",
-    "recovery": {
-      "step1": "List all players to find valid IDs",
-      "step2": "Use valid player ID or create new player"
-    }
-  }
-}
-```
-
-### Example 2: Handling Rate Limit
-
-```json
-{
-  "scenario": "Rate limit exceeded",
-  "request": {
-    "method": "GET",
-    "url": "/structs/player"
-  },
-  "response": {
-    "status": 429,
-    "headers": {
-      "Retry-After": "60"
-    },
-    "body": {
-      "error": "Rate limit exceeded",
-      "code": 429,
-      "retry_after": 60
-    }
-  },
-  "handling": {
-    "errorCode": 429,
-    "category": "retryable",
-    "action": "Wait and retry",
-    "recovery": {
-      "waitTime": 60,
-      "retry": true,
-      "strategy": "fixed delay"
-    }
-  }
-}
-```
-
-### Example 3: Handling Network Error with Retry
-
-```json
-{
-  "scenario": "Network timeout",
-  "request": {
-    "method": "GET",
-    "url": "/structs/player/1-1"
-  },
-  "error": {
-    "code": "timeout",
-    "name": "REQUEST_TIMEOUT"
-  },
-  "handling": {
-    "errorCode": "timeout",
-    "category": "retryable",
-    "action": "Retry with exponential backoff",
-    "recovery": {
-      "attempt1": {
-        "delay": 1000,
-        "retry": true
-      },
-      "attempt2": {
-        "delay": 2000,
-        "retry": true
-      },
-      "attempt3": {
-        "delay": 4000,
-        "retry": true
-      },
-      "maxRetries": 3,
-      "fallback": "Log error and abort if all retries fail"
-    }
-  }
-}
-```
-
----
+An API timeout while reading funds permits a bounded read retry. A timeout after
+sending signed transfer bytes requires observing that hash. A committed failure
+returns the transfer to its existing confirmation with the same recipient/amount;
+a later confirmed action can be prepared from fresh state.
 
 ## Integration with Other Protocols
 
-### Query Protocol Integration
-
-When querying, always check for errors:
-
-```json
-{
-  "queryPattern": {
-    "request": "GET /structs/player/{id}",
-    "errorHandling": {
-      "checkStatus": true,
-      "checkBody": true,
-      "categorizeError": true,
-      "applyRecovery": true
-    }
-  }
-}
-```
-
-### Action Protocol Integration
-
-When performing actions, handle errors appropriately:
-
-```json
-{
-  "actionPattern": {
-    "request": "POST /cosmos/tx/v1beta1/txs",
-    "errorHandling": {
-      "transactionErrors": {
-        "INSUFFICIENT_FUNDS": "Wait for resources",
-        "INVALID_SIGNATURE": "Re-sign and retry",
-        "PLAYER_OFFLINE": "Wait for player online"
-      }
-    }
-  }
-}
-```
-
----
+[Action protocol](action-protocol.md) defines one-send identity and outcomes.
+[Authentication](authentication.md) defines session/token recovery.
+[State and data](../develop/client/state-and-data.md) defines coherent cache updates.
 
 ## Testing Error Handling
 
-### Test Cases
-
-1. **Entity Not Found**: Request non-existent entity
-2. **Rate Limiting**: Make too many requests
-3. **Network Errors**: Simulate network failures
-4. **Invalid Requests**: Send malformed requests
-5. **Resource Errors**: Attempt actions without sufficient resources
-
-### Validation
-
-- Verify error response format matches schema
-- Verify retry logic works correctly
-- Verify fallback behavior is appropriate
-- Verify error logging captures all details
-
----
+Exercise actual transport boundaries: HTTP failure with valid JSON, lost send
+acknowledgement, admission without inclusion, committed failure, reload while
+unknown, notification loss, wrong-session late replies and incomplete native data.
+Assert the original hash/bytes and send count survive; checking only an error string
+cannot establish duplicate prevention.
 
 ## References
 
-- **Error Code Schema**: `schemas/errors.md`
-- **Response Schema**: `schemas/responses.md`
-- **Query Protocol**: `protocols/query-protocol.md`
-- **Action Protocol**: `protocols/action-protocol.md`
-- **API Reference**: `technical/api-reference.md#error-handling`
+- [Retry strategies](../patterns/retry-strategies.md)
+- [Native errors](../api/error-codes.md)
+- [API contracts](webapp-api-protocol.md)
 
----
-
-*Last Updated: January 2025*
-
+**Verified against:** webapp `43bc1086`, TSA `3258529`, official structsd `96cea3a`.

@@ -1,159 +1,48 @@
 ---
 title: Error codes quick reference
-description: Quick reference for error codes and what they mean, with handling patterns and a lookup table. Full definitions live in the error schema.
+description: "Identify native codespace and submission stage, distinguish read failures from uncertain transactions, and use the release error catalog."
 ---
 
 # Error codes quick reference
 
-**Version**: 1.0.0  
-**Category**: Troubleshooting  
-**Status**: Stable
-
 ## Overview
 
-This document provides quick reference for error codes and their meanings. For complete error definitions, see `schemas/errors.md`.
-
----
+Preserve the source and stage before interpreting a code. HTTP status, gRPC-gateway
+codes and native ABCI `(codespace, code)` pairs use different namespaces. The
+[native error catalog](../api/error-codes.md) lists verified release definitions.
 
 ## Common Error Codes
 
-### Success
-- **Code**: 0
-- **Name**: SUCCESS
-- **Description**: Operation successful
-- **Action**: Continue
+| Evidence | Meaning / response |
+|---|---|
+| CheckTx code 0 | Admitted; observe committed execution |
+| Committed DeliverTx code 0 | That exact transaction succeeded; wait for indexed refresh |
+| `structs`, 1050 | Object not found; verify ID and authoritative source |
+| `structs`, 1100 | Permission failure; inspect current signer and object authority |
+| `structs`, 1152 | Player offline; refresh power state |
+| `structs`, 1200 | Insufficient charge; wait for current eligibility |
+| `structs`, 1613 | Reactor stake cap; choose an eligible target after current reads |
+| `structs-ante`, 2011 | Signing key lacks required permission |
+| `structs-ante`, 2021 | Player charge action already used this block |
+| `structs-ante`, 2042 / 2043 | Duplicate staking operation in transaction/block |
 
----
+## Error Handling
 
-### General Errors
-- **Code**: 1
-- **Name**: GENERAL_ERROR
-- **Description**: General error occurred
-- **Action**: Log and retry
-- **Retryable**: Yes
+Read timeouts, 429 and temporary 5xx failures permit bounded read retries. Malformed
+proofs, unsupported payloads and permission failures need diagnosis, not automatic
+re-signing. An unavailable financial read stays unknown rather than becoming zero.
 
----
-
-### Resource Errors
-- **Code**: 2
-- **Name**: INSUFFICIENT_FUNDS
-- **Description**: Insufficient funds for transaction
-- **Action**: Wait for resources
-- **Retryable**: No
-- **Requires**: Check player inventory, wait for resources
-
----
-
-### Authentication Errors
-- **Code**: 3
-- **Name**: INVALID_SIGNATURE
-- **Description**: Transaction signature is invalid
-- **Action**: Re-sign transaction
-- **Retryable**: Yes
-
----
-
-### Gas Errors
-- **Code**: 4
-- **Name**: INSUFFICIENT_GAS
-- **Description**: Insufficient gas for transaction
-- **Action**: Increase gas limit
-- **Retryable**: Yes
-
----
-
-### Message Errors
-- **Code**: 5
-- **Name**: INVALID_MESSAGE
-- **Description**: Message format is invalid
-- **Action**: Validate message format
-- **Retryable**: No
-
----
-
-### Player Status Errors
-- **Code**: 6
-- **Name**: PLAYER_OFFLINE
-- **Description**: Player is offline (offline)
-- **Action**: Wait for player online
-- **Retryable**: No
-- **Requires**: Check player status, restore capacity or shed load until online
-
----
-
-### Charge Errors
-- **Code**: 7
-- **Name**: INSUFFICIENT_CHARGE
-- **Description**: Player has insufficient charge (charge is a single per-player bar, not per-struct)
-- **Action**: Wait for charge to build (1 per block; charge = CurrentBlockHeight - player.lastActionBlock)
-- **Retryable**: No
-- **Requires**: Check player charge, wait for charge
-
----
-
-## Error Handling Patterns
-
-### Pattern 1: Retryable Errors
-
-```json
-{
-  "pattern": {
-    "errors": [1, 3, 4],
-    "action": "Retry with same parameters",
-    "maxRetries": 3,
-    "retryDelay": 2000
-  }
-}
-```
-
-### Pattern 2: Non-Retryable Errors
-
-```json
-{
-  "pattern": {
-    "errors": [2, 5, 6, 7],
-    "action": "Fix requirement, then retry",
-    "steps": [
-      "Identify missing requirement",
-      "Fix requirement",
-      "Verify fix",
-      "Retry action"
-    ]
-  }
-}
-```
-
----
-
-## Error Code Lookup
-
-### By Category
-
-**Success**: 0
-
-**General**: 1
-
-**Resources**: 2
-
-**Authentication**: 3
-
-**Gas**: 4
-
-**Message**: 5
-
-**Player Status**: 6
-
-**Charge**: 7
-
----
+Once a native send may have happened, retain its bytes/hash and observe that identity.
+Timeout, search miss, reconnect or a larger account sequence is not proof of failure.
+Definitive CheckTx rejection or committed failure must be recorded before a later
+revalidated action. Never convert an uncertain payment back to an available queue item.
 
 ## Related Documentation
 
-- **Error Schemas**: `../schemas/errors.md` - Complete error definitions
-- **Common Issues**: `common-issues.md` - Common issues and solutions
-- **Validation**: `../validation/` - Validation patterns
+- [Full selected error catalog and source definitions](../api/error-codes.md)
+- [Error data structures](../schemas/errors.md)
+- [Error handling protocol](../protocols/error-handling.md)
+- [Retry strategies](../patterns/retry-strategies.md)
+- [Practical symptom index](../play/errors.md)
 
----
-
-*Last Updated: January 2025*
-
+**Reviewed against:** official structsd `96cea3a`, webapp `43bc1086` and TSA `3258529`.

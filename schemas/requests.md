@@ -1,276 +1,153 @@
 ---
-description: The complete catalog of API request body formats, indexed by request type, from authentication through player and address operations.
+title: API request schemas
+description: "Current wallet authentication, device consent, native broadcast and query request contracts, with links to endpoint-specific field definitions."
 ---
 
 # API Request Schemas
 
-**Version**: 1.0.0
-**Category**: api
-**Schema**: JSON Schema Draft-07
-**Description**: Complete catalog of all API request body formats for AI agents. See `schemas/formats.md` for format specifications.
-
----
-
 ## Request Type Index
 
-| Category | Request Types |
-|----------|--------------|
-| Authentication | AuthSignupRequest, AuthLoginRequest |
-| Player | PlayerUsernameUpdateRequest, PlayerRaidSearchQuery, PlayerTransferSearchQuery |
-| Player Address | PlayerAddressAddPendingRequest, PlayerAddressMetaRequest, PlayerAddressActivationCodeRequest, PlayerAddressPendingPermissionsRequest, PlayerAddressPermissionsRequest |
-| Transaction | TransactionRequest |
-| Query | QueryParameters, PlayerRaidSearchQuery, PlayerTransferSearchQuery, GuildNameFilterQuery, GuildDirectoryQuery |
+The webapp API, native LCD and native transaction messages are different contracts.
+Use the matching deployed API revision and release codecs. This index points to
+verified field definitions rather than treating one generic body as valid everywhere.
 
----
+| Request family | Canonical contract |
+|---|---|
+| Wallet login, bearer and guild signup | [Authentication API](../api/webapp/auth.md) |
+| Device activation, consent and metadata | [Player address API](../api/webapp/player-address.md) |
+| Player/search queries | [Player API](../api/webapp/player.md) |
+| Public guild directory/filter | [Guild API](../api/webapp/guild.md) |
+| Native signed broadcast | [Submit transaction](../api/transactions/submit-transaction.md) |
+| Native message fields | [Release message catalog](../api/transactions/messages.md) |
 
 ## Authentication Requests
 
 ### AuthSignupRequest
 
-Register a new player account.
-
-- **Endpoint**: `POST /api/auth/signup`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address (e.g., `cosmos1...`) |
-| signature | string | | Yes | Signature for authentication |
-| message | string | | Yes | Message to sign |
+`POST /api/auth/signup` requires `primary_address`, `signature`, `pubkey` and
+`guild_id`. Optional profile fields are `username`, `pfp` and
+`pfp_client_render_attributes`. The proof is over
+`GUILD{guildId}ADDRESS{address}NONCE0`. HTTP 202 accepts asynchronous onboarding;
+it does not establish native registration or a login session.
 
 ### AuthLoginRequest
 
-Authenticate and log in a player.
+`POST /api/auth/login` or `/api/auth/token` requires `address`, `signature`,
+`pubkey`, `guild_id` and canonical decimal `unix_timestamp`. Sign SHA-256 of the
+exact UTF-8 bytes `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}`.
+The timestamp must be less than 600 seconds from server time in either direction.
 
-- **Endpoint**: `POST /api/auth/login`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address |
-| signature | string | | Yes | Signature for authentication |
-| message | string | | Yes | Message to sign |
-
----
+These proofs use a compressed secp256k1 public key as 66 hex characters and a raw
+R+S signature as 128 hex characters. There is no caller-selected `message` field.
+See [authentication schemas](authentication.md) for response and session handling.
 
 ## Player Requests
 
 ### Player Name and PFP Updates
 
-Username and PFP are updated via the on-chain transactions `MsgPlayerUpdateName`, `MsgPlayerUpdatePfp`, and `MsgPlayerUpdatePfpClientRenderAttributes` (the composited 5-layer avatar recipe). Validation is enforced by the chain validators in `ValidatePlayerName` / `ValidatePfp` / `ValidatePfpClientRenderAttributes` -- see `schemas/validation.md#ugc-name-and-pfp-validation` and `knowledge/mechanics/ugc-moderation.md` for the rules.
+Names and PFPs use native `MsgPlayerUpdateName`, `MsgPlayerUpdatePfp` and
+`MsgPlayerUpdatePfpClientRenderAttributes`. Validate with the release rules and
+encode the native message; a webapp profile request does not replace a transaction.
 
 ### PlayerRaidSearchQuery
 
-Query parameters for player raid search.
-
-- **Endpoint**: `GET /api/player/raid/search`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| player_id | string | entity-id | No | Player identifier in format `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
-| status | string | | No | Raid status filter. Values: `active`, `completed`, `failed` |
+Use the deployed [player search parameters](../api/webapp/player.md). Do not add
+invented `status` filters or assume entity-detail fields are accepted query inputs.
 
 ### PlayerTransferSearchQuery
 
-Query parameters for player transfer search.
-
-- **Endpoint**: `GET /api/player/transfer/search`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| player_id | string | entity-id | No | Player identifier in format `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
-| from | string | date-time | No | Start date for search |
-| to | string | date-time | No | End date for search |
-
----
+Use the [player transfer search](../api/webapp/player.md) contract. Player selection
+resolves the recipient's vault for payment; a literal non-player address remains
+literal. Search results do not authorize the sender's spend.
 
 ## Player Address Requests
 
 ### PlayerAddressAddPendingRequest
 
-Add player pending address.
-
-- **Endpoint**: `POST /api/auth/player-address`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address to add |
-| player_id | string | entity-id | Yes | Player identifier in format `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
+`POST /api/auth/player-address` requires `player_id`, `guild_id`, `code`,
+`activation_id`, `address`, `signature` and `pubkey`; `user_agent` is optional.
+The proof is bound to the current native registration context and issued activation
+UUID. Persist the new key once and retain its consent; acceptance is not registration.
 
 ### PlayerAddressMetaRequest
 
-Add player address metadata.
-
-- **Endpoint**: `POST /api/player-address/meta`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address |
-| meta | object | | Yes | Metadata object (arbitrary key-value pairs) |
+`POST /api/player-address/meta` requires an authenticated owner, `address`,
+`guild_id` and optional `user_agent`. The server derives IP from the request.
+It is private device metadata, not an arbitrary metadata-object write.
 
 ### PlayerAddressActivationCodeRequest
 
-Create player address activation code.
-
-- **Endpoint**: `POST /api/player-address/activation-code`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address |
-| player_id | string | entity-id | Yes | Player identifier in format `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
+`POST /api/player-address/activation-code` accepts `logged_in_address` and
+`guild_id` from the authenticated owner. Retain the returned code and UUID together.
+A reused short code is a different activation instance.
 
 ### PlayerAddressPendingPermissionsRequest
 
-Set pending address permissions.
-
-- **Endpoint**: `PUT /api/player-address/pending/permissions`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address |
-| permissions | array of string | | Yes | List of permissions |
+`PUT /api/player-address/pending/permissions` accepts `code`, `activation_id`,
+`address` and a numeric `permissions` mask, not a list of names. This records an
+owner's proposal; the native registration transaction establishes authority.
+See the [device API](../api/webapp/player-address.md) for accepted mask bounds.
 
 ### PlayerAddressPermissionsRequest
 
-Set address permissions.
-
-- **Endpoint**: `PUT /api/player-address/permissions`
-
-| Field | Type | Format | Required | Description |
-|-------|------|--------|----------|-------------|
-| address | string | blockchain-address | Yes | Blockchain address |
-| permissions | array of string | | Yes | List of permissions |
-
----
+`PUT /api/player-address/permissions` returns 410 `chain_transaction_required`.
+Prepare `MsgPermissionSetOnAddress`, preserving unexposed bits and checking the
+signer's ceiling over both removed and granted permissions. Observe inclusion
+before adopting the indexed result.
 
 ## Transaction Requests
 
 ### TransactionRequest
 
-Cosmos SDK transaction request. See `schemas/actions.md` for complete message type definitions.
+`POST /cosmos/tx/v1beta1/txs` accepts this **broadcast envelope**:
 
-- **Endpoint**: `POST /cosmos/tx/v1beta1/txs`
+```json
+{"tx_bytes":"BASE64_OF_SIGNED_TXRAW","mode":"BROADCAST_MODE_SYNC"}
+```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| body | object | Yes | Transaction body |
-| auth_info | object | Yes | Authentication information |
-| signatures | array of string | Yes | Transaction signatures (base64 encoded), minimum 1 |
+The signed protobuf `TxRaw` contains encoded body/auth-info and signatures. A JSON
+object containing `body`, `auth_info` and `signatures` is not the LCD request above.
+Keep account number, sequence, amounts, ranks and heights exact; select fees for
+the actual message set. Ordinary fees use the chain's configured denomination
+(`ualpha` here), not an invented `ustructs` asset.
 
 #### body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| messages | array of TransactionMessage | Yes | Array of transaction messages (minimum 1). See `schemas/actions.md` for complete message schemas. |
-| memo | string | No | Transaction memo |
-| timeout_height | string | No | Timeout height |
+Prepare native messages, memo and applicable timeout height, then encode them with
+the matching release codecs. Never change an already signed body to retry a timeout.
 
 #### auth_info
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| signer_infos | array | Yes | Signer information |
-| fee | object | Yes | Transaction fee |
-
-Each entry in `signer_infos`:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| public_key | object | Public key information |
-| mode_info | object | Signing mode information |
-| sequence | string | Account sequence number |
-
-The `fee` object:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| amount | array | Fee amount entries, each with `denom` (e.g., `ustructs`) and `amount` (as string) |
-| gas_limit | string | Gas limit |
-| payer | string (blockchain-address) | Fee payer address (optional) |
-| granter | string (blockchain-address) | Fee granter address (optional) |
+Encode the ordinary signer's public key/mode/sequence and chosen fee/gas policy.
+A player or guild vault is an asset owner and never a substitute signing key.
 
 ### TransactionMessage
 
-Base transaction message structure. All messages must include `@type`. See `schemas/actions.md` for specific message schemas.
+Native JSON descriptions use registered `@type` URLs, but actual broadcast carries
+signed protobuf bytes. Refer to the [message catalog](../api/transactions/messages.md)
+and release `tx.proto` for fields. For example, `MsgAllocationTransfer` takes
+`creator`, `allocationId` and `ownerId` (player or guild), not an old `controller`
+field. Native uint64 values must not pass through lossy JavaScript Numbers.
 
-Each message type has specific required fields beyond what is listed here.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| @type | string | Yes | Message type URL (see below) |
-| creator | string (blockchain-address) | Varies | Transaction creator address (required for most messages) |
-
-#### Available Message Types
-
-The `@type` field must be a live `/structs.structs.Msg*` (see [messages.md](../api/transactions/messages.md)). This table is a **subset**. There is no `MsgStructBuild`.
-
-| Message Type | Description |
-|-------------|-------------|
-| `/structs.structs.MsgStructBuildInitiate` | Initiate struct build |
-| `/structs.structs.MsgStructBuildComplete` | Complete struct build |
-| `/structs.structs.MsgStructActivate` | Activate a struct |
-| `/structs.structs.MsgStructDeactivate` | Deactivate a struct |
-| `/structs.structs.MsgStructDeactivateBatch` | Deactivate up to 65 structs in one transaction (`structId` is a list) |
-| `/structs.structs.MsgStructTrash` | Permanently destroy a built struct (costs `buildCharge`, irreversible) |
-| `/structs.structs.MsgStructStealthActivate` | Stealth activate a struct |
-| `/structs.structs.MsgStructStealthDeactivate` | Stealth deactivate a struct |
-| `/structs.structs.MsgStructAttack` | Attack with a struct |
-| `/structs.structs.MsgStructDefenseSet` | Set struct defense |
-| `/structs.structs.MsgStructDefenseClear` | Clear struct defense |
-| `/structs.structs.MsgStructMove` | Move a struct |
-| `/structs.structs.MsgStructOreMinerComplete` | Complete ore mining |
-| `/structs.structs.MsgStructOreRefineryComplete` | Complete ore refining |
-| `/structs.structs.MsgPlanetExplore` | Explore a planet (optional `name` field) |
-| `/structs.structs.MsgGuildUpdatePrimaryReactor` | Reassign guild primary reactor |
-| `/structs.structs.MsgPlanetRaidComplete` | Complete a planet raid |
-| `/structs.structs.MsgFleetMove` | Move a fleet |
-| `/structs.structs.MsgReactorInfuse` | Infuse a reactor |
-| `/structs.structs.MsgReactorDefuse` | Defuse a reactor |
-| `/structs.structs.MsgStructGeneratorInfuse` | Infuse a generator with Alpha Matter |
-| `/structs.structs.MsgSubstationCreate` | Create a substation |
-| `/structs.structs.MsgSubstationPlayerConnect` | Connect player to substation |
-| `/structs.structs.MsgSubstationAllocationConnect` | Connect an allocation to a substation |
-| `/structs.structs.MsgAllocationCreate` | Create an allocation from a source object (`creator`, `controller`, `sourceObjectId`, `allocationType`, `power`) |
-| `/structs.structs.MsgAllocationUpdate` | Update a dynamic allocation's power (`creator`, `allocationId`, `power`) |
-| `/structs.structs.MsgAllocationDelete` | Delete an allocation (`creator`, `allocationId`) |
-| `/structs.structs.MsgAllocationTransfer` | Reassign an allocation's controller (`creator`, `allocationId`, `controller`) |
-| `/structs.structs.MsgProviderCreate` | Create a provider |
-| `/structs.structs.MsgAgreementOpen` | Open an energy agreement |
-| `/structs.structs.MsgGuildCreate` | Create a guild |
-| `/structs.structs.MsgGuildMembershipJoin` | Join a guild |
-| `/structs.structs.MsgGuildMembershipKick` | Remove a member from a guild |
-| `/structs.structs.MsgGuildBankMint` | Mint from guild bank |
-| `/structs.structs.MsgGuildBankRedeem` | Redeem from guild bank |
-
----
+A CheckTx code zero means admitted, not committed. Persist the one signed identity
+and reconcile its outcome; do not repeat the send after an uncertain response.
 
 ## Query Parameters
 
 ### QueryParameters
 
-Common query parameters for list endpoints.
-
-| Field | Type | Default | Constraints | Description |
-|-------|------|---------|-------------|-------------|
-| pagination.key | string | | | Pagination key for next page |
-| pagination.limit | integer | 50 | min: 1, max: 100 | Number of items per page |
-| pagination.offset | integer | | min: 0 | Number of items to skip |
+Pagination is endpoint-specific. Native key pagination and webapp page/limit
+parameters are not interchangeable. Respect advertised limits and continuation
+fields; an incomplete page is not a complete empty balance or permission result.
 
 ### GuildNameFilterQuery
 
-Query parameters for guild name filter.
-
-- **Endpoint**: `GET /api/guild/name`
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| filter | string | No | Name filter string |
+Use the public `/api/guild/name` filter fields in the [guild contract](../api/webapp/guild.md).
 
 ### GuildDirectoryQuery
 
-Query parameters for guild directory.
+Use the public `/api/guild/directory` paging fields in the [guild contract](../api/webapp/guild.md).
+Preserve its response shape and exact values; do not invent a universal 20-row limit.
 
-- **Endpoint**: `GET /api/guild/directory`
-
-| Field | Type | Default | Constraints | Description |
-|-------|------|---------|-------------|-------------|
-| page | integer | 1 | min: 1 | Page number |
-| limit | integer | 20 | min: 1, max: 100 | Items per page |
+**Reviewed against:** webapp `43bc1086` authentication/device/query contracts and
+structsd release `96cea3a` transaction definitions.

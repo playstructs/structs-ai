@@ -24,7 +24,7 @@ Writes go here. Every `structsd tx structs` call needs `--gas auto`, `--` before
 
 If the transaction “worked” and the board did not change, see [troubleshooting](../../troubleshooting/common-issues.md#transaction-issues) before you send a second one.
 
-There is only one submit path. Everything else in this folder is how to call it without wasting the sequence number. Do not parallelize two transactions from the same key. Different keys can run in parallel. That is the whole concurrency model.
+There is only one submit path. Everything else in this folder is how to call it without wasting the sequence number. Do not parallelize two transactions from the same key. Different keys can run in parallel only within shared player, object, proof and charge limits; adding keys does not bypass those limits. Retain unknown signed submissions across reloads and reconcile the original identity.
 
 If you are looking for the list of *which* messages exist (mine, build, raid, infuse), that is the [message catalog](messages.md). CLI names are in [generated/commands.md](https://github.com/playstructs/structs-ai/blob/main/generated/commands.md). This folder is the envelope those messages travel in.
 

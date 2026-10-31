@@ -1,763 +1,163 @@
 ---
-description: Which errors are worth retrying and which are not, from basic backoff through to advanced retry patterns.
+description: "Retry bounded reads, preserve idempotent request identities, and reconcile uncertain signed transactions without duplicate broadcasts."
 ---
 
 # Retry Strategies Pattern
 
-**Version**: 1.0.0  
-**Category**: API Patterns  
-**Purpose**: Comprehensive guide for AI agents on implementing effective retry strategies for API requests
-
----
-
 ## Overview
 
-This pattern provides detailed implementation strategies for retrying failed API requests. It complements the Error Handling Protocol by focusing specifically on retry logic, circuit breakers, and advanced retry patterns.
-
-**Key Principles**:
-1. **Retry only retryable errors** - Don't retry non-retryable errors
-2. **Use exponential backoff** - Avoid overwhelming the server
-3. **Implement circuit breakers** - Prevent cascading failures
-4. **Set reasonable limits** - Don't retry indefinitely
-5. **Log retry attempts** - Monitor and debug retry behavior
-
----
+Decide whether the operation is a read, a known-unsent action, an idempotent request,
+or a signed submission before retrying it. An HTTP status alone cannot tell you
+whether a transaction reached the chain. A retry wrapper around signing/broadcast
+can repeat a payment or replace the identity needed to establish its outcome.
 
 ## Retryable vs Non-Retryable Errors
 
 ### Retryable Errors
 
-**Always Retry**:
-- `GENERAL_ERROR` (code: 1)
-- `INVALID_SIGNATURE` (code: 3) - May succeed on retry
-- `INSUFFICIENT_GAS` (code: 4) - May succeed if gas available
-- `INTERNAL_SERVER_ERROR` (code: 500)
-- `REQUEST_TIMEOUT` (timeout)
-- `NETWORK_ERROR` (network)
-- `RATE_LIMIT_EXCEEDED` (code: 429) - Retry after delay
+| Operation | Permitted recovery |
+|---|---|
+| Read times out, loses its connection, or receives HTTP 429/5xx | Retry the read with a deadline, bounded backoff and cancellation; respect a valid Retry-After policy |
+| Cached session expires | Reauthenticate once, then retry the protected read within the same session generation |
+| Explicit idempotent TSA operator/key request loses its SQL acknowledgement | Repeat identical arguments with the saved request UUID; do not allocate a new request |
+| Unsigned action lacks current data/charge | Wait for fresh authoritative eligibility, then prepare the still-current intent |
+| Broadcast or result persistence loses its acknowledgement | Observe the already saved transaction identity; do not sign or broadcast again |
 
 ### Non-Retryable Errors
 
-**Never Retry** (will always fail):
-- `INSUFFICIENT_FUNDS` (code: 2)
-- `INVALID_MESSAGE` (code: 5)
-- `PLAYER_OFFLINE` (code: 6)
-- `INSUFFICIENT_CHARGE` (code: 7)
-- `INVALID_LOCATION` (code: 8)
-- `INVALID_TARGET` (code: 9)
-- `ENTITY_NOT_FOUND` (code: 404)
-- `BAD_REQUEST` (code: 400)
+Malformed payloads, invalid signatures, unsupported protocol/authority, permission
+denials and failed native simulation need diagnosis or changed inputs. Sleeping does
+not fix them. Do not use invented global mappings such as “code 3 = retryable
+signature error”: native codes must be interpreted with their codespace and stage.
 
-**Reference**: See `protocols/error-handling.md` for complete error categorization
-
----
+Insufficient charge, an offline player or insufficient funds may change later. They
+still do not justify blindly repeating a signed request. Distinguish a preparation
+refusal, definitive CheckTx rejection and committed DeliverTx failure from an unknown
+transport outcome.
 
 ## Basic Retry Strategies
 
 ### Strategy 1: Exponential Backoff
 
-**Best For**: Most retryable errors
+Use a small bounded attempt count, a per-attempt deadline and a total deadline for
+reads. Add jitter to avoid synchronized clients. Cancel when the user leaves the
+route, logs out, switches player/account or replaces the connection. Coalesce
+identical in-flight reads instead of multiplying requests from several listeners.
 
-**Implementation**:
-```json
-{
-  "strategy": "exponential-backoff",
-  "maxRetries": 3,
-  "initialDelay": 1000,
-  "maxDelay": 10000,
-  "backoffMultiplier": 2,
-  "jitter": true
-}
-```
-
-**Delay Calculation**:
-```json
-{
-  "attempt": 1,
-  "delay": 1000,
-  "calculation": "initialDelay * (backoffMultiplier ^ (attempt - 1))"
-}
-```
-
-**Example Delays**:
-- Attempt 1: 1000ms (1 second)
-- Attempt 2: 2000ms (2 seconds)
-- Attempt 3: 4000ms (4 seconds)
-- Attempt 4: 8000ms (8 seconds, capped at maxDelay)
-
-**With Jitter** (randomization to prevent thundering herd):
-```json
-{
-  "jitter": {
-    "enabled": true,
-    "type": "full",
-    "range": "0 to calculated delay"
-  }
-}
-```
-
-**Code Example**:
-```javascript
-async function retryWithExponentialBackoff(fn, maxRetries = 3) {
-  let attempt = 0;
-  let delay = 1000;
-  
-  while (attempt < maxRetries) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (!isRetryableError(error)) {
-        throw error; // Don't retry non-retryable errors
-      }
-      
-      attempt++;
-      if (attempt >= maxRetries) {
-        throw error; // Max retries reached
-      }
-      
-      // Calculate delay with jitter
-      const jitter = Math.random() * delay;
-      await sleep(delay + jitter);
-      
-      // Exponential backoff
-      delay = Math.min(delay * 2, 10000); // Cap at 10 seconds
-    }
-  }
-}
-```
+The reference webapp uses a 15-second default HTTP deadline. Its helpers reject
+HTTP 5xx even if the body contains parseable JSON. Do not turn a failed read into an
+empty success response.
 
 ### Strategy 2: Fixed Delay Retry
 
-**Best For**: Rate limiting (429 errors)
-
-**Implementation**:
-```json
-{
-  "strategy": "fixed-delay",
-  "maxRetries": 3,
-  "delay": 5000,
-  "useWhen": "rate-limit-errors"
-}
-```
-
-**Example**:
-```json
-{
-  "rateLimitRetry": {
-    "error": 429,
-    "delay": 5000,
-    "reason": "Wait for rate limit window to reset",
-    "maxRetries": 3
-  }
-}
-```
-
-**Code Example**:
-```javascript
-async function retryWithFixedDelay(fn, delay = 5000, maxRetries = 3) {
-  let attempt = 0;
-  
-  while (attempt < maxRetries) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (error.status === 429) {
-        attempt++;
-        if (attempt >= maxRetries) {
-          throw error;
-        }
-        await sleep(delay); // Fixed delay for rate limits
-      } else {
-        throw error; // Don't retry non-rate-limit errors
-      }
-    }
-  }
-}
-```
+A periodic health/readiness probe can wait for its next bounded interval. A 429
+response can provide Retry-After; validate the value and apply the client's overall
+deadline. A transaction POST that timed out remains uncertain regardless of how
+long that interval has elapsed.
 
 ### Strategy 3: Linear Backoff
 
-**Best For**: Predictable retry scenarios
-
-**Implementation**:
-```json
-{
-  "strategy": "linear-backoff",
-  "maxRetries": 5,
-  "initialDelay": 1000,
-  "increment": 1000,
-  "maxDelay": 5000
-}
-```
-
-**Delay Calculation**:
-```json
-{
-  "attempt": 1,
-  "delay": 1000,
-  "calculation": "initialDelay + (increment * (attempt - 1))"
-}
-```
-
-**Example Delays**:
-- Attempt 1: 1000ms
-- Attempt 2: 2000ms
-- Attempt 3: 3000ms
-- Attempt 4: 4000ms
-- Attempt 5: 5000ms
-
----
+A delay schedule is a transport choice for repeatable reads, not evidence that an
+action is safe to repeat. Prefer the simplest schedule that respects the service's
+limits; additional retry mechanisms do not change the submission rules below.
 
 ## Advanced Retry Patterns
 
 ### Pattern 1: Circuit Breaker
 
-**Purpose**: Prevent cascading failures by stopping retries after repeated failures
-
-**States**:
-- **Closed**: Normal operation, requests pass through
-- **Open**: Circuit is open, requests fail immediately
-- **Half-Open**: Testing if service recovered
-
-**Implementation**:
-```json
-{
-  "circuitBreaker": {
-    "failureThreshold": 5,
-    "successThreshold": 2,
-    "timeout": 60000,
-    "halfOpenRetries": 1,
-    "states": ["closed", "open", "half-open"]
-  }
-}
-```
-
-**State Transitions**:
-```json
-{
-  "transitions": {
-    "closed-to-open": "After 5 consecutive failures",
-    "open-to-half-open": "After timeout (60 seconds)",
-    "half-open-to-closed": "After 2 successful requests",
-    "half-open-to-open": "After 1 failure"
-  }
-}
-```
-
-**Code Example**:
-```javascript
-class CircuitBreaker {
-  constructor(options = {}) {
-    this.failureThreshold = options.failureThreshold || 5;
-    this.successThreshold = options.successThreshold || 2;
-    this.timeout = options.timeout || 60000;
-    this.state = 'closed';
-    this.failureCount = 0;
-    this.successCount = 0;
-    this.nextAttempt = Date.now();
-  }
-  
-  async execute(fn) {
-    if (this.state === 'open') {
-      if (Date.now() < this.nextAttempt) {
-        throw new Error('Circuit breaker is open');
-      }
-      this.state = 'half-open';
-      this.successCount = 0;
-    }
-    
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (error) {
-      this.onFailure();
-      throw error;
-    }
-  }
-  
-  onSuccess() {
-    this.failureCount = 0;
-    
-    if (this.state === 'half-open') {
-      this.successCount++;
-      if (this.successCount >= this.successThreshold) {
-        this.state = 'closed';
-      }
-    }
-  }
-  
-  onFailure() {
-    this.failureCount++;
-    
-    if (this.state === 'half-open') {
-      this.state = 'open';
-      this.nextAttempt = Date.now() + this.timeout;
-    } else if (this.failureCount >= this.failureThreshold) {
-      this.state = 'open';
-      this.nextAttempt = Date.now() + this.timeout;
-    }
-  }
-}
-```
+Stop initiating dependent actions while required reads repeatedly fail. Keep the
+last coherent snapshot for display only when its stale/unavailable state is known.
+Resume preparations after fresh protocol, authority and readiness checks, not merely
+a successful TCP connection.
 
 ### Pattern 2: Retry with Validation
 
-**Purpose**: Validate conditions before retrying
-
-**Implementation**:
-```json
-{
-  "retryWithValidation": {
-    "validateBeforeRetry": true,
-    "validations": [
-      "Check if error is retryable",
-      "Verify retry count < max retries",
-      "Validate request parameters unchanged",
-      "Check if conditions changed (e.g., player online)"
-    ]
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "scenario": "Retry mining after insufficient charge",
-  "validation": {
-    "beforeRetry": [
-      "Query player charge level",
-      "Verify charge >= required amount",
-      "Check player is online (capacity covers load)"
-    ],
-    "retryIf": "charge >= required AND player online via capacity/load"
-  }
-}
-```
-
-**Code Example**:
-```javascript
-async function retryWithValidation(fn, validator, maxRetries = 3) {
-  let attempt = 0;
-  
-  while (attempt < maxRetries) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (!isRetryableError(error)) {
-        throw error;
-      }
-      
-      // Validate before retrying
-      const canRetry = await validator(error, attempt);
-      if (!canRetry) {
-        throw error;
-      }
-      
-      attempt++;
-      if (attempt >= maxRetries) {
-        throw error;
-      }
-      
-      await sleep(calculateDelay(attempt));
-    }
-  }
-}
-```
+Before preparing an unsent action, verify the original intent still applies:
+current player, target, protocol, permissions, exact amount, funds, charge and work
+anchor. A refreshed amount/recipient must not mutate an already signed identity.
+A confirmed failed transfer returns to confirmation with its amount/recipient
+preserved; a new user action can then use a new validated snapshot.
 
 ### Pattern 3: Retry with Context
 
-**Purpose**: Pass context between retry attempts
-
-**Implementation**:
-```json
-{
-  "retryWithContext": {
-    "context": {
-      "requestId": "unique-request-id",
-      "attempt": 1,
-      "previousErrors": [],
-      "metadata": {}
-    },
-    "updateContext": "On each retry attempt"
-  }
-}
-```
-
-**Use Cases**:
-- Track retry history
-- Pass state between attempts
-- Log retry attempts with context
-- Adjust strategy based on context
+Persist request identity before the side effect. For signed transactions preserve
+chain, signer, account number, sequence, signed bytes/hash and outcome evidence.
+The webapp journal survives reload and retains public unknown-send evidence across
+logout. TSA stores signed identity in SQL and on its persistent volume before its
+one-use send permit. A lost acknowledgement must refer back to that identity.
 
 ### Pattern 4: Adaptive Retry
 
-**Purpose**: Adjust retry strategy based on error patterns
-
-**Implementation**:
-```json
-{
-  "adaptiveRetry": {
-    "strategy": "adaptive",
-    "adjustments": {
-      "ifManyTimeouts": "Increase initial delay",
-      "ifManyRateLimits": "Use fixed delay",
-      "ifManyServerErrors": "Use exponential backoff",
-      "ifManyNetworkErrors": "Increase max retries"
-    }
-  }
-}
-```
-
-**Example**:
-```json
-{
-  "adaptiveStrategy": {
-    "timeoutErrors": {
-      "count": 5,
-      "action": "Increase initial delay to 2000ms"
-    },
-    "rateLimitErrors": {
-      "count": 3,
-      "action": "Switch to fixed delay strategy"
-    }
-  }
-}
-```
-
----
+Adapt read polling frequency to visibility, connection state and useful new data.
+Do not adapt permissions or generate a new signing key to escape a shared throttle.
+TSA pool growth has a separate exact-grant policy; it is not transaction retry.
 
 ## Error-Specific Retry Strategies
 
 ### Rate Limit Errors (429)
 
-**Strategy**: Fixed delay based on rate limit headers
-
-**Implementation**:
-```json
-{
-  "rateLimitRetry": {
-    "error": 429,
-    "strategy": "fixed-delay",
-    "delaySource": "Retry-After header or default 5000ms",
-    "maxRetries": 3
-  }
-}
-```
-
-**Code Example**:
-```javascript
-async function handleRateLimit(error, fn) {
-  const retryAfter = error.headers['retry-after'] || 5;
-  const delay = parseInt(retryAfter) * 1000;
-  
-  await sleep(delay);
-  return await fn();
-}
-```
+Retry eligible reads after bounded delay. For an attempted broadcast, establish
+whether the native node definitively rejected that exact identity. A proxy response
+or missing acknowledgement does not establish non-inclusion.
 
 ### Timeout Errors
 
-**Strategy**: Exponential backoff with longer initial delay
-
-**Implementation**:
-```json
-{
-  "timeoutRetry": {
-    "error": "timeout",
-    "strategy": "exponential-backoff",
-    "initialDelay": 2000,
-    "maxDelay": 30000,
-    "maxRetries": 5
-  }
-}
-```
+A read may be repeated. A signed submission becomes unknown and remains reserved.
+Observe its hash and matching block bytes/results. Neither an empty `tx_search`
+response nor a larger account sequence proves failure.
 
 ### Network Errors
 
-**Strategy**: Exponential backoff with connection check
-
-**Implementation**:
-```json
-{
-  "networkErrorRetry": {
-    "error": "network",
-    "strategy": "exponential-backoff",
-    "validateConnection": true,
-    "maxRetries": 5
-  }
-}
-```
+Reconnect and refresh authoritative state. Recreate subscriptions and invalidate
+stale projections, but do not replay signed transactions as part of reconnection.
+A GRASS reconnect does not provide durable event replay.
 
 ### Server Errors (500)
 
-**Strategy**: Exponential backoff with circuit breaker
-
-**Implementation**:
-```json
-{
-  "serverErrorRetry": {
-    "error": 500,
-    "strategy": "exponential-backoff",
-    "circuitBreaker": true,
-    "maxRetries": 3
-  }
-}
-```
-
----
+Reject the failed read even if its response is valid JSON. Bound read retries and
+keep actions unavailable until their evidence is complete. Preserve an uncertain
+submission for reconciliation if the error followed a send attempt.
 
 ## Retry Configuration
 
-### Recommended Configurations
-
-**Default Configuration**:
-```json
-{
-  "default": {
-    "maxRetries": 3,
-    "strategy": "exponential-backoff",
-    "initialDelay": 1000,
-    "maxDelay": 10000,
-    "backoffMultiplier": 2,
-    "jitter": true
-  }
-}
-```
-
-**Rate Limit Configuration**:
-```json
-{
-  "rateLimit": {
-    "maxRetries": 3,
-    "strategy": "fixed-delay",
-    "delay": 5000,
-    "useRetryAfterHeader": true
-  }
-}
-```
-
-**Network Error Configuration**:
-```json
-{
-  "networkError": {
-    "maxRetries": 5,
-    "strategy": "exponential-backoff",
-    "initialDelay": 2000,
-    "maxDelay": 30000
-  }
-}
-```
-
-**Timeout Configuration**:
-```json
-{
-  "timeout": {
-    "maxRetries": 5,
-    "strategy": "exponential-backoff",
-    "initialDelay": 2000,
-    "maxDelay": 30000
-  }
-}
-```
-
----
+Configure deadlines, attempt budgets and cancellation per operation. Keep transport
+retry separate from submission state. A system-wide “retry all failed POSTs” policy
+is incompatible with one-attempt signing. UUID-bound server requests are repeatable
+only where the server explicitly implements that idempotency contract.
 
 ## Best Practices
 
-### 1. Set Reasonable Limits
-
-**Do**:
-- Set max retries (typically 3-5)
-- Set max delay (typically 10-30 seconds)
-- Use jitter to prevent thundering herd
-
-**Don't**:
-- Retry indefinitely
-- Use very long delays
-- Retry without limits
-
-### 2. Log Retry Attempts
-
-**Do**:
-```json
-{
-  "logging": {
-    "include": [
-      "error code and message",
-      "retry attempt number",
-      "delay used",
-      "request details",
-      "timestamp"
-    ]
-  }
-}
-```
-
-**Benefits**:
-- Debug retry behavior
-- Monitor retry patterns
-- Identify problematic endpoints
-
-### 3. Use Circuit Breakers for Repeated Failures
-
-**Do**:
-- Implement circuit breakers
-- Open circuit after threshold failures
-- Test recovery with half-open state
-
-**Benefits**:
-- Prevent cascading failures
-- Reduce server load
-- Faster failure detection
-
-### 4. Validate Before Retrying
-
-**Do**:
-- Check if error is retryable
-- Verify conditions changed (if applicable)
-- Validate request parameters
-
-**Example**:
-```json
-{
-  "validation": {
-    "beforeRetry": [
-      "Is error retryable?",
-      "Has player come online?",
-      "Is charge sufficient?",
-      "Are parameters still valid?"
-    ]
-  }
-}
-```
-
-### 5. Combine with Caching
-
-**Do**:
-- Cache successful responses
-- Use cached data on retry failures
-- Invalidate cache on successful retry
-
-**Benefits**:
-- Faster fallback
-- Reduced API calls
-- Better user experience
-
----
+- Preserve exact integers and the original work anchor; recalculating from rounded
+  values can change the intended transaction or proof.
+- Revalidate cache epoch, chain, owner and source height after reconnect or login.
+- Invalidate financial data on notifications, then read a complete snapshot; do not
+  apply unverified event deltas or substitute unknown balances with zero.
+- Stop stale callbacks from overwriting a newer route/session. Aborting a UI wait
+  does not cancel a transaction already sent to the chain.
+- Keep diagnostics to operation IDs/stages and redacted error details. Never log
+  credentials, private keys, recovery phrases or full authentication requests.
 
 ## Integration with Other Patterns
 
-### Retry + Rate Limiting
-
-**Pattern**: Combine retry with rate limit handling
-
-```json
-{
-  "integration": {
-    "retry": "Exponential backoff",
-    "rateLimit": "Respect rate limit headers",
-    "strategy": "Retry after rate limit window"
-  }
-}
-```
-
-**Reference**: `patterns/rate-limiting.md`
-
-### Retry + Caching
-
-**Pattern**: Use cache as fallback during retries
-
-```json
-{
-  "integration": {
-    "retry": "Exponential backoff",
-    "cache": "Use cached data if retry fails",
-    "strategy": "Retry → Cache → Error"
-  }
-}
-```
-
-**Reference**: `patterns/caching.md`
-
-### Retry + Circuit Breaker
-
-**Pattern**: Use circuit breaker to prevent excessive retries
-
-```json
-{
-  "integration": {
-    "retry": "Exponential backoff",
-    "circuitBreaker": "Open after threshold failures",
-    "strategy": "Retry → Circuit Breaker → Fail Fast"
-  }
-}
-```
-
----
+[Signing](../develop/client/actions-and-signing.md) defines durable submission
+states. [State and data](../develop/client/state-and-data.md) defines coherent reads
+and cache invalidation. [GRASS](../develop/client/realtime-grass.md) defines reconnect
+recovery. [TSA operations](../knowledge/infrastructure/guild-stack.md#transaction-signing-agent)
+cover persistent key/SQL recovery.
 
 ## Monitoring and Metrics
 
-### Metrics to Track
-
-**Retry Metrics**:
-```json
-{
-  "metrics": {
-    "retryCount": "Number of retries attempted",
-    "retrySuccessRate": "Percentage of successful retries",
-    "averageRetries": "Average retries per request",
-    "retryDelay": "Average delay between retries",
-    "circuitBreakerState": "Current circuit breaker state"
-  }
-}
-```
-
-### Monitoring Dashboard
-
-**Key Indicators**:
-- Retry rate (retries / total requests)
-- Success rate after retry
-- Average retry delay
-- Circuit breaker state changes
-- Error distribution by type
-
----
-
-## Related Documentation
-
-- **Error Handling Protocol**: `protocols/error-handling.md` - Complete error handling guide
-- **Rate Limiting**: `patterns/rate-limiting.md` - Rate limit handling
-- **Caching**: `patterns/caching.md` - Caching strategies
-- **Error Codes**: `api/error-codes.md` - Complete error code catalog
-
----
+Measure read timeout/attempt counts, projection lag, unresolved-submission age and
+reconciliation results separately. “Retry succeeded” cannot stand in for a matching
+committed result. Alert on unresolved evidence without deleting it or unreserving keys.
 
 ## Quick Reference
 
-### Retryable Errors
-- `GENERAL_ERROR` (1)
-- `INVALID_SIGNATURE` (3)
-- `INSUFFICIENT_GAS` (4)
-- `INTERNAL_SERVER_ERROR` (500)
-- `REQUEST_TIMEOUT`
-- `NETWORK_ERROR`
-- `RATE_LIMIT_EXCEEDED` (429)
+Read failure → bounded read retry. Known-unsent refusal → fresh eligibility.
+Idempotent request → same UUID and arguments. Uncertain broadcast → same signed
+identity, observation only. Definitive outcome → record it and refresh authoritative
+state before any later action.
 
-### Recommended Strategies
-- **Most errors**: Exponential backoff (3 retries, 1s initial delay)
-- **Rate limits**: Fixed delay (5s, use Retry-After header)
-- **Timeouts**: Exponential backoff (5 retries, 2s initial delay)
-- **Network errors**: Exponential backoff (5 retries, 2s initial delay)
-
-### Best Practices
-1. Set reasonable limits (3-5 retries)
-2. Use exponential backoff with jitter
-3. Implement circuit breakers
-4. Log retry attempts
-5. Validate before retrying
-
----
-
-*Pattern Version: 1.0.0 - January 2025*
-
+**Verified against:** webapp integration `43bc1086` signing/journal/HTTP lifecycle
+and TSA `3258529` worker/journal/operator contracts. Read-backoff recommendations
+are implementation guidance, not new chain error codes or permission to rebroadcast.

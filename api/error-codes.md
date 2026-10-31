@@ -1,185 +1,72 @@
 ---
 title: API error code catalog
-description: The complete catalog of API error codes for agents, with response examples, categories, and which errors are worth retrying.
+description: "Selected release-native errors with codespaces and submission stages, plus HTTP/API handling and links to authoritative definitions."
 ---
 
 # API error code catalog
 
-**Version**: 1.0.0
-**Description**: Complete catalog of API error codes for AI agents
-
----
-
 ## Error Code Reference
+
+Interpret native `(codespace,code)` together with the stage. An HTTP/gRPC gateway
+code is a separate namespace. The table selects errors useful to clients; the full
+release definitions are linked below.
 
 ### HTTP Status Code Errors
 
-| Code | Name | Category | Retryable | Action | Recovery |
-|------|------|----------|-----------|--------|----------|
-| 400 | BAD_REQUEST | client_error | No | Validate request parameters and format | Check request body, headers, and parameter types |
-| 404 | NOT_FOUND | client_error | No | Verify resource ID and try again | Check if resource ID is correct, or query list to find valid IDs |
-| 429 | RATE_LIMIT_EXCEEDED | rate_limit | Yes | Wait for retry_after seconds before retrying | Implement rate limiting: reduce request frequency, use exponential backoff, respect Retry-After header |
-| 500 | INTERNAL_SERVER_ERROR | server_error | Yes | Retry with exponential backoff | If error persists, report issue with request_id |
-| 503 | SERVICE_UNAVAILABLE | server_error | Yes | Wait for retry_after seconds, then retry | Service may be under maintenance or overloaded |
+400/401/403/404/409 describe request/authentication/resource/conflict handling;
+429 and 5xx can justify bounded **read** retries. None alone authorizes repeating an
+attempted native broadcast. The webapp body commonly has `success`, `errors`, `data`
+and optional `meta`; empty errors can be an array and keyed failures an object.
 
 ### Consensus Network Error Codes
 
-| Code | Name | Category | Retryable | Action | Recovery |
-|------|------|----------|-----------|--------|----------|
-| 0 | SUCCESS | success | No | Continue processing | -- |
-| 1 | GENERAL_ERROR | error | Yes | Log and retry with backoff | Max 3 retries with exponential backoff |
-| 2 | INSUFFICIENT_FUNDS | error | No | Wait for resources | Check player inventory, wait for resources to accumulate |
-| 3 | INVALID_SIGNATURE | error | Yes | Re-sign transaction | Verify signature generation, re-sign with correct private key |
-| 4 | INSUFFICIENT_GAS | error | Yes | Increase gas limit | Estimate gas requirements, increase gas limit in transaction |
-| 5 | INVALID_MESSAGE | error | No | Validate message format | Check message structure against schema, verify all required fields |
-| 6 | PLAYER_OFFLINE | error | No | Restore capacity or shed load | No `halted` field — online is `(load+structsLoad) ≤ (capacity+secondary)`. Wire codespace is often **1152** (`ErrPlayerOffline`), not literal `6` |
-| 7 | INSUFFICIENT_CHARGE | error | No | Wait for charge to accumulate | Charge = height − `gridAttributes.lastAction`. Wire codespace often **1200** |
-| 8 | INVALID_LOCATION | error | No | Validate location | Check location format and validity |
-| 9 | INVALID_TARGET | error | No | Validate target | Check target format and validity |
-| 1900 | OBJECT_NOT_FOUND | error | No | Verify resource ID | Consensus Network returns 200 with error code, not 404. Check response.code field. |
-| 1613 | REACTOR_STAKE_CAP_EXCEEDED | error | No | Pick another reactor | `reactor stake cap exceeded` — reactor already holds ≥30% of bonded stake. Check `reactor-stake-share` headroom first |
-| 2010 | ANTE_UNREGISTERED_ADDRESS | ante | No | Create the player first | Address is not a registered player; bootstrap with `structsd tx staking delegate`, not `reactor-infuse` |
-| 2020 / 2021 | ANTE_CHARGE_DEDUP | ante | Yes (next block) | Resubmit next block | One charge-consuming message per player per tx (2020) and per block (2021) |
-| 2031 / 2033 | ANTE_PROOF_THROTTLE | ante | Yes (next block) | Resubmit next block | One proof per struct (2031) and one message per throttle key — fleet, planet explore, registration — (2033) per block |
-| 2040 | ANTE_PLAYER_MSG_CAP | ante | Yes (next block) | Spread across blocks | A player may land at most 40 messages per block across all of their addresses; recovery messages from the primary are exempt |
-| 2041 | ANTE_CHECKTX_ADDR_CAP | ante | Yes (next block) | Slow down | More than 5 free transactions from one address queued for one block in CheckTx |
+| Codespace | Code | Release sentinel | Client response |
+|---|---|---|---|
+| `structs` | 1050 | `ErrObjectNotFound` | Verify object and source; resource absence is distinct from query unavailability |
+| `structs` | 1100 | `ErrPermission` | Check current object and signing-key authority |
+| `structs` | 1152 | `ErrPlayerOffline` | Refresh power state and action eligibility |
+| `structs` | 1200 | `ErrInsufficientCharge` | Wait for eligible current charge before a later action |
+| `structs` | 1613 | `ErrReactorStakeCapExceeded` | Read current reactor stake share/cap and choose an eligible target |
+| `structs` | 1900 | `ErrInvalidPacketTimeout` | Diagnose IBC timeout input; this is not object-not-found |
+| `structs-ante` | 2000 / 2001 | `ErrTxTooLarge` / `ErrMsgCountExceeded` | Reduce transaction shape within the release limits |
+| `structs-ante` | 2002 / 2004 | `ErrUnknownStructsMessage` / `ErrNestedStructsMessage` | Use current direct message types |
+| `structs-ante` | 2005 | `ErrInvalidProofIdentity` | Diagnose proof identity before signing |
+| `structs-ante` | 2010 / 2011 | `ErrUnregisteredAddress` / `ErrMissingPermission` | Verify ordinary address registration and its own grant |
+| `structs-ante` | 2020 / 2021 | `ErrDuplicateChargeInTx` / `ErrChargeAlreadyUsedThisBlock` | Respect the shared player charge action limit |
+| `structs-ante` | 2022 | `ErrPlayerDischargedThisBlock` | Wait for a later eligible action |
+| `structs-ante` | 2030 / 2031 | `ErrDuplicateProofInTx` / `ErrProofAlreadyAttemptedThisBlock` | Preserve original work intent; respect proof throttles |
+| `structs-ante` | 2032 / 2033 | `ErrDuplicateThrottleKeyInTx` / `ErrObjectThrottledThisBlock` | Respect shared object throttle keys |
+| `structs-ante` | 2040 / 2041 | `ErrPlayerMsgCapExceeded` / `ErrCheckTxAddrCapExceeded` | Reduce submissions across the relevant player/address budget |
+| `structs-ante` | 2042 / 2043 | `ErrDuplicateStakingInTx` / `ErrStakingAlreadySubmittedThisBlock` | One listed staking operation per address per transaction/block; mixed paid transactions do not bypass it |
 
-### Network Errors
+Some failures are SDK/module errors or structured wrappers with added context.
+Do not infer their code from a human label or numeric value in another namespace.
 
-| Code | Name | Category | Retryable | Action | Recovery |
-|------|------|----------|-----------|--------|----------|
-| timeout | REQUEST_TIMEOUT | network_error | Yes | Retry with exponential backoff | Increase timeout duration or reduce request complexity |
-| network | NETWORK_ERROR | network_error | Yes | Retry with exponential backoff | Check network connectivity, verify server is running |
+## Error Response Format
 
----
+Preserve native code/codespace/log, hash and stage. For inclusion also preserve
+height, tx index and matching block hash/time. API failures additionally retain
+HTTP status and applicable readiness/reason fields. Do not treat parseable JSON,
+HTTP 200 or CheckTx code zero as committed execution success.
 
-## Error Response Examples
+## Error Handling
 
-### 400 BAD_REQUEST
+A preparation refusal can be reconsidered after current eligibility changes.
+Definitive rejection or committed failure is recorded before any later action.
+An uncertain send retains its original signed bytes/hash and is observed; a timeout,
+empty search result or sequence change cannot authorize re-signing/rebroadcast.
 
-```json
-{
-  "error": "Bad request",
-  "code": 400,
-  "details": ["Invalid parameter format"]
-}
-```
+See [error-handling protocol](../protocols/error-handling.md) and
+[retry strategies](../patterns/retry-strategies.md).
 
-### 404 NOT_FOUND
+## Source and Related Documentation
 
-Affected endpoints: `webapp-player-by-id`, `webapp-planet-by-id`, `webapp-guild-by-id`, `webapp-struct-by-id`, `player-by-id`, `planet-by-id`, `guild-by-id`, `struct-by-id`
+- [Structs release error definitions](https://github.com/playstructs/structsd/blob/96cea3a322c406b46ca1feb880dc4497ebd9353f/x/structs/types/errors.go)
+- [Custom ante error definitions](https://github.com/playstructs/structsd/blob/96cea3a322c406b46ca1feb880dc4497ebd9353f/app/ante/errors.go)
+- [Structured error context](https://github.com/playstructs/structsd/blob/96cea3a322c406b46ca1feb880dc4497ebd9353f/x/structs/types/errors_structured.go)
+- [Error data structures](../schemas/errors.md)
+- [Practical error index](../play/errors.md)
 
-```json
-{
-  "error": "Player not found",
-  "code": 404,
-  "details": ["Player ID 1-999 does not exist"]
-}
-```
-
-### 429 RATE_LIMIT_EXCEEDED
-
-```json
-{
-  "error": "Rate limit exceeded",
-  "code": 429,
-  "retry_after": 60,
-  "limit": 100,
-  "remaining": 0,
-  "reset_at": "2025-01-01T00:01:00Z"
-}
-```
-
-### 500 INTERNAL_SERVER_ERROR
-
-```json
-{
-  "error": "Internal server error",
-  "code": 500,
-  "details": ["An unexpected error occurred"],
-  "request_id": "req_1234567890"
-}
-```
-
-### 503 SERVICE_UNAVAILABLE
-
-```json
-{
-  "error": "Service unavailable",
-  "code": 503,
-  "details": ["Service is temporarily unavailable"],
-  "retry_after": 30
-}
-```
-
-### Consensus Network Errors (code 1-9, 1900)
-
-Consensus Network errors are returned with HTTP 200 but with a non-zero `code` field in the response body.
-
-```json
-{
-  "code": 2,
-  "message": "codespace structs code 2: insufficient funds",
-  "details": []
-}
-```
-
-```json
-{
-  "code": 1152,
-  "message": "codespace structs code 1152: player is offline",
-  "details": []
-}
-```
-
-Codes **1–9** in the table above are a simplified agent schema. Raw ABCI logs use module codespace IDs (e.g. offline **1152**, insufficient charge **1200**, stake cap **1613**). Codes **2000–2049** come from the `ante` codespace (`app/ante/errors.go`) and are rejected before any handler runs. There is no live `player halted` / code-6 halt path. Insufficient-funds errors on refine-funded actions (reactor-infuse, generator infuse, agreement-open, Central Bank, rank purchase) name the **vault** address, not your signing key — fund the vault, or check `playerInventory.rocks`.
-
----
-
-## Error Categories
-
-| Category | Description | Codes |
-|----------|-------------|-------|
-| success | Successful operations | 0, 200 |
-| client_error | Client-side errors (not retryable) | 400, 404, 5, 6, 7, 8, 9, 1900 |
-| server_error | Server-side errors (retryable) | 500, 503 |
-| rate_limit | Rate limiting errors (retryable with delay) | 429 |
-| network_error | Network-related errors (retryable) | timeout, network |
-| error | Game-specific errors | 1, 2, 3, 4 |
-
----
-
-## Retry Strategies
-
-### Exponential Backoff
-
-- **Initial delay**: 1000ms
-- **Max delay**: 60000ms
-- **Backoff multiplier**: 2
-- **Max retries**: 5
-
-Use for: server errors (500, 503), general errors (1), network errors
-
-### Fixed Delay
-
-- **Delay**: 5000ms
-- **Max retries**: 3
-
-Use for: rate limit errors when Retry-After header is not provided
-
-### Respect Retry-After Header
-
-- **Use header**: Yes
-- **Max retries**: 10
-
-Use for: rate limit errors (429) when Retry-After header is provided
-
----
-
-## Related Documentation
-
-- `schemas/errors.md` - Error schema definitions
-- `schemas/responses.md` - Response definitions
-- `patterns/retry-strategies.md` - Retry logic patterns
-- `protocols/error-handling.md` - Error handling patterns
-- `api/rate-limits.md` - Rate limit configuration
+**Verified against:** official structsd v0.22.0 `96cea3a`, webapp `43bc1086` and
+TSA `3258529`. Source registration names/codes are verified; recovery guidance
+still depends on the actual operation and stage.

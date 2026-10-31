@@ -1,87 +1,67 @@
 ---
-description: The complete error code catalog with categories, retry classification, and the handling strategy each class calls for.
+description: "Error identity across HTTP, webapp and native results, with stage-aware recovery and no implicit broadcast retries."
 ---
 
 # Structs Error Codes
-
-**Version**: 1.1.0
-**Category**: errors
-**Description**: Complete catalog of error codes for AI agents
-
----
 
 ## Error Codes
 
 ### Success
 
-| Code | Name | Category | Description | Action | Retryable |
-|------|------|----------|-------------|--------|-----------|
-| 0 | SUCCESS | success | Operation successful | continue | -- |
+Native `code=0` must be interpreted with its stage: CheckTx admission is not
+committed execution. A matching committed DeliverTx result with code zero establishes
+execution success. Indexed API display readiness is a later check.
 
 ### Game Errors
 
-| Code | Name | Category | Description | Action | Retryable | Requires |
-|------|------|----------|-------------|--------|-----------|----------|
-| 1 | GENERAL_ERROR | error | General error occurred | log and retry | yes | -- |
-| 2 | INSUFFICIENT_FUNDS | error | Insufficient funds for transaction | wait for resources | no | check player inventory, wait for resources |
-| 3 | INVALID_SIGNATURE | error | Transaction signature is invalid | re-sign transaction | yes | -- |
-| 4 | INSUFFICIENT_GAS | error | Insufficient gas for transaction | increase gas limit | yes | -- |
-| 5 | INVALID_MESSAGE | error | Message format is invalid | validate message format | no | -- |
-| 6 | PLAYER_OFFLINE | error | Player offline: `(load+structsLoad) > (capacity+capacitySecondary)` | restore capacity or shed load | no | There is no `halted` field — query player power attributes |
-| 7 | INSUFFICIENT_CHARGE | error | Player has insufficient charge (per-player bar, not per-struct) | wait for charge | no | check player charge, wait for charge |
-| 8 | INVALID_LOCATION | error | Location is invalid or inaccessible | validate location | no | -- |
-| 9 | INVALID_TARGET | error | Target is invalid or not attackable | validate target | no | -- |
+Use `(codespace,code)` from the native result. Structs handler sentinels use
+`structs`; custom ante sentinels use `structs-ante`. See the
+[selected native catalog](../api/error-codes.md) and pinned release source.
+Do not assign generic numbers 1–9 to insufficient funds, signatures, gas or charge.
 
 ### HTTP Errors
 
-| Code | Name | Category | Description | Action | Retryable |
-|------|------|----------|-------------|--------|-----------|
-| 400 | BAD_REQUEST | http | Invalid request | validate request format | no |
-| 404 | ENTITY_NOT_FOUND | http | Entity not found | verify entity ID | no |
-| 500 | INTERNAL_SERVER_ERROR | http | Server error | retry with backoff | yes |
+HTTP status belongs to the request/transport layer. It is not a native ABCI error
+code. A proxy timeout or 5xx after a send does not prove the transaction was rejected.
+Read failures can be retried with bounds; uncertain sends must be observed.
 
 ### Network Errors
 
-| Code | Name | Category | Description | Action | Retryable |
-|------|------|----------|-------------|--------|-----------|
-| timeout | REQUEST_TIMEOUT | network | Request timed out | retry with backoff | yes |
-| network | NETWORK_ERROR | network | Network error occurred | retry with backoff | yes |
-
----
+Retain operation stage, whether transport was attempted, signed request identity,
+and error evidence. Do not turn a lost acknowledgement into a fresh request.
 
 ## Error Categories
 
-| Category | Error Codes |
-|----------|-------------|
-| success | 0 |
-| error | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
-| http | 400, 404, 500 |
-| network | timeout, network |
+| Evidence | Fields to retain |
+|---|---|
+| Webapp response | HTTP status, `success`, `errors`, relevant readiness/reason metadata |
+| LCD/gRPC query failure | Transport status and gateway `code`, `message`, `details` when present |
+| Native simulation/admission | Stage, `(codespace,code)`, log, exact intended/signed identity |
+| Committed native result | Hash/bytes, height, tx index, block hash/time, DeliverTx code/codespace |
+| Unknown submission | Original chain/signer/account/sequence/bytes/hash and send marker |
 
----
+The webapp's empty `errors` value can be an array; keyed failures can be objects.
+A framework/proxy failure need not use the application DTO.
 
 ## Retry Classification
 
-**Retryable**: 1 (GENERAL_ERROR), 3 (INVALID_SIGNATURE), 4 (INSUFFICIENT_GAS), 500 (INTERNAL_SERVER_ERROR), timeout (REQUEST_TIMEOUT), network (NETWORK_ERROR)
-
-**Not retryable**: 0 (SUCCESS), 2 (INSUFFICIENT_FUNDS), 5 (INVALID_MESSAGE), 6 (PLAYER_OFFLINE), 7 (INSUFFICIENT_CHARGE), 8 (INVALID_LOCATION), 9 (INVALID_TARGET), 400 (BAD_REQUEST), 404 (ENTITY_NOT_FOUND)
-
----
+Repeatable read failures use bounded retries. Changed unsigned eligibility permits
+new preparation. UUID-bound server requests reuse identical arguments and the saved
+UUID. An uncertain signed transaction is never automatically replaced or resent.
 
 ## Error Handling Strategy
 
 ### Retryable Errors
 
-| Setting | Value |
-|---------|-------|
-| Action | retry |
-| Max retries | 3 |
-| Backoff | exponential |
-| Initial delay | 1000 ms |
+Classify the operation before the transport error. Preserve cancellation, total
+deadlines, current session and source identity for read retries. Follow
+[retry strategies](../patterns/retry-strategies.md).
 
 ### Non-Retryable Errors
 
-| Setting | Value |
-|---------|-------|
-| Action | log |
-| Fallback | abort or wait |
+Invalid payloads/proofs/permissions need diagnosis. Preserve a definitive failure
+and revalidate later intent. Never “repair” uncertainty by deleting history,
+changing account sequence or widening a key's permissions.
+
+**Verified scope:** webapp `43bc1086`, TSA `3258529`, native codespaces at official
+structsd `96cea3a`. This is an error-shape/recovery contract, not a complete SDK catalog.

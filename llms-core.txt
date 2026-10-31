@@ -773,7 +773,7 @@ Mining and refining are multi-hour background operations. Track both jobs and th
 
 **Energy is ephemeral.** Energy produced in a block but not consumed is permanently lost. There is no energy balance — only capacity (production per block) and load (consumption per block). Idle capacity is waste.
 
-**Gameplay transactions are free.** Every pure Structs gameplay message runs on a dedicated free-gas meter — no `ualpha` fee is charged (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
+**Gameplay transactions are free.** Ordinary pure Structs gameplay transactions use a dedicated free-gas meter; `MsgGuildCreate`, `MsgReactorRestart` and `MsgUpdateParams` use ordinary paid gas (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
 
 **Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen. Refined Alpha is deposited in your **vault**, not on your signing key — read it with `structsd query bank balances [vault-address]` or as `playerInventory.rocks` on the player query.
 

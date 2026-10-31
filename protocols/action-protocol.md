@@ -1,589 +1,182 @@
 ---
 title: Action protocol for submitting transactions
-description: "How agents submit actions as transactions to the consensus network: base configuration, transaction flow, action patterns, and requirements."
+description: "Prepare exact authorized actions, persist signed identity, broadcast once, and verify committed outcomes without duplicate transactions."
 ---
 
 # Action protocol for submitting transactions
 
-**Version**: 1.0.0  
-**Category**: Action  
-**Status**: Stable
-
 ## Overview
 
-The Action Protocol defines how AI agents should perform actions (transactions) in Structs. All actions are submitted as transactions to the consensus network.
+Prepare an action from current authoritative state, sign once, retain its identity,
+and observe the outcome. Webapp login authorizes API access; it is not a native
+transaction signature. A SQL enqueue or successful broadcast response is not proof
+that the action committed.
 
 ### Fees
 
-Transactions composed entirely of `structs` module messages (excluding `MsgUpdateParams`) are routed through a free-gas meter and require no `ualpha` fee. Pure-staking transactions (`MsgDelegate`, `MsgUndelegate`, `MsgBeginRedelegate`, `MsgCancelUnbondingDelegation`, `MsgCreateValidator`, `MsgEditValidator`) are also free, capped at one per signer per block. Mixed transactions and other Cosmos messages still pay fees in `ualpha`. The transaction examples below intentionally use empty `fee.amount` arrays for free Structs txs. Always include `--gas auto --gas-adjustment 1.5` (or set `gas_limit` explicitly) so the simulator can size the meter correctly. See `knowledge/mechanics/transactions.md` for the full ante handler routing rules.
+A pure Structs transaction is free only when it excludes `MsgUpdateParams`,
+`MsgGuildCreate` and `MsgReactorRestart`. The last two use ordinary priced gas;
+guild creation also pays its separate vault-funded founding cost. A pure transaction
+of the six allowlisted Cosmos staking messages uses the separate free-staking meter.
+Mixed module transactions pay ordinary fees. The default free meters are 20 million
+and 40 million gas respectively; “free” does not mean unmetered.
+
+Simulate with the intended messages and current account state. CLI examples use
+`--gas auto --gas-adjustment 1.5`; priced operations also need an explicit fee/price
+matching the node's admission policy. A browser/TSA integration should select its
+fee policy by protocol and message set, not attach one hardcoded fee to everything.
+See [transactions](../knowledge/mechanics/transactions.md).
 
 ## Base Configuration
 
-```json
-{
-  "baseUrl": "http://localhost:1317",
-  "transactionEndpoint": "/cosmos/tx/v1beta1/txs",
-  "timeout": 30000,
-  "confirmationTimeout": 60000,
-  "retryPolicy": {
-    "maxRetries": 3,
-    "retryDelay": 2000,
-    "retryOn": ["timeout", "5xx", "network"]
-  }
-}
-```
+Keep chain ID, RPC/LCD origins, protocol, signer and action intent explicit. Use
+separate bounded timeouts for reads, simulation, transport and outcome observation.
+Do not configure automatic retries for transaction broadcasts. Persist public
+signed evidence outside short-lived UI state and keep private keys separately.
 
 ## Transaction Flow
 
 ### Step 1: Get Account Information
 
-**Format**: Query account to get account_number and sequence
+Read the signing account's supported native account type, account number and
+sequence as exact uint64 decimal strings. Resolve its ordinary player identity and
+current address permissions. Its own grant is a hard ceiling; player/guild authority
+does not broaden a restricted key.
 
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "http://localhost:1317/cosmos/auth/v1beta1/accounts/{address}",
-    "headers": {
-      "Accept": "application/json"
-    }
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "account": {
-        "@type": "/cosmos.auth.v1beta1.BaseAccount",
-        "address": "structs1abc...",
-        "pub_key": {
-          "@type": "/cosmos.crypto.secp256k1.PubKey",
-          "key": "base64_public_key"
-        },
-        "account_number": "0",
-        "sequence": "5"
-      }
-    }
-  }
-}
-```
-
-**Extract**: Store `account_number` and `sequence` for transaction signing.
+For data-derived actions, validate chain/protocol and API readiness first, then the
+required current native evidence. `data_ready` permits a coherent read;
+`transaction_ready` adds index freshness. Neither replaces current bank spendability,
+staking eligibility, permissions, charge, ownership or target checks.
 
 ### Step 2: Build Transaction
 
-**Format**: Create transaction body with message(s) and auth_info
+Use the release protobuf definitions/generated codecs and the current message
+fields. [Message catalog](../api/transactions/messages.md) and
+[reference-client signing](../develop/client/actions-and-signing.md) identify the
+implemented payloads. A readable JSON description is not itself a signed wire body.
 
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgStructBuildInitiate",
-        "creator": "structs1abc...",
-        "playerId": "1-11",
-        "structTypeId": "1",
-        "operatingAmbit": "land",
-        "slot": "0"
-      }
-    ],
-    "memo": "",
-    "timeout_height": "0"
-  },
-  "auth_info": {
-    "signer_infos": [
-      {
-        "public_key": {
-          "@type": "/cosmos.crypto.secp256k1.PubKey",
-          "key": "base64_public_key"
-        },
-        "mode_info": {
-          "single": {
-            "mode": "SIGN_MODE_DIRECT"
-          }
-        },
-        "sequence": "5"
-      }
-    ],
-    "fee": {
-      "amount": [],
-      "gas_limit": "200000",
-      "payer": "",
-      "granter": ""
-    }
-  }
-}
-```
+Keep original intent alongside the payload: acting player, source owner, destination,
+amount/denom, target, original work anchor and applicable proof context. Player-selected
+transfers use the recipient vault; explicit non-player addresses remain literal.
+Vault funds, retained balances and total wealth are different inputs. A vault never
+becomes the signing address.
 
-**Multiple Messages**: Can include multiple messages in one transaction
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgStructBuildInitiate",
-        "creator": "structs1abc...",
-        "playerId": "1-11",
-        "structTypeId": "1",
-        "operatingAmbit": "land",
-        "slot": "0"
-      },
-      {
-        "@type": "/structs.structs.MsgReactorInfuse",
-        "creator": "structs1abc...",
-        "delegatorAddress": "structs1abc...",
-        "validatorAddress": "structsvaloper1...",
-        "amount": { "denom": "ualpha", "amount": "100000000" }
-      }
-    ],
-    "memo": "",
-    "timeout_height": "0"
-  },
-  "auth_info": {
-    "signer_infos": [
-      {
-        "public_key": {
-          "@type": "/cosmos.crypto.secp256k1.PubKey",
-          "key": "base64_public_key"
-        },
-        "mode_info": {
-          "single": {
-            "mode": "SIGN_MODE_DIRECT"
-          }
-        },
-        "sequence": "5"
-      }
-    ],
-    "fee": {
-      "amount": [],
-      "gas_limit": "200000"
-    }
-  }
-}
-```
+Use exact arithmetic, retaining full denominations and their known scales. Do not
+round account numbers, ranks, clocks, native balances or proof difficulty through a
+JavaScript Number. Read `meta` and native completeness before treating an absent
+position as zero.
 
 ### Step 3: Sign Transaction
 
-**Format**: Sign transaction bytes with player's private key using secp256k1
+Validate/simulate the exact intended message and fee set. Sign the protobuf bytes
+with the ordinary signing address and exact account state. Compute the hash from
+the final signed `TxRaw` bytes. Persist chain, account, sequence, bytes, hash and
+request identity before transport; later refreshed state cannot mutate those bytes.
 
-```json
-{
-  "signing": {
-    "method": "secp256k1",
-    "privateKey": "0x...",
-    "message": "transaction_bytes",
-    "chainId": "structs-testnet",
-    "accountNumber": "0",
-    "sequence": "5",
-    "result": "base64_signature"
-  },
-  "signedTransaction": {
-    "body": {
-      "messages": [
-        {
-          "@type": "/structs.structs.MsgStructBuildInitiate",
-          "creator": "structs1abc...",
-          "playerId": "1-11",
-          "structTypeId": "1",
-          "operatingAmbit": "land",
-          "slot": "0"
-        }
-      ],
-      "memo": ""
-    },
-    "auth_info": {
-      "signer_infos": [
-        {
-          "public_key": {
-            "@type": "/cosmos.crypto.secp256k1.PubKey",
-            "key": "base64_public_key"
-          },
-          "mode_info": {
-            "single": {
-              "mode": "SIGN_MODE_DIRECT"
-            }
-          },
-          "sequence": "5"
-        }
-      ],
-      "fee": {
-        "amount": [],
-        "gas_limit": "200000"
-      }
-    },
-    "signatures": [
-      "base64_signature"
-    ]
-  }
-}
-```
-
-**Note**: The transaction must be serialized to bytes before signing. The signature is then added to the `signatures` array.
+Address registration uses the target key's consent proof plus an authorized ordinary
+signer. The current Structs proxy nonce, asset owner and permission context are not
+the native account sequence. Device approval also carries the issued activation UUID.
 
 ### Step 4: Submit Transaction
 
-**Format**: POST signed transaction (base64-encoded) to endpoint
+The LCD endpoint is `POST /cosmos/tx/v1beta1/txs`. Its JSON body contains:
 
 ```json
 {
-  "request": {
-    "method": "POST",
-    "url": "http://localhost:1317/cosmos/tx/v1beta1/txs",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "body": {
-      "tx_bytes": "base64_encoded_signed_transaction",
-      "mode": "BROADCAST_MODE_SYNC"
-    }
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "tx_response": {
-        "code": 0,
-        "txhash": "ABC123...",
-        "height": 12345,
-        "gas_used": "150000",
-        "gas_wanted": "200000"
-      }
-    }
-  }
+  "tx_bytes": "BASE64_OF_SIGNED_TXRAW",
+  "mode": "BROADCAST_MODE_SYNC"
 }
 ```
 
-**Note**: `tx_bytes` must be the complete signed transaction serialized and base64-encoded.
-
-**Broadcast Modes**:
-- `BROADCAST_MODE_SYNC`: Wait for CheckTx (fast, no confirmation)
-- `BROADCAST_MODE_ASYNC`: Don't wait (fastest, no confirmation)
-- `BROADCAST_MODE_BLOCK`: Wait for block inclusion (slowest, confirmed)
+The reference client/TSA may use CometBFT RPC for equivalent transport. These are
+alternative transport choices for one signed submission, not parallel attempts.
+SYNC reports CheckTx admission; ASYNC cannot report inclusion. The application
+makes one broadcast attempt and durably records its send marker/result.
 
 ### Step 5: Wait for Confirmation
 
-**Format**: Poll transaction status using txhash
+Observe the saved hash and verify matching transaction bytes/results at a committed
+block. Retain block height/hash/time, tx index, code, codespace and stage. A successful
+CheckTx does not guarantee successful DeliverTx. An HTTP timeout, transaction-search
+miss, larger account sequence or reconnect does not prove failure and does not
+permit a replacement transaction.
 
-```json
-{
-  "poll": {
-    "endpoint": "GET http://localhost:1317/cosmos/tx/v1beta1/txs/{txhash}",
-    "interval": 1000,
-    "maxAttempts": 60,
-    "successCondition": "tx_response.code == 0",
-    "failureCondition": "tx_response.code != 0"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "tx_response": {
-        "code": 0,
-        "txhash": "ABC123...",
-        "height": 12345,
-        "gas_used": "150000",
-        "gas_wanted": "200000"
-      }
-    }
-  }
-}
-```
-
-**Sequence Error Handling**: If transaction fails with sequence mismatch:
-
-```json
-{
-  "error": {
-    "code": 4,
-    "raw_log": "sequence mismatch: expected 5, got 4"
-  },
-  "recovery": {
-    "action": "Get current account sequence",
-    "steps": [
-      "1. Query account again: GET /cosmos/auth/v1beta1/accounts/{address}",
-      "2. Update sequence in transaction",
-      "3. Re-sign transaction",
-      "4. Resubmit transaction"
-    ]
-  }
-}
-```
+Serialize work per signing account and coordinate same-origin browser tabs. Keep
+unknown submissions reserved across reload/logout, connection loss and schema or
+codec updates. A cancelled UI wait does not cancel an already submitted action.
 
 ### Step 6: Handle Result
 
-**Success Response** (code: 0):
-```json
-{
-  "tx_response": {
-    "code": 0,
-    "txhash": "ABC123...",
-    "height": 12345,
-    "gas_used": "150000",
-    "gas_wanted": "200000"
-  },
-  "handling": {
-    "action": "Transaction accepted",
-    "next": "Monitor for block inclusion if using BROADCAST_MODE_SYNC"
-  }
-}
-```
+| Evidence | Next step |
+|---|---|
+| Refused before signing/sending | Retain or cancel the unsigned intent as appropriate; prepare again only from current eligibility |
+| Definitive CheckTx rejection | Record the exact rejection and allow a later revalidated action |
+| Committed DeliverTx failure | Record failure and refresh state; do not label it successful because it entered a block |
+| Committed success | Wait for the relevant indexed source/projections, then update the existing screen |
+| Unknown/accepted without a committed result | Observe the same identity; no new signature or broadcast |
 
-**Error Response** (code != 0):
-```json
-{
-  "tx_response": {
-    "code": 1,
-    "codespace": "sdk",
-    "raw_log": "insufficient funds: insufficient account funds",
-    "txhash": "ABC123..."
-  },
-  "handling": {
-    "action": "Check tx_response.code and raw_log for error details",
-    "recovery": "Address insufficient funds issue before retrying"
-  }
-}
-```
-
-**Related Examples**: See `ai/examples/auth/consensus-transaction-signing.md` for complete working examples.
+A sequence mismatch is not permission to edit a possibly submitted transaction's
+sequence and resend. First establish the original outcome. See
+[retry strategies](../patterns/retry-strategies.md).
 
 ## Action Patterns
 
 ### Pattern 1: Simple Action
 
-**Use Case**: Single action, no dependencies
-
-```json
-{
-  "action": "MsgStructBuildInitiate",
-  "steps": [
-    "1. Build transaction",
-    "2. Sign transaction",
-    "3. Submit transaction",
-    "4. Wait for confirmation",
-    "5. Handle result"
-  ]
-}
-```
+Prepare → persist signed identity → one send → definitive outcome → indexed refresh.
 
 ### Pattern 2: Action with Follow-Up
 
-**Use Case**: Action requires follow-up action
-
-```json
-{
-  "action": "MsgStructBuildInitiate",
-  "followUp": {
-    "action": "MsgStructBuildComplete",
-    "waitFor": "struct in building state",
-    "requires": ["proof-of-work"]
-  }
-}
-```
-
-**Example Flow**:
-1. Submit `MsgStructBuildInitiate`
-2. Wait for confirmation
-3. Query struct state (wait for building state)
-4. Compute proof-of-work
-5. Submit `MsgStructBuildComplete`
+Start a dependent action only after the first's outcome and relevant state are
+confirmed. A later API failure does not require repeating the earlier native action.
 
 ### Pattern 3: Conditional Action
 
-**Use Case**: Action depends on game state
-
-```json
-{
-  "action": "MsgStructAttack",
-  "preconditions": [
-    {
-      "check": "GET /structs/struct/{structId}",
-      "condition": "struct.operatingAmbit >= distance to target",
-      "ifFalse": "abort"
-    },
-    {
-      "check": "GET /structs/player/{playerId}",
-      "condition": "player online via capacity/load",
-      "ifFalse": "abort"
-    }
-  ],
-  "then": "submit action"
-}
-```
+Recheck conditions immediately before signing. If they changed, reject the unsigned
+preparation and retain the user's intent where appropriate. Never rewrite an already
+signed request to match a new snapshot.
 
 ### Pattern 4: Batch Actions
 
-**Use Case**: Multiple related actions
-
-```json
-{
-  "actions": [
-    {
-      "@type": "/structs.structs.MsgStructBuildInitiate",
-      "...": "playerId, structTypeId, operatingAmbit, slot"
-    },
-    {
-      "@type": "/structs.structs.MsgReactorInfuse",
-      "...": "delegatorAddress, validatorAddress, amount (Coin)"
-    }
-  ],
-  "submit": "single transaction"
-}
-```
+Batch only where the protocol permits atomic operations. The reference withdrawal
+uses a bounded vault-first then eligible retained-address batch. Raw Cosmos staking
+rejects repeated operations for the same address in a transaction and across a block;
+paying gas or adding keys cannot bypass shared player/object/charge limits.
 
 ## Action Requirements
 
 ### Common Requirements
 
-```json
-{
-  "requirements": {
-    "playerOnline": {
-      "check": "GET /structs/player/{playerId}",
-      "condition": "player online via capacity/load",
-      "error": "PLAYER_OFFLINE"
-    },
-    "sufficientResources": {
-      "check": "GET /structs/player/{playerId}",
-      "condition": "player.playerInventory.resources >= required",
-      "error": "INSUFFICIENT_RESOURCES"
-    },
-    "sufficientCharge": {
-      "check": "GET /structs/player/{playerId}",
-      "condition": "player.charge >= required",
-      "note": "charge is a single per-player bar (CurrentBlockHeight - gridAttributes.lastAction), not per-struct",
-      "error": "INSUFFICIENT_CHARGE"
-    },
-    "validLocation": {
-      "check": "GET /structs/planet/{planetId}",
-      "condition": "planet exists and accessible",
-      "error": "INVALID_LOCATION"
-    }
-  }
-}
-```
+Resolve explicit signer/owner/target identities and current permissions. Reject
+destroyed or missing targets, insufficient spendable funds, incomplete evidence,
+and unsupported protocol/fee policy. An operator grant cannot supply a permission
+missing from the signing key.
 
 ### Proof-of-Work Requirements
 
-**Actions Requiring Proof-of-Work**:
-- `MsgStructBuildComplete`
-- `MsgStructOreMinerComplete`
-- `MsgStructOreRefineryComplete`
-- `MsgPlanetRaidComplete`
-
-These four are the only proof-of-work messages; guild founding is a paid `MsgGuildCreate`.
-
-**Proof-of-Work Process**:
-```json
-{
-  "proofOfWork": {
-    "difficulty": "from struct type or planet",
-    "compute": {
-      "algorithm": "hash",
-      "input": "structId + nonce",
-      "target": "difficulty threshold"
-    },
-    "submit": {
-      "hash": "computed hash",
-      "nonce": "nonce that produces hash"
-    }
-  }
-}
-```
+Preserve category, object, target, original block-start anchor and exact difficulty.
+Use the current worker protocol and validate the returned candidate. On notification
+loss/reconnect read authoritative work; do not invent a new start block or repeat an
+uncertain completion. See [work and proof](../develop/client/work-and-pow.md).
 
 ## Error Handling
 
-### Transaction Errors
-
-```json
-{
-  "errorCodes": {
-    "0": "SUCCESS",
-    "1": "GENERAL_ERROR",
-    "2": "INSUFFICIENT_FUNDS",
-    "3": "INVALID_SIGNATURE",
-    "4": "INSUFFICIENT_GAS",
-    "5": "INVALID_MESSAGE",
-    "6": "PLAYER_OFFLINE",
-    "7": "INSUFFICIENT_CHARGE",
-    "8": "INVALID_LOCATION",
-    "9": "INVALID_TARGET"
-  }
-}
-```
-
-### Error Handling Strategy
-
-```json
-{
-  "onError": {
-    "INSUFFICIENT_FUNDS": {
-      "action": "log",
-      "retry": false,
-      "fallback": "wait for resources"
-    },
-    "PLAYER_OFFLINE": {
-      "action": "log",
-      "retry": false,
-      "fallback": "restore capacity or shed load until online"
-    },
-    "INSUFFICIENT_CHARGE": {
-      "action": "log",
-      "retry": false,
-      "fallback": "wait for charge"
-    },
-    "NETWORK_ERROR": {
-      "action": "retry",
-      "maxRetries": 3,
-      "backoff": "exponential"
-    }
-  }
-}
-```
+Interpret native `(codespace,code)` with its submission stage, and API errors with
+HTTP/body/readiness context. [Error handling](error-handling.md) explains the formats.
+Do not use cached/default financial values to make an unavailable action appear ready.
 
 ## Best Practices
 
-1. **Check Preconditions**: Always check requirements before submitting
-2. **Handle Errors**: Always handle transaction errors
-3. **Wait for Confirmation**: Wait for confirmation before considering action complete
-4. **Use Appropriate Broadcast Mode**: Use SYNC for most cases, BLOCK for critical actions
-5. **Batch When Possible**: Batch related actions in single transaction
-6. **Monitor Gas**: Monitor gas usage and adjust gas limits
-7. **Handle Sequence**: Track and increment sequence numbers
-8. **Proof-of-Work**: Compute proof-of-work efficiently
+Preserve the existing screen's intent through definitive failure, retain uncertain
+signed evidence through reload, and reject callbacks from an old route/session.
+Keep native inclusion and indexed display readiness separate in diagnostics.
 
 ## Performance Optimization
 
-### Optimization 1: Pre-compute Proof-of-Work
+Coalesce reads, use bounded polling and notification-driven invalidation, and reuse
+complete compatible catalogs. Run proof work outside the UI thread. Parallelize
+independent reads; serialize signing for the same account and respect shared quotas.
+These optimizations do not authorize duplicate sends or broader signing permissions.
 
-```json
-{
-  "strategy": "precompute",
-  "when": "struct enters building state",
-  "action": "start computing proof-of-work",
-  "submit": "when ready"
-}
-```
-
-### Optimization 2: Batch Actions
-
-```json
-{
-  "strategy": "batch",
-  "collect": "related actions",
-  "submit": "single transaction",
-  "benefit": "lower gas cost, atomic execution"
-}
-```
-
-### Optimization 3: Async Submission
-
-```json
-{
-  "strategy": "async",
-  "submit": "BROADCAST_MODE_ASYNC",
-  "poll": "separate thread",
-  "benefit": "non-blocking"
-}
-```
-
----
-
-*Last Updated: December 7, 2025*
-
+**Verified against:** webapp `43bc1086`, TSA `3258529`, and official structsd release
+`96cea3a` fee/throttle maps and generated transaction definitions.

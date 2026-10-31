@@ -1524,7 +1524,7 @@ Mining and refining are multi-hour background operations. Track both jobs and th
 
 **Energy is ephemeral.** Energy produced in a block but not consumed is permanently lost. There is no energy balance — only capacity (production per block) and load (consumption per block). Idle capacity is waste.
 
-**Gameplay transactions are free.** Every pure Structs gameplay message runs on a dedicated free-gas meter — no `ualpha` fee is charged (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
+**Gameplay transactions are free.** Ordinary pure Structs gameplay transactions use a dedicated free-gas meter; `MsgGuildCreate`, `MsgReactorRestart` and `MsgUpdateParams` use ordinary paid gas (see [transactions](https://structs.ai/knowledge/mechanics/transactions)). You still pass `--gas auto` (the meter is metered, not unlimited), and you must be **online (powered)** and hold enough **charge** to act. Being powered is a gate on acting, not a per-transaction fee.
 
 **Ore is a liability.** Mined ore sitting in your inventory can be stolen in a raid. Refine it immediately into Alpha Matter, which cannot be stolen. Refined Alpha is deposited in your **vault**, not on your signing key — read it with `structsd query bank balances [vault-address]` or as `playerInventory.rocks` on the player query.
 
@@ -6802,8 +6802,8 @@ description: How the ante handler routes gameplay and staking messages through a
 
 ## TL;DR
 
-- Pure-Structs transactions (every gameplay message in the `structs` module except `MsgUpdateParams`) are **free**. No fee in `ualpha` is required, and they execute against a dedicated 20 M free-gas meter that does **not** consume the block's normal gas budget.
-- Pure-staking transactions (six `x/staking` messages) are also **free**, against a 40 M free-staking meter, but capped to **one free staking tx per address per block**.
+- Pure-Structs transactions (only Structs messages, excluding `MsgUpdateParams`, `MsgGuildCreate` and `MsgReactorRestart`) are **free**. No fee in `ualpha` is required, and they execute against a dedicated 20 M free-gas meter that does **not** consume the block's normal gas budget.
+- Pure-staking transactions (six `x/staking` messages) are also **free**, against a 40 M free-staking meter, but capped to **one listed staking operation per address per transaction/block**, including mixed paid transactions.
 - Mixing Structs messages with non-Structs messages (or with `MsgUpdateParams`, governance, bank, distribution, etc.) in a single transaction breaks the free path and the whole tx pays normal fees.
 - All transactions still need `--gas auto`. Gas is metered and rejected on overflow; "free" only means the gas is not paid for, not that it's unlimited.
 - Network-wide message and tx-size caps still apply, and the address rate limit still applies on `CheckTx`.
@@ -6814,7 +6814,7 @@ description: How the ante handler routes gameplay and staking messages through a
 
 Cosmos SDK ante decorators run before the message handler executes. Structs's custom ante chain (`app/ante/ante.go`) inserts a `GasRouterDecorator` early in the chain that checks every incoming transaction:
 
-1. If `IsFreeTransaction(msgs)` -- every message URL starts with `/structs.structs.Msg` AND none of them is `MsgUpdateParams` -- the gas meter is **replaced** with a free meter capped at `FreeGasCap` (default `20_000_000`).
+1. If `IsFreeTransaction(msgs)` -- every message URL starts with `/structs.structs.Msg` AND none is `MsgUpdateParams` or a member of `PricedStructsMessages` (`MsgGuildCreate`, `MsgReactorRestart`) -- the gas meter is **replaced** with a free meter capped at `FreeGasCap` (default `20_000_000`).
 2. Else if `IsFreeStakingTransaction(msgs)` -- every message URL is one of the six entries in `FreeStakingMessages` -- the gas meter is replaced with a free meter capped at `FreeStakingGasCap` (default `40_000_000`), and a per-address per-block throttle gates how many of these can land.
 3. Otherwise the standard SDK gas meter is used and fees flow through `ConditionalMempoolFeeDecorator` + `ConditionalFeeDecorator`, which behave like the upstream SDK fee decorators.
 
@@ -6826,15 +6826,16 @@ Both `ConditionalMempoolFeeDecorator` and `ConditionalFeeDecorator` short-circui
 
 ## Free Structs gameplay messages
 
-Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for the free-gas path, except `MsgUpdateParams` (governance). The list covers:
+Anything in `KnownStructsMessages` (defined in `app/ante/maps.go`) qualifies for the free-gas path, except `MsgUpdateParams` (governance) and the priced `MsgGuildCreate` / `MsgReactorRestart` operations. The list covers:
 
-- All `MsgAddress*`, `MsgAgreement*`, `MsgAllocation*`, `MsgPlayer*`, `MsgProvider*`, `MsgReactor*`, `MsgStruct*`, `MsgSubstation*`, `MsgPermission*` messages.
+- Registered `MsgAddress*`, `MsgAgreement*`, `MsgAllocation*`, `MsgPlayer*`, `MsgProvider*`, `MsgReactor*`, `MsgStruct*`, `MsgSubstation*`, `MsgPermission*` messages, except `MsgReactorRestart`.
 - `MsgFleetMove`, `MsgPlanetExplore`, `MsgPlanetRaidComplete`, `MsgPlanetUpdateName`.
-- All guild messages: `MsgGuildCreate`, `MsgGuildBank*`, `MsgGuildMembership*`, `MsgGuildUpdate*` (including the UGC messages: `MsgGuildUpdateName/Pfp`, `MsgPlayerUpdateName/Pfp`, `MsgPlayerUpdatePfpClientRenderAttributes`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName/Pfp`).
+- Registered guild messages except `MsgGuildCreate`: `MsgGuildBank*`, `MsgGuildMembership*`, `MsgGuildUpdate*` (including the UGC messages: `MsgGuildUpdateName/Pfp`, `MsgPlayerUpdateName/Pfp`, `MsgPlayerUpdatePfpClientRenderAttributes`, `MsgPlanetUpdateName`, `MsgSubstationUpdateName/Pfp`).
 
 Excluded from the free path:
 
 - `MsgUpdateParams` (`/structs.structs.MsgUpdateParams`) -- this is a governance message and must pay normal fees even though it's in the Structs module.
+- `MsgGuildCreate` and `MsgReactorRestart` — ordinary priced gas; including either makes the whole transaction paid. Guild creation also has its separate vault-funded founding cost.
 - Any message outside the Structs module URL prefix.
 
 If you want to see the canonical, complete list, read `KnownStructsMessages` in `.references/structsd/app/ante/maps.go`.
@@ -6855,10 +6856,10 @@ The chain treats staking as a first-class gameplay action because reactor stakin
 Constraints:
 
 - A transaction that mixes any staking message with any other message type (Structs, bank, etc.) is **not** treated as a free staking tx and pays normal fees.
-- The `StakingThrottleDecorator` enforces **one** free staking transaction per signer address per block. A second free staking tx in the same block from the same address is rejected.
+- The `StakingThrottleDecorator` enforces **one** listed staking operation per address per transaction/block, whether the transaction is free or paid.
 - The signer is derived from the staking-message-specific field (`DelegatorAddress` for delegations, `ValidatorAddress` for validator messages).
 
-Use this for routine `MsgDelegate` / `MsgUndelegate` activity. If you need to send several staking ops in one block, batch them into a single tx (as long as it stays purely staking) -- the throttle is on free txs, not on the messages inside the tx.
+The staking throttle also rejects two listed staking operations from the same address inside one transaction (`structs-ante` 2042), and another in the same block (2043). It follows the message even in a mixed paid transaction. Batching or paying gas does not bypass it. Multi-message Structs reactor withdrawal has its own release rules; do not confuse those messages with raw Cosmos staking.
 
 ---
 
@@ -6868,7 +6869,7 @@ Anything not classified as free runs through the standard fee path:
 
 - Mixed transactions (Structs + non-Structs).
 - Pure non-Structs, non-staking transactions: `bank`, `distribution`, `gov`, `slashing`, `evidence`, IBC, etc.
-- `MsgUpdateParams` in any combination.
+- `MsgUpdateParams`, `MsgGuildCreate` or `MsgReactorRestart` in any combination.
 
 These pay fees in `ualpha` like any other Cosmos SDK chain. Set `--fees` or `--gas-prices` accordingly.
 
@@ -6886,7 +6887,7 @@ Even when a transaction is free, the rest of the ante chain still runs:
 - **`ThrottleDecorator`** -- per-object throttles for proof-of-work messages, fleet move, planet explore, address register.
 - **Charge messages** (`StructActivate`, `StructAttack`, `StructBuildInitiate`, `StructTrash`, `StructDefenseClear/Set`, `StructMove`, `StructStealthActivate/Deactivate`) -- the ante allows **one** of these per player per block (`ErrChargeAlreadyUsedThisBlock`, 2021) and never two in one transaction (`ErrDuplicateChargeInTx`, 2020), so the free path cannot side-step the charge bar. `StructBuildInitiate` and `StructTrash` cost 1 charge (every struct type's `buildCharge` is 1); `StructDeactivate` and `StructDeactivateBatch` cost no charge at all.
 
-The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission management, guild membership voting flows) skips the ante-level permission check and lets the handler enforce the right permission, since the bits depend on runtime fields. This has nothing to do with fees -- those messages are still free as long as the tx stays purely Structs.
+The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission management, guild membership voting flows) skips the ante-level permission check and lets the handler enforce the right permission, since the bits depend on runtime fields. Dynamic permission resolution is separate from fee classification: `MsgReactorRestart` is dynamic and priced. Evaluate the complete transaction against the fee maps.
 
 ---
 
@@ -6899,7 +6900,7 @@ The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission m
 - Submitting the same staking message twice in one block from one address will fail at `StakingThrottleDecorator` (`ErrDuplicateStakingInTx` 2042 / `ErrStakingAlreadySubmittedThisBlock` 2043). Wait a block. The throttle now also applies when a staking message is paired with any other message in one tx.
 - Reactor inflows (`reactor-infuse`, native `staking delegate`, migrations, cancelled defusions) are rejected with `reactor stake cap exceeded` (structs code 1613) when the validator would exceed 30 % of bonded stake while the cap is active (10+ bonded validators). Check `structsd query structs reactor-stake-share [reactor-id]` first.
 - Game spends come out of the signing player's **vault**, not the signing key — see [energy.md — vaults](energy.md#vaults). A `tx structs` that reports insufficient funds while the key's `bank balances` look healthy is almost always an empty vault.
-- The free-gas budgets (20 M / 40 M) are governance parameters in the chain (`FreeGasCap`, `FreeStakingGasCap` on `HandlerOptions`). Treat them as soft-coded numbers; check `structsd query params` if you suspect they've moved.
+- The default free meters are 20 M / 40 M in `GasRouterDecorator`; application `HandlerOptions` can configure them. These are not exposed as a guessed gameplay parameter query. Verify the executing release/configuration when diagnosing a cap.
 
 ---
 
@@ -6909,6 +6910,8 @@ The `DynamicPermissionMessages` set (e.g. all UGC messages, address/permission m
 - [ugc-moderation.md](ugc-moderation.md) -- UGC name/pfp transactions and validation rules
 - `protocols/transactions.md` -- Transaction broadcast/verify flow
 - `troubleshooting/transaction-issues.md` -- Common rejections and fixes
+
+**Fee/staking-throttle review:** official structsd v0.22.0 `96cea3a`, `app/ante/maps.go`, `gas_router.go`, `staking_throttle.go`. Other gameplay-specific examples retain their own mechanics references.
 
 </document>
 
@@ -8718,7 +8721,7 @@ description: "How energy flows between players: providers, agreements, pricing d
 
 Energy is **ephemeral and per-block** — produced from Alpha Matter via conversion structs, consumed by structs and operations. Energy generated in a block but not consumed in that block is permanently lost. There is no "energy balance" to accumulate. Idle capacity is waste, not safety margin. Guild substations should run at full utilization.
 
-Pure Structs gameplay transactions are **free** — they run on a dedicated free-gas meter and are charged no `ualpha` fee (see [transactions](../mechanics/transactions.md)). So a player does not need to hold a fee balance to play. Note this is distinct from *energy*: you must be online (powered) and hold charge to *act*, but no energy is spent as a per-transaction gas fee.
+Ordinary pure Structs gameplay transactions are **free**; `MsgGuildCreate`, `MsgReactorRestart` and `MsgUpdateParams` use ordinary paid gas. The free path uses a dedicated meter with no `ualpha` fee (see [transactions](../mechanics/transactions.md)). So a player does not need to hold a fee balance to play. Note this is distinct from *energy*: you must be online (powered) and hold charge to *act*, but no energy is spent as a per-transaction gas fee.
 
 Energy agreements create **self-enforcing subscriptions** between providers (sellers) and consumers (buyers). Energy is shared across a player's structs via substation connections.
 

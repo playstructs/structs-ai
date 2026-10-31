@@ -1,81 +1,57 @@
 ---
-description: "How to submit a signed transaction to the chain: the endpoint, its parameters, and a worked example."
+description: "Submit signed protobuf transaction bytes, distinguish admission from inclusion, and preserve identity when the outcome is uncertain."
 ---
 
 # Submit Transaction
 
-**Version**: 1.0.0
-**Base Path**: `/cosmos/tx/v1beta1`
-**Category**: transaction
-
----
-
 ## Endpoint
 
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| POST | `/cosmos/tx/v1beta1/txs` | Submit transaction to blockchain | Required |
+| Method | Path | Input |
+|---|---|---|
+| POST | `/cosmos/tx/v1beta1/txs` | Signed protobuf `TxRaw` bytes in the LCD broadcast envelope |
 
-All game actions are submitted through this endpoint. See `schemas/actions.md` for message types.
-
----
+Native signing authority is required. Webapp session/bearer authentication does
+not sign a chain transaction. CometBFT RPC is an alternative transport; use one
+transport for the one attempted broadcast.
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| body | object | Yes | Transaction body with messages |
+| Field | Encoding | Meaning |
+|---|---|---|
+| `tx_bytes` | base64 string | Complete signed `TxRaw` bytes |
+| `mode` | enum string | `BROADCAST_MODE_SYNC` asks for CheckTx admission |
 
-**Request schema**: `schemas/requests.md#Transaction`
-**Response schema**: `schemas/responses.md#TransactionResponse`
-**Content-Type**: `application/json`
-
----
+A JSON message body is input to transaction construction, not a signed broadcast
+request. Use current generated protobuf types and exact account/sequence/amounts.
 
 ## Example
 
 ### Request
 
 ```json
-// POST /cosmos/tx/v1beta1/txs
 {
-  "body": {
-    "messages": [
-      {
-        "@type": "/structs.structs.MsgStructBuildInitiate",
-        "creator": "structs1...",
-        "playerId": "1-11",
-        "structTypeId": "1",
-        "operatingAmbit": "land",
-        "slot": "0"
-      }
-    ]
-  }
+  "tx_bytes": "BASE64_OF_SIGNED_TXRAW",
+  "mode": "BROADCAST_MODE_SYNC"
 }
 ```
 
 ### Response
 
-```json
-{
-  "tx_response": {
-    "code": 0,
-    "txhash": "...",
-    "height": 12345
-  }
-}
-```
+Inspect `tx_response` including hash, code, codespace and log. A code of zero in a
+SYNC response establishes admission only. Observe matching bytes/results at a
+committed height and check DeliverTx success before treating the action as complete.
 
-A `code` of `0` indicates success. Non-zero codes indicate errors -- see `api/error-codes.md` for the complete error catalog.
-
----
+Persist the exact bytes/hash and request identity before transport. On timeout or
+lost acknowledgement observe that identity; never automatically create or resend
+another transaction. Indexer/read-model confirmation is separate from native inclusion.
 
 ## Related Documentation
 
-- `schemas/actions.md` - Action/message type definitions
-- `schemas/requests.md` - Request schema definitions
-- `schemas/responses.md` - Response schema definitions
-- `api/error-codes.md` - Error code catalog
-- `protocols/action-protocol.md` - Action protocol guide
-- `reference/action-quick-reference.md` - Action quick reference
-- `api/transactions/README.md` - Transaction overview
+- [Action protocol](../../protocols/action-protocol.md)
+- [Message catalog](messages.md)
+- [Reference-client signing](../../develop/client/actions-and-signing.md)
+- [Native errors](../error-codes.md)
+- [Retry strategies](../../patterns/retry-strategies.md)
+
+**Verified scope:** native submission contract used by webapp `43bc1086` and TSA
+`3258529`, with official structsd release `96cea3a` messages and SDK transport.
