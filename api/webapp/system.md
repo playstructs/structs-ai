@@ -1,52 +1,39 @@
 ---
-description: System endpoints on the web application, including server timestamps for reconciling your own clock against chain time.
+description: "Read server time for wallet login and indexed block/readiness metadata without confusing it with native chain confirmation."
 ---
 
 # Webapp System API Endpoints
 
-**Version**: 1.1.0
-**Category**: webapp
-**Entity**: Timestamp
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`)
-**Last Updated**: January 1, 2026
+| Method | Path | Authentication |
+|---|---|---|
+| GET | `/api/timestamp` | Public |
+| GET | `/api/block` | Session or bearer |
 
----
+## Server timestamp
 
-## Endpoint Summary
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| GET | `/api/timestamp` | Get current Unix timestamp | No (public) |
-| GET | `/api/block` | Indexer `current_block`: height, tip_height, lag_blocks, status, updated_at | Yes |
-
-`/api/timestamp` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); it needs no session cookie. Use it to obtain server time for the login `unix_timestamp` (must be within 600s of server time). `/api/block` requires a session; many charting responses also stamp `meta.height` — see [`analytics.md`](analytics.md).
-
----
-
-## Endpoint Details
-
-### GET `/api/timestamp`
-
-Get current Unix timestamp.
-
-- **ID**: `webapp-timestamp`
-- **Response Schema**: `schemas/responses.md#TimestampResponse`
-- **Content Type**: `application/json`
-
-#### Example
-
-**Request**: `GET http://localhost:8080/api/timestamp`
-
-**Response** (standard envelope; `data` holds the SQL/column key `unix_timestamp`):
+`/api/timestamp` returns server Unix seconds, not chain time:
 
 ```json
-{
-  "success": true,
-  "errors": {},
-  "data": { "unix_timestamp": 1704067200 }
-}
+{"success":true,"errors":[],"data":{"unix_timestamp":1704067200}}
 ```
 
----
+Use server time for the [login proof](auth.md). Its timestamp must be a canonical
+decimal string less than 600 seconds from the server in either direction. The full
+public-route allowlist is in the auth reference; public guild reads are not limited
+to `/api/guild/this`.
 
-*Last Updated: January 1, 2026*
+## Indexed block and readiness
+
+`/api/block` returns a current-block object or null with `chain_id`, `height`,
+`tip_height`, `lag_blocks`, `status` and `updated_at`. The response also carries
+`meta` from `api_readiness([])` in the same SQL snapshot. A response can be HTTP 200
+with `success: true` and still have `data_ready: false` or `transaction_ready: false`.
+
+Read [snapshot metadata](../../protocols/webapp-api-protocol.md#snapshot-metadata)
+for the exact contract. This route requests no specific projection model, so it
+cannot certify a different response's inventory/work data. `tip_height` is observed
+indexer evidence, not a replacement for current native status, simulation or a
+committed transaction receipt.
+
+*Verified against webapp `43bc1086` TimestampController/ResponseMetaUtil and
+structs-pg `400e1c1` api_readiness.*

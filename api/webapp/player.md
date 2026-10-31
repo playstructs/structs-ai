@@ -1,15 +1,12 @@
 ---
-description: Read player records from the web application catalog, with the fuller response schema the webapp adds on top of chain state.
+description: "Read player identity, exact spendable vault Alpha, source metadata, activity statistics and player catalog rows."
 ---
 
 # Webapp Player API Endpoints
 
-**Category**: webapp
-**Entity**: Player
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: September 14, 2026
-
----
+Player routes require [session or bearer authentication](auth.md). Public guild
+profiles/rosters have their own explicit access policy; it does not make these
+player routes public. Use the configured guild webapp base URL.
 
 ## Endpoint Summary
 
@@ -34,223 +31,86 @@ Census, power-margin, and leaderboards for dashboards: [`analytics.md`](analytic
 
 ---
 
-## Endpoint Details
-
-### GET `/api/player/{player_id}`
-
-Get player information from web application.
-
-- **ID**: `webapp-player-by-id`
-- **Response Schema**: `schemas/responses.md#WebappPlayerResponse`
-- **Content Type**: `application/json`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | entity-id (pattern: `^1-[0-9]+$`) | Player identifier in format 'type-index' (e.g., '1-11' for player type 1, index 11). Type 1 = Player. |
-
-#### Example
-
-**Request**: `GET http://localhost:8080/api/player/1-11`
-
-**Response** — envelope; `data` is a **single flat object whose keys are the SQL columns** from `PlayerManager::getPlayer` (snake_case), not nested `{player, guild, stats}`. Representative shape (column set may grow):
-
-```json
-{
-  "success": true,
-  "errors": {},
-  "data": {
-    "id": "1-11",
-    "primary_address": "structs1...",
-    "guild_id": "0-1",
-    "guild_name": "GuildName",
-    "tag": "GLD",
-    "substation_id": "4-1",
-    "planet_id": "2-1",
-    "fleet_id": "9-11",
-    "fleet": { "...": "row_to_json of the fleet" },
-    "username": "PlayerName",
-    "pfp": "...",
-    "pfp_client_render_attributes": "...",
-    "alpha": "1000000",
-    "ore": "1000",
-    "load": "5"
-  }
-}
-```
-
-Guild fields are type 0 (`0-1`). Always unwrap `data` after checking `success`; treat keys as SQL column names.
-
-- **`pfp`** is the raw profile-picture UGC value (chain `structs.player.pfp`).
-- **`pfp_client_render_attributes`** carries client-side render hints for the PFP. Both are returned by every bespoke player query in `PlayerManager`.
-
----
-
-### GET `/api/player/{player_id}/action/last/block/height`
-
-Get last action block height for player.
-
-- **ID**: `webapp-player-action-last-block`
-- **Response Schema**: `schemas/responses.md#BlockHeightResponse`
-- **Content Type**: `application/json`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-
-#### Example
-
-**Request**: `GET http://localhost:8080/api/player/1-11/action/last/block/height`
-
-**Response** (envelope; `data` is a single row, `last_action_block_height` is an LCD numeric string):
-
-```json
-{
-  "success": true,
-  "errors": {},
-  "data": { "last_action_block_height": "12345" }
-}
-```
-
----
-
-### GET `/api/player/raid/search`
-
-Search player raids.
-
-- **ID**: `webapp-player-raid-search`
-
----
-
-### Username and profile picture
-
-Username and PFP are chain UGC fields on `structs.player` (`username`, `pfp` columns). They are set at signup via `MsgGuildMembershipJoinProxy.playerName` / `playerPfp`, or updated later via `MsgPlayerUpdateName` / `MsgPlayerUpdatePfp`. The webapp queues these through `queueMsgPlayerUpdateName(playerId, name)` and `queueMsgPlayerUpdatePfp(playerId, pfp)`.
-
-All identity updates go through chain transactions; there is no HTTP endpoint for username updates.
-
-See `knowledge/mechanics/ugc-moderation.md` for the full UGC update flow and validation rules.
-
----
-
-### GET `/api/player/transfer/search`
-
-Search player transfers.
-
-- **ID**: `webapp-player-transfer-search`
-
----
-
-### GET `/api/player/{player_id}/ore/stats`
-
-Get player ore statistics.
-
-- **ID**: `webapp-player-ore-stats`
-- **Response Schema**: `schemas/responses.md#OreStatsResponse`
-- **Content Type**: `application/json`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-
-#### Example
-
-**Request**: `GET http://localhost:8080/api/player/1-11/ore/stats`
-
-**Response**:
-
-```json
-{
-  "player_id": "1-11",
-  "total_ore": 1000,
-  "ore_by_type": {
-    "iron": 500,
-    "copper": 300,
-    "silver": 200
-  }
-}
-```
-
----
-
-### GET `/api/player/{player_id}/planet/completed`
-
-Get completed planets for player.
-
-- **ID**: `webapp-player-planet-completed`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-
----
-
-### GET `/api/player/{player_id}/raid/launched`
-
-Count of raids this player **initiated**: `planet_activity` rows with `category = 'raid_status'` and `detail.status = 'initiated'`, joined to `fleet` on `detail.fleet_id` where `fleet.owner` is the player. Returns `{ "count": N }`. This is not a list, and it is not "fleets that left planets this player currently owns".
-
-- **ID**: `webapp-player-raid-launched`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-
----
-
-### GET `/api/player/list/all/page/{page}`
-
-Catalog list of every player on the chain, paginated.
-
-- **ID**: `webapp-player-list-all`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
-
----
-
-### GET `/api/player/list/guild/{guild_id}/page/{page}`
-
-Catalog list of players in a guild.
-
-- **ID**: `webapp-player-list-by-guild`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `guild_id` | string | Yes | guild-id | Guild identifier (e.g. `0-1`) |
-| `page` | integer | Yes | `\d+` | Page number |
-
----
-
-### GET `/api/player/list/substation/{substation_id}/page/{page}`
-
-Catalog list of players connected to a substation.
-
-- **ID**: `webapp-player-list-by-substation`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `substation_id` | string | Yes | substation-id | Substation identifier (e.g. `4-1`) |
-| `page` | integer | Yes | `\d+` | Page number |
-
----
-
-## Response Schema
-
-The bespoke `/api/player/{player_id}` response is a **single flat object** (not nested `{player, guild, stats}`); its keys are the SQL columns selected by `PlayerManager::getPlayer` — player identity plus resolved `guild_*`, `substation_id`, `planet_id`, `fleet` (a `row_to_json` sub-object), `username`, `pfp`, `pfp_client_render_attributes`, and balance columns. The column set may grow over releases; treat unknown keys as forward-compatible.
-
-The `/api/player/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke `/api/player/{player_id}` endpoints also use the `{ "success", "errors", "data" }` envelope; their `data` holds the SQL column names from the backing query (snake_case). See `protocols/webapp-api-protocol.md`.
+## Player detail
+
+`GET /api/player/{player_id}` returns one flat object or null inside the application
+envelope. It is not nested `{player, guild, stats}`. Identity fields include `id`,
+`primary_address`, `guild_id`, `substation_id`, `planet_id`, `fleet_id`, `username`,
+`pfp`, `pfp_client_render_attributes`, resolved `guild_name`/`tag` and a nested `fleet`
+row. A primary signing address and an economic vault are different identities.
+
+### Exact funds and raw values
+
+| Fields | Meaning |
+|---|---|
+| `vault_address` | Canonical player vault address when verified |
+| `spendable_alpha_p` | Exact ualpha available in that vault, or null when unknown |
+| `alpha` | Floored Alpha display; 1 Alpha = 1,000,000 ualpha |
+| `funds_meta.height`, `ready`, `source`, `provisioned`, `reason` | Evidence specific to spendable funds |
+| `ore`, `load`, `structs_load`, `capacity`, `connection_capacity` | Exact SQL grid values, before browser display conversion |
+| envelope `meta` | Indexed inventory snapshot, chain/protocol and readiness |
+
+The API uses an indexed balance directly only for a known newly-created BaseAccount
+vault. Otherwise the individual-player route can verify canonical vault identity and
+native spendable balance at the same indexed height. Sources are
+`indexed_base_account` or `chain_spendable`. A failed/pruned/mismatched native read
+leaves `spendable_alpha_p` and post-activation `alpha` null and disables transaction
+readiness. A proved zero is `"0"`; unknown is not zero.
+
+An unprovisioned vault can already receive coins. Conversely, an existing account's
+bank balance alone need not prove spendability. Retained signing-address balances,
+reactor stake and pending refunds are not included as spendable vault Alpha. The
+[reactor aggregate](infusion.md) supplies those positions separately.
+
+Data and indexed `meta` come from one consistent SQL snapshot. Native fallback runs
+after that snapshot closes and must prove its original height. Before spending,
+validate the response and funds metadata, then independently prepare/simulate against
+current native state. See [snapshot metadata](../../protocols/webapp-api-protocol.md#snapshot-metadata).
+
+## Search and recipient selection
+
+`/api/player/transfer/search` is a bounded indexed search, not an RPC fan-out per
+result. It supplies vault/funds fields when indexed evidence permits; unresolved
+spendability stays unknown until an individual-player read. Selecting a player for
+a transfer resolves the recipient's vault. An explicitly entered non-player address
+receives at that literal address. Never substitute a primary address merely because
+it appears in a search result.
+
+`/api/player/raid/search` is a separate search interface; use its documented filters
+and returned row fields rather than assuming a nested `raids` payload or a generic
+`status` query. Both searches use the normal envelope.
+
+## Activity and display reads
+
+| Endpoint suffix after `/api/player/{player_id}` | Data |
+|---|---|
+| `/action/last/block/height` | `last_action_block_height` as an exact SQL numeric string; null if no row |
+| `/ore/stats` | `player_id`, `forfeited`, `mined`, `seized` historical ore totals, or null |
+| `/planet/completed` | Object with `count` |
+| `/raid/launched` | Object with `count` of `raid_status: initiated` activity attributed through fleet ownership |
+| `/power` | Stored capacity/load/margin read; not a current native admission check |
+
+Ore totals use the ledger's ore action categories and indexed address attribution;
+there are no iron/copper/silver subtypes in this response. These historical display
+queries are separate from exact spendable funds and do not share every readiness
+field. Never promote a bare last-action or statistic row to a complete economy snapshot.
+
+## Profile updates
+
+`username` and `pfp` are chain UGC, set through signup or the appropriate native
+player-update messages. `pfp_client_render_attributes` contains rendering hints.
+There is no HTTP username mutation endpoint. Native permission/validation still
+applies; reading identity fields does not grant authority to change them.
+
+## Catalog lists
+
+The `/api/player/list/...` routes return flat arrays of stored player rows. They are
+not enriched detail responses and do not guarantee `funds_meta`. Pages start at 1,
+default to 100 rows and accept the catalog's optional limit/filter/metadata controls.
+See [catalog conventions](../../protocols/webapp-api-protocol.md#pattern-7-catalog-read).
+Keep response metadata attached; paged requests are separate snapshots.
+
+*Player detail/funds, transfer search and the listed activity shapes verified against
+webapp `43bc1086` PlayerManager, PlayerController and VaultFundsManager, with
+structs-pg `400e1c1` ownership/readiness. Analytics-specific tunables retain their
+separate reference and validation scope.*

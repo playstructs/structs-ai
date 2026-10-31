@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Webapp economy/read-model references now distinguish exact vault spendability,
+  complete reactor positions, stored generator output and source-matched ledger
+  history. Response schemas include coherent readiness and session/bearer contracts;
+  guild access and setting row shapes match the reviewed routes. Incorrect pending
+  `_p`, transaction-hash row IDs, nested payloads and ore-subtype examples are removed.
+  Scoped source verification uses webapp `43bc1086` and structs-pg `400e1c1`; unrelated
+  database/analytics references and the global webapp pin retain their own scope.
+
 - Reference-client signing, state, work and streaming pages now describe current
   protocol-aware preparation, exact raw values/readiness, durable unknown outcomes,
   native integer proof eligibility and versioned worker updates. Canonical streaming

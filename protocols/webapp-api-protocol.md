@@ -1,61 +1,78 @@
 ---
-description: "The structs-webapp API: response envelope, authentication, catalog conventions, time-series stats, live tunables, and pagination."
+description: "Exact webapp response contracts: authentication, coherent readiness, vault funds, current positions, pagination and safe reconciliation."
 ---
 
 # Web Application API Protocol
 
-**Category**: Query
-**Status**: Stable
-**Last Updated**: September 30, 2026
-**Verified against**: structs-webapp `08e13e2` (`TableReadManager.php` and related managers)
-
-## Overview
-
-The Web Application API Protocol defines how AI agents should interact with the `structs-webapp` service. This API provides enhanced game state information, player statistics, guild data, paginated catalog reads, live tunables, time-series stats, and authentication services.
-
-**Implementation**: The webapp API is implemented in a PHP Symfony application ([`structs-webapp`](https://github.com/playstructs/structs-webapp)). This is the main user-facing API for the game.
-
-The surface has two layers:
-
-1. **Bespoke entity endpoints** — return joined / aggregated objects for common UI flows (e.g. `/api/player/{player_id}` returns the player + reactor staking summary; `/api/planet/{planet_id}/shield/health` returns the planet shield).
-2. **Catalog read endpoints** — uniform paginated lists under `/api/{entity}[/{filter}]/page/{page}`. Use these when iterating, syncing, or analysing rather than rendering a single screen.
+Use the guild's configured webapp base URL for `/api/...`; use its independently
+configured chain LCD/RPC for `/structs/...`, native simulation and transaction
+confirmation. This page describes reviewed webapp integration `43bc1086`, paired
+with structs-pg `400e1c1`. Verify the actual deployment before relying on the contract.
 
 ## Response Envelope
 
-Application API responses use the envelope (`ApiResponseContentDto`):
-
 ```json
-{
-  "success": true,
-  "errors": [],
-  "data": null
-}
+{"success":true,"errors":[],"data":null}
 ```
 
-- `success` (boolean): true for successful application responses (including 201/202); false for application errors. Check HTTP status too.
-- `errors` (array or object): empty `[]` on success; validation failures usually use a keyed map such as `{"signature_validation_failed":"Invalid signature"}`. Handle both representations rather than assuming an object. Infrastructure errors may not carry this application envelope.
-- `data` (object | array | null): the payload. Single-row reads → object; catalog list reads → **flat array** (see Pattern 7); `null` on error or an empty single lookup.
-- `total` (optional): present when the handler sets it.
-- `meta.height` (optional): indexer height. `ResponseMetaUtil::stampHeight` uses `structs.api_refresh_state.source_height` for a named model (leaderboards, inventory, guild bank) or `current_block.height`. Compare to `GET /api/block` (`height` vs `tip_height`, `lag_blocks`) when a chart must not outrun the chain.
+- Check HTTP status and `success`. Infrastructure failures may not be JSON.
+- `errors` is an empty array or a keyed object; handle both.
+- `data` is a single object, a flat list, or null. It has no universal nested
+  `player`, `guild`, `rows`, `transactions` or `stats` wrapper.
+- Optional `total` and `meta` belong to the envelope; retain them through factories,
+  caches and empty lists. Successful reads do not necessarily establish readiness.
 
-Parsing rule for all clients/agents: check `success`, then read `errors` or unwrap `data`. Browser clients must send `credentials: include` so the `PHPSESSID` cookie rides along.
+Exact chain integers and raw monetary values must remain decimal strings. Use
+BigInt/exact decimal internally and stringify for JSON. An already-rounded Number
+cannot be repaired by `String(value)`. `_p` is a precision/raw-unit suffix, not a
+pending-state suffix. Energy uses milliwatts, Alpha uses ualpha; other denominations
+and ratio/display columns have their own scale. See
+[client state and precision](../develop/client/state-and-data.md).
 
-## Base Configuration
+## Snapshot metadata
 
-```json
-{
-  "baseUrl": "http://localhost:8080",
-  "basePath": "/api",
-  "timeout": 5000,
-  "retryPolicy": {
-    "maxRetries": 3,
-    "retryDelay": 1000,
-    "retryOn": ["timeout", "5xx", "network"]
-  }
-}
-```
+Converted gameplay/economy reads obtain their data and readiness in one consistent
+SQL snapshot. The complete contract includes:
 
-For the public Orbital Hydro guild webapp use `http://crew.oh.energy` as the base URL.
+| Field | Meaning |
+|---|---|
+| `chain_id`, `protocol`, `observed_protocol`, `activation_height` | Indexed and observed chain eras |
+| `api_contract` | `structs-api-v022-1` |
+| `cache_epoch` | `structs-api-v022-1:{protocol}` |
+| `height`, `indexed_height`, `observed_tip` | Exact string heights, or null when unavailable |
+| `required_models` | Explicit model requirements for this response |
+| `models` | Per-model exact height, source time and ready flag |
+| `source_time` | Complete response boundary time, or null |
+| `inventory_authority` | `current-claims-v1` after activation |
+| `data_ready` | Consistent source and all required projection watermarks |
+| `transaction_ready` | Data readiness plus current cursor status and matching observed era |
+
+The configured chain is `structstestnet-111`, with activation height `3353000`.
+The database requires matching cursor/current-block boundaries and, after activation,
+contiguous `events-v022-1` source coverage through the same height/hash. Rebuilding a
+projection or advancing an old writer's cursor cannot create that evidence.
+Required model heights and times must equal the response's indexed boundary;
+missing model state cannot borrow the general cursor height.
+
+`data_ready` can be useful during catch-up while `transaction_ready` remains false.
+Native preparation must independently verify current chain/height, ownership,
+permissions, balances and message execution; API readiness reserves nothing.
+Additional `funds_meta`, `positions_meta` or transfer-source checks qualify their
+specific data. Do not replace them with a newer `/api/block` response.
+
+| Read | Required evidence |
+|---|---|
+| Player detail/transfer search | Indexed inventory; individual spendability also has `funds_meta` |
+| Inventory / current guild-bank list | Ready `inventory` / `guild_bank` model respectively |
+| Player reactor aggregate | Inventory plus complete positions and valid applied power |
+| Generator snapshot | Inventory plus valid stored position totals |
+| Bespoke ledger page/count/detail/source lookup | Inventory and exact source-match evidence where requested |
+| Work routes | Ready `work` model, including empty results |
+| Struct catalog/current block | Coherent general boundary; no substitute for another response's required models |
+
+Generic catalog `?include_meta=1` and some analytics still use a **height-only** stamp.
+That stamp is not this complete contract. Do not silently synthesize missing fields
+or assume every `/api/` response is safe to use for signing.
 
 ## Authentication
 
@@ -89,468 +106,137 @@ bearer. Clear local key/session material even if HTTP logout fails, while retain
 public evidence of any uncertain signed transaction. See the
 [login example](../examples/auth/webapp-login.md).
 
-*This authentication/envelope section was reviewed against integration `5991ca95`.
-The rest of this page retains its earlier verification baseline pending its separate
-read-model review; deployment capability must be checked independently.*
-
 ## Query Patterns
 
 ### Pattern 1: Player Information
 
-**Use Case**: Get enhanced player information from webapp
-
-**Format**: `GET /api/player/{player_id}`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/player/1-11",
-    "headers": {
-      "Accept": "application/json"
-    }
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": {
-        "id": "1-11",
-        "primary_address": "structs1...",
-        "guild_id": "0-1",
-        "guild_name": "GuildName",
-        "substation_id": "4-1",
-        "planet_id": "2-1",
-        "fleet_id": "9-11",
-        "fleet": {"...": "row_to_json of the fleet"},
-        "username": "PlayerName",
-        "pfp": "...",
-        "pfp_client_render_attributes": "..."
-      }
-    }
-  }
-}
-```
-
-> **`data` is a single flat object**, not nested `{player, stats, planets}`. Its keys are the SQL columns returned by `PlayerManager::getPlayer` (snake_case). For per-player ore/planet/raid figures, call the dedicated `/api/player/{player_id}/*` endpoints listed below.
-
-**Related Endpoints**:
-- `GET /api/player/{player_id}/ore/stats` - Ore statistics
-- `GET /api/player/{player_id}/planet/completed` - Completed planets
-- `GET /api/player/{player_id}/raid/launched` - Count of raids this player initiated
-- `GET /api/player/{player_id}/action/last/block/height` - Last action block height
+`GET /api/player/1-11` returns flat identity/association/grid fields plus
+`vault_address`, exact `spendable_alpha_p`, `funds_meta` and envelope `meta`.
+`alpha` is the existing floored vault Alpha display. Retained-address wealth,
+bonded stake and pending refunds are separate. Unknown funds are null, not zero.
+The [player reference](../api/webapp/player.md) describes individual and search reads.
 
 ### Pattern 2: Planet Information
 
-**Use Case**: Get enhanced planet information
-
-**Format**: `GET /api/planet/{planet_id}`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/planet/1-1"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": {
-        "planet": {...},
-        "shield": {
-          "health": 100,
-          "maxHealth": 100
-        },
-        "structs": [...]
-      }
-    }
-  }
-}
-```
-
-**Related Endpoints**:
-- `GET /api/planet/{planet_id}/shield/health` - Shield health
-- `GET /api/planet/{planet_id}/shield` - Shield information
-- `GET /api/planet/{planet_id}/raid/active` - Active raid
-- `GET /api/planet/raid/active/fleet/{fleet_id}` - Active raid for fleet
+Use `/api/planet/{planet_id}` with planet IDs such as `2-1`, and the dedicated
+shield/raid routes in the [planet reference](../api/webapp/planet.md).
+Do not assume a `{planet, shield, structs}` wrapper: inspect the specific endpoint's
+flat SQL projection. A catalog row is not necessarily the enriched detail response.
 
 ### Pattern 3: Guild Information
 
-**Use Case**: Get guild information and statistics
-
-**Format**: `GET /api/guild/{guild_id}`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/guild/0-1"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": {
-        "guild": {...},
-        "members": [...],
-        "stats": {...}
-      }
-    }
-  }
-}
-```
-
-Guild IDs are type `0` (`^0-[0-9]+$`), e.g. `0-1`. `GET /api/guild/{guild_id}` requires an authenticated session.
-
-**Related Endpoints**:
-- `GET /api/guild/this` - Infrastructure / host guild for this deployment (`guild_meta.this_infrastructure = TRUE`). Public (no session); not the logged-in player's guild. The operator's own guild comes from the login session (`guild_id`) or the player record.
-- `GET /api/guild/{guild_id}/roster` - Guild roster
-- `GET /api/guild/{guild_id}/power/stats` - Power statistics
-- `GET /api/guild/{guild_id}/members/count` - Member count
-- `GET /api/guild/{guild_id}/planet/complete/count` - Completed planet count
-- `GET /api/guild/directory` - Guild directory
-- `GET /api/guild/count` - Total guild count
+The explicit public GET/HEAD allowlist includes guild profiles, names, directory,
+rosters, member counts, power stats and completed-planet counts. Send no credentials
+for anonymous cross-origin access. `/api/guild/this` identifies the infrastructure's
+host guild, which can differ from the authenticated player's guild.
+See the [guild routes](../api/webapp/guild.md) and exact [public access policy](../api/webapp/auth.md).
 
 ### Pattern 4: Struct Information
 
-**Use Case**: Get struct information
-
-**Format**: `GET /api/struct/{struct_id}`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/struct/1"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": {
-        "struct": {...}
-      }
-    }
-  }
-}
-```
-
-**Related Endpoints**:
-- `GET /api/struct/list/location/{location_id}/page/{page}` - Structs at a location (planet or fleet)
-- `GET /api/struct/player/{player_id}` - A player's structs
-- `GET /api/struct/type` - Struct types
+Use `/api/struct/{struct_id}` with IDs such as `5-1`, `/api/struct/player/{player_id}`
+and `/api/struct/type`. Preserve current catalog metadata and exact work inputs.
+The [generator snapshot](../api/webapp/struct.md#generator-snapshot) keeps stored
+applied output separate from the selected funding position and today's rate.
 
 ### Pattern 5: Ledger Information
 
-**Use Case**: Get transaction ledger for player
+`/api/ledger/player/{player_id}/page/{page}` returns a flat array of positive Alpha
+`sent`/`received` movements at currently owned vault/retained addresses. Count uses
+the same filter. `/api/ledger/{tx_id}` takes a numeric ledger row ID, **not** a native
+transaction hash. Catalog routes include other actions/denominations.
 
-**Format**: `GET /api/ledger/player/{player_id}/page/{page}`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/ledger/player/1-11/page/1"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": [ { "tx_id": "...", "...": "..." } ]
-    }
-  }
-}
-```
-
-The page endpoint returns a **flat array** of ledger rows in `data` (page size 100 — fetch the next page when `data.length === 100`); there is no `transactions`/`page`/`totalPages` wrapper. `/count` returns `data: { count }` and `/{tx_id}` returns a single object in `data` — all inside the same envelope.
-
-**Related Endpoints**:
-- `GET /api/ledger/player/{player_id}/count` - Transaction count
-- `GET /api/ledger/{tx_id}` - Transaction by ID
+After committed native success, the [transfer-source endpoint](../api/webapp/ledger.md#exact-transfer-source-lookup)
+uses exact source coordinates/time/amount to find one indexed sent leg. Missing or
+ambiguous matches remain unresolved; they never authorize another payment.
 
 ### Pattern 6: Search Endpoints
 
-**Use Case**: Search for raids, transfers, etc.
-
-**Format**: `GET /api/player/raid/search` or `GET /api/player/transfer/search`
-
-**Example**:
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/player/raid/search",
-    "queryParams": {
-      "player_id": "1",
-      "status": "active"
-    }
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": {
-        "raids": [...]
-      }
-    }
-  }
-}
-```
+Raid and transfer search have distinct filters and row shapes. Transfer search is a
+bounded indexed list; unresolved funds are completed only by an individual read.
+A selected player receives through that player's canonical vault; a literal
+non-player address stays literal. See [player search](../api/webapp/player.md#search-and-recipient-selection).
 
 ### Pattern 7: Catalog Read
 
-**Use Case**: Iterate or scan rows for any catalog entity (player, planet, struct, allocation, agreement, defusion, fleet, grid, infusion, ledger, permission, permission-guild-rank, planet-activity, planet-attribute, provider, reactor, struct-attribute, struct-defender, substation, address-tag, work, guild-membership-application). A few list reads are **not** paginated and return the full set in one call (e.g. `/api/banned-word/all`, `/api/fleet/player/{player_id}`, `/api/work/player/{player_id}`).
+Catalog pages generally use `/api/{entity}[/{filter}/{value}]/page/{page}`.
+Entities with a colliding detail route use `/list/`, including player, infusion,
+ledger, fleet, planet and struct. Consult each route rather than generating URLs
+from the entity name alone.
 
-**Format**: `GET /api/{entity}[/{filter_name}/{filter_value}]/page/{page}`
+- Pages are 1-indexed; catalog controller page parameters are digit-constrained.
+- Default page size is 100. `TableReadManager` catalog lists accept `limit` clamped
+  to 1–10000. This is not a universal override for bespoke ledger/work endpoints.
+- List data is a flat array. `include_total=1` adds envelope `total`;
+  `include_meta=1` adds height metadata. Those optional values share the page snapshot.
+- `updated_since`, `after_id`, `since_seq`, `order`, `is_destroyed` and
+  `since_height` are endpoint-specific. Unsupported recognized controls return 400.
+- Infusion supports an update-time filter, not a single-ID cursor. Ledger has no
+  update-time or sequence cursor. Planet `seq` is meaningful only within its planet.
+- Offset pages can change as indexing advances. Do not call a partial/multi-height
+  traversal a complete same-height signing snapshot.
+- Some scoped lists are unpaged, including player work and player fleet reads.
 
-Conventions:
-
-- `page` is **1-indexed** and constrained to `\d+` by the controller — non-numeric pages are 404.
-- Catalog page size defaults to **100** (`PaginationLimits::DEFAULT`) and is **not** sent as `offset`. List reads accept optional `?limit=` clamped to **1–10000** (`PaginationLimits::MAX`). Leaderboards default to **50**. Full-page test: `data.length ===` the limit you used (100 if omitted).
-- Batch id lists are a separate cap: `/api/objects?ids=` is regex-limited to **200** comma-separated object keys (`PaginationLimits::BATCH_IDS_MAX` / `RegexPattern::IDS`). More than 200 ids is `400`. `/api/resolve` name search uses the same 200 as its SQL `LIMIT`.
-- Per-player planet-activity (`GET /api/planet-activity/player/{id}/page/{n}`) takes `?since_height=` as a `block_height` filter (not a keyset). `since_seq` is unsupported there — `seq` is per-planet. `?order=` is `asc` or `desc` only. It pages grouped attribution keys before lateral parent lookup; `?include_total=1` counts distinct parent keys and `?include_meta=1` stamps `meta.height`.
-- Rows are returned **directly in `data` as a flat JSON array** — there is no `{ rows, page, page_size }` wrapper object.
-- Endpoints with names containing a dash use kebab-case (e.g. `/api/banned-word/all`, `/api/permission-guild-rank/object/{object_id}/page/1`).
-- For entities that **also** have bespoke single-object routes (`ledger`, `infusion`, `fleet`, `player`, `planet`, `guild`, `struct`), the catalog list lives under `/list/...` to avoid shadowing those routes (e.g. `/api/ledger/list/all/page/{page}` does not collide with `/api/ledger/{tx_id}`).
-
-**Example**:
-
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/allocation/source/4-1/page/1"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": [
-        { "id": "6-1", "allocation_type": "static", "source_id": "4-1", "destination_id": "1-11", "creator": "structs1...", "controller": "1-11" }
-      ]
-    }
-  }
-}
-```
+The [work API](../api/webapp/work.md) and [infusion API](../api/webapp/infusion.md)
+separate scoped gameplay reads from catalog browsing. The exact
+[planet-activity lookup](../api/webapp/planet-activity.md#exact-event-lookup)
+uses `(planet_id, seq, time)` and preserves microseconds for large GRASS stubs.
 
 ### Pattern 8: Time-Series Stats
 
-**Use Case**: Pull a metric for one object across a time window.
-
-**Format**: `GET /api/stat/{metric}/object/{object_key}/range/page/{page}?start_time={unix_seconds}&end_time={unix_seconds}`
-
-Optional `bucket=1h|1d` averages into `date_trunc` buckets and raises the max window from **7 days** to **30 days**. Optional `limit` (default 100, max **10000**).
-
-Galaxy-wide LOCF aggregate (not a page of one object): `GET /api/stat/{metric}/aggregate/range?object_type=&start_time=&end_time=` with optional `bucket`. Reads `structs.stat_rollup`; empty buckets are absent and the current hour is missing until the `:02` cron. See [`api/webapp/analytics.md`](../api/webapp/analytics.md).
-
-**Example**:
-
-```json
-{
-  "request": {
-    "method": "GET",
-    "url": "/api/stat/power/object/1-11/range/page/1?start_time=1715000000&end_time=1715600000"
-  },
-  "response": {
-    "status": 200,
-    "body": {
-      "success": true,
-      "errors": [],
-      "data": [
-        { "time": "2024-05-06T14:18:20Z", "value": 1024 },
-        { "time": "2024-05-06T14:23:20Z", "value": 1018 }
-      ]
-    }
-  }
-}
-```
-
-`data` is a flat array of `{time, value}` (the column is `time`, not `ts`), page size 100. The window is `[start_time, end_time)` (start inclusive, end exclusive).
-
-**Constraints** (all `400` with keyed `errors`):
-- `start_time_end_time_required` — `start_time`/`end_time` query params missing.
-- `time_range_invalid` — `end_time` must be greater than `start_time`.
-- `time_range_too_large` — max window is **604800s (7 days)** without `bucket`, **2592000s (30 days)** with `bucket=1h|1d` or on the aggregate endpoint.
-- `object_key_invalid` — malformed key, or wrong entity type for a **family-two** metric (`structs_load`→player, `connection_count`/`connection_capacity`→substation, `struct_health`/`struct_status`→struct). Family-one metrics (`ore`, `fuel`, `capacity`, `load`, `power`) accept any object type.
+Use the [stat reference](../api/webapp/stat.md) and
+[analytics reference](../api/webapp/analytics.md) for time ranges, metric families,
+buckets, aggregation cadence and limits. These are historical display/analysis
+surfaces. A chart's height-only metadata does not certify native spendability or
+current proof eligibility. Their detailed route/tunable baseline remains independent
+of the economy-read review on this page.
 
 ### Pattern 9: Live Tunables
 
-**Use Case**: Read the chain's economy/gameplay constants once at startup.
-
-**Format**: `GET /api/setting`
-
-Returns every entry from the `setting` table as a name/value map. Treat the response as an open-ended map — new keys are added over time. Known keys: `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`.
+`GET /api/setting` is public and returns a flat array of `name`, `value` and
+`updated_at` rows. Match by name; treat the list as open-ended.
+Settings and struct types can change at an upgrade; refresh relevant data with its
+protocol epoch rather than labeling it permanently static. Native rules outrank an
+old cached catalog or a copied client constant.
 
 ## Error Handling
 
-### Standard Error Response
+Application errors normally use `success: false` and keyed `errors`, with appropriate
+HTTP status such as 400, 401, 403, 409 or 410. A missing single row may be a successful
+null; distinguish that from an unavailable prerequisite. Readiness failures can also
+be a successful response with explicit false/null evidence.
 
-Webapp failures reuse the envelope with `success: false` and a keyed `errors` object (see "Response Envelope" above). There is no top-level `error`/`code`/`details` body.
+Use bounded, cancellable reads and limited backoff. The reference browser uses a
+15-second request deadline and shares one wallet-backed reauthentication before
+retrying a protected read once. Login disables recursive reauthentication. Closing
+a view cancels that view's observer, not the underlying signed transaction.
 
-```json
-{
-  "success": false,
-  "errors": {
-    "player_address_does_not_exists": "Player address does not exist"
-  },
-  "data": null
-}
-```
-
-HTTP status conveys the category: `400` (validation), `401` (unauthenticated / signature failure), `403`, `404`, `409` (conflict).
-
-### Error Handling Strategy
-
-```json
-{
-  "onError": {
-    "404": {
-      "action": "log",
-      "retry": false,
-      "fallback": "return null"
-    },
-    "401": {
-      "action": "authenticate",
-      "retry": true,
-      "fallback": "request login"
-    },
-    "403": {
-      "action": "log",
-      "retry": false,
-      "fallback": "return null"
-    },
-    "500": {
-      "action": "retry",
-      "maxRetries": 3,
-      "backoff": "exponential"
-    },
-    "timeout": {
-      "action": "retry",
-      "maxRetries": 3,
-      "backoff": "exponential"
-    }
-  }
-}
-```
-
-## Best Practices
-
-1. **Use Session Cookies**: Maintain session cookies for authenticated requests
-2. **Handle Authentication**: Check for 401 errors and re-authenticate if needed
-3. **Cache Strategically**: Cache static data (struct types, guild directory)
-4. **Don't Cache Dynamic Data**: Don't cache player stats, raid status, shield health
-5. **Use Pagination**: Use pagination for ledger queries
-6. **Combine with Consensus API**: Use webapp API for enhanced data, consensus API for authoritative state
-7. **Handle Errors Gracefully**: Always handle 404, 401, 403, 500 errors
+Retrying a read is separate from replaying a mutation. Preserve idempotency/activation
+identity on HTTP workflows. Never recreate or rebroadcast an uncertain signed
+transaction because of a timeout, 5xx, missing index row or notification loss. Reconcile
+its original hash and bytes. See [actions and signing](../develop/client/actions-and-signing.md).
 
 ## Comparison with Consensus API
 
-### When to Use Webapp API
+The webapp provides joined/current projections, catalog browsing, history and account
+workflows. Native chain queries provide current authority and execution evidence.
+Keep their heights and base URLs distinct; neither an API row nor a GRASS event is
+a transaction receipt.
 
-**Use Webapp API for**:
-- Enhanced player statistics (ore stats, completed planets)
-- Guild information and rosters
-- Shield health and planet details
-- Ledger/transaction history
-- Search functionality (raids, transfers)
-- Authentication and user management
-- **Catalog reads** (paginated lists per entity, joined with metadata) when you would otherwise reach into the chain's `pagination.key` API
-- **Time-series stats** for one object across a time window, or galaxy-wide aggregates
-- **Charting / admin reads** — leaderboards, inventory, guild banks, denom registry, market snapshots, census counts. Map: [`api/webapp/analytics.md`](../api/webapp/analytics.md)
-- **Live tunables** (`/api/setting`) — chain constants without parameter queries
-- **Banned word list** to preflight UGC name validation client-side
-
-### When to Use Consensus API
-
-**Use Consensus API for**:
-- Authoritative game state
-- Transaction submission
-- real-time state queries
-- Block height and chain information
-- Module parameters
-- **Single-entity detail by ID** for entities the webapp only lists as catalogs (e.g. reactor, substation)
-
-### No webapp single-entity GET for some entities
-
-The webapp does **not** expose `GET /api/reactor/{id}` or `GET /api/substation/{id}` — those entities are **catalog-only** over HTTP (`/api/reactor/all|guild|...|/page/{n}`, `/api/substation/all|owner/page/{n}`). To get one such entity from the webapp you must scan/filter catalog pages client-side. The by-ID paths `GET /structs/reactor/{id}` and `GET /structs/substation/{id}` belong to the **consensus** (chain REST) base URL — keep the two base URLs distinct.
-
-### Combined Strategy
-
-```json
-{
-  "strategy": "hybrid",
-  "consensusAPI": {
-    "useFor": [
-      "authoritative state",
-      "transactions",
-      "block height"
-    ]
-  },
-  "webappAPI": {
-    "useFor": [
-      "enhanced statistics",
-      "guild information",
-      "ledger history",
-      "search functionality"
-    ]
-  }
-}
-```
+There is no webapp `/api/reactor/{id}` or `/api/substation/{id}` detail route in this
+reviewed surface. Use the documented catalog filters or the corresponding native
+`/structs/reactor/{id}` / `/structs/substation/{id}` query.
 
 ## Performance Optimization
 
-### Optimization 1: Parallel Queries
+Coalesce same-scope refreshes and bound concurrency. Preserve metadata and account
+identity with cached data; refuse late responses after navigation/account changes.
+Refresh funds, work and catalogs after reconnect/resume and at bounded intervals.
+Core NATS does not replay a gap. Apply authoritative snapshots rather than adding
+financial notification deltas. See [client state](../develop/client/state-and-data.md)
+and [GRASS behavior](../develop/client/realtime-grass.md).
 
-```json
-{
-  "strategy": "parallel",
-  "queries": [
-    "GET /api/player/1",
-    "GET /api/player/1/ore/stats",
-    "GET /api/player/1/planet/completed"
-  ],
-  "maxConcurrency": 10
-}
-```
-
-### Optimization 2: Caching Strategy
-
-```json
-{
-  "cachePolicy": {
-    "structTypes": {
-      "ttl": 3600,
-      "endpoint": "/api/struct/type"
-    },
-    "guildDirectory": {
-      "ttl": 300,
-      "endpoint": "/api/guild/directory"
-    },
-    "guildCount": {
-      "ttl": 60,
-      "endpoint": "/api/guild/count"
-    },
-    "settings": {
-      "ttl": 300,
-      "endpoint": "/api/setting"
-    },
-    "bannedWords": {
-      "ttl": 300,
-      "endpoint": "/api/banned-word/all"
-    }
-  }
-}
-```
+*Verified overview against webapp `43bc1086`: response/consistent-read utilities,
+authentication policy, TableReadManager catalog controls, Player/Infusion/Ledger/Work/
+Struct managers and TimestampController; database readiness against structs-pg
+`400e1c1`. Linked detailed analytics/other-entity references retain their own scope.
+This is source/isolated-fixture compatibility, not a public deployment certificate.*

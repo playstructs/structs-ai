@@ -30,6 +30,37 @@ Per-struct attributes and defender relationships live in [`struct-attribute.md`]
 
 ---
 
+## Generator snapshot
+
+`GET /api/struct/{struct_id}/generator?address={address}` is an authenticated read.
+The address is a required source-position selector, not spend authority. Data is one
+object or null and carries inventory readiness metadata from the same SQL snapshot.
+
+Fields are `struct_id`, `source_address`, exact string `fuel_p`/`power_p`,
+`positions_ready`, `source_exists`, `source_fuel_p`, `source_power_p`,
+`source_ratio_p`, `source_commission`, `source_generator_disabled` and
+`source_recorded_owner_id`. A missing source position is explicit; malformed stored
+positions make totals unavailable, not zero.
+
+Total output is the sum of stored applied power. Preview only the selected source
+position at the current generating rate; leave other historic/disabled positions'
+output unchanged. The browser separately validates native target/owner/TokenInfuse,
+vault funds and exact signed simulation. This snapshot does not authorize a spend.
+
+### Catalog and existing struct reads
+
+`GET /api/struct/type` is a fresh consistent catalog read with protocol/readiness
+metadata. Preserve exact work inputs and cache epoch. A metadata-free 24-hour catalog
+cache cannot establish current proof rules. Existing struct reads add
+`generator_positions_ready`, `generator_fuel_p` and `generator_power_p` for applied
+output; do not reconstruct all output from today's rate.
+
+*This generator/catalog section is verified against webapp `43bc1086` StructManager
+and StructController plus the restricted-role snapshot fixtures. Other entity fields
+below retain their separately documented source scope.*
+
+---
+
 ## Endpoint Details
 
 ### GET `/api/struct/player/{player_id}`

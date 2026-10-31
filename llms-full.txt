@@ -18890,11 +18890,11 @@ description: "Charting endpoints on the guild webapp: leaderboards, inventory, b
 **Verified against**: structs-webapp `08e13e2` (2026-09-30)
 **Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
 
-These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, optional `meta.height` for the indexer tip, and (where noted) `?bucket=1h|1d` windows over the last 30 days.
+These routes exist to **draw the board**, not to look up one entity. Leaderboards, inventory, bank history, time-series aggregates, market snapshots, and census counts all return chart-ready rows: amounts as **strings**, endpoint-specific source/readiness metadata, and (where noted) `?bucket=1h|1d` windows over the last 30 days.
 
 They still sit behind a session cookie. Public prefixes remain `/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`. `/api/block` needs auth.
 
-Envelope: `{ "success", "errors", "data" }` plus optional `meta.height` and `total`. Unwrap `data` after `success`. Protocol: [webapp-api-protocol](../../protocols/webapp-api-protocol.md). Per-entity lookup routes stay on their entity pages; this file is the charting map.
+Envelope: `{ "success", "errors", "data" }` plus optional `meta` and `total`. Unwrap `data` after `success`. Protocol: [webapp-api-protocol](../../protocols/webapp-api-protocol.md). Per-entity lookup routes stay on their entity pages; this file is the charting map.
 
 **Limits** (`PaginationLimits` in structs-webapp):
 
@@ -18973,7 +18973,23 @@ Player also has `username`, `guild_id`. Height stamped from `api_refresh_state` 
 
 ## Inventory and guild banks
 
-There **is** an HTTP bank read. Mint/redeem/convert remain chain txs; balances and ratios come from these catalog tables.
+These authenticated reads use complete snapshot metadata, with required model
+`inventory` for balance lists and `guild_bank` for the current bank list. Inspect
+`data_ready`, model height and contract/epoch from that response. General bank
+history has a consistent boundary but no required current-bank projection.
+Mint/redeem/convert remain native transactions.
+
+Inventory `balance` is an exact string or, for incomplete synthetic claims, null.
+Address rows and their player/guild aggregates describe overlapping assets: never
+sum all owner types into a global supply. Current ownership includes approved
+retained addresses and canonical vaults; guild vaults remain guild assets.
+`ualpha.infused` combines complete native bonded stake with stored generator fuel
+(including disabled positions). `ualpha.defusing` uses actual native unbonding claims,
+including held entries. Neither is a historical ledger-sum spendable balance.
+Use [player funds](player.md#exact-funds-and-raw-values) for spendable vault Alpha.
+
+Preserve the full denomination, including dots/slashes, and URL-encode it as a path
+value. Do not split a slash-bearing bank denomination into a different asset.
 
 ### GET `/api/inventory/denom/{denom}/page/{page}`
 
@@ -18991,7 +19007,11 @@ Same table, one owner. `owner_type` is a `structs.object_type` enum value (`play
 
 - **ID**: `webapp-guild-bank`
 
-Every row in `structs.api_guild_bank`: `guild_id`, `denom`, `collateral`, `supply` (text), `ratio`. This is the live collateral picture that used to require a bank-module query.
+Every row in `structs.api_guild_bank`: `guild_id`, `denom`, `collateral`, `supply` (text), `ratio`. These are exact current projection values. Supply includes the genesis bank
+baseline once, plus later issuance/burn, including escrow/module holdings regardless
+of economic attribution. Collateral follows the tagged bank collateral pool; a
+player wallet or guild vault is not that pool. History is movement volume, not an
+alternate source for current supply/collateral.
 
 ### GET `/api/guild-bank/{guild_id}/history`
 
@@ -19071,6 +19091,11 @@ Optional `bucket`, `denom`. Last 30 days. Rows: `bucket`, `action`, `denom`, `vo
 Entity pages that own the non-charting routes: [player](player.md), [planet](planet.md), [struct](struct.md), [fleet](fleet.md), [ledger](ledger.md), [work](work.md), [system](system.md), [grid](grid.md), [agreement](agreement.md), [provider](provider.md), [planet-activity](planet-activity.md), [stat](stat.md).
 
 Guild banking economics: [guild-banking.md](../../knowledge/economy/guild-banking.md).
+
+*Inventory/current-bank/history section verified against webapp `43bc1086`
+InventoryController/InventoryManager and structs-pg `400e1c1` current claims and
+current-supply projection. Other analytics sections retain their independent
+verification scope.*
 
 </document>
 

@@ -15,22 +15,22 @@ description: The complete catalog of API response formats, from general envelope
 
 ### ApiResponseContentDto (webapp envelope)
 
-Every `structs-webapp` JSON response — success or failure, bespoke or catalog — uses this single envelope (PHP `App\Dto\ApiResponseContentDto`). Clients must check `success`, then read `errors` or unwrap `data`.
+Application `structs-webapp` JSON responses use this envelope; infrastructure failures may be non-JSON. PHP `App\Dto\ApiResponseContentDto` defines the fields. Clients must check `success`, then read `errors` or unwrap `data`.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | success | boolean | Yes | `true` on success, `false` on failure |
-| errors | object | Yes | Keyed map of `error_key` → message (e.g. `{"signature_validation_failed":"Invalid signature"}`). Empty `{}` on success. Never a string array. |
+| errors | array or object | Yes | Empty `[]` on success; usually a keyed map on failure, e.g. `{"signature_validation_failed":"Invalid signature"}`. Preserve both forms. |
 | data | object \| array \| null | Yes | Payload. Single-row reads → object; list/catalog reads → flat array; `null` on error or empty single lookup. |
 
 Examples:
 
 ```json
-{ "success": true, "errors": {}, "data": { "id": "1-11" } }
+{ "success": true, "errors": [], "data": { "id": "1-11" } }
 ```
 
 ```json
-{ "success": true, "errors": {}, "data": [ { "id": "3-1" }, { "id": "3-2" } ] }
+{ "success": true, "errors": [], "data": [ { "id": "3-1" }, { "id": "3-2" } ] }
 ```
 
 ```json
@@ -41,7 +41,7 @@ Examples:
 
 ### Catalog pagination
 
-Catalog list reads put rows **directly in `data` as a flat JSON array** — there is no `rows`/`page`/`page_size` wrapper. Page size is fixed at 100 and the page number is a 1-indexed path segment (`/page/{n}`). To detect more pages: if `data.length === 100`, fetch the next page; if fewer than 100 (or empty), stop. See `protocols/webapp-api-protocol.md`.
+Catalog list reads put rows **directly in `data` as a flat JSON array** — there is no `rows`/`page`/`page_size` wrapper. Default catalog page size is 100, with endpoint-specific `limit` support. Page numbers start at 1. Bespoke work/ledger reads can retain a fixed limit. Optional `total` and `meta` stay on the envelope; multi-page reads are not one fixed database snapshot. See [catalog conventions](../protocols/webapp-api-protocol.md#pattern-7-catalog-read).
 
 ### Consensus PaginationResponse
 
@@ -58,13 +58,12 @@ Key-based pagination used only by the consensus network API (`/structs/...`).
 
 ### AuthResponse
 
-Webapp login response. Login uses Cosmos signature verification and returns a **session cookie** (`PHPSESSID`); there is no JWT/bearer token. See `examples/auth/webapp-login.md`.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| success | boolean | `true` on successful login (HTTP 200) |
-| errors | object | Keyed errors on failure (HTTP 401), e.g. `signature_validation_failed`, `player_address_does_not_exists` |
-| data | null | Login carries no body payload; identity is established via the `Set-Cookie: PHPSESSID` header |
+`POST /api/auth/login` returns HTTP 200, a session cookie and
+`{"success":true,"errors":[],"data":null}`. `POST /api/auth/token` accepts the same
+hex wallet proof and returns `data` with `access_token`, `token_type: "Bearer"`,
+`expires_in: 86400` and `player_id`. The token is opaque, not a JWT. Failure is HTTP
+401 with keyed errors. See [authentication](../api/webapp/auth.md) and the
+[login example](../examples/auth/webapp-login.md).
 
 ### PlayerData
 
@@ -80,7 +79,7 @@ Player data structure, reused across multiple responses.
 
 ## Player Responses
 
-> Webapp note: all webapp response bodies below are carried inside the `data` field of the `ApiResponseContentDto` envelope (`{ "success": true, "errors": {}, "data": ... }`). Bespoke endpoints return SQL column names (snake_case) from their backing query unless otherwise noted. Always unwrap `data` after checking `success`.
+> Webapp note: all webapp response bodies below are carried inside the `data` field of the `ApiResponseContentDto` envelope (`{ "success": true, "errors": [], "data": ... }`). Bespoke endpoints return SQL column names (snake_case) from their backing query unless otherwise noted. Always unwrap `data` after checking `success`.
 
 ### WebappPlayerResponse
 
@@ -90,6 +89,10 @@ Web application player response (`data` payload of `GET /api/player/{player_id}`
 |-------|------|-------------|
 | id | string | Player identifier (e.g. `1-11`) |
 | primary_address | string | Player's primary signing address |
+| vault_address | string or null | Canonical economic address, independently verified |
+| spendable_alpha_p | string or null | Exact spendable vault ualpha; unknown is not zero |
+| alpha | string or null | Floored Alpha display |
+| funds_meta | object | Funds height/readiness/source/provisioning/reason |
 | guild_id | string | Guild identifier (e.g. `0-1`) |
 | guild_name | string | Guild name |
 | substation_id | string | Connected substation |
@@ -100,7 +103,9 @@ Web application player response (`data` payload of `GET /api/player/{player_id}`
 | pfp | string | Player UGC profile picture |
 | pfp_client_render_attributes | string | Client-side PFP render hints |
 
-The column set may grow across releases; treat unknown keys as forward-compatible. For ore/planet/raid figures, call the dedicated `/api/player/{player_id}/*` endpoints.
+The column set may grow; treat unknown response keys as forward-compatible.
+Keep envelope readiness metadata with the object. See the [player contract](../api/webapp/player.md)
+for funds semantics, exact grid fields and separate history/statistic responses.
 
 ### PlayerIdResponse
 
@@ -114,13 +119,11 @@ Player ID response.
 
 ### ActivationCodeResponse
 
-Activation code information response.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| code | string | Activation code |
-| valid | boolean | Whether code is valid |
-| player_id | string (entity-id) | Associated player ID if applicable. Format: `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
+Activation creation returns `code` and `activation_id`; the UUID must accompany
+subsequent consent, status and cleanup. Public lookup returns scoped activation/player
+and guild display context, not a universal `valid` flag or a credential. Do not infer
+approval from code existence. Exact request/response shapes and owner checks are in
+the [device API](../api/webapp/player-address.md).
 
 ---
 
@@ -193,21 +196,18 @@ Power statistics response.
 
 ### OreStatsResponse
 
-Ore statistics response.
-
-| Field | Type | Format | Description |
-|-------|------|--------|-------------|
-| player_id | string | entity-id | Player identifier in format `type-index` (e.g., `1-11`). Pattern: `^1-[0-9]+$`. Type 1 = Player. |
-| total_ore | integer | | Total ore mined |
-| ore_by_type | object | | Ore counts by type |
+`GET /api/player/{player_id}/ore/stats` returns one object with `player_id`,
+`forfeited`, `mined` and `seized`, or null. These are historical ore-action totals
+from the indexed ledger; there is no `ore_by_type` or iron/copper/silver split.
+They are separate from current spendable funds.
 
 ### BlockHeightResponse
 
-Player last-action block height response. `data` is a single row; the value is an LCD numeric string.
+Player last-action block height response. `data` is a single row; the value is an exact SQL numeric string, or `data` is null when no row exists.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| last_action_block_height | string | Yes | Block height of the player's last action (LCD numeric string) |
+| last_action_block_height | string | Yes | Block height of the player's last action (exact SQL numeric string) |
 
 ### CountResponse
 
@@ -255,3 +255,16 @@ RPC node status response.
 | result.node_info | object | Node information |
 | result.sync_info | object | Sync information |
 
+
+## Snapshot metadata
+
+Converted player/infusion/ledger/work/generator/catalog responses retain `meta` with
+chain/protocol/epoch, exact heights, required model evidence and separate data versus
+transaction readiness. `funds_meta`, `positions_meta` and `meta.transfer_source` add
+read-specific evidence. Generic height-only catalog stamps do not imply this contract.
+The authoritative field descriptions are in the
+[webapp protocol](../protocols/webapp-api-protocol.md#snapshot-metadata).
+
+*Envelope, auth, activation, player funds, ore and metadata sections reviewed against
+webapp `43bc1086` and structs-pg `400e1c1`. Other response summaries retain their
+independent earlier scope; consult their specific endpoint before using a payload.*

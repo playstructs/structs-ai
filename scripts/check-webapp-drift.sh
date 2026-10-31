@@ -39,6 +39,24 @@ src/js/sui|develop/ui/runtime.md
 src/js/managers/SigningQueueManager.js|develop/client/actions-and-signing.md
 src/js/managers/SigningClientManager.js|develop/client/actions-and-signing.md
 src/js/managers/WalletManager.js|develop/client/actions-and-signing.md
+src/src/Manager/InventoryManager.php|api/webapp/analytics.md, protocols/webapp-api-protocol.md
+src/src/Controller/InventoryController.php|api/webapp/analytics.md
+src/src/Manager/TableReadManager.php|protocols/webapp-api-protocol.md, api/webapp/infusion.md, api/webapp/ledger.md
+src/src/Manager/PlayerManager.php|api/webapp/player.md, schemas/responses.md
+src/src/Controller/PlayerController.php|api/webapp/player.md
+src/src/Manager/VaultFundsManager.php|api/webapp/player.md, develop/client/state-and-data.md
+src/src/Controller/InfusionController.php|api/webapp/infusion.md
+src/src/Manager/InfusionManager.php|api/webapp/infusion.md
+src/src/Manager/ReactorVaultManager.php|api/webapp/infusion.md
+src/src/Manager/LedgerManager.php|api/webapp/ledger.md
+src/src/Util/TransferSourceQuery.php|api/webapp/ledger.md
+src/src/Manager/WorkManager.php|api/webapp/work.md
+src/src/Manager/StructManager.php|api/webapp/struct.md, develop/client/state-and-data.md
+src/src/Controller/TimestampController.php|api/webapp/system.md
+src/src/Manager/SettingManager.php|api/webapp/setting.md
+src/src/Util/ResponseMetaUtil.php|protocols/webapp-api-protocol.md, schemas/responses.md
+src/src/Util/ConsistentRead.php|protocols/webapp-api-protocol.md
+src/src/Security/PublicGuildReadMatcher.php|api/webapp/guild.md, api/webapp/auth.md
 src/src/Controller/AuthController.php|api/webapp/auth.md, protocols/authentication.md, examples/auth/webapp-login.md
 src/src/Manager/AuthManager.php|api/webapp/auth.md, protocols/authentication.md
 src/src/Manager/SignatureValidationManager.php|api/webapp/auth.md, protocols/authentication.md

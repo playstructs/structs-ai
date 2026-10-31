@@ -16,15 +16,15 @@ description: "Read guild records from the web application catalog: membership, r
 | Method | Path | Description | Auth Required |
 |--------|------|-------------|---------------|
 | GET | `/api/guild/this` | Get the host/infrastructure guild for this deployment | No (public) |
-| GET | `/api/guild/name` | Get guild name | Yes |
-| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | Yes |
-| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | Yes |
-| GET | `/api/guild/count` | Get total guild count | Yes |
-| GET | `/api/guild/directory` | Get guild directory | Yes |
-| GET | `/api/guild/{guild_id}` | Get guild by ID | Yes |
-| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | Yes |
-| GET | `/api/guild/{guild_id}/roster` | Get guild roster | Yes |
-| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | Yes |
+| GET | `/api/guild/name` | Get guild name | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}/name` | Get guild name by ID | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}/members/count` | Get guild member count | No (public GET/HEAD) |
+| GET | `/api/guild/count` | Get total guild count | No (public GET/HEAD) |
+| GET | `/api/guild/directory` | Get guild directory | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}` | Get guild by ID | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}/power/stats` | Get guild power statistics | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}/roster` | Get guild roster | No (public GET/HEAD) |
+| GET | `/api/guild/{guild_id}/planet/complete/count` | Get completed planet count for guild | No (public GET/HEAD) |
 | GET | `/api/guild/list/all/page/{page}` | Catalog list of every guild | Yes |
 | GET | `/api/guild/list/primary-reactor/{primary_reactor_id}/page/{page}` | List guilds by primary reactor | Yes |
 | GET | `/api/guild/list/entry-substation/{entry_substation_id}/page/{page}` | List guilds by entry substation | Yes |
@@ -260,6 +260,14 @@ List guilds by owning player.
 
 ---
 
-The `/api/guild/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (fixed page size 100 — if `data.length === 100`, fetch the next page). Bespoke guild endpoints also use the `{ "success", "errors", "data" }` envelope. All guild routes require a session **except** `/api/guild/this` (public). See `protocols/webapp-api-protocol.md`.
+The `/api/guild/list/...` endpoints return the shared envelope with rows **directly in `data` as a flat array** (default page size 100; catalog `limit` is supported). Bespoke guild endpoints also use the `{ "success", "errors", "data" }` envelope. The listed profile/name/directory/roster/statistics reads are public GET/HEAD.
+Catalog `/list/` routes retain session or bearer authentication. Anonymous CORS
+callers omit credentials; see the exact [access policy](auth.md#public-guild-reads).
 
-> There is no HTTP endpoint to read a guild's bank/token balance. `MsgGuildBankMint`/`MsgGuildBankRedeem` are chain transactions; read balances via chain queries (bank module) or the ledger, not the webapp.
+Bank/inventory reads are authenticated endpoints under `/api/guild-bank` and
+`/api/inventory/...`; see [analytics](analytics.md#inventory-and-guild-banks).
+Mint/redeem/convert remain native chain transactions. A public guild profile does
+not make its bank endpoint public.
+
+*Access policy reverified against webapp `43bc1086` PublicGuildReadMatcher/security
+configuration. This scoped review does not advance unrelated row-shape claims.*

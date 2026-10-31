@@ -13,7 +13,8 @@ description: "Read live tunables from the web application: the settings that gov
 
 ## Overview
 
-Live tunables that control chain economy and gameplay constants. The table is `(name, value)` keyed on `name` and seeded with the values listed in `knowledge/infrastructure/database-schema.md`. Clients read this once at startup to pick up the current `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`, etc.
+Live tunables that control chain economy and gameplay constants. The table is `(name, value)` keyed on `name` and seeded with the values listed in `knowledge/infrastructure/database-schema.md`. Clients read this at startup and refresh relevant constants at protocol changes.
+The table can include `REACTOR_RATIO`, `PLAYER_RESUME_CHARGE`, `PLANETARY_SHIELD_BASE`, `PLAYER_PASSIVE_DRAW`, `PLANET_STARTING_ORE`, `PLANET_STARTING_SLOTS`, etc.
 
 ---
 
@@ -23,7 +24,8 @@ Live tunables that control chain economy and gameplay constants. The table is `(
 |--------|------|-------------|---------------|
 | GET | `/api/setting` | Return every setting row | No (public) |
 
-`/api/setting` is one of the four public routes (`/api/auth/*`, `/api/guild/this`, `/api/timestamp`, `/api/setting`); no session cookie required.
+`/api/setting` is public; no session cookie is required. See the current
+[public access policy](auth.md#public-guild-reads) for the separate guild allowlist.
 
 ---
 
@@ -61,3 +63,6 @@ The exact key list grows over time — treat `data` as an open list of name/valu
 ---
 
 The response uses the standard envelope (see `protocols/webapp-api-protocol.md`).
+
+*Setting row/envelope and public access verified against webapp `43bc1086`
+SettingManager/SettingController; seeded constants are not a live native-rule certificate.*

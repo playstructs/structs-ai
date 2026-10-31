@@ -1,129 +1,99 @@
 ---
-description: "Read the ledger from the web application: the record of value moving between players, guilds, and the Central Bank."
+description: "Read owner-aware Alpha history and exact ledger source coordinates, and reconcile indexed transfers after native confirmation."
 ---
 
 # Webapp Ledger API Endpoints
 
-**Category**: webapp
-**Entity**: Ledger
-**Base URL**: `${webappBaseUrl}` (default: `http://localhost:8080`, public guild webapp: `http://crew.oh.energy`)
-**Last Updated**: September 14, 2026
-
----
+All routes below require [authentication](auth.md) and use the shared application
+envelope. A ledger row is an indexed movement, not native transaction finality.
 
 ## Endpoint Summary
 
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| GET | `/api/ledger/player/{player_id}/page/{page}` | Get ledger page for a player | Yes |
-| GET | `/api/ledger/player/{player_id}/count` | Get ledger count for a player | Yes |
-| GET | `/api/ledger/{tx_id}` | Get ledger entry by transaction ID | Yes |
-| GET | `/api/ledger/list/all/page/{page}` | List every ledger entry on the chain | Yes |
-| GET | `/api/ledger/list/player/{player_id}/page/{page}` | Catalog list of ledger entries for a player | Yes |
-| GET | `/api/ledger/list/address/{address}/page/{page}` | List ledger entries for a Cosmos address | Yes |
-| GET | `/api/ledger/stats` | 30-day volume by action/denom (`?bucket=`, `?denom=`) | Yes |
+| Method | Path | Result |
+|---|---|---|
+| GET | `/api/ledger/player/{player_id}/page/{page}` | Existing Alpha transfer history |
+| GET | `/api/ledger/player/{player_id}/count` | Count with the same ownership/action filters |
+| GET | `/api/ledger/{tx_id}` | One ledger row by its numeric row ID, or null |
+| GET | `/api/ledger/player/{player_id}/transfer-source` | Exact sent leg matched to verified inclusion coordinates |
+| GET | `/api/ledger/list/all/page/{page}` | All ledger actions/denominations |
+| GET | `/api/ledger/list/player/{player_id}/page/{page}` | All movements at addresses currently owned by a player |
+| GET | `/api/ledger/list/address/{address}/page/{page}` | All movements at one literal address |
+| GET | `/api/ledger/stats` | 30-day action/denomination volume; see [analytics](analytics.md) |
 
-Time-bucketed ledger volume for charts: [`analytics.md`](analytics.md).
+## Player history and detail
 
-The `/api/ledger/list/...` family is the catalog read interface and is namespaced under `/list/` so it does not shadow the single-entry `GET /api/ledger/{tx_id}` route.
+The existing history page and count select positive `ualpha` `sent`/`received` rows.
+They use `structs.asset_owner`: vault and currently approved retained addresses belong
+to the player; guild vaults remain guild assets. Counts and pages share that policy.
+This is current-owner attribution, not a historical ownership snapshot at each event.
 
----
+Pages are flat arrays ordered by `time DESC, id DESC`, with 100 rows per page.
+Count returns `data: {"count": ...}`. Despite the route parameter name `tx_id`,
+`GET /api/ledger/{tx_id}` looks up **ledger.id**, not a chain hash. Detail resolves
+`counterparty_player_id` and `counterparty_username` through current ownership,
+including a recipient's vault.
 
-## Endpoint Details
+Rows retain `address`, `counterparty`, `denom`, `action`, `direction`, `time`,
+`chain_id`, `tx_index`, `msg_index`, `event_index`, and exact string `id`, `amount_p`
+and `block_height`. `amount` is a display value; `amount_p` is the raw denomination
+amount. Preserve complete denominations, including dotted synthetic or slash-bearing
+names. Never tokenize them to recover an integer or assume every asset uses Alpha's
+six decimal places.
 
-### GET `/api/ledger/player/{player_id}/page/{page}`
+The bespoke history/count/detail methods read data and inventory readiness metadata
+inside one consistent SQL snapshot. Inspect `meta.data_ready` and the specific
+response boundary; a later `/api/block` cannot certify earlier history.
 
-Get ledger page for player.
+## Exact transfer-source lookup
 
-- **ID**: `webapp-ledger-player-page`
+After verifying the original signed transaction's committed code-0 result, request:
 
-#### Parameters
+```text
+GET /api/ledger/player/{player_id}/transfer-source
+```
 
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-| `page` | integer | Yes | -- | Page number |
+Supply these URL-encoded query parameters; unknown parameters are rejected:
 
----
+| Parameter | Contract |
+|---|---|
+| `chain_id` | `structstestnet-111` in this integration |
+| `block_height` | Positive exact decimal, within PostgreSQL signed bigint |
+| `tx_index` | Exact nonnegative transaction index |
+| `block_time` | Verified UTC block timestamp, `...Z`, with up to 9 fractional digits |
+| `address`, `counterparty` | Exact source/destination addresses from the committed message |
+| `denom` | `ualpha` for this endpoint |
+| `amount_p` | Positive exact raw coin amount |
+| `msg_index`, `event_index` | Optional disambiguators; message index may be `-1` |
 
-### GET `/api/ledger/player/{player_id}/count`
+The timestamp is truncated to microseconds to match the writer's PostgreSQL encoding.
+The query matches source time, chain, height/index, exact amount/denomination,
+source/destination, `sent`/`debit` and current player ownership. It does not scan
+history for a similar amount or guess a transaction hash.
 
-Get ledger count for player.
+The envelope may be successful while matching is incomplete. Check
+`meta.transfer_source.ready` and `required_height`; reasons are
+`indexed_state_unavailable`, `not_indexed`, `not_found` or `ambiguous`. Only exactly
+one matching row is returned as ready. Missing/ambiguous history never authorizes a
+replacement payment. Keep the original journal and reconcile it independently.
 
-- **ID**: `webapp-ledger-player-count`
+## Catalogs and statistics
 
-#### Parameters
+`/list/` avoids collision with the single-row path. Catalogs include all actions and
+denominations, default to 100 rows, accept a limit clamped to 1–10000 and order newest
+first. Ledger catalogs do not support `updated_since`, `after_id` or `since_seq`.
+Optional `include_total=1` / `include_meta=1` reads those values with the same page
+snapshot, but its height-only stamp is not full transaction-readiness evidence.
 
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
+Source-aware row idempotency uses `(time, chain_id, tx_index, msg_index, event_index,
+denom)`. One native transaction can emit several rows and several denominations;
+legacy rows can lack source coordinates. Display row IDs and source-event coordinates
+serve different purposes.
 
----
+Synthetic `ualpha.infused` / `ualpha.defusing` current balances come from complete
+native/stored claims, not the sum of historical ledger movements. Slashing, retained
+stake and held unbonding make a historical sum unsuitable as current spendability.
+Statistics are volume summaries and do not authorize transfers.
 
-### GET `/api/ledger/{tx_id}`
-
-Get ledger entry by transaction ID.
-
-- **ID**: `webapp-ledger-by-tx`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `tx_id` | string | Yes | transaction-hash | Transaction identifier |
-
----
-
-### GET `/api/ledger/list/all/page/{page}`
-
-List every ledger entry on the chain, paginated.
-
-- **ID**: `webapp-ledger-list-all`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `page` | integer | Yes | `\d+` | Page number, 1-indexed |
-
----
-
-### GET `/api/ledger/list/player/{player_id}/page/{page}`
-
-Catalog list of ledger entries for a player. This is the catalog-read variant — use it when you need consistent paging metadata across entity types.
-
-- **ID**: `webapp-ledger-list-by-player`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `player_id` | string | Yes | player-id | Player identifier |
-| `page` | integer | Yes | `\d+` | Page number |
-
----
-
-### GET `/api/ledger/list/address/{address}/page/{page}`
-
-List ledger entries for a Cosmos address.
-
-- **ID**: `webapp-ledger-list-by-address`
-
-#### Parameters
-
-| Name | Type | Required | Format | Description |
-|------|------|----------|--------|-------------|
-| `address` | string | Yes | bech32 | Cosmos address (e.g. `structs1...`) |
-| `page` | integer | Yes | `\d+` | Page number |
-
----
-
-## Response Shape
-
-All ledger endpoints — catalog and bespoke — use the shared `{ "success", "errors", "data" }` envelope (see `protocols/webapp-api-protocol.md`):
-
-- `/api/ledger/list/...` and `/api/ledger/player/{player_id}/page/{page}` → `data` is a **flat array** of ledger rows (page size 100; fetch the next page when `data.length === 100`). Newest first: `ORDER BY time DESC, id DESC`.
-- `/api/ledger/player/{player_id}/count` → `data` is a single object `{ "count": N }`.
-- `/api/ledger/{tx_id}` → `data` is a single ledger row object (or `null`).
-
-The `/list/` path prefix is required so the catalog routes don't shadow `GET /api/ledger/{tx_id}`.
+*Verified against webapp `43bc1086` (LedgerManager, TransferSourceQuery and
+TableReadManager), structs-pg `400e1c1` ownership/readiness/ledger identity, and the
+recorded confirmed-transfer, ambiguity and exact-source integration fixtures.*
