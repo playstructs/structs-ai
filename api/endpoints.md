@@ -617,7 +617,7 @@ Response schema: `schemas/responses.md#CountResponse`
 |--------|------|-------------|------|
 | POST | `/api/auth/signup` | Register a new player (Cosmos signature) | None (public) |
 | POST | `/api/auth/login` | Authenticate via Cosmos signature → `PHPSESSID` cookie | None (public) |
-| GET | `/api/auth/logout` | Clear the current session | None (public prefix) |
+| POST | `/api/auth/logout` | Clear the current session | None (public prefix) |
 
 Login body: `{address, signature, pubkey, guild_id, unix_timestamp}`; signed message `LOGIN_GUILD{guildId}ADDRESS{address}DATETIME{unix_timestamp}`. See `api/webapp/auth.md`.
 

@@ -221,6 +221,21 @@ revocation storage separately when replacing a serving container.
 
 ---
 
+## Local builds and running containers
+
+A development container bind-mounts its configured source directory at `/src`.
+Run `npm run dev` (watch) or `npm run build` (one production build) from that
+mounted directory's `src/` on the host, then refresh the browser. Both emit the
+manifest and hashed application/worker files. An image rebuild or restart is not
+needed for those asset edits; watch mode itself does not reload an open page.
+Building a different Git worktree does not change the mounted checkout. Check the
+mount and the page's selected manifest URL before diagnosing a container failure.
+
+The current native-read deployment assumes one PHP container, with sessions,
+cache and locks coordinated across its workers. Shared storage is required before
+adding replicas. See the [migration guide](client/migration.md#7-prepare-your-backend-if-you-operate-one)
+for deployment order, proxy routing and native source configuration.
+
 ## What to copy, and what not to
 
 **Copy:** the [dual-lane signing queue](client/actions-and-signing.md#the-dual-lane-queue),
@@ -234,7 +249,8 @@ that custody model belongs to the page's trust boundary. `GameState` is mutable,
 retain source/owner/session checks at updates. Current `JsonAjaxer` rejects failed
 HTTP responses, bounds requests and supports cancellation; do not restore older
 silent-failure behavior. Definitive transaction failure returns existing flows to
-their retained intent, while uncertainty keeps the signed identity reserved.
+their retained intent. Preserve uncertain signed identity; whether it reserves new
+sends depends on the [recovery evidence](client/actions-and-signing.md#retries-and-settlement).
 
 ---
 
@@ -242,3 +258,5 @@ their retained intent, while uncertainty keeps the signed identity reserved.
 registration, accepted view flows, webpack/manifest/worker integration and Docker
 runtime ownership. Unchanged base interfaces and examples were compared with the
 previous source revision.*
+
+*Scoped follow-up against webapp `461bba5a`: mounted build/manifest workflow and deployment requirements; rendering and router interfaces retain the baseline above.*

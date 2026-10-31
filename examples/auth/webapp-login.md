@@ -174,7 +174,7 @@ Logout invalidates the server session and revokes a supplied bearer token. This 
 
 ```json
 {
-  "method": "GET",
+  "method": "POST",
   "url": "http://localhost:8080/api/auth/logout",
   "headers": {
     "Cookie": "PHPSESSID=abc123def456"
@@ -219,3 +219,5 @@ for the exact public paths and request-header policy.
 - [Authentication Protocol](../../protocols/authentication.md)
 - [Authenticated Guild Query Workflow](../workflows/authenticated-guild-query.md)
 - [Error Handling Protocol](../../protocols/error-handling.md)
+
+*Logout method rechecked against webapp `461bba5a` (`AuthController` and `GuildAPI`): POST only. Other sections retain their existing verification scope.*

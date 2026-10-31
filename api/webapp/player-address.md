@@ -26,7 +26,7 @@ together before using activation identities or private metadata grants.
 | DELETE | `/api/player-address/activation-code/{code}?activation_id={uuid}` | Delete that activation instance | Authenticated owner |
 | PUT | `/api/player-address/pending/permissions` | Select a pending grant | Authenticated owner |
 | PUT | `/api/player-address/permissions` | Returns 410; a native transaction is required | Authenticated |
-| GET | `/api/player-address/{address}/state` | Native/indexed authority with exact masks | Authenticated |
+| GET | `/api/player-address/{address}/state` | Native/indexed authority with exact masks | Authenticated owner or unowned address |
 | GET | `/api/player-address/count/player/{player_id}` | Approved device count | Authenticated owner |
 | GET | `/api/player-address/player/{player_id}` | Approved devices and private metadata | Authenticated owner |
 | GET | `/api/player-address/{address}` | One owned approved device | Authenticated owner |
@@ -60,7 +60,8 @@ Private device and proof/status responses use `Cache-Control: no-store`. Success
    consent. Confirm committed success, then native and indexed ownership at or beyond
    inclusion. Delete the completed activation using both code and UUID.
 
-HTTP 202 from the consent POST means stored, not registered. An identical accepted
+HTTP 202 from the consent POST means stored, not registered. Repeated consent is
+compared by field value, not database column order or driver representation. An identical accepted
 retry reuses one consent. A second device or different proof for that instance is
 409 `resource_already_exists`; an unavailable/expired identity is 409
 `activation_code_unavailable`. Invalid signature is 400; unavailable current proof is
@@ -71,6 +72,12 @@ HTTP response. A changed nonce requires fresh target-device consent before a new
 transaction, and only after any prior send is definitively resolved.
 
 Proof/status GET and pending-consent POST share registration rate budgets. A 429 includes Retry-After and Cache-Control: no-store; retain the existing key/consent and retry reads after backoff. GRASS wakes both approval observers promptly but cannot prove approval. Saved device-action pointers retain their terminal journal evidence; genuinely missing historical evidence still requires recovery rather than a fresh send.
+
+The browser's abandoned account-recovery key records have a one-hour lifetime.
+Startup expiry skips records locked by another tab and removes records with absent,
+invalid or expired creation times. This concerns saved private recovery keys,
+not ordinary activation-code identity, native revocation or public signed history.
+Do not infer a failed registration from an expired local key record.
 
 ## Native registration proof
 
@@ -119,6 +126,9 @@ Authenticated `/api/player-address/{address}/state` uses the session player's ID
 and adds exact string `permissions` to the native and indexed sides. Native height
 and SQL height are independent. Do not stamp the older SQL row with the newer native
 height or accept an unrelated indexed player as a successful registration.
+If either the indexed row or native context belongs to a different player, `/state`
+returns 404 `address_not_owned`. This private ownership restriction does not change
+the public `/registration` endpoint's narrower response.
 
 ## Permission changes and revocation
 
@@ -146,7 +156,9 @@ POST `/api/player-address/meta` requires `address`, `guild_id` and optional
 `user_agent`. It validates current approved ownership in the write and returns 201;
 foreign/unapproved ownership returns 403 `address_does_not_exist`. IP comes from
 Symfony's trusted-proxy-aware request. This endpoint updates IP/browser metadata,
-not chain permissions or public profile render attributes.
+not chain permissions or public profile render attributes. User-agent/OS values
+remain untrusted display text: escape them before inserting HTML, even on an
+authenticated owner page.
 
 The schema dependencies include `table-player-address-20261030-activation-instance`,
 `role-structs-webapp-20261030-address-permission` and
@@ -157,3 +169,5 @@ with these API ownership checks; an older API cannot safely consume them.
 `581fcd0f`; activation, recovery, permissions, revocation and metadata were exercised
 with restricted database roles and an isolated native chain. See
 [permissions](../../knowledge/mechanics/permissions.md) for chain authority.*
+
+*Scoped changes reviewed at webapp `461bba5a`: owner-only device state, value-based consent reuse, recovery-key expiry, shared native budgets and escaped user-agent rendering. Earlier native-chain/database acceptance above is retained as historical evidence, not a new run of this revision.*

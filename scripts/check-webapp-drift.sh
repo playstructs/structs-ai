@@ -32,6 +32,20 @@ DO_FETCH=0
 # Directories the docs make claims about, mapped to the pages that would be wrong.
 # Keep in sync with the "Verified against" footers in develop/.
 SURFACES="
+src/js|develop/client/migration.md
+src/src|develop/client/migration.md
+src/config|develop/client/migration.md
+tools|develop/client/migration.md
+docker/deployment.md|develop/client/migration.md, develop/frontend-architecture.md
+README.md|develop/client/migration.md, develop/frontend-architecture.md
+src/package.json|develop/client/migration.md
+src/js/util/ExactInteger.js|develop/client/state-and-data.md
+src/js/util/PollUntil.js|develop/client/actions-and-signing.md
+src/js/tutorial/SimulatedTaskManager.js|develop/client/work-and-pow.md, develop/client/state-and-data.md
+src/js/models/KeyPlayer.js|develop/client/state-and-data.md
+src/js/managers/DeviceRegistrationStore.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
+src/src/Manager/NativeReadBudget.php|api/webapp/auth.md, develop/client/state-and-data.md
+src/src/Util/ClientKey.php|api/webapp/auth.md
 src/public/css/sui|develop/ui/tokens.md, components.md, gotchas.md
 src/public/css/structicons.css|develop/ui/icons.md
 src/public/css/main.css|develop/ui/index.md (scaling)
@@ -74,7 +88,6 @@ src/src/Controller/PlayerAddressController.php|api/webapp/player-address.md
 src/src/Manager/PlayerAddressManager.php|api/webapp/player-address.md
 src/src/Manager/AddressRegistrationProofManager.php|api/webapp/player-address.md
 src/src/Util/ChainProtocol.php|api/webapp/player-address.md
-src/js/managers/DeviceRegistrationStore.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
 src/js/managers/RegistrationPreparation.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
 src/js/managers/DeviceChangePreparation.js|api/webapp/player-address.md, develop/client/actions-and-signing.md
 src/js/util/RegistrationProof.js|api/webapp/player-address.md

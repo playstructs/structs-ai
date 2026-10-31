@@ -121,8 +121,10 @@ requested event/inclusion height, and rejects stale or conflicting snapshots.
 Successful committed transactions request refresh through their inclusion height.
 Focus, online, pageshow, GRASS reconnect and a 30-second visible-page poll cover lost
 notifications. Failed reads back off while preserving uncertainty. Account changes,
-logout or replaced sessions cancel the old stream. Funds metadata remains separate
-from the rest of a player row so a newer balance cannot certify stale unrelated data.
+logout or replaced sessions cancel the old stream. Funds-change notifications ignore read-height-only changes while still reporting
+value/readiness changes. Generator previews remain usable during routine refresh;
+submit re-reads, and protocol/session changes invalidate the preview. Funds
+metadata remains separate from the rest of a player row so a newer balance cannot certify stale unrelated data.
 
 ## Catalogs and work
 
@@ -157,7 +159,9 @@ signed evidence independently of private session state.
 `TransactionJournal.clearSession()` publishes a cross-tab boundary before clearing
 private state. Late wallet derivation, GameState saves and device-key writes honor
 that boundary. Tutorial sessions disable persistence, background authority/refresh
-work and native signing; returning restores the saved real account.
+work and native signing; returning restores the saved real account. Tutorial construction
+uses `SimulatedTaskManager`, whose relaxed simulated work rules must not be used
+for live tasks.
 
 ### Session authority
 
@@ -189,3 +193,5 @@ reload and account handoff.
 JsonAjaxer, Player/Infusion/Work/GuildAPIResponse factories, AuthManager,
 AlphaRefreshManager, WorkRefreshManager, SessionAuthorityManager, PlayerFunds and
 ChainProtocol. Matching database/API evidence is required at deployment.*
+
+*Scoped follow-up at `461bba5a`: height-insensitive funds notifications, preview preservation during background refresh, tutorial task-manager separation and shared native-read budgets. The broader state/factory baseline above is unchanged.*

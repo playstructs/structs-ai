@@ -11,6 +11,17 @@ All notable changes to the Structs Compendium documentation will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-10-31 — client adoption follow-up
+
+- Reviewed the published webapp `0.22.0-migration` branch at `461bba5a` and
+  expanded the client guide with source/suite mapping, atomic funding examples,
+  recovery/error decisions, reproducible checks and mounted-build instructions.
+- Updated logout examples to POST and documented owner-only device state,
+  IPv6/native-read budgets, corrupt-state recovery, cross-tab queue preservation,
+  indexed-sequence deferral, recovery-key expiry and tutorial task separation.
+- Kept the global webapp pin and full-page verification baselines unchanged;
+  affected references identify the narrower follow-up review explicitly.
+
 ## 2026-10-31 — client migration guide
 
 - Added the client migration checklist to the maintained developer documentation

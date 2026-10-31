@@ -99,7 +99,11 @@ timeout, fee, mode, signer and signature against the intended transaction. It ha
 the exact TxRaw bytes. Reviewed intents simulate those same signed bytes at the
 preparation height; simulation must fit the selected gas limit. Before sending,
 protocol and connection/account identity are rechecked. Simulation reserves nothing;
-only committed chain execution determines success.
+only committed chain execution determines success. Reactor/generator preparation
+compares the signing sequence at the indexed height with a fresh native read and
+defers when they differ, so readable but lagging state cannot sign an old sequence.
+Generic post-activation payloads lacking current-protocol preparation are refused
+finally while still unsent; they are not deferred at the head of a lane forever.
 
 For the configured `structstestnet-111` transition at `3353000`, pre-activation
 transactions expire at `3352999`. Post-activation transactions expire at the observed preparation height plus 60 blocks. This client validity window is separate from native permission, staking cooldown and the address-consent proof context.
@@ -144,7 +148,10 @@ Queue snapshot version 3 uses `signingQueue:{wsUrl}:{address}`. Each intent also
 an independent `signingJournal:{chainId}:{address}:{id}` record. The snapshot cannot
 erase signed evidence. Signed bytes/hash and the `prepared` record must be durably
 written before the separate `broadcasting` marker; only then can the network send
-run. Terminal history is bounded, except records still referenced by saved device-action pointers. Unresolved evidence is never pruned simply for its age.
+run. The connection epoch/account check also runs before the broadcasting marker:
+a failure there leaves a prepared, provably unsent intent. Queue snapshots merge
+other tabs' unseen unsent entries before writing, and a failed session-boundary
+check restores the selected intent to its lane. Terminal history is bounded, except records still referenced by saved device-action pointers. Unresolved evidence is never pruned simply for its age.
 
 | Journal/state | Recovery meaning |
 |---|---|
@@ -159,7 +166,13 @@ run. Terminal history is bounded, except records still referenced by saved devic
 The 30-minute age limit applies only to unsent intents. Legacy in-flight records
 without signed identity remain unknown history and never become fresh sends. They
 do not block new explicit actions. Corrupt active queues or journals still block
-signing and remain available for recovery. Logout clears private browser state
+signing until explicitly recovered. The Account page offers "Set Aside and
+Continue" for this case, with an unknown-outcome warning. Under the account lock,
+unreadable records are copied unchanged into `signingJournal:quarantine:...`;
+the copy is read back before the active record is removed. Readable journal
+records continue through ordinary reconciliation. This is not automatic storage
+clearing, cancellation or evidence that a send failed. Quarantined copies survive
+logout. Logout clears private browser state
 and closes the unsigned session boundary while retaining public journals.
 
 Legacy lane entries with a nonzero attempt count or recorded broadcast block are
@@ -168,7 +181,8 @@ as version 3. They remain unknown history. The current endpoint/account's `.corr
 backup is preserved verbatim. Identifiable possible sends are imported for
 observation; malformed backups are not executed and do not reserve the account.
 A backup with valid current signed identity still follows native reconciliation.
-Unsigned-only backups are not replayed. No notice or new screen is added.
+Unsigned-only backups are not replayed. Historical import itself does not require
+the explicit unreadable-active-state recovery action described above.
 This preserves evidence without resolving an identity-free transaction's outcome
 or inspecting another origin's storage. A manually repeated action can execute
 again if the earlier action already committed; no automatic repeat is permitted.
@@ -185,7 +199,9 @@ that proof durably and release the signing reservation while keeping the outcome
 unknown; this is not a failed or successful receipt. Conflicting/unavailable
 evidence stays held. Retain the original bytes and proof; never automatically sign
 a replacement. Bounded lookups prioritize possible live sends before historical
-records and rotate within each group.
+records and rotate within each group. Historical lookups start with a 10-block
+interval and double up to 600 blocks; this in-memory schedule does not expire
+submission evidence.
 
 `whenSettled(id, signal)` resolves with the terminal transaction; check `status`.
 It remains pending for uncertainty. Aborting a view observer rejects only that
@@ -229,7 +245,9 @@ notifications must not complete a different action or affect a new wallet sessio
 The existing transfer flow returns a definitive failure to its confirmation screen
 with recipient/amount preserved. An unknown send stays protected against duplicates.
 Deploy and action controls handle enqueue refusal before adding pending visuals, and release only their own operation lock after a definitive failure. Device and gameplay actions likewise require terminal evidence before reporting
-success; a successful self-revoke may clear local state without waiting for an API
+success. Transfer/reactor waiting views can be left while the action continues;
+a committed receipt awaiting indexing is reported separately and never becomes a
+new send. A successful self-revoke may clear local state without waiting for an API
 read that the revoked key can no longer authenticate.
 
 ### Desktop adds a native virtual-player signer
@@ -266,3 +284,5 @@ rollback, reload/unknown outcomes and unchanged rendered controls.*
 `3f04437d5606d6736df41301bb980893129a7912`: `mcp/native_signer.rs`,
 `vplayer_bridge.rs`, `tx_gate.rs`, `tx_retry.rs`, and `tools/system.rs`. No new Desktop
 compatibility or deployment claim is made here.*
+
+*Scoped review against `461bba5a`: signing/queue/journal changes since the baseline above, indexed-sequence deferral, unsent refusal, historical backoff, cross-tab persistence and explicit corrupt-state recovery. Desktop verification remains separate.*

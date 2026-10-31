@@ -69,8 +69,10 @@ transactions fail on-chain rather than queueing politely.
 **One new transaction per observed block per address.** This is the browser queue's
 policy, alongside real shared player/charge/object chain limits. Same-origin tabs
 coordinate with a Web Lock. Signed bytes, hash and account context are durably saved;
-uncertain submissions block new sends until the original outcome is established.
-A sequence change does not authorize replacing them.
+uncertain submissions that can still execute block new sends. Historical unknown
+records and durable proof of a consumed sequence can release that reservation
+without inventing an outcome. A sequence change never authorizes automatic replay.
+See [recovery rules](actions-and-signing.md#retries-and-settlement).
 
 **Proof-of-work gets cheaper if you wait.** Difficulty decays logarithmically with the
 age of the on-chain anchor. Initiating early and completing later is strictly better than

@@ -135,7 +135,10 @@ in memory for a later block; it is not silently reported as submitted.
 
 The view's observer can be cancelled without cancelling a send. Logout stops workers,
 clears observers and closes the session boundary while retaining signed transaction
-evidence. Tutorial work remains simulated and cannot enter the native queue.
+evidence. Tutorial work uses the separate `SimulatedTaskManager`: it takes work
+from `TutorialWorld`, has no native journal to reconcile and applies simulated ore
+clocks directly. These rules cannot be enabled on the live `TaskManager` or used
+as evidence that a native proof completed.
 
 ## Deployment and verification
 
@@ -154,3 +157,5 @@ separate evidence. Keep those distinctions when reporting client acceptance.
 TaskStateFactory, TaskWorker, WorkFactory, WorkDifficulty, WorkSubmission,
 WorkRefreshManager and TaskConstants. Integer eligibility cross-checked directly
 against release `x/structs/types/work.go`; no chain checkout was modified.*
+
+*Scoped follow-up at `461bba5a`: tutorial task behavior is separated into `SimulatedTaskManager`; the live work/worker contract above remains required.*

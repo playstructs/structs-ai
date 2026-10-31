@@ -237,7 +237,7 @@ Registration is also signature-based and **asynchronous**: persisting the pendin
 ```json
 {
   "request": {
-    "method": "GET",
+    "method": "POST",
     "url": "http://localhost:8080/api/auth/logout",
     "headers": {
       "Cookie": "PHPSESSID=abc123def456"
@@ -836,3 +836,5 @@ asyncio.run(main())
 
 *Last Updated: December 7, 2025*
 
+
+*Logout method rechecked against webapp `461bba5a` (`AuthController` and `GuildAPI`): POST only. Other sections retain their existing verification scope.*

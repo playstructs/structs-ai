@@ -18,7 +18,7 @@ image alone does not establish that a guild serves them.
 | POST | `/api/auth/signup` | Submit signed guild proxy signup | Public, signature validated |
 | POST | `/api/auth/login` | Establish a session cookie | Public, signature validated |
 | POST | `/api/auth/token` | Obtain a bearer token | Public, same signature validation |
-| GET | `/api/auth/logout` | Invalidate the presented session and revoke the presented bearer | Public |
+| POST | `/api/auth/logout` | Invalidate the presented session and revoke the presented bearer | Public |
 | GET | `/api/auth/player-address/{address}/guild/{guild_id}/player-id` | Resolve approved player membership | Public |
 | GET | `/api/auth/activation-code/{code}` | Resolve the active code's player and activation identity | Public |
 | GET | `/api/auth/player-address/{address}/player/{player_id}/proof` | Read native registration proof context | Public |
@@ -30,7 +30,14 @@ An API session is separate from the signing key's chain authority.
 
 ## Registration request limits
 
-The proof/status GET routes and pending-consent POST share a client-IP token bucket (12-request burst, one token per two seconds) and a container-wide bucket (60-request burst, ten tokens per second). Symfony uses trusted-proxy-aware client IPs, filesystem cache and flock locks shared by PHP workers. Rejection returns 429, Retry-After and Cache-Control: no-store before native queries. Configure shared cache/locks for replicas and explicit trusted proxies for deployment; this is not a substitute for an edge limit. Other public signup/discovery routes retain their existing access policy.
+The proof/status GET routes and pending-consent POST share a client token bucket (12-request burst, one token per two seconds) and a container-wide bucket (60-request burst, ten tokens per second). Symfony uses trusted-proxy-aware client IPs, normalizes IPv4-mapped IPv6 to IPv4 and groups other IPv6 addresses by /64. Filesystem cache and flock locks share budgets across PHP workers. Rejection returns 429, Retry-After and Cache-Control: no-store before native queries. The stock deployment supports one webapp replica. Shared sessions, bearer/cache state and locks are required before adding replicas. Configure explicit trusted proxies for deployment; this is not a substitute for an edge limit. Other public signup/discovery routes retain their existing access policy.
+
+Native reads through `ChainSnapshotManager` also consume a shared budget across
+routes: 120 tokens/client replenished at 12/second and 480 global tokens at
+48/second. Retained-funds cache misses have their own window budget as well.
+Exhaustion of native reads can appear as unavailable evidence or 503 from the
+calling manager; it does not always use the registration subscriber's 429 envelope.
+Back off and keep unknown values distinct from zero.
 
 ## Signed login request
 
@@ -91,8 +98,9 @@ the session cookie or use the bearer. Private API reads and writes still enforce
 their owning-player checks. Bearer support does not by itself enable browser CORS:
 verify the deployment's origin policy before using private routes across origins.
 
-`GET /api/auth/logout` returns the success envelope above, also when already logged
-out. It loads and invalidates the cookie's server session, clears its player/guild
+`POST /api/auth/logout` returns the success envelope above, also when already logged
+out. A GET is not a logout request; POST prevents cross-site links/images from
+ending a SameSite=Lax session. It loads and invalidates the cookie's server session, clears its player/guild
 claims, and revokes a presented valid bearer until that token expires. A different
 bearer is unaffected. Revocation records live in the application's cache, which
 must survive as required by the deployment's token lifetime.
@@ -120,7 +128,9 @@ Authorization, credentialed requests or writes.
 The `/api/auth/`, `/api/timestamp` and `/api/setting` firewall paths and exact
 `/api/onboarding/events` route are public too. Struct, reactor, ledger, player and
 planet-activity reads remain authenticated. Device metadata and account management
-remain private.
+remain private. The authenticated `/api/` firewall also has an
+`IS_AUTHENTICATED` access-control backstop. Explicit public firewalls bypass that
+rule; do not make arbitrary private paths public to resolve a 401.
 
 ## POST `/api/auth/signup`
 
@@ -153,3 +163,5 @@ tokens after one day. Client seeding and endpoint configuration are deployment c
 (`table-oidc-20260826-provider`, `role-structs-webapp-20260826-oidc`). Authentication,
 public-route and logout behavior reviewed against webapp `581fcd0f`; real signed
 session/bearer HTTP checks passed against an isolated release node.*
+
+*Scoped changes reviewed at webapp `461bba5a`: POST-only logout, the private API authentication backstop, ClientKey normalization and NativeReadBudget. The earlier full authentication and OIDC reviews above retain their stated scope.*

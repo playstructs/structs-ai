@@ -101,7 +101,7 @@ routes. Catalog, struct and planet-activity reads remain authenticated. Public g
 GET/HEAD supports anonymous CORS; omit cookies/tokens. Private bearer routes need a
 separate browser origin policy.
 
-GET `/api/auth/logout` invalidates the presented session and revokes the presented
+POST `/api/auth/logout` invalidates the presented session and revokes the presented
 bearer. Clear local key/session material even if HTTP logout fails, while retaining
 public evidence of any uncertain signed transaction. See the
 [login example](../examples/auth/webapp-login.md).
@@ -239,3 +239,5 @@ authentication policy, TableReadManager catalog controls, Player/Infusion/Ledger
 Struct managers and TimestampController; database readiness against structs-pg
 `400e1c1`. Linked detailed analytics/other-entity references retain their own scope.
 This is source/isolated-fixture compatibility, not a public deployment certificate.*
+
+*Logout method rechecked against webapp `461bba5a`: POST only. Other protocol sections retain the scoped baseline above.*
